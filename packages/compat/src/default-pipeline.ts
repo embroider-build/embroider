@@ -1,12 +1,7 @@
-import { App, Addons as CompatAddons, Options } from '.';
-import { toBroccoliPlugin, PackagerConstructor, Variant, EmberAppInstance } from '@embroider/core';
-import { tmpdir } from '@embroider/core';
+import { App, compatAddons, Options } from '.';
+import { toBroccoliPlugin, PackagerConstructor, Variant, EmberAppInstance, outputTree } from '@embroider/core';
 import { Node } from 'broccoli-node-api';
-import writeFile from 'broccoli-file-creator';
-import mergeTrees from 'broccoli-merge-trees';
-import { createHash } from 'crypto';
-import { join, dirname } from 'path';
-import { sync as pkgUpSync } from 'pkg-up';
+import { join } from 'path';
 
 export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
@@ -14,39 +9,34 @@ export interface PipelineOptions<PackagerOptions> extends Options {
   variants?: Variant[];
 }
 
-export function stableWorkspaceDir(appRoot: string, environment: string) {
-  let hash = createHash('md5');
-  hash.update(dirname(pkgUpSync({ cwd: appRoot })!));
-  hash.update(environment);
-  return join(tmpdir, 'embroider', hash.digest('hex').slice(0, 6));
-}
-
 export default function defaultPipeline<PackagerOptions>(
   emberApp: EmberAppInstance,
   packager?: PackagerConstructor<PackagerOptions>,
   options: PipelineOptions<PackagerOptions> = {}
 ): Node {
-  let outputPath: string;
-  let addons;
-
   let embroiderApp = new App(emberApp, options);
-
-  addons = new CompatAddons(embroiderApp);
-  addons.ready().then(result => {
-    outputPath = result.outputPath;
-  });
-
+  let stage1 = outputTree(
+    compatAddons(embroiderApp),
+    'embroider-stage-1',
+    join('node_modules', '.embroider', 'rewritten-packages')
+  );
   if (process.env.STAGE1_ONLY) {
-    return mergeTrees([addons.tree, writeFile('.stage1-output', () => outputPath)]);
+    return stage1;
   }
 
+  let stage2 = outputTree(
+    embroiderApp.builder(stage1),
+    'embroider-stage-2',
+    join('node_modules', '.embroider', 'rewritten-app')
+  );
+
   if (process.env.STAGE2_ONLY || !packager) {
-    return mergeTrees([embroiderApp.asStage(addons).tree, writeFile('.stage2-output', () => outputPath)]);
+    return stage2;
   }
 
   let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
-  return new BroccoliPackager(embroiderApp.asStage(addons), variants, options && options.packagerOptions);
+  return new BroccoliPackager(stage2, embroiderApp.root, variants, options && options.packagerOptions);
 }
 
 function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {

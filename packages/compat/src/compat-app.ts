@@ -1,5 +1,5 @@
 import { Node as BroccoliNode } from 'broccoli-node-api';
-import { PackageCache, WaitForTrees, Stage, RewrittenPackageCache, Package } from '@embroider/core';
+import { PackageCache, RewrittenPackageCache, Package } from '@embroider/core';
 import Options, { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
@@ -26,7 +26,7 @@ import { readFileSync } from 'fs';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import semver from 'semver';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
-import { CompatAppBuilder } from './compat-app-builder';
+import { CompatAppBuilder, TreeNames } from './compat-app-builder';
 
 type EmberCliHTMLBarsAddon = AddonInstance & {
   htmlbarsOptions(): HTMLBarsOptions;
@@ -41,8 +41,6 @@ interface Group {
 // This runs at broccoli-pipeline-construction time, whereas the
 // CompatAppBuilder instance only becomes available during tree-building time.
 export default class CompatApp {
-  private annotation = '@embroider/compat/app';
-  private active: CompatAppBuilder | undefined;
   readonly options: Required<Options>;
 
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
@@ -182,7 +180,7 @@ export default class CompatApp {
     });
   }
 
-  private get htmlTree() {
+  private get htmlTree(): BroccoliNode {
     if (this.legacyEmberAppInstance.tests) {
       return mergeTrees([this.indexTree, this.testIndexTree]);
     } else {
@@ -190,7 +188,7 @@ export default class CompatApp {
     }
   }
 
-  private get indexTree() {
+  private get indexTree(): BroccoliNode {
     let indexFilePath = this.legacyEmberAppInstance.options.outputPaths.app.html;
     let index = buildFunnel(this.legacyEmberAppInstance.trees.app, {
       allowEmpty: true,
@@ -794,7 +792,7 @@ export default class CompatApp {
     });
   }
 
-  private inTrees(prevStageTree: BroccoliNode) {
+  private inTrees(prevStageTree: BroccoliNode): TreeNames {
     let publicTree = this.publicTree;
     let configTree = this.config;
 
@@ -826,53 +824,9 @@ export default class CompatApp {
     }
   }
 
-  private async instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
-    let origAppPkg = this.appPackage();
-    let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
-    return new CompatAppBuilder(
-      root,
-      origAppPkg,
-      movedAppPkg,
-      this.options,
-      this,
-      configTree,
-      packageCache.get(
-        join(origAppPkg.root, 'node_modules', '.embroider', 'rewritten-packages', '@embroider', 'synthesized-vendor')
-      ),
-      packageCache.get(
-        join(origAppPkg.root, 'node_modules', '.embroider', 'rewritten-packages', '@embroider', 'synthesized-styles')
-      )
-    );
-  }
-
-  asStage(prevStage: Stage): Stage {
-    let resolve: (result: { outputPath: string }) => void;
-    let promise: Promise<{ outputPath: string }> = new Promise(r => (resolve = r));
-
-    let tree = () => {
-      let inTrees = this.inTrees(prevStage.tree);
-      return new WaitForTrees(inTrees, this.annotation, async treePaths => {
-        if (!this.active) {
-          let { outputPath } = await prevStage.ready();
-          let packageCache = RewrittenPackageCache.shared('embroider', this.root);
-          this.active = await this.instantiate(outputPath, packageCache, inTrees.configTree);
-          resolve({ outputPath });
-        }
-        await this.active.build(treePaths);
-      });
-    };
-
-    return {
-      get inputPath() {
-        return prevStage.inputPath;
-      },
-      ready: async () => {
-        return await promise;
-      },
-      get tree() {
-        return tree();
-      },
-    };
+  builder(prevTree: BroccoliNode): BroccoliNode {
+    let inTrees = this.inTrees(prevTree);
+    return mergeTrees([inTrees.appJS, new CompatAppBuilder(inTrees, this.options, this)], { overwrite: true });
   }
 }
 

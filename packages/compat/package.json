@@ -60,7 +60,6 @@
     "resolve-package-path": "^4.0.1",
     "semver": "^7.3.5",
     "symlink-or-copy": "^1.3.1",
-    "tree-sync": "^2.1.0",
     "typescript-memoize": "^1.0.1",
     "walk-sync": "^3.0.0",
     "yargs": "^17.0.1"

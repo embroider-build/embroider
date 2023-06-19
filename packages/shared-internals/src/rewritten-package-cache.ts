@@ -51,18 +51,19 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
       }
     }
 
+    let resolveFromPkg: Package;
     let oldRoot = this.index.newToOld.get(fromPackage.root);
-    if (!oldRoot) {
-      // the fromPackage has not been moved, so we're just providing the plain
-      // behavior.
-      return this.plainCache.resolve(packageName, fromPackage);
+    if (oldRoot) {
+      // the requesting package has been moved, so do the resolving from the old location
+      resolveFromPkg = this.plainCache.get(oldRoot);
+    } else {
+      // the requesting package has not been moved
+      resolveFromPkg = fromPackage;
     }
 
-    // do the real resolving from the old location
-    let oldSrc = this.plainCache.get(oldRoot);
-    let oldDest = this.plainCache.resolve(packageName, oldSrc);
+    let oldDest = this.plainCache.resolve(packageName, resolveFromPkg);
 
-    // and if the package we found was itself moved return the moved one.
+    // if the target package we found was itself moved return the moved one.
     return this.maybeMoved(oldDest);
   }
 

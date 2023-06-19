@@ -7,7 +7,6 @@ export {
   getPackagerCacheDir,
 } from './packager';
 export { HTMLEntrypoint, BundleSummary } from './html-entrypoint';
-export { default as Stage } from './stage';
 export { Asset, EmberAsset, ImplicitAssetPaths } from './asset';
 export { default as Options, optionsWithDefaults } from './options';
 export { default as toBroccoliPlugin } from './to-broccoli-plugin';
@@ -25,6 +24,7 @@ export {
 } from './module-resolver';
 export { virtualContent } from './virtual-content';
 export type { Engine } from './app-files';
+export { outputTree } from './output-tree';
 
 // this is reexported because we already make users manage a peerDep from some
 // other packages (like embroider/webpack and @embroider/compat

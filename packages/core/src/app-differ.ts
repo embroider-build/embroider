@@ -1,13 +1,10 @@
 import { AddonPackage } from '@embroider/shared-internals';
 import MultiTreeDiff, { InputTree } from './multi-tree-diff';
 import walkSync from 'walk-sync';
-import { join, basename, dirname, resolve } from 'path';
-import { mkdirpSync, unlinkSync, rmdirSync, removeSync, copySync, writeFileSync, readFileSync } from 'fs-extra';
+import { join, resolve } from 'path';
+import { mkdirpSync, unlinkSync, rmdirSync, removeSync } from 'fs-extra';
 import { debug } from './messages';
 import assertNever from 'assert-never';
-import { describeExports } from './describe-exports';
-import { compile } from './js-handlebars';
-import { TransformOptions } from '@babel/core';
 import { statSync } from 'fs';
 import { format } from 'util';
 
@@ -29,8 +26,7 @@ export default class AppDiffer {
     // arguments below this point are only needed in fastboot mode. Fastboot
     // makes this pretty messy because fastboot trees all merge into the app 🤮.
     fastbootEnabled = false,
-    ownFastbootJSDir?: string | undefined,
-    private babelParserConfig?: TransformOptions | undefined
+    ownFastbootJSDir?: string | undefined
   ) {
     this.sources = activeAddonDescendants.map(addon => maybeSource(addon, 'app-js')).filter(Boolean) as Source[];
 
@@ -100,33 +96,12 @@ export default class AppDiffer {
             // trying to import it anyway, because that would have already been
             // an error pre-embroider).
             this.isFastbootOnly.set(relativePath, sourceIndices[0] >= this.firstFastbootTree);
-            let source = this.sources[sourceIndices[0]];
-            let sourceFile = source.locate(relativePath);
-            if (!source.isRelocated) {
-              copySync(sourceFile, outputPath, { dereference: true });
-            }
             this.updateFiles(relativePath);
           } else {
             // we have both fastboot and non-fastboot files for this path.
             // Because of the way fastbootMerge is written, the first one is the
             // non-fastboot.
             this.isFastbootOnly.set(relativePath, false);
-            let [browserSrc, fastbootSrc] = sourceIndices.map(i => this.sources[i]);
-            let [browserSourceFile, fastbootSourceFile] = [browserSrc, fastbootSrc].map(src =>
-              src.locate(relativePath)
-            );
-            let dir = dirname(relativePath);
-            let base = basename(relativePath);
-            let browserDest = `_browser_${base}`;
-            let fastbootDest = `_fastboot_${base}`;
-            if (!browserSrc.isRelocated && !fastbootSrc.isRelocated) {
-              copySync(browserSourceFile, join(this.outputPath, dir, browserDest), { dereference: true });
-              copySync(fastbootSourceFile, join(this.outputPath, dir, fastbootDest), { dereference: true });
-              writeFileSync(
-                outputPath,
-                switcher(browserDest, fastbootDest, this.babelParserConfig!, readFileSync(browserSourceFile, 'utf8'))
-              );
-            }
             this.updateFiles(relativePath);
           }
           break;
@@ -165,37 +140,6 @@ function fastbootMerge(firstFastbootTree: number) {
       throw new Error(`bug: should always have at least one winner in fastbootMerge`);
     }
   };
-}
-
-const switcherTemplate = compile(`
-import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
-let mod;
-if (macroCondition(getGlobalConfig().fastboot?.isRunning)){
-  mod = importSync("./{{js-string-escape fastbootDest}}");
-} else {
-  mod = importSync("./{{js-string-escape browserDest}}");
-}
-{{#if hasDefaultExport}}
-export default mod.default;
-{{/if}}
-{{#each names as |name|}}
-export const {{name}} = mod.{{name}};
-{{/each}}
-`) as (params: { fastbootDest: string; browserDest: string; names: string[]; hasDefaultExport: boolean }) => string;
-
-function switcher(
-  browserDest: string,
-  fastbootDest: string,
-  babelParserConfig: TransformOptions,
-  browserSource: string
-): string {
-  let { names } = describeExports(browserSource, babelParserConfig);
-  return switcherTemplate({
-    fastbootDest,
-    browserDest,
-    names: [...names].filter(name => name !== 'default'),
-    hasDefaultExport: names.has('default'),
-  });
 }
 
 interface Source extends InputTree {

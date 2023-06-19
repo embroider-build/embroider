@@ -1,4 +1,4 @@
-import { Package, PackageCache, RewrittenPackageIndex } from '@embroider/core';
+import { Package, PackageCache, RewrittenPackageCache, RewrittenPackageIndex, WaitForTrees } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import buildCompatAddon from './build-compat-addon';
 import { Funnel } from 'broccoli-funnel';
@@ -9,7 +9,18 @@ import type { Node } from 'broccoli-node-api';
 import CompatApp from './compat-app';
 import { join } from 'path';
 
-export function convertLegacyAddons(compatApp: CompatApp) {
+// This build stage expects to be run with broccoli memoization enabled in order
+// to get good rebuild performance. We turn it on by default here, but you can
+// still explicitly turn it off by setting the env var to "false".
+//
+// As for safetly mutating process.env: broccoli doesn't read this until a Node
+// executes its build hook, so as far as I can tell there's no way we could set
+// this too late.
+if (typeof process.env.BROCCOLI_ENABLED_MEMOIZE === 'undefined') {
+  process.env.BROCCOLI_ENABLED_MEMOIZE = 'true';
+}
+
+export function compatAddons(compatApp: CompatApp) {
   let packageCache = PackageCache.shared('embroider', compatApp.root);
   let instanceCache = new V1InstanceCache(compatApp, packageCache);
 
@@ -24,6 +35,7 @@ export function convertLegacyAddons(compatApp: CompatApp) {
     return new Funnel(interior, { destDir: index.packages[pkg.root] });
   });
 
+  let indexNode = writeFile('index.json', JSON.stringify(index, null, 2));
   return broccoliMergeTrees([
     ...exteriorTrees,
     new Funnel(compatApp.synthesizeStylesPackage(interiorTrees), {
@@ -32,7 +44,16 @@ export function convertLegacyAddons(compatApp: CompatApp) {
     new Funnel(compatApp.synthesizeVendorPackage(interiorTrees), {
       destDir: '@embroider/synthesized-vendor',
     }),
-    writeFile('index.json', JSON.stringify(index, null, 2)),
+    indexNode,
+    new WaitForTrees<{ index: Node }>(
+      { index: indexNode },
+      '@embroider/compat/standalone-addon-build',
+      async ({ index }, changed) => {
+        if (changed.has(index)) {
+          RewrittenPackageCache.shared('embroider', compatApp.root).invalidateIndex();
+        }
+      }
+    ),
   ]);
 }
 

@@ -44,3 +44,47 @@ In the tests directory we derive our tests off of base app and addon templates (
 2. Run `pnpm compile` (or `pnpm compile --watch`).
 3. In each of the `./packages/*` directories, run `pnpm link`.
 4. In your app, `pnpm link @embroider/core` and any other embroider packages that appear in your package.json.
+
+## Issue Triage
+
+Triaging issues and Pull Requests is a great way to help maintainers out, as it highly async communication, and benefits users of projects within this repo, past, present, and feature.
+
+The goal helping out with issue/pr triage is to efficiently and asynchronously communicate if anything needs attention -- all without opening a new tab for each issue/pr and reading the whole history. 
+
+Triage tasks can fall in to the following categories:
+
+### Issue: Request or Create a Reproduction
+
+If an issue is reported, but does not have a clear path to resolution, we need a reproduction that demonstrates the issuse in a clear and concise way.  
+[StackOverflow has a good process](https://stackoverflow.com/help/minimal-reproducible-example) for creating minimal reproductions.
+
+The following labels should be added / removed, depending on the state of the issue: 
+
+- `needs reproduction` - a reproduction repo or failing test is still needed
+- `has reproduction` - no additional reproduction needed, the problem is clearly demonstrated in an isolated and understable way
+
+### Issue: Confirm problem is present in current release 
+
+Once a reproduction exists for an issue, we can re-run the reproduction steps with the current release, and if the problem is resolved, we can close the issue. 
+
+If the issue is still present, the label `confirmed issue` can be added to the issue.
+
+### Issue: Problem confirmed, needs fix
+
+When an issue is confirmed, and isn't potentially a user error, or configuration problem, the label `bug` can be added to the issue.
+
+### Pull Request: reproduction 
+
+In some cases, pull requests are used to demonstrate a problem via failing test -- these pull requsets need a fix / resolution to be implemented.
+
+
+To represent this state, the labels, `needs fix`, and `is reproduction` could be applied to the PR
+
+### Pull Request: others
+
+All other PRs' states are represented by GitHub-native status, reviewed, approved, etc.
+When a PR is approved by `embroider` maintainers, it could be considered ready for merge once CI passes.
+
+
+
+

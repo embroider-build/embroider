@@ -1,8 +1,6 @@
-import { join } from 'path';
 import merge from 'lodash/merge';
-import fs from 'fs-extra';
 import { loadFromFixtureData } from './helpers';
-import { dummyAppScenarios, baseAddon, appScenarios } from './scenarios';
+import { baseAddon, appScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import { expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
@@ -474,39 +472,6 @@ appScenarios
       test('disabled in-repo addon is present but empty', function () {
         expectFile('lib/disabled-in-repo-addon/package.json').exists();
         expectFile('lib/disabled-in-repo-addon/example.js').doesNotExist();
-      });
-    });
-  });
-
-dummyAppScenarios
-  .map('stage-1-dummy-addon', project => {
-    project.pkg.name = 'my-addon';
-
-    project.linkDependency('@embroider/webpack', { baseDir: __dirname });
-    project.linkDependency('@embroider/core', { baseDir: __dirname });
-    project.linkDependency('@embroider/compat', { baseDir: __dirname });
-
-    merge(project.files, {
-      addon: {
-        components: {
-          'hello-world.js': '',
-        },
-      },
-    });
-  })
-  .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name}`, function (hooks) {
-      let app: PreparedApp;
-      let workspaceDir: string;
-
-      hooks.before(async () => {
-        app = await scenario.prepare();
-        await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
-        workspaceDir = fs.readFileSync(join(app.dir, 'dist', '.stage1-output'), 'utf8');
-      });
-
-      test('dummy app can resolve own addon', function (assert) {
-        assert.ok(require.resolve('my-addon/components/hello-world.js', { paths: [workspaceDir] }));
       });
     });
   });

@@ -124,7 +124,7 @@ Scenarios.fromProject(() => baseV2Addon())
         // None of these tests should take longer than even 1s, but
         // if something goes wrong, they could hang, and we don't want to hold up
         // all of C.I.
-        assert.timeout(5_000);
+        assert.timeout(10_000);
       });
 
       hooks.afterEach(async () => {

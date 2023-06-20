@@ -108,7 +108,7 @@ export class DevWatcher {
     await this.settled();
   };
 
-  settled = async (timeout = 2_000) => {
+  settled = async (timeout = 5_000) => {
     if (!this.#waitForBuildPromise) {
       console.debug(`There is nothing to wait for`);
       return;

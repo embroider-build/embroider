@@ -37,7 +37,14 @@ export class DevWatcher {
 
     this.#watcher = rollup.watch(
       configFile.options.map((options: RollupOptions) => {
-        options.watch = { buildDelay: 20 };
+        options.watch = {
+          buildDelay: 20,
+          // Windows doesn't have a good file-watching mechanism (such as inotify),
+          // so we need to tell this `DevWatcher` tool to use chokidar's polling feature
+          chokidar: {
+            usePolling: true,
+          },
+        };
         return options;
       })
     );

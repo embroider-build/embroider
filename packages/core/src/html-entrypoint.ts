@@ -152,6 +152,11 @@ export class HTMLEntrypoint {
     }
     return this.dom.serialize();
   }
+
+  simpleRender(): string {
+    //used to cache bust during webpack build
+    return this.dom.serialize();
+  }
 }
 
 export interface BundleSummary {

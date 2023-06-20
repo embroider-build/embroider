@@ -54,6 +54,7 @@ interface AppInfo {
   publicAssetURL: string;
   resolverConfig: ResolverOptions;
   packageName: string;
+  renderedEntrypointsDom: string[];
 }
 
 // AppInfos are equal if they result in the same webpack config.
@@ -61,7 +62,10 @@ function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   return (
     isEqual(left.babel, right.babel) &&
     left.entrypoints.length === right.entrypoints.length &&
-    left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules))
+    left.entrypoints.every(
+      (e, index) =>
+        isEqual(e.modules, right.entrypoints[index].modules) && e.simpleRender() === right.renderedEntrypointsDom[index]
+    )
   );
 }
 
@@ -182,7 +186,16 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
 
     let resolverConfig: EmbroiderPluginOptions = readJSONSync(join(this.pathToVanillaApp, '.embroider/resolver.json'));
 
-    return { entrypoints, otherAssets, babel, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };
+    return {
+      entrypoints,
+      otherAssets,
+      babel,
+      rootURL,
+      resolverConfig,
+      publicAssetURL,
+      packageName: meta.name,
+      renderedEntrypointsDom: [],
+    };
   }
 
   private configureWebpack(appInfo: AppInfo, variant: Variant, variantIndex: number): Configuration {
@@ -305,6 +318,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       mergeWith({}, this.configureWebpack(appInfo, variant, variantIndex), this.extraConfig, appendArrays)
     );
     this.lastAppInfo = appInfo;
+    this.lastAppInfo.renderedEntrypointsDom = appInfo.entrypoints.map(function (entrypoint) {
+      return entrypoint.simpleRender();
+    });
     return (this.lastWebpack = webpack(config));
   }
 

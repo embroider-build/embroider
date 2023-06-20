@@ -1,7 +1,9 @@
 import path from 'path';
 import { PreparedApp } from 'scenario-tester';
+// @ts-expect-error
 import { loadConfigFile } from 'rollup/loadConfigFile';
 import rollup from 'rollup';
+import type { RollupOptions } from 'rollup';
 
 export class DevWatcher {
   #addon: PreparedApp;
@@ -34,7 +36,7 @@ export class DevWatcher {
     configFile.warnings.flush();
 
     this.#watcher = rollup.watch(
-      configFile.options.map(options => {
+      configFile.options.map((options: RollupOptions) => {
         options.watch = { buildDelay: 20 };
         return options;
       })
@@ -42,6 +44,9 @@ export class DevWatcher {
 
     this.#defer();
 
+    /**
+     * NOTE: there is a bit of a delay between a file change and the next "START"
+     */
     this.#watcher.on('event', args => {
       switch (args.code) {
         case 'START': {

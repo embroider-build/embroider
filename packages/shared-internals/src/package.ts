@@ -137,7 +137,7 @@ export default class Package {
             // stop you.
             let pkg, main;
             try {
-              pkg = this.packageCache.get(join(this.packageCache.basedir(this), path));
+              pkg = this.packageCache.get(join(this.root, path));
               main = pkg.packageJSON['ember-addon']?.main || pkg.packageJSON['main'];
             } catch (err) {
               // package was missing or had invalid package.json
@@ -150,7 +150,7 @@ export default class Package {
               main = `${main}.js`;
             }
 
-            let mainPath = join(this.packageCache.basedir(this), path, main);
+            let mainPath = join(this.root, path, main);
             if (!existsSync(mainPath)) {
               // package has no valid main
               return false;

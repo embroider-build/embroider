@@ -29,11 +29,7 @@ export interface RewrittenPackageIndex {
 // could see all of those)
 type PublicAPI<T> = { [K in keyof T]: T[K] };
 
-// TODO: as our refactor lands we should be able to remove these things from
-// PackageCache itself.
-type PackageCacheTheGoodParts = Omit<PublicAPI<PackageCache>, 'basedir' | 'seed' | 'shareAs'>;
-
-export class RewrittenPackageCache implements PackageCacheTheGoodParts {
+export class RewrittenPackageCache implements PublicAPI<PackageCache> {
   constructor(private plainCache: PackageCache) {}
 
   get appRoot(): string {

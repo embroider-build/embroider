@@ -3,6 +3,7 @@ import Package from './package';
 import { existsSync, readJSONSync } from 'fs-extra';
 import { resolve } from 'path';
 import { getOrCreate } from './get-or-create';
+import { locateEmbroiderWorkingDir } from './working-dir';
 
 export interface RewrittenPackageIndex {
   // keys are paths to original package root directories.
@@ -136,7 +137,7 @@ export class RewrittenPackageCache implements PackageCacheTheGoodParts {
   }
 
   private loadIndex(): RewrittenPackageCache['index'] {
-    let addonsDir = resolve(this.appRoot, 'node_modules', '.embroider', 'rewritten-packages');
+    let addonsDir = resolve(locateEmbroiderWorkingDir(this.appRoot), 'rewritten-packages');
     let indexFile = resolve(addonsDir, 'index.json');
     if (!existsSync(indexFile)) {
       return {

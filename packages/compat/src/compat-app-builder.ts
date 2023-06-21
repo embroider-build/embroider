@@ -16,6 +16,7 @@ import {
   cacheBustingPluginVersion,
   cacheBustingPluginPath,
   Resolver,
+  locateEmbroiderWorkingDir,
 } from '@embroider/core';
 import walkSync from 'walk-sync';
 import { resolve as resolvePath, posix } from 'path';
@@ -1057,7 +1058,7 @@ export class CompatAppBuilder {
   }
 
   private addResolverConfig(config: CompatResolverOptions) {
-    outputJSONSync(join(this.origAppPackage.root, 'node_modules', '.embroider', 'resolver.json'), config);
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config);
   }
 
   private shouldSplitRoute(routeName: string) {

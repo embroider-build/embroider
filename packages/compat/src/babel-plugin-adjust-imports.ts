@@ -5,7 +5,7 @@ import type { types as t } from '@babel/core';
 import { ImportUtil } from 'babel-import-util';
 import { readJSONSync } from 'fs-extra';
 import { CompatResolverOptions } from './resolver-transform';
-import { Package, packageName, Resolver, unrelativize } from '@embroider/core';
+import { locateEmbroiderWorkingDir, Package, packageName, Resolver, unrelativize } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
 import { ActivePackageRules, appTreeRulesDir, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
 
@@ -43,7 +43,7 @@ export default function main(babel: typeof Babel) {
       return cached;
     }
     let resolverOptions: CompatResolverOptions = readJSONSync(
-      join(appRoot, 'node_modules', '.embroider', 'resolver.json')
+      join(locateEmbroiderWorkingDir(appRoot), 'resolver.json')
     );
     let resolver = new Resolver(resolverOptions);
     cached = {

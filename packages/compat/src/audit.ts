@@ -1,6 +1,14 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
-import { AppMeta, explicitRelative, hbsToJS, Resolver, ResolverOptions, RewrittenPackageCache } from '@embroider/core';
+import {
+  AppMeta,
+  explicitRelative,
+  hbsToJS,
+  locateEmbroiderWorkingDir,
+  Resolver,
+  ResolverOptions,
+  RewrittenPackageCache,
+} from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -259,7 +267,7 @@ export class Audit {
   }
 
   private get resolverParams(): ResolverOptions {
-    return readJSONSync(join(this.originAppRoot, 'node_modules', '.embroider', 'resolver.json'));
+    return readJSONSync(join(locateEmbroiderWorkingDir(this.originAppRoot), 'resolver.json'));
   }
 
   private resolver = new Resolver(this.resolverParams);

@@ -21,7 +21,7 @@ import {
   getOrCreate,
   ResolverOptions,
 } from '@embroider/core';
-import { RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
+import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
 import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
 import { readFileSync, outputFileSync, copySync, Stats, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
@@ -182,7 +182,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     }
 
     let resolverConfig: EmbroiderPluginOptions = readJSONSync(
-      join(this.appRoot, 'node_modules/.embroider/resolver.json')
+      join(locateEmbroiderWorkingDir(this.appRoot), 'resolver.json')
     );
 
     return { entrypoints, otherAssets, babel, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };

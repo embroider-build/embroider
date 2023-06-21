@@ -14,7 +14,7 @@ import assertNever from 'assert-never';
 import { join, sep } from 'path';
 import { readJSONSync } from 'fs-extra';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
-import { ResolverOptions as CoreResolverOptions, Resolver } from '@embroider/core';
+import { ResolverOptions as CoreResolverOptions, Resolver, locateEmbroiderWorkingDir } from '@embroider/core';
 import CompatOptions from './options';
 import { AuditMessage, Loc } from './audit';
 import { camelCase, mergeWith } from 'lodash';
@@ -861,7 +861,7 @@ class TemplateResolver implements ASTPlugin {
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
 export default function makeResolverTransform({ appRoot }: Options) {
-  let config: CompatResolverOptions = readJSONSync(join(appRoot, 'node_modules', '.embroider', 'resolver.json'));
+  let config: CompatResolverOptions = readJSONSync(join(locateEmbroiderWorkingDir(appRoot), 'resolver.json'));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     if (env.strictMode) {
       return {

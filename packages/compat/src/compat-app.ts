@@ -1,5 +1,12 @@
 import { Node as BroccoliNode } from 'broccoli-node-api';
-import { PackageCache, WaitForTrees, Stage, RewrittenPackageCache, Package } from '@embroider/core';
+import {
+  PackageCache,
+  WaitForTrees,
+  Stage,
+  RewrittenPackageCache,
+  Package,
+  locateEmbroiderWorkingDir,
+} from '@embroider/core';
 import Options, { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
@@ -829,6 +836,7 @@ export default class CompatApp {
   private async instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
     let origAppPkg = this.appPackage();
     let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
+    let workingDir = locateEmbroiderWorkingDir(this.root);
     return new CompatAppBuilder(
       root,
       origAppPkg,
@@ -836,12 +844,8 @@ export default class CompatApp {
       this.options,
       this,
       configTree,
-      packageCache.get(
-        join(origAppPkg.root, 'node_modules', '.embroider', 'rewritten-packages', '@embroider', 'synthesized-vendor')
-      ),
-      packageCache.get(
-        join(origAppPkg.root, 'node_modules', '.embroider', 'rewritten-packages', '@embroider', 'synthesized-styles')
-      )
+      packageCache.get(join(workingDir, 'rewritten-packages', '@embroider', 'synthesized-vendor')),
+      packageCache.get(join(workingDir, 'rewritten-packages', '@embroider', 'synthesized-styles'))
     );
   }
 

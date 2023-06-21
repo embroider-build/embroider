@@ -22,3 +22,4 @@ export {
   pluginPath as cacheBustingPluginPath,
   version as cacheBustingPluginVersion,
 } from './babel-plugin-cache-busting';
+export { locateEmbroiderWorkingDir } from './working-dir';

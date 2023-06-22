@@ -65,6 +65,7 @@ export interface Options {
 interface EngineConfig {
   packageName: string;
   activeAddons: { name: string; root: string }[];
+  fastbootFiles: { [appName: string]: { localFilename: string; shadowsApp: boolean } };
   root: string;
 }
 
@@ -156,6 +157,8 @@ export class Resolver {
     request = this.handleFastbootCompat(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleRenaming(request);
+    // we expect the specifier to be app relative at this point - must be after handleRenaming
+    request = this.handleAppFastboot(request);
     request = this.preHandleExternal(request);
 
     // this should probably stay the last step in beforeResolve, because it can
@@ -293,6 +296,41 @@ export class Resolver {
       return pkg;
     }
     return owningPackage;
+  }
+
+  private handleAppFastboot<R extends ModuleRequest>(request: R): R {
+    let pkg = this.owningPackage(request.fromFile);
+
+    if (!pkg) {
+      return request;
+    }
+
+    if (pkg.root === this.options.appRoot) {
+      // if the file exists in fastbootFiles then resolve to it
+      // TODO is it right to always get the first engine here to equate to the app?
+      let fastbootFile = this.options.engines[0].fastbootFiles[request.specifier];
+
+      if (!fastbootFile) {
+        fastbootFile = this.options.engines[0].fastbootFiles[`${request.specifier}.js`];
+      }
+
+      if (fastbootFile) {
+        if (fastbootFile.shadowsApp) {
+          let foundAppJS = this.nodeResolve(fastbootFile.localFilename, `${pkg.root}/app`);
+
+          if (foundAppJS.type === 'real') {
+            let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), {});
+            return request.virtualize(fastbootSwitch(request.specifier, request.fromFile, names));
+          }
+
+          throw new Error('could not find your file');
+        } else {
+          return request.alias(fastbootFile.localFilename);
+        }
+      }
+    }
+
+    return request;
   }
 
   private handleFastbootCompat<R extends ModuleRequest>(request: R): R {

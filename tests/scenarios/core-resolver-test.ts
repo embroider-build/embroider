@@ -672,8 +672,8 @@ Scenarios.fromProject(() => new Project())
             export const x = mod.x;
           `);
 
-          switcherModule.resolves('./fastboot').to('./node_modules/my-addon/_fastboot_/hello-world.js');
-          switcherModule.resolves('./browser').to('./node_modules/my-addon/_app_/hello-world.js');
+          switcherModule.resolves('./fastboot').to('./fastboot/hello-world.js');
+          switcherModule.resolves('./browser').to('./app/hello-world.js');
         });
       });
 

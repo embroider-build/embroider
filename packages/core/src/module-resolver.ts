@@ -352,10 +352,25 @@ export class Resolver {
 
     let pkg = this.owningPackage(match.filename);
     if (pkg) {
-      let rel = explicitRelative(pkg.root, match.filename);
-      let entry = this.getEntryFromMergeMap(rel, pkg.root);
-      if (entry?.type === 'both') {
-        return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
+      let engineConfig = this.engineConfig(pkg.name);
+      if (engineConfig) {
+        let rel = explicitRelative(pkg.root, match.filename);
+
+        let fastbootFile = engineConfig.fastbootFiles[rel];
+
+        if (!fastbootFile) {
+          fastbootFile = engineConfig.fastbootFiles[`${rel}.js`];
+        }
+
+        if (fastbootFile) {
+          return request.alias(fastbootFile.localFilename).rehome(resolve(pkg.root, 'package.json'));
+        }
+      } else {
+        let rel = explicitRelative(pkg.root, match.filename);
+        let entry = this.getEntryFromMergeMap(rel, pkg.root);
+        if (entry?.type === 'both') {
+          return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
+        }
       }
     }
 

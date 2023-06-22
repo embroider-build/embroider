@@ -43,6 +43,7 @@ describe('audit', function () {
       engines: [
         {
           packageName: 'audit-this-app',
+          fastbootFiles: {},
           activeAddons: [],
           root: app.baseDir,
         },

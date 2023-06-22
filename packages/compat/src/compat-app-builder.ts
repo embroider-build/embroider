@@ -56,6 +56,7 @@ import SourceMapConcat from 'fast-sourcemap-concat';
 import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
+import TreeSync from 'tree-sync';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -63,6 +64,7 @@ import type CompatApp from './compat-app';
 export class CompatAppBuilder {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
+  private treeSync: TreeSync | undefined;
 
   constructor(
     private root: string,
@@ -405,22 +407,6 @@ export class CompatAppBuilder {
     return result;
   }
 
-  // unlike our full config, this one just needs to know how to parse all the
-  // syntax our app can contain.
-  @Memoize()
-  private babelParserConfig(): TransformOptions {
-    let babel = cloneDeep(this.compatApp.babelConfig());
-
-    if (!babel.plugins) {
-      babel.plugins = [];
-    }
-
-    // Our stage3 code is always allowed to use dynamic import. We may emit it
-    // ourself when splitting routes.
-    babel.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
-    return babel;
-  }
-
   @Memoize()
   private babelConfig(resolverConfig: CompatResolverOptions) {
     let babel = cloneDeep(this.compatApp.babelConfig());
@@ -721,16 +707,9 @@ export class CompatAppBuilder {
       this.appDiffers = engines.map(engine => {
         let differ: AppDiffer;
         if (this.activeFastboot) {
-          differ = new AppDiffer(
-            engine.destPath,
-            engine.sourcePath,
-            [...engine.addons],
-            true,
-            this.fastbootJSSrcDir(),
-            this.babelParserConfig()
-          );
+          differ = new AppDiffer(engine.sourcePath, [...engine.addons], true, this.fastbootJSSrcDir());
         } else {
-          differ = new AppDiffer(engine.destPath, engine.sourcePath, [...engine.addons]);
+          differ = new AppDiffer(engine.sourcePath, [...engine.addons]);
         }
         return {
           differ,
@@ -745,6 +724,13 @@ export class CompatAppBuilder {
       .slice()
       .reverse()
       .forEach(a => a.differ.update());
+
+    if (!this.treeSync) {
+      this.treeSync = new TreeSync(appJSPath, this.root);
+    }
+
+    this.treeSync.sync();
+
     return this.appDiffers.map(a => {
       return {
         ...a.engine,

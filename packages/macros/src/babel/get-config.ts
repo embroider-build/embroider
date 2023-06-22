@@ -28,7 +28,7 @@ function getPackage(path: NodePath<t.CallExpression>, state: State, mode: 'own' 
   } else {
     assertNever(mode);
   }
-  return targetPackage(state.sourceFile, packageName, state.packageCache);
+  return targetPackage(state.originalOwningPackage(), packageName, state.packageCache);
 }
 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
@@ -75,16 +75,12 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
 }
 
 function targetPackage(
-  fromPath: string,
+  us: Package,
   packageName: string | undefined,
   packageCache: RewrittenPackageCache
 ): Package | null {
-  let us = packageCache.ownerOfFile(fromPath);
-  if (!us) {
-    throw new Error(`unable to determine which npm package owns the file ${fromPath}`);
-  }
   if (!packageName) {
-    return packageCache.original(us) || us;
+    return us;
   }
   try {
     let target = packageCache.resolve(packageName, us);

@@ -16,6 +16,7 @@ export default interface State {
   sourceFile: string;
   pathToOurAddon(moduleName: string): string;
   owningPackage(): Package;
+  originalOwningPackage(): Package;
   cloneDeep(node: Node): Node;
 
   opts: {
@@ -59,6 +60,7 @@ export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Prog
   state.sourceFile = state.opts.owningPackageRoot || (path.hub as any).file.opts.filename;
   state.pathToOurAddon = pathToAddon;
   state.owningPackage = owningPackage;
+  state.originalOwningPackage = originalOwningPackage;
   state.cloneDeep = cloneDeep;
 }
 
@@ -86,6 +88,11 @@ function owningPackage(this: State): Package {
   if (!pkg) {
     throw new Error(`unable to determine which npm package owns the file ${this.sourceFile}`);
   }
+  return pkg;
+}
+
+function originalOwningPackage(this: State): Package {
+  let pkg = this.owningPackage();
   return this.packageCache.original(pkg) || pkg;
 }
 

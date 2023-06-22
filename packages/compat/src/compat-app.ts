@@ -821,7 +821,9 @@ export default class CompatApp {
 
   @Memoize()
   appPackage(): Package {
-    let packageCache = RewrittenPackageCache.shared('embroider', this.root);
+    // this is deliberately not RewrittenPackageCache, because it's supposed to
+    // be the original copy of the app with all the original dependencies.
+    let packageCache = PackageCache.shared('embroider', this.root);
     if (this.isDummy) {
       return new DummyPackage(
         this.root,

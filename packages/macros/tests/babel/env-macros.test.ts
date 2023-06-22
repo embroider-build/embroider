@@ -121,7 +121,7 @@ describe(`env macros`, function () {
 
       describe(`false cases`, function () {
         beforeEach(function () {
-          macrosConfig = MacrosConfig.for({}, '/nonexistent');
+          macrosConfig = MacrosConfig.for({}, resolve(__dirname, '..', '..'));
           macrosConfig.setGlobalConfig(__filename, '@embroider/macros', { isTesting: false });
           applyMode(macrosConfig);
           macrosConfig.finalize();

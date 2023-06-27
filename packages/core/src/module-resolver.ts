@@ -155,11 +155,11 @@ export class Resolver {
       return logTransition('early exit', request);
     }
 
-    request = this.handleFastbootCompat(request);
+    request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
-    request = this.handleAppFastboot(request);
+    request = this.generateFastbootSwitch(request);
     request = this.preHandleExternal(request);
 
     // this should probably stay the last step in beforeResolve, because it can
@@ -299,7 +299,7 @@ export class Resolver {
     return owningPackage;
   }
 
-  private handleAppFastboot<R extends ModuleRequest>(request: R): R {
+  private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
     let pkg = this.owningPackage(request.fromFile);
 
     if (!pkg) {
@@ -314,17 +314,19 @@ export class Resolver {
     }
 
     let engineConfig = this.engineConfig(pkg.name);
+    let appRelativePath = explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier));
     if (engineConfig) {
-      for (let candidate of this.withResolvableExtensions(request.specifier)) {
+      for (let candidate of this.withResolvableExtensions(appRelativePath)) {
         let fastbootFile = engineConfig.fastbootFiles[candidate];
         if (fastbootFile) {
           if (fastbootFile.shadowedFilename) {
             let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {});
-            return logTransition(
-              'shadowed app fastboot',
-              request,
-              request.virtualize(fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names))
-            );
+            let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
+            if (switchFile === request.fromFile) {
+              return logTransition('internal lookup from fastbootSwitch', request);
+            } else {
+              return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
+            }
           } else {
             return logTransition(
               'unshadowed app fastboot',
@@ -339,7 +341,7 @@ export class Resolver {
     return request;
   }
 
-  private handleFastbootCompat<R extends ModuleRequest>(request: R): R {
+  private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
     let match = decodeFastbootSwitch(request.fromFile);
     if (!match) {
       return request;
@@ -353,7 +355,7 @@ export class Resolver {
     }
 
     if (!section) {
-      return request;
+      return logTransition('non-special import in fastboot switch', request);
     }
 
     let pkg = this.owningPackage(match.filename);
@@ -370,17 +372,29 @@ export class Resolver {
           } else {
             targetFile = fastbootFile.localFilename;
           }
-          return request.alias(targetFile).rehome(resolve(pkg.root, 'package.json'));
+          return logTransition(
+            'matched app entry',
+            request,
+            // deliberately not using rehome because we want
+            // generateFastbootSwitch to see that this request is coming *from*
+            // a fastboot switch so it won't cycle back around. Instead we make
+            // the targetFile relative to the fromFile that we already have.
+            request.alias(explicitRelative(dirname(request.fromFile), resolve(pkg.root, targetFile)))
+          );
         }
       }
 
       let entry = this.getEntryFromMergeMap(rel, pkg.root)?.entry;
       if (entry?.type === 'both') {
-        return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
+        return logTransition(
+          'matched addon entry',
+          request,
+          request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'))
+        );
       }
     }
 
-    return request;
+    return logTransition('failed to match in fastboot switch', request);
   }
 
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {

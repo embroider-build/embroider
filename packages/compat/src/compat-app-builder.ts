@@ -32,7 +32,7 @@ import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import { sync as resolveSync } from 'resolve';
 import bind from 'bind-decorator';
-import { outputJSONSync, readJSONSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
+import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
@@ -64,7 +64,8 @@ import TreeSync from 'tree-sync';
 export class CompatAppBuilder {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
-  private treeSync: TreeSync | undefined;
+  private appSync: { tree: TreeSync; files: Set<string> } | undefined;
+  private fastbootSync: { tree: TreeSync; files: Set<string> } | undefined;
 
   constructor(
     private root: string,
@@ -276,8 +277,8 @@ export class CompatAppBuilder {
       appRoot: this.origAppPackage.root,
       engines: engines.map((engine, index) => ({
         packageName: engine.package.name,
-        root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.roto
-        fastbootFiles: {},
+        root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.root
+        fastbootFiles: engine.fastbootFiles,
         activeAddons: [...engine.addons]
           .map(a => ({
             name: a.name,
@@ -726,16 +727,45 @@ export class CompatAppBuilder {
       .reverse()
       .forEach(a => a.differ.update());
 
-    if (!this.treeSync) {
-      this.treeSync = new TreeSync(appJSPath, this.root);
+    if (!this.appSync) {
+      // this rm is here so that we get a full list of the files on the first
+      // sync. If we didn't do it, TreeSync still produces the right on-disk
+      // output but it doesn't tell us the names of all the files that are in
+      // there on the first pass, if they were unchanged.
+      rmSync(this.root, { recursive: true, force: true });
+      this.appSync = { tree: new TreeSync(appJSPath, this.root), files: new Set() };
     }
+    syncTree(this.appSync);
 
-    this.treeSync.sync();
+    let fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } } = {};
+
+    if (this.activeFastboot) {
+      let fastbootDir = this.fastbootJSSrcDir();
+      if (fastbootDir) {
+        if (!this.fastbootSync) {
+          this.fastbootSync = {
+            tree: new TreeSync(fastbootDir, resolvePath(this.root, '_fastboot_')),
+            files: new Set(),
+          };
+        }
+        syncTree(this.fastbootSync);
+        fastbootFiles = Object.fromEntries(
+          [...this.fastbootSync.files].map(name => [
+            `./${name}`,
+            {
+              localFilename: `./_fastboot_/${name}`,
+              shadowedFilename: this.appSync!.files.has(name) ? `./${name}` : undefined,
+            },
+          ])
+        );
+      }
+    }
 
     return this.appDiffers.map(a => {
       return {
         ...a.engine,
         appFiles: new AppFiles(a.differ, this.resolvableExtensionsPattern, this.podModulePrefix()),
+        fastbootFiles,
       };
     });
   }
@@ -1623,5 +1653,24 @@ class ConcatenatedAsset {
   ) {}
   get sourcemapPath() {
     return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
+  }
+}
+
+function syncTree({ tree, files }: { tree: TreeSync; files: Set<string> }): void {
+  for (let [operation, name] of tree.sync()) {
+    switch (operation) {
+      case 'rmdir':
+      case 'mkdir':
+        // we don't track directories, only files
+        break;
+      case 'unlink':
+        files.delete(name);
+        break;
+      case 'change':
+        // we only track existence, not contents
+        break;
+      case 'create':
+        files.add(name);
+    }
   }
 }

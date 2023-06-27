@@ -1,0 +1,7 @@
+{{page-title "BasicData"}}
+
+<ul>
+  {{#each @model as |face index|}}
+    <li data-test-face={{index}}>{{face.name}}</li>
+  {{/each}}
+</ul>

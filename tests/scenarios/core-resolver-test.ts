@@ -52,6 +52,7 @@ Scenarios.fromProject(() => new Project())
         podModulePrefix?: string;
         renamePackages?: Record<string, string>;
         addonMeta?: Partial<AddonMeta>;
+        fastbootFiles?: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
       }
 
       let configure: (opts?: ConfigureOpts) => Promise<void>;
@@ -92,6 +93,7 @@ Scenarios.fromProject(() => new Project())
               {
                 packageName: 'my-app',
                 root: app.dir,
+                fastbootFiles: opts?.fastbootFiles ?? {},
                 activeAddons: [
                   {
                     name: 'my-addon',
@@ -569,6 +571,21 @@ Scenarios.fromProject(() => new Project())
             .to('./node_modules/my-addon/_fastboot_/hello-world.js');
         });
 
+        test(`resolves app fastboot-js`, async function () {
+          givenFiles({
+            './fastboot/hello-world.js': ``,
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            fastbootFiles: {
+              './hello-world.js': { localFilename: './fastboot/hello-world.js', shadowedFilename: undefined },
+            },
+          });
+
+          expectAudit.module('./app.js').resolves('my-app/hello-world').to('./fastboot/hello-world.js');
+        });
+
         test(`file exists in both app-js and fastboot-js`, async function () {
           givenFiles({
             'node_modules/my-addon/_fastboot_/hello-world.js': `
@@ -615,6 +632,56 @@ Scenarios.fromProject(() => new Project())
 
           switcherModule.resolves('./fastboot').to('./node_modules/my-addon/_fastboot_/hello-world.js');
           switcherModule.resolves('./browser').to('./node_modules/my-addon/_app_/hello-world.js');
+        });
+
+        test(`app and fastboot file exists`, async function () {
+          givenFiles({
+            'fastboot/hello-world.js': `
+              export function hello() { return 'fastboot'; }
+              export class Bonjour {}
+              export default function() {}
+              const value = 1;
+              export { value };
+              export const x = 2;
+            `,
+            'app/hello-world.js': `
+              export function hello() { return 'browser'; }
+              export class Bonjour {}
+              export default function() {}
+              const value = 1;
+              export { value };
+              export const x = 2;
+          `,
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            fastbootFiles: {
+              './hello-world.js': {
+                localFilename: './fastboot/hello-world.js',
+                shadowedFilename: './app/hello-world.js',
+              },
+            },
+          });
+
+          let switcherModule = expectAudit.module('./app.js').resolves('my-app/hello-world').toModule();
+          switcherModule.codeEquals(`
+            import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+            let mod;
+            if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+              mod = importSync("./fastboot");
+            } else {
+              mod = importSync("./browser");
+            }
+            export default mod.default;
+            export const hello = mod.hello;
+            export const Bonjour = mod.Bonjour;
+            export const value = mod.value;
+            export const x = mod.x;
+          `);
+
+          switcherModule.resolves('./fastboot').to('./fastboot/hello-world.js');
+          switcherModule.resolves('./browser').to('./app/hello-world.js');
         });
       });
 

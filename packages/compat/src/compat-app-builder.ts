@@ -277,6 +277,7 @@ export class CompatAppBuilder {
       engines: engines.map((engine, index) => ({
         packageName: engine.package.name,
         root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.roto
+        fastbootFiles: {},
         activeAddons: [...engine.addons]
           .map(a => ({
             name: a.name,

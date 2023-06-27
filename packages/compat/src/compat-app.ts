@@ -354,6 +354,13 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       activeAddons[addon.name] = addon.root;
     }
 
+    let options: CompatResolverOptions['options'] = {
+      staticHelpers: this.options.staticHelpers,
+      staticModifiers: this.options.staticModifiers,
+      staticComponents: this.options.staticComponents,
+      allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
+    };
+
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
       activeAddons,
@@ -379,8 +386,8 @@ class CompatAppAdapter implements AppAdapter<TreeNames, CompatResolverOptions> {
       // global template resolving
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
-      options: this.options,
       activePackageRules: this.activeRules(),
+      options,
     };
 
     return config;

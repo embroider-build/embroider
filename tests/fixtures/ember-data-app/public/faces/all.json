@@ -1,0 +1,9 @@
+{
+  "data": [{
+    "type": "face",
+    "id": "1",
+    "attributes": {
+      "name": "First Face"
+    }
+  }]
+}

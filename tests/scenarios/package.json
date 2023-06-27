@@ -74,7 +74,7 @@
     "ember-source": "~3.28.11",
     "ember-source-4.4": "npm:ember-source@~4.4.0",
     "ember-source-beta": "npm:ember-source@beta",
-    "ember-source-latest": "npm:ember-source@latest",
+    "ember-source-latest": "npm:ember-source@~5.0.0",
     "ember-truth-helpers": "^3.0.0",
     "rollup-plugin-ts": "^3.2.0",
     "typescript": "^4.9.0"

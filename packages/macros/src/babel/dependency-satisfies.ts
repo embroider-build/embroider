@@ -1,7 +1,7 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
 import State from './state';
-import { satisfies } from 'semver';
+import { satisfies, parse } from 'semver';
 import error from './error';
 import { assertArray } from './evaluate-json';
 
@@ -29,9 +29,31 @@ export default function dependencySatisfies(path: NodePath<t.CallExpression>, st
     }
 
     let version = state.packageCache.resolve(packageName.value, us).version;
-    return satisfies(version, range.value, {
+    let satisfied = satisfies(version, range.value, {
       includePrerelease: true,
     });
+
+    // version === '*'
+    if (version === undefined || version === '*') {
+      return true;
+    }
+
+    // if a pre-release version is used, we need to check that separate,
+    // because `includePrerelease` only applies to the range argument of `range`.
+    if (!satisfied) {
+      let parsedVersion = parse(version);
+
+      if (parsedVersion && parsedVersion.prerelease.length > 0) {
+        let { major, minor, patch } = parsedVersion;
+        let bareVersion = `${major}.${minor}.${patch}`;
+
+        return satisfies(bareVersion, range.value, {
+          includePrerelease: true,
+        });
+      }
+    }
+
+    return satisfied;
   } catch (err) {
     if (err.code !== 'MODULE_NOT_FOUND') {
       throw err;

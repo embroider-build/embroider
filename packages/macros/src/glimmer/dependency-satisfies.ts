@@ -1,4 +1,4 @@
-import { satisfies } from 'semver';
+import { satisfies, parse } from 'semver';
 import type { PackageCache } from '@embroider/shared-internals';
 
 export default function dependencySatisfies(
@@ -35,9 +35,31 @@ export default function dependencySatisfies(
   }
 
   if (pkg) {
-    return satisfies(pkg.version, range, {
+    let satisfied = satisfies(pkg.version, range, {
       includePrerelease: true,
     });
+
+    // version === '*'
+    if (pkg.version === undefined || pkg.version === '*') {
+      return true;
+    }
+
+    // if a pre-release version is used, we need to check that separate,
+    // because `includePrerelease` only applies to the range argument of `range`.
+    if (!satisfied) {
+      let parsedVersion = parse(pkg.version);
+
+      if (parsedVersion && parsedVersion.prerelease.length > 0) {
+        let { major, minor, patch } = parsedVersion;
+        let bareVersion = `${major}.${minor}.${patch}`;
+
+        return satisfies(bareVersion, range, {
+          includePrerelease: true,
+        });
+      }
+    }
+
+    return satisfied;
   }
   return false;
 }

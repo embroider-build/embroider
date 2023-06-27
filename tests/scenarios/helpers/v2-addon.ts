@@ -1,91 +1,122 @@
+import path from 'path';
 import { PreparedApp } from 'scenario-tester';
-import { spawn } from 'child_process';
+// @ts-expect-error
+import { loadConfigFile } from 'rollup/loadConfigFile';
+import rollup from 'rollup';
+import type { RollupOptions } from 'rollup';
 
 export class DevWatcher {
   #addon: PreparedApp;
-  #singletonAbort?: AbortController;
+  #watcher?: ReturnType<(typeof rollup)['watch']>;
   #waitForBuildPromise?: Promise<unknown>;
-  #lastBuild?: string;
+  #resolve?: (value: unknown) => void;
+  #reject?: (error: unknown) => void;
+  #originalDirectory: string;
 
   constructor(addon: PreparedApp) {
     this.#addon = addon;
+    this.#originalDirectory = process.cwd();
   }
 
-  start = () => {
-    if (this.#singletonAbort) this.#singletonAbort.abort();
+  start = async () => {
+    if (this.#watcher) {
+      throw new Error(`.start() may only be called once`);
+    }
 
-    this.#singletonAbort = new AbortController();
+    let buildDirectory = this.#addon.dir;
 
     /**
-     * NOTE: when running rollup in a non-TTY environemnt, the "watching for changes" message does not print.
+     * Rollup does not have a way to build/watch in other directories,
+     * unless we prepend / modifier all the input/output/include/exclude paths
      */
-    let rollupProcess = spawn('pnpm', ['start'], {
-      cwd: this.#addon.dir,
-      signal: this.#singletonAbort.signal,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      // Have to disable color so our regex / string matching works easier
-      // Have to include process.env, so the spawned environment has access to `pnpm`
-      env: { ...process.env, NO_COLOR: '1' },
+    process.chdir(buildDirectory);
+
+    let configPath = path.resolve(this.#addon.dir, 'rollup.config.mjs');
+    let configFile = await loadConfigFile(configPath);
+    configFile.warnings.flush();
+
+    this.#watcher = rollup.watch(
+      configFile.options.map((options: RollupOptions) => {
+        options.watch = {
+          buildDelay: 20,
+          // Windows doesn't have a good file-watching mechanism (such as inotify),
+          // so we need to tell this `DevWatcher` tool to use chokidar's polling feature
+          chokidar: {
+            usePolling: true,
+          },
+        };
+        return options;
+      })
+    );
+
+    this.#defer();
+
+    /**
+     * NOTE: there is a bit of a delay between a file change and the next "START"
+     */
+    this.#watcher.on('event', args => {
+      switch (args.code) {
+        case 'START': {
+          this.#defer();
+          break;
+        }
+        case 'END': {
+          this.#forceResolve?.('end');
+          break;
+        }
+        case 'ERROR': {
+          this.#forceReject?.(args.error);
+          break;
+        }
+      }
     });
 
-    let settle: (...args: unknown[]) => void;
-    let error: (...args: unknown[]) => void;
-    this.#waitForBuildPromise = new Promise((resolve, reject) => {
-      settle = resolve;
-      error = reject;
-    });
+    this.#watcher.on('close', () => this.#forceResolve?.('close'));
 
-    if (!rollupProcess.stdout) {
-      throw new Error(`Failed to start process, pnpm start`);
-    }
-    if (!rollupProcess.stderr) {
-      throw new Error(`Failed to start process, pnpm start`);
-    }
-
-    let handleData = (data: Buffer) => {
-      let string = data.toString();
-      let lines = string.split('\n');
-
-      let build = lines.find(line => line.trim().match(/^created dist in (.+)$/));
-      let problem = lines.find(line => line.includes('Error:'));
-      let isAbort = lines.find(line => line.includes('AbortError:'));
-
-      if (isAbort) {
-        // Test may have ended, we want to kill the watcher,
-        // but not error, because throwing an error causes the test to fail.
-        return settle();
-      }
-
-      if (problem) {
-        console.error('\n!!!\n', problem, '\n!!!\n');
-        error(problem);
-        return;
-      }
-
-      if (build) {
-        this.#lastBuild = build[1];
-
-        settle?.();
-
-        this.#waitForBuildPromise = new Promise((resolve, reject) => {
-          settle = resolve;
-          error = reject;
-        });
-      }
-    };
-
-    // NOTE: rollup outputs to stderr only, not stdout
-    rollupProcess.stderr.on('data', (...args) => handleData(...args));
-    rollupProcess.on('error', handleData);
-    rollupProcess.on('close', () => settle?.());
-    rollupProcess.on('exit', () => settle?.());
-
-    return this.#waitForBuildPromise;
+    return this.settled();
   };
 
-  stop = () => this.#singletonAbort?.abort();
-  settled = () => this.#waitForBuildPromise;
-  get lastBuild() {
-    return this.#lastBuild;
+  #defer = () => {
+    if (this.#waitForBuildPromise) {
+      // Need to finish prior work before deferring again
+      // if we hit this use case, we may have mis-configured
+      // the previosu deferral
+      return;
+    }
+    this.#waitForBuildPromise = new Promise<unknown>((_resolve, _reject) => {
+      this.#resolve = _resolve;
+      this.#reject = _reject;
+    });
+  };
+
+  #forceResolve(state: unknown) {
+    this.#resolve?.(state);
+    this.#waitForBuildPromise = undefined;
   }
+  #forceReject(error: unknown) {
+    this.#reject?.(error);
+    this.#waitForBuildPromise = undefined;
+  }
+
+  stop = async () => {
+    await this.#watcher?.close();
+    process.chdir(this.#originalDirectory);
+  };
+
+  nextBuild = async () => {
+    this.#defer();
+    await this.settled();
+  };
+
+  settled = async (timeout = 5_000) => {
+    if (!this.#waitForBuildPromise) {
+      console.debug(`There is nothing to wait for`);
+      return;
+    }
+
+    await Promise.race([
+      this.#waitForBuildPromise,
+      new Promise((_, reject) => setTimeout(() => reject('[DevWatcher] rollup.watch timed out'), timeout)),
+    ]);
+  };
 }

@@ -268,6 +268,13 @@ export class CompatAppBuilder {
       activeAddons[addon.name] = addon.root;
     }
 
+    let options: CompatResolverOptions['options'] = {
+      staticHelpers: this.options.staticHelpers,
+      staticModifiers: this.options.staticModifiers,
+      staticComponents: this.options.staticComponents,
+      allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
+    };
+
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
       activeAddons,
@@ -294,8 +301,8 @@ export class CompatAppBuilder {
       // global template resolving
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
-      options: this.options,
       activePackageRules: this.activeRules(),
+      options,
     };
 
     return config;

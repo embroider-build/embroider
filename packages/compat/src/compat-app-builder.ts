@@ -56,7 +56,7 @@ import SourceMapConcat from 'fast-sourcemap-concat';
 import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
-import TreeSync from 'tree-sync';
+import { SyncDir } from './sync-dir';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -64,8 +64,8 @@ import TreeSync from 'tree-sync';
 export class CompatAppBuilder {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
-  private appSync: { tree: TreeSync; files: Set<string> } | undefined;
-  private fastbootSync: { tree: TreeSync; files: Set<string> } | undefined;
+  private appSync: SyncDir | undefined;
+  private fastbootSync: SyncDir | undefined;
 
   constructor(
     private root: string,
@@ -733,9 +733,9 @@ export class CompatAppBuilder {
       // output but it doesn't tell us the names of all the files that are in
       // there on the first pass, if they were unchanged.
       rmSync(this.root, { recursive: true, force: true });
-      this.appSync = { tree: new TreeSync(appJSPath, this.root), files: new Set() };
+      this.appSync = new SyncDir(appJSPath, this.root);
     }
-    syncTree(this.appSync);
+    this.appSync.update();
 
     let fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } } = {};
 
@@ -743,12 +743,9 @@ export class CompatAppBuilder {
       let fastbootDir = this.fastbootJSSrcDir();
       if (fastbootDir) {
         if (!this.fastbootSync) {
-          this.fastbootSync = {
-            tree: new TreeSync(fastbootDir, resolvePath(this.root, '_fastboot_')),
-            files: new Set(),
-          };
+          this.fastbootSync = new SyncDir(fastbootDir, resolvePath(this.root, '_fastboot_'));
         }
-        syncTree(this.fastbootSync);
+        this.fastbootSync.update();
         fastbootFiles = Object.fromEntries(
           [...this.fastbootSync.files].map(name => [
             `./${name}`,
@@ -1653,24 +1650,5 @@ class ConcatenatedAsset {
   ) {}
   get sourcemapPath() {
     return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
-  }
-}
-
-function syncTree({ tree, files }: { tree: TreeSync; files: Set<string> }): void {
-  for (let [operation, name] of tree.sync()) {
-    switch (operation) {
-      case 'rmdir':
-      case 'mkdir':
-        // we don't track directories, only files
-        break;
-      case 'unlink':
-        files.delete(name);
-        break;
-      case 'change':
-        // we only track existence, not contents
-        break;
-      case 'create':
-        files.add(name);
-    }
   }
 }

@@ -39,10 +39,8 @@ import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-impo
 import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
 import { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
-import { AppFiles, EngineSummary, RouteFiles } from '@embroider/core/src/app-files';
-import { mangledEngineRoot } from '@embroider/core/src/engine-mangler';
+import { AppFiles, RouteFiles } from '@embroider/core/src/app-files';
 import { PortableHint, maybeNodeModuleVersion } from '@embroider/core/src/portable';
-import AppDiffer from '@embroider/core/src/app-differ';
 import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname, sep } from 'path';
@@ -64,8 +62,6 @@ import { SyncDir } from './sync-dir';
 export class CompatAppBuilder {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
-  private appSync: SyncDir | undefined;
-  private fastbootSync: SyncDir | undefined;
 
   constructor(
     private root: string,
@@ -259,7 +255,7 @@ export class CompatAppBuilder {
     ]);
   }
 
-  private resolverConfig(engines: Engine[]): CompatResolverOptions {
+  private resolverConfig(engines: AppFiles[]): CompatResolverOptions {
     let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
     let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
 
@@ -275,11 +271,11 @@ export class CompatAppBuilder {
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.origAppPackage.root,
-      engines: engines.map((engine, index) => ({
-        packageName: engine.package.name,
-        root: index === 0 ? this.root : engine.package.root, // first engine is the app, which has been relocated to this.root
-        fastbootFiles: engine.fastbootFiles,
-        activeAddons: [...engine.addons]
+      engines: engines.map((appFiles, index) => ({
+        packageName: appFiles.engine.package.name,
+        root: index === 0 ? this.root : appFiles.engine.package.root, // first engine is the app, which has been relocated to this.root
+        fastbootFiles: appFiles.fastbootFiles,
+        activeAddons: [...appFiles.engine.addons]
           .map(a => ({
             name: a.name,
             root: a.root,
@@ -319,7 +315,7 @@ export class CompatAppBuilder {
 
   private impliedAssets(
     type: keyof ImplicitAssetPaths,
-    engine: Engine,
+    engine: AppFiles,
     emberENV?: EmberENV
   ): (OnDiskAsset | InMemoryAsset)[] {
     let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
@@ -384,7 +380,7 @@ export class CompatAppBuilder {
     return result;
   }
 
-  private impliedAddonAssets(type: keyof ImplicitAssetPaths, engine: Engine): string[] {
+  private impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
     let result: Array<string> = [];
     for (let addon of sortBy(Array.from(engine.addons), this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
@@ -486,7 +482,7 @@ export class CompatAppBuilder {
 
   private insertEmberApp(
     asset: ParsedEmberAsset,
-    appFiles: Engine[],
+    appFiles: AppFiles[],
     prepared: Map<string, InternalAsset>,
     emberENV: EmberENV
   ) {
@@ -518,7 +514,7 @@ export class CompatAppBuilder {
 
     html.insertStyleLink(html.styles, `assets/${this.origAppPackage.name}.css`);
 
-    const parentEngine = appFiles.find(e => !e.parent) as Engine;
+    const parentEngine = appFiles.find(e => !e.engine.parent)!;
     let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
     if (vendorJS) {
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
@@ -560,7 +556,7 @@ export class CompatAppBuilder {
 
   private implicitScriptsAsset(
     prepared: Map<string, InternalAsset>,
-    application: Engine,
+    application: AppFiles,
     emberENV: EmberENV
   ): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.js');
@@ -574,7 +570,7 @@ export class CompatAppBuilder {
     return asset;
   }
 
-  private implicitStylesAsset(prepared: Map<string, InternalAsset>, application: Engine): InternalAsset | undefined {
+  private implicitStylesAsset(prepared: Map<string, InternalAsset>, application: AppFiles): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.css');
     if (!asset) {
       let implicitStyles = this.impliedAssets('implicit-styles', application);
@@ -589,7 +585,7 @@ export class CompatAppBuilder {
 
   private implicitTestScriptsAsset(
     prepared: Map<string, InternalAsset>,
-    application: Engine
+    application: AppFiles
   ): InternalAsset | undefined {
     let testSupportJS = prepared.get('assets/test-support.js');
     if (!testSupportJS) {
@@ -608,7 +604,7 @@ export class CompatAppBuilder {
 
   private implicitTestStylesAsset(
     prepared: Map<string, InternalAsset>,
-    application: Engine
+    application: AppFiles
   ): InternalAsset | undefined {
     let asset = prepared.get('assets/test-support.css');
     if (!asset) {
@@ -625,7 +621,7 @@ export class CompatAppBuilder {
   // Inner engines themselves will be returned, but not those engines' children.
   // The output set's insertion order is the proper ember-cli compatible
   // ordering of the addons.
-  private findActiveAddons(pkg: Package, engine: EngineSummary, isChild = false): void {
+  private findActiveAddons(pkg: Package, engine: Engine, isChild = false): void {
     for (let child of this.activeAddonChildren(pkg)) {
       if (!child.isEngine()) {
         this.findActiveAddons(child, engine, true);
@@ -642,8 +638,8 @@ export class CompatAppBuilder {
     }
   }
 
-  private partitionEngines(appJSPath: string): EngineSummary[] {
-    let queue: EngineSummary[] = [
+  private partitionEngines(appJSPath: string): Engine[] {
+    let queue: Engine[] = [
       {
         package: this.appPackageWithMovedDeps,
         addons: new Set(),
@@ -653,7 +649,7 @@ export class CompatAppBuilder {
         appRelativePath: '.',
       },
     ];
-    let done: EngineSummary[] = [];
+    let done: Engine[] = [];
     let seenEngines: Set<Package> = new Set();
     while (true) {
       let current = queue.shift();
@@ -668,7 +664,7 @@ export class CompatAppBuilder {
             package: addon,
             addons: new Set(),
             parent: current,
-            sourcePath: mangledEngineRoot(addon),
+            sourcePath: addon.root,
             modulePrefix: addon.name,
             appRelativePath: explicitRelative(this.root, addon.root),
           });
@@ -698,74 +694,60 @@ export class CompatAppBuilder {
     }
   }
 
-  private appDiffers: { differ: AppDiffer; engine: EngineSummary }[] | undefined;
+  private engines: { engine: Engine; appSync: SyncDir; fastbootSync: SyncDir | undefined }[] | undefined;
 
-  private updateAppJS(inputPaths: OutputPaths<TreeNames>): Engine[] {
-    let appJSPath = inputPaths.appJS;
-    if (!this.appDiffers) {
-      let engines = this.partitionEngines(appJSPath);
-      this.appDiffers = engines.map(engine => {
-        let differ: AppDiffer;
-        if (this.activeFastboot) {
-          differ = new AppDiffer(engine.sourcePath, [...engine.addons], true, this.fastbootJSSrcDir());
+  private updateAppJS(inputPaths: OutputPaths<TreeNames>): AppFiles[] {
+    if (!this.engines) {
+      this.engines = this.partitionEngines(inputPaths.appJS).map(engine => {
+        if (engine.sourcePath === inputPaths.appJS) {
+          // this is the app. We have more to do for the app than for other
+          // engines.
+          let fastbootSync: SyncDir | undefined;
+          if (this.activeFastboot) {
+            let fastbootDir = this.fastbootJSSrcDir();
+            if (fastbootDir) {
+              fastbootSync = new SyncDir(fastbootDir, resolvePath(this.root, '_fastboot_'));
+            }
+          }
+          return {
+            engine,
+            appSync: new SyncDir(inputPaths.appJS, this.root),
+            fastbootSync,
+          };
         } else {
-          differ = new AppDiffer(engine.sourcePath, [...engine.addons]);
+          // this is not the app, so it's some other engine. Engines are already
+          // built by stage1 like all other addons, so we only need to observe
+          // their files, not doing any actual copying or building.
+          return {
+            engine,
+            appSync: new SyncDir(engine.sourcePath, undefined),
+
+            // AFAIK, we've never supported a fastboot overlay directory in an
+            // engine. But if we do need that, it would go here.
+            fastbootSync: undefined,
+          };
         }
-        return {
-          differ,
-          engine,
-        };
       });
     }
-    // this is in reverse order because we need deeper engines to update before
-    // their parents, because they aren't really valid packages until they
-    // update, and their parents will go looking for their own `app-js` content.
-    this.appDiffers
-      .slice()
-      .reverse()
-      .forEach(a => a.differ.update());
 
-    if (!this.appSync) {
-      // this rm is here so that we get a full list of the files on the first
-      // sync. If we didn't do it, TreeSync still produces the right on-disk
-      // output but it doesn't tell us the names of all the files that are in
-      // there on the first pass, if they were unchanged.
-      rmSync(this.root, { recursive: true, force: true });
-      this.appSync = new SyncDir(appJSPath, this.root);
-    }
-    this.appSync.update();
-
-    let fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } } = {};
-
-    if (this.activeFastboot) {
-      let fastbootDir = this.fastbootJSSrcDir();
-      if (fastbootDir) {
-        if (!this.fastbootSync) {
-          this.fastbootSync = new SyncDir(fastbootDir, resolvePath(this.root, '_fastboot_'));
-        }
-        this.fastbootSync.update();
-        fastbootFiles = Object.fromEntries(
-          [...this.fastbootSync.files].map(name => [
-            `./${name}`,
-            {
-              localFilename: `./_fastboot_/${name}`,
-              shadowedFilename: this.appSync!.files.has(name) ? `./${name}` : undefined,
-            },
-          ])
-        );
-      }
+    for (let engine of this.engines) {
+      engine.appSync.update();
+      engine.fastbootSync?.update();
     }
 
-    return this.appDiffers.map(a => {
-      return {
-        ...a.engine,
-        appFiles: new AppFiles(a.differ, this.resolvableExtensionsPattern, this.podModulePrefix()),
-        fastbootFiles,
-      };
-    });
+    return this.engines.map(
+      ({ engine, appSync, fastbootSync }) =>
+        new AppFiles(
+          engine,
+          appSync.files,
+          fastbootSync?.files ?? new Set(),
+          this.resolvableExtensionsPattern,
+          this.podModulePrefix()
+        )
+    );
   }
 
-  private prepareAsset(asset: Asset, appFiles: Engine[], prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private prepareAsset(asset: Asset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -783,7 +765,11 @@ export class CompatAppBuilder {
     }
   }
 
-  private prepareAssets(requestedAssets: Asset[], appFiles: Engine[], emberENV: EmberENV): Map<string, InternalAsset> {
+  private prepareAssets(
+    requestedAssets: Asset[],
+    appFiles: AppFiles[],
+    emberENV: EmberENV
+  ): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
       this.prepareAsset(asset, appFiles, prepared, emberENV);
@@ -860,7 +846,7 @@ export class CompatAppBuilder {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: Engine[], emberENV: EmberENV) {
+  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[], emberENV: EmberENV) {
     let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
@@ -932,10 +918,18 @@ export class CompatAppBuilder {
     return assets.concat(this.extractAssets(inputPaths));
   }
 
+  private firstBuild = true;
+
   async build(inputPaths: OutputPaths<TreeNames>) {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
     this.compatApp.macrosConfig.finalize();
+
+    // on first build, clear the output directory completely
+    if (this.firstBuild) {
+      rmSync(this.root, { recursive: true, force: true });
+      this.firstBuild = false;
+    }
 
     let appFiles = this.updateAppJS(inputPaths);
     let emberENV = this.configTree.readConfig().EmberENV;
@@ -1148,7 +1142,7 @@ export class CompatAppBuilder {
     }
   }
 
-  private topAppJSAsset(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+  private topAppJSAsset(engines: AppFiles[], prepared: Map<string, InternalAsset>): InternalAsset {
     let [app, ...childEngines] = engines;
     let relativePath = `assets/${this.origAppPackage.name}.js`;
     return this.appJSAsset(relativePath, app, childEngines, prepared, {
@@ -1181,12 +1175,11 @@ export class CompatAppBuilder {
 
   private appJSAsset(
     relativePath: string,
-    engine: Engine,
-    childEngines: Engine[],
+    appFiles: AppFiles,
+    childEngines: AppFiles[],
     prepared: Map<string, InternalAsset>,
     entryParams?: Partial<Parameters<typeof entryTemplate>[0]>
   ): InternalAsset {
-    let { appFiles } = engine;
     let cached = prepared.get(relativePath);
     if (cached) {
       return cached;
@@ -1208,19 +1201,19 @@ export class CompatAppBuilder {
     let styles = [];
     // only import styles from engines with a parent (this excludeds the parent application) as their styles
     // will be inserted via a direct <link> tag.
-    if (engine.parent && engine.package.isLazyEngine()) {
-      let implicitStyles = this.impliedAssets('implicit-styles', engine);
+    if (appFiles.engine.parent && appFiles.engine.package.isLazyEngine()) {
+      let implicitStyles = this.impliedAssets('implicit-styles', appFiles);
       for (let style of implicitStyles) {
         styles.push({
           path: explicitRelative('assets/_engine_', style.relativePath),
         });
       }
 
-      let engineMeta = engine.package.meta as AddonMeta;
+      let engineMeta = appFiles.engine.package.meta as AddonMeta;
       if (engineMeta && engineMeta['implicit-styles']) {
         for (let style of engineMeta['implicit-styles']) {
           styles.push({
-            path: explicitRelative(dirname(relativePath), join(engine.appRelativePath, style)),
+            path: explicitRelative(dirname(relativePath), join(appFiles.engine.appRelativePath, style)),
           });
         }
       }
@@ -1229,14 +1222,14 @@ export class CompatAppBuilder {
     let lazyEngines: { names: string[]; path: string }[] = [];
     for (let childEngine of childEngines) {
       let asset = this.appJSAsset(
-        `assets/_engine_/${encodeURIComponent(childEngine.package.name)}.js`,
+        `assets/_engine_/${encodeURIComponent(childEngine.engine.package.name)}.js`,
         childEngine,
         [],
         prepared
       );
-      if (childEngine.package.isLazyEngine()) {
+      if (childEngine.engine.package.isLazyEngine()) {
         lazyEngines.push({
-          names: [childEngine.package.name],
+          names: [childEngine.engine.package.name],
           path: explicitRelative(dirname(relativePath), asset.relativePath),
         });
       } else {
@@ -1254,11 +1247,11 @@ export class CompatAppBuilder {
         (routeNames: string[], files: string[]) => {
           let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
           if (!prepared.has(routeEntrypoint)) {
-            prepared.set(routeEntrypoint, this.routeEntrypoint(engine, routeEntrypoint, files));
+            prepared.set(routeEntrypoint, this.routeEntrypoint(appFiles, routeEntrypoint, files));
           }
           lazyRoutes.push({
             names: routeNames,
-            path: this.importPaths(engine, routeEntrypoint).buildtime,
+            path: this.importPaths(appFiles, routeEntrypoint).buildtime,
           });
         }
       );
@@ -1267,12 +1260,12 @@ export class CompatAppBuilder {
     let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
       appFiles.isFastbootOnly.get(file)
     );
-    let amdModules = nonFastboot.map(file => this.importPaths(engine, file));
-    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(engine, file));
+    let amdModules = nonFastboot.map(file => this.importPaths(appFiles, file));
+    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(appFiles, file));
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', engine, amdModules);
+    this.gatherImplicitModules('implicit-modules', appFiles, amdModules);
 
     let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
     if (entryParams) {
@@ -1290,7 +1283,7 @@ export class CompatAppBuilder {
     return asset;
   }
 
-  private importPaths(engine: Engine, engineRelativePath: string) {
+  private importPaths({ engine }: AppFiles, engineRelativePath: string) {
     let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
       runtime: `${engine.modulePrefix}/${noHBS}`,
@@ -1298,21 +1291,21 @@ export class CompatAppBuilder {
     };
   }
 
-  private routeEntrypoint(engine: Engine, relativePath: string, files: string[]) {
-    let [fastboot, nonFastboot] = partition(files, file => engine.appFiles.isFastbootOnly.get(file));
+  private routeEntrypoint(appFiles: AppFiles, relativePath: string, files: string[]) {
+    let [fastboot, nonFastboot] = partition(files, file => appFiles.isFastbootOnly.get(file));
 
     let asset: InternalAsset = {
       kind: 'in-memory',
       source: routeEntryTemplate({
-        files: nonFastboot.map(f => this.importPaths(engine, f)),
-        fastbootOnlyFiles: fastboot.map(f => this.importPaths(engine, f)),
+        files: nonFastboot.map(f => this.importPaths(appFiles, f)),
+        fastbootOnlyFiles: fastboot.map(f => this.importPaths(appFiles, f)),
       }),
       relativePath,
     };
     return asset;
   }
 
-  private testJSEntrypoint(engines: Engine[], prepared: Map<string, InternalAsset>): InternalAsset {
+  private testJSEntrypoint(appFiles: AppFiles[], prepared: Map<string, InternalAsset>): InternalAsset {
     let asset = prepared.get(`assets/test.js`);
     if (asset) {
       return asset;
@@ -1321,7 +1314,7 @@ export class CompatAppBuilder {
     // We're only building tests from the first engine (the app). This is the
     // normal thing to do -- tests from engines don't automatically roll up into
     // the app.
-    let engine = engines[0];
+    let engine = appFiles[0];
 
     const myName = 'assets/test.js';
 
@@ -1331,7 +1324,7 @@ export class CompatAppBuilder {
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
     let eagerModules: string[] = [
-      explicitRelative(dirname(myName), this.topAppJSAsset(engines, prepared).relativePath),
+      explicitRelative(dirname(myName), this.topAppJSAsset(appFiles, prepared).relativePath),
     ];
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
@@ -1339,8 +1332,7 @@ export class CompatAppBuilder {
     // test support modules.
     this.gatherImplicitModules('implicit-test-modules', engine, amdModules);
 
-    let { appFiles } = engine;
-    for (let relativePath of appFiles.tests) {
+    for (let relativePath of engine.tests) {
       amdModules.push(this.importPaths(engine, relativePath));
     }
 
@@ -1361,7 +1353,7 @@ export class CompatAppBuilder {
 
   private gatherImplicitModules(
     section: 'implicit-modules' | 'implicit-test-modules',
-    engine: Engine,
+    { engine }: AppFiles,
     lazyModules: { runtime: string; buildtime: string }[]
   ) {
     for (let addon of engine.addons) {

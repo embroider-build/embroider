@@ -1,6 +1,5 @@
 import { sep } from 'path';
 import { Package, AddonPackage } from '@embroider/shared-internals';
-import type AppDiffer from './app-differ';
 
 export interface RouteFiles {
   route?: string;
@@ -17,15 +16,55 @@ export class AppFiles {
   private perRoute: RouteFiles;
   readonly otherAppFiles: ReadonlyArray<string>;
   readonly isFastbootOnly: Map<string, boolean>;
+  readonly fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
 
-  constructor(appDiffer: AppDiffer, resolvableExtensions: RegExp, podModulePrefix?: string) {
+  constructor(
+    readonly engine: Engine,
+    appFiles: Set<string>,
+    fastbootFiles: Set<string>,
+    resolvableExtensions: RegExp,
+    podModulePrefix?: string
+  ) {
     let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
     let modifiers: string[] = [];
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
-    for (let relativePath of appDiffer.files.keys()) {
+
+    let combinedFiles = new Set<string>();
+    let combinedNonFastbootFiles = new Set<string>();
+    let isFastbootOnly = new Map<string, boolean>();
+
+    for (let f of appFiles) {
+      combinedFiles.add(f);
+      combinedNonFastbootFiles.add(f);
+    }
+    for (let f of fastbootFiles) {
+      combinedFiles.add(f);
+    }
+
+    for (let addon of engine.addons) {
+      let appJS = addon.meta['app-js'];
+      if (appJS) {
+        for (let filename of Object.keys(appJS)) {
+          filename = filename.replace(/^\.\//, '');
+          combinedFiles.add(filename);
+          combinedNonFastbootFiles.add(filename);
+        }
+      }
+
+      let fastbootJS = addon.meta['fastboot-js'];
+      if (fastbootJS) {
+        for (let filename of Object.keys(fastbootJS)) {
+          filename = filename.replace(/^\.\//, '');
+          combinedFiles.add(filename);
+        }
+      }
+    }
+
+    for (let relativePath of combinedFiles) {
+      isFastbootOnly.set(relativePath, !combinedNonFastbootFiles.has(relativePath));
       relativePath = relativePath.split(sep).join('/');
       if (!resolvableExtensions.test(relativePath)) {
         continue;
@@ -82,7 +121,25 @@ export class AppFiles {
     this.helpers = helpers;
     this.modifiers = modifiers;
     this.otherAppFiles = otherAppFiles;
-    this.isFastbootOnly = appDiffer.isFastbootOnly;
+    this.isFastbootOnly = isFastbootOnly;
+
+    // this deliberately only describes the app's fastboot files. Not the full
+    // merge from all the addons. This is because they need different handling
+    // in the module resolver -- addon fastboot files can always be a
+    // fallbackResolve, because if the app happens to define the same name
+    // (whether fastboot-specific or just browser) that wins over the addon.
+    // Whereas if the app itself defines a fastbot-specific version of a file,
+    // that must take precedence over the *normal* resolution, and must be
+    // implemented in beforeResolve.
+    this.fastbootFiles = Object.fromEntries(
+      [...fastbootFiles].map(name => [
+        `./${name}`,
+        {
+          localFilename: `./_fastboot_/${name}`,
+          shadowedFilename: appFiles.has(name) ? `./${name}` : undefined,
+        },
+      ])
+    );
   }
 
   private handleClassicRouteFile(relativePath: string): boolean {
@@ -142,22 +199,17 @@ export class AppFiles {
   }
 }
 
-export interface EngineSummary {
+export interface Engine {
   // the engine's own package
   package: Package;
   // the set of active addons in the engine
   addons: Set<AddonPackage>;
   // the parent engine, if any
-  parent: EngineSummary | undefined;
+  parent: Engine | undefined;
   // where the engine's own V2 code comes from
   sourcePath: string;
   // runtime name for the engine's own module namespace
   modulePrefix: string;
   // this is destPath but relative to the app itself
   appRelativePath: string;
-}
-
-export interface Engine extends EngineSummary {
-  appFiles: AppFiles;
-  fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
 }

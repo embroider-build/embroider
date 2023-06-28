@@ -189,11 +189,8 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
 const shared: Map<string, RewrittenPackageCache> = new Map();
 const wrapped = new WeakMap<Package, WrappedPackage>();
 
-// TODO: as our refactor lands we should be able to remove this from Package
-// itself.
 type PackageTheGoodParts = Omit<PublicAPI<Package>, 'nonResolvableDeps'>;
 
-// TODO: this goes with the above TODO and can get deleted when it does.
 function castToPackage(m: WrappedPackage): Package {
   return m as unknown as Package;
 }

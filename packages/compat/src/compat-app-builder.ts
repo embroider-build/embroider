@@ -649,7 +649,6 @@ export class CompatAppBuilder {
         addons: new Set(),
         parent: undefined,
         sourcePath: appJSPath,
-        destPath: this.root,
         modulePrefix: this.modulePrefix(),
         appRelativePath: '.',
       },
@@ -670,7 +669,6 @@ export class CompatAppBuilder {
             addons: new Set(),
             parent: current,
             sourcePath: mangledEngineRoot(addon),
-            destPath: addon.root,
             modulePrefix: addon.name,
             appRelativePath: explicitRelative(this.root, addon.root),
           });

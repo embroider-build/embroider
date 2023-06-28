@@ -4,7 +4,7 @@ import dependencySatisfies from './dependency-satisfies';
 import { maybeAttrs } from './macro-maybe-attrs';
 import { macroIfBlock, macroIfExpression, macroIfMustache } from './macro-condition';
 import { failBuild } from './fail-build';
-import { PackageCache } from '@embroider/shared-internals';
+import { RewrittenPackageCache } from '@embroider/shared-internals';
 
 export interface BuildPluginParams {
   // Glimmer requires this on ast transforms.
@@ -53,7 +53,7 @@ export function makeFirstTransform(opts: FirstTransformParams) {
       throw new Error(`bug in @embroider/macros. Running without packageRoot but don't have filename.`);
     }
 
-    let packageCache = PackageCache.shared('embroider-stage3', opts.appRoot);
+    let packageCache = RewrittenPackageCache.shared('embroider', opts.appRoot);
 
     let scopeStack: string[][] = [];
 

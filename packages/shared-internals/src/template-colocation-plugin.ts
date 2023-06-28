@@ -6,6 +6,8 @@ import { dirname } from 'path';
 import { explicitRelative, PackageCache } from '.';
 import { ImportUtil } from 'babel-import-util';
 
+export const pluginPath = __filename;
+
 // these options are designed so the defaults are appropriate for use within an
 // addon's dev pipeline, whereas when we use it within Embroider we diverge from
 // the defaults. That means less options for addon authors to need to know
@@ -53,7 +55,7 @@ export default function main(babel: typeof Babel) {
           let filename = (path.hub as any).file.opts.filename;
 
           if (state.opts.packageGuard) {
-            let owningPackage = PackageCache.shared('embroider-stage3', state.opts.appRoot).ownerOfFile(filename);
+            let owningPackage = PackageCache.shared('embroider', state.opts.appRoot).ownerOfFile(filename);
             if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
               return;
             }

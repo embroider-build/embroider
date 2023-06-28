@@ -18,7 +18,6 @@ import ObserveTree from './observe-tree';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
 import { TransformOptions, PluginItem } from '@babel/core';
-import V1App from './v1-app';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
@@ -33,6 +32,7 @@ import { fromPairs } from 'lodash';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import getRealAddon from './get-real-addon';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
+import CompatApp from './compat-app';
 
 const stockTreeNames: AddonTreePath[] = Object.freeze([
   'addon',
@@ -82,7 +82,7 @@ export default class V1Addon {
   constructor(
     protected addonInstance: AddonInstance,
     protected addonOptions: Required<Options>,
-    protected app: V1App,
+    protected app: CompatApp,
     private packageCache: PackageCache,
     private orderIdx: number
   ) {
@@ -1068,7 +1068,7 @@ export interface V1AddonConstructor {
   new (
     addonInstance: any,
     options: Required<Options>,
-    app: V1App,
+    app: CompatApp,
     packageCache: PackageCache,
     orderIdx: number
   ): V1Addon;

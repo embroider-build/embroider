@@ -43,6 +43,7 @@ describe('audit', function () {
       engines: [
         {
           packageName: 'audit-this-app',
+          fastbootFiles: {},
           activeAddons: [],
           root: app.baseDir,
         },
@@ -76,8 +77,10 @@ describe('audit', function () {
         null,
         2
       )}`,
-      '.embroider': {
-        'resolver.json': JSON.stringify(resolverConfig),
+      node_modules: {
+        '.embroider': {
+          'resolver.json': JSON.stringify(resolverConfig),
+        },
       },
     });
     let appMeta: AppMeta = {

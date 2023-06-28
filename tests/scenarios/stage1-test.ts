@@ -1,11 +1,9 @@
-import { join } from 'path';
 import merge from 'lodash/merge';
-import fs from 'fs-extra';
 import { loadFromFixtureData } from './helpers';
-import { dummyAppScenarios, baseAddon, appScenarios } from './scenarios';
+import { baseAddon, appScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import { expectFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -28,95 +26,105 @@ appScenarios
   .forEachScenario(async scenario => {
     Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
-      let workspaceDir: string;
+      let expectFile: ExpectFile;
 
       hooks.before(async assert => {
         process.env.THROW_UNLESS_PARALLELIZABLE = '1'; // see https://github.com/embroider-build/embroider/pull/924
         app = await scenario.prepare();
         let result = await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
         assert.equal(result.exitCode, 0, result.output);
-        workspaceDir = fs.readFileSync(join(app.dir, 'dist', '.stage1-output'), 'utf8');
       });
 
       hooks.after(async () => {
         delete process.env.THROW_UNLESS_PARALLELIZABLE;
       });
 
-      test('component in app tree', function (assert) {
-        assert.ok(fs.existsSync(join(workspaceDir, 'node_modules/my-addon/_app_/components/hello-world.js')));
+      hooks.beforeEach(assert => {
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
-      test('addon metadata', function (assert) {
-        let assertMeta = fs.readJsonSync(join(workspaceDir, 'node_modules/my-addon/package.json'))['ember-addon'];
-        assert.deepEqual(assertMeta['app-js'], { './components/hello-world.js': './_app_/components/hello-world.js' });
-        assert.ok(
-          JSON.stringify(assertMeta['implicit-modules']).includes('./components/hello-world'),
-          'staticAddonTrees is off so we should include the component implicitly'
-        );
-        assert.ok(
-          JSON.stringify(assertMeta['implicit-modules']).includes('./templates/components/hello-world'),
-          'staticAddonTrees is off so we should include the template implicitly'
-        );
-
-        assert.equal(assertMeta.version, 2);
+      test('component in app tree', function () {
+        expectFile('node_modules/my-addon/_app_/components/hello-world.js').exists();
       });
 
-      test('component in addon tree', function (assert) {
-        let fileContents = fs.readFileSync(join(workspaceDir, 'node_modules/my-addon/components/hello-world.js'));
+      test('addon metadata', function () {
+        let myAddonPkg = expectFile('node_modules/my-addon/package.json').json();
+        myAddonPkg
+          .get('ember-addon.app-js')
+          .deepEquals({ './components/hello-world.js': './_app_/components/hello-world.js' });
 
-        assert.ok(fileContents.includes('getOwnConfig()'), 'JS macros have not run yet');
-        assert.ok(fileContents.includes('embroider-sample-transforms-result'), 'custom babel plugins have run');
+        myAddonPkg
+          .get('ember-addon.implicit-modules')
+          .includes(
+            './components/hello-world',
+            'staticAddonTrees is off so we should include the component implicitly'
+          );
+
+        myAddonPkg
+          .get('ember-addon.implicit-modules')
+          .includes(
+            './templates/components/hello-world.hbs',
+            'staticAddonTrees is off so we should include the template implicitly'
+          );
+
+        myAddonPkg.get('ember-addon.version').deepEquals(2);
       });
 
-      test('component template in addon tree', function (assert) {
-        let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/templates/components/hello-world.hbs.js')
+      test('component in addon tree', function () {
+        expectFile('node_modules/my-addon/components/hello-world.js').matches(
+          'getOwnConfig()',
+          'JS macros have not run yet'
         );
-        assert.ok(
-          fileContents.includes('<div class={{embroider-sample-transforms-result}}>hello world</div>'),
+
+        expectFile('node_modules/my-addon/components/hello-world.js').matches(
+          'embroider-sample-transforms-result',
+          'custom babel plugins have run'
+        );
+      });
+
+      test('component template in addon tree', function () {
+        let fileContents = expectFile('node_modules/my-addon/templates/components/hello-world.hbs.js');
+
+        fileContents.matches(
+          '<div class={{embroider-sample-transforms-result}}>hello world</div>',
           'template is still hbs and custom transforms have run'
         );
-        assert.ok(
-          fileContents.includes('<span>{{macroDependencySatisfies \\"ember-source\\" \\">3\\"}}</span>'),
+
+        fileContents.matches(
+          '<span>{{macroDependencySatisfies \\"ember-source\\" \\">3\\"}}</span>',
           'template macros have not run'
         );
       });
 
-      test('test module name added', function (assert) {
-        let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/templates/components/module-name.hbs.js')
-        );
+      test('test module name added', function () {
+        let fileContents = expectFile('node_modules/my-addon/templates/components/module-name.hbs.js');
         let expected = `<div class={{embroider-sample-transforms-module \\"my-addon/templates/components/module-name.hbs\\"}}>hello world</div>`;
-        assert.ok(fileContents.includes(expected), 'template is still hbs and module name transforms have run');
+        fileContents.matches(expected, 'template is still hbs and module name transforms have run');
       });
 
-      test('component with inline template', function (assert) {
-        let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/components/has-inline-template.js')
-        );
-        assert.ok(
-          fileContents.includes('hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>'),
+      test('component with inline template', function () {
+        let fileContents = expectFile('node_modules/my-addon/components/has-inline-template.js');
+
+        fileContents.matches(
+          'hbs`<div class={{embroider-sample-transforms-result}}>Inline</div>',
           'tagged template is still hbs and custom transforms have run'
         );
-        assert.ok(
-          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/.test(fileContents.toString()),
+
+        fileContents.matches(
+          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
           'called template is still hbs and custom transforms have run'
         );
-        assert.ok(
-          /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/.test(fileContents.toString()),
+
+        fileContents.matches(
+          /<span>{{macroDependencySatisfies ['"]ember-source['"] ['"]>3['"]}}<\/span>/,
           'template macros have not run'
         );
       });
 
-      test('in-repo-addon is available', function (assert) {
-        assert.ok(require.resolve('in-repo-addon/helpers/helper-from-in-repo-addon', { paths: [workspaceDir] }));
-      });
-
-      test('dynamic import is preserved', function (assert) {
-        let fileContents = fs.readFileSync(
-          join(workspaceDir, 'node_modules/my-addon/components/does-dynamic-import.js')
+      test('dynamic import is preserved', function () {
+        expectFile('node_modules/my-addon/components/does-dynamic-import.js').matches(
+          /return import\(['"]some-library['"]\)/
         );
-        assert.ok(/return import\(['"]some-library['"]\)/.test(fileContents.toString()));
       });
     });
   });
@@ -159,17 +167,15 @@ appScenarios
   .forEachScenario(async scenario => {
     Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
-      let workspaceDir: string;
+      let expectFile: ExpectFile;
 
       hooks.before(async () => {
         app = await scenario.prepare();
         await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
-        workspaceDir = fs.readFileSync(join(app.dir, 'dist', '.stage1-output'), 'utf8');
       });
 
-      let expectFile: ExpectFile;
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(workspaceDir, { qunit: assert });
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test('component with inline template', function () {
@@ -407,99 +413,65 @@ appScenarios
   .forEachScenario(async scenario => {
     Qmodule(`${scenario.name}`, function (hooks) {
       let app: PreparedApp;
-      let workspaceDir: string;
+      let expectFile: ExpectFile;
 
       hooks.before(async () => {
         app = await scenario.prepare();
         await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
-        workspaceDir = fs.readFileSync(join(app.dir, 'dist', '.stage1-output'), 'utf8');
       });
 
-      test('real package.json wins', function (assert) {
-        let fileContents = fs.readFileSync(join(workspaceDir, 'node_modules/alpha/package.json'));
-        assert.ok(fileContents.includes('alpha'));
+      hooks.beforeEach(assert => {
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
-      test('custom tree hooks are detected in addons that manually extend from Addon', function (assert) {
-        let fileContents = fs.readFileSync(join(workspaceDir, 'node_modules/has-custom-base/file.js'));
-        assert.ok(/weird-addon-path\/file\.js/.test(fileContents.toString()));
+      test('real package.json wins', function () {
+        expectFile('node_modules/alpha/package.json').matches('alpha');
       });
 
-      test('no fastboot-js is emitted', function (assert) {
-        let fileContents = fs.readJsonSync(join(workspaceDir, 'node_modules/undefined-fastboot/package.json'));
-        assert.equal(fileContents['ember-addon']['fastboot-js'], null);
+      test('custom tree hooks are detected in addons that manually extend from Addon', function () {
+        expectFile('node_modules/has-custom-base/file.js').matches(/weird-addon-path\/file\.js/);
       });
 
-      test('custom tree hooks are detected when they have been patched into the addon instance', function (assert) {
-        assert.ok(fs.existsSync(join(workspaceDir, 'node_modules/externally-customized/public/hello/world.js')));
+      test('no fastboot-js is emitted', function () {
+        expectFile('node_modules/undefined-fastboot/package.json').json().get('ember-addon.fastboot-js').equals(null);
       });
 
-      test('custom tree hooks are detected when they have been customized via treeForMethod names', function (assert) {
-        assert.ok(fs.existsSync(join(workspaceDir, 'node_modules/patches-method-name/hello/world.js')));
+      test('custom tree hooks are detected when they have been patched into the addon instance', function () {
+        expectFile('node_modules/externally-customized/public/hello/world.js').exists();
       });
 
-      test('addon with customized ember-addon.main can still use stock trees', function (assert) {
-        let fileContents = fs.readFileSync(join(workspaceDir, 'node_modules/moved-main/helpers/hello.js'));
-        assert.ok(/hello-world/.test(fileContents.toString()));
+      test('custom tree hooks are detected when they have been customized via treeForMethod names', function () {
+        expectFile('node_modules/patches-method-name/hello/world.js').exists();
       });
 
-      test('addon with customized treeFor can suppress a stock tree', function (assert) {
-        assert.notOk(fs.existsSync(join(workspaceDir, 'node_modules/suppressed/_app_/app-example.js')));
+      test('addon with customized ember-addon.main can still use stock trees', function () {
+        expectFile('node_modules/moved-main/helpers/hello.js').matches(/hello-world/);
       });
 
-      test('addon with customized treeFor can pass through a stock tree', function (assert) {
-        assert.ok(fs.existsSync(join(workspaceDir, 'node_modules/suppressed/addon-example.js')));
+      test('addon with customized treeFor can suppress a stock tree', function () {
+        expectFile('node_modules/suppressed/_app_/app-example.js').doesNotExist();
       });
 
-      test('addon with customized treeFor can suppress a customized tree', function (assert) {
-        assert.notOk(fs.existsSync(join(workspaceDir, 'node_modules/suppressed-custom/_app_/app-example.js')));
+      test('addon with customized treeFor can pass through a stock tree', function () {
+        expectFile('node_modules/suppressed/addon-example.js').exists();
       });
 
-      test('addon with customized treeFor can pass through a customized tree', function (assert) {
-        assert.ok(fs.existsSync(join(workspaceDir, 'node_modules/suppressed-custom/addon-example.js')));
+      test('addon with customized treeFor can suppress a customized tree', function () {
+        expectFile('node_modules/suppressed-custom/_app_/app-example.js').doesNotExist();
       });
 
-      test('blacklisted in-repo addon is present but empty', function (assert) {
-        assert.ok(fs.existsSync(join(workspaceDir, 'lib/blacklisted-in-repo-addon/package.json')));
-        assert.notOk(fs.existsSync(join(workspaceDir, 'lib/blacklisted-in-repo-addon/example.js')));
+      test('addon with customized treeFor can pass through a customized tree', function () {
+        expectFile('node_modules/suppressed-custom/addon-example.js').exists();
       });
 
-      test('disabled in-repo addon is present but empty', function (assert) {
-        assert.ok(fs.existsSync(join(workspaceDir, 'lib/disabled-in-repo-addon/package.json')));
-        assert.notOk(fs.existsSync(join(workspaceDir, 'lib/disabled-in-repo-addon/example.js')));
-      });
-    });
-  });
-
-dummyAppScenarios
-  .map('stage-1-dummy-addon', project => {
-    project.pkg.name = 'my-addon';
-
-    project.linkDependency('@embroider/webpack', { baseDir: __dirname });
-    project.linkDependency('@embroider/core', { baseDir: __dirname });
-    project.linkDependency('@embroider/compat', { baseDir: __dirname });
-
-    merge(project.files, {
-      addon: {
-        components: {
-          'hello-world.js': '',
-        },
-      },
-    });
-  })
-  .forEachScenario(async scenario => {
-    Qmodule(`${scenario.name}`, function (hooks) {
-      let app: PreparedApp;
-      let workspaceDir: string;
-
-      hooks.before(async () => {
-        app = await scenario.prepare();
-        await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
-        workspaceDir = fs.readFileSync(join(app.dir, 'dist', '.stage1-output'), 'utf8');
+      test('blacklisted in-repo addon is present but empty', function () {
+        expectFile('lib/blacklisted-in-repo-addon/package.json').exists();
+        expectFile('lib/blacklisted-in-repo-addon/example.js').doesNotExist();
       });
 
-      test('dummy app can resolve own addon', function (assert) {
-        assert.ok(require.resolve('my-addon/components/hello-world.js', { paths: [workspaceDir] }));
+      test('disabled in-repo addon is present but empty', function () {
+        expectFile('lib/disabled-in-repo-addon/package.json').exists();
+        expectFile('lib/disabled-in-repo-addon/example.js').doesNotExist();
       });
     });
   });

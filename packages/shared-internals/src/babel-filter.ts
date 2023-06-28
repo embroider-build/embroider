@@ -8,7 +8,7 @@ export default function babelFilter(skipBabel: { package: string; semverRange?: 
       return false;
     }
 
-    let owner = PackageCache.shared('embroider-stage3', appRoot).ownerOfFile(filename);
+    let owner = PackageCache.shared('embroider', appRoot).ownerOfFile(filename);
     if (owner) {
       for (let { package: pkg, semverRange } of skipBabel) {
         if (owner.name === pkg && (semverRange == null || semver.satisfies(owner.version, semverRange))) {

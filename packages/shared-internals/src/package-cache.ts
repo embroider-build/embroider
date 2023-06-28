@@ -11,7 +11,7 @@ export default class PackageCache {
     let cache = getOrCreate(this.resolutionCache, fromPackage, () => new Map() as Map<string, Package | null>);
     let result = getOrCreate(cache, packageName, () => {
       // the type cast is needed because resolvePackagePath itself is erroneously typed as `any`.
-      let packagePath = resolvePackagePath(packageName, this.basedir(fromPackage)) as string | null;
+      let packagePath = resolvePackagePath(packageName, fromPackage.root) as string | null;
       if (!packagePath) {
         // this gets our null into the cache so we don't keep trying to resolve
         // a thing that is not found
@@ -27,19 +27,8 @@ export default class PackageCache {
     return result;
   }
 
-  seed(pkg: Package) {
-    if (this.rootCache.has(pkg.root)) {
-      throw new Error(`bug: tried to seed package ${pkg.name} but it's already in packageCache`);
-    }
-    this.rootCache.set(pkg.root, pkg);
-  }
-
-  protected rootCache: Map<string, Package> = new Map();
-  protected resolutionCache: Map<Package, Map<string, Package | null>> = new Map();
-
-  basedir(pkg: Package): string {
-    return pkg.root;
-  }
+  private rootCache: Map<string, Package> = new Map();
+  private resolutionCache: Map<Package, Map<string, Package | null>> = new Map();
 
   get(packageRoot: string) {
     let root = realpathSync(packageRoot);
@@ -72,13 +61,11 @@ export default class PackageCache {
     }
   }
 
-  // register to be shared as the per-process package cache with the given name
-  shareAs(identifier: string) {
-    shared.set(identifier, this);
-  }
-
   static shared(identifier: string, appRoot: string) {
     let pk = getOrCreate(shared, identifier + appRoot, () => new PackageCache(appRoot));
+
+    // it's not clear that this could ever happen because appRoot is part of the new identifier
+    // but it doesn't cost much to leave this code here.
     if (pk.appRoot !== appRoot) {
       throw new Error(`bug: PackageCache appRoot disagreement ${appRoot}!=${pk.appRoot}`);
     }

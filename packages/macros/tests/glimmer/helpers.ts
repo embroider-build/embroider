@@ -1,7 +1,7 @@
 import { emberTemplateCompiler } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { MacrosConfig } from '../../src/node';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { hbsToJS } from '@embroider/shared-internals';
 import { transformSync } from '@babel/core';
 import { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
@@ -19,7 +19,7 @@ export interface TemplateTransformOptions {
 
 export function templateTests(createTests: CreateTestsWithConfig | CreateTests) {
   let { plugins, setConfig } = MacrosConfig.transforms();
-  let config = MacrosConfig.for({}, '/nonexistent');
+  let config = MacrosConfig.for({}, resolve(__dirname, '..', '..'));
   setConfig(config);
 
   let transform = (templateContents: string, options: TemplateTransformOptions = {}) => {

@@ -21,9 +21,9 @@ import {
   getOrCreate,
   ResolverOptions,
 } from '@embroider/core';
-import { tmpdir } from '@embroider/shared-internals';
+import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
 import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
-import { readFileSync, outputFileSync, copySync, realpathSync, Stats, statSync, readJSONSync } from 'fs-extra';
+import { readFileSync, outputFileSync, copySync, Stats, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -110,7 +110,7 @@ function createBarrier(): [BeginFn, IncrementFn] {
 const Webpack: PackagerConstructor<Options> = class Webpack implements Packager {
   static annotation = '@embroider/webpack';
 
-  pathToVanillaApp: string;
+  private pathToVanillaApp: string;
   private extraConfig: Configuration | undefined;
   private passthroughCache: Map<string, Stats> = new Map();
   private publicAssetURL: string | undefined;
@@ -123,7 +123,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private incrementBarrier: IncrementFn;
 
   constructor(
-    pathToVanillaApp: string,
+    private appRoot: string,
     private outputPath: string,
     private variants: Variant[],
     private consoleWrite: (msg: string) => void,
@@ -133,7 +133,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       throw new Error(`@embroider/webpack requires webpack@^5.0.0, but found version ${webpack.version}`);
     }
 
-    this.pathToVanillaApp = realpathSync(pathToVanillaApp);
+    let packageCache = RewrittenPackageCache.shared('embroider', appRoot);
+    this.pathToVanillaApp = packageCache.maybeMoved(packageCache.get(appRoot)).root;
     this.extraConfig = options?.webpackConfig;
     this.publicAssetURL = options?.publicAssetURL;
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
@@ -180,7 +181,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       }
     }
 
-    let resolverConfig: EmbroiderPluginOptions = readJSONSync(join(this.pathToVanillaApp, '.embroider/resolver.json'));
+    let resolverConfig: EmbroiderPluginOptions = readJSONSync(
+      join(locateEmbroiderWorkingDir(this.appRoot), 'resolver.json')
+    );
 
     return { entrypoints, otherAssets, babel, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };
   }

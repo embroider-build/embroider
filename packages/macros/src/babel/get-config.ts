@@ -1,6 +1,6 @@
 import type { NodePath } from '@babel/traverse';
 import State from './state';
-import { PackageCache, Package } from '@embroider/shared-internals';
+import { RewrittenPackageCache, Package } from '@embroider/shared-internals';
 import error from './error';
 import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
 import assertNever from 'assert-never';
@@ -28,7 +28,7 @@ function getPackage(path: NodePath<t.CallExpression>, state: State, mode: 'own' 
   } else {
     assertNever(mode);
   }
-  return targetPackage(state.sourceFile, packageName, state.packageCache);
+  return targetPackage(state.originalOwningPackage(), packageName, state.packageCache);
 }
 
 // this evaluates to the actual value of the config. It can be used directly by the Evaluator.
@@ -74,16 +74,17 @@ export function insertConfig(path: NodePath<t.CallExpression>, state: State, mod
   }
 }
 
-function targetPackage(fromPath: string, packageName: string | undefined, packageCache: PackageCache): Package | null {
-  let us = packageCache.ownerOfFile(fromPath);
-  if (!us) {
-    throw new Error(`unable to determine which npm package owns the file ${fromPath}`);
-  }
+function targetPackage(
+  us: Package,
+  packageName: string | undefined,
+  packageCache: RewrittenPackageCache
+): Package | null {
   if (!packageName) {
     return us;
   }
   try {
-    return packageCache.resolve(packageName, us);
+    let target = packageCache.resolve(packageName, us);
+    return packageCache.original(target) || target;
   } catch (err) {
     return null;
   }

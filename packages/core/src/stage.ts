@@ -1,5 +1,4 @@
 import type { Node } from 'broccoli-node-api';
-import { PackageCache } from '@embroider/shared-internals';
 
 // A build Stage is _kinda_ like a Broccoli transform, and it interoperates with
 // Broccoli, but it takes a different approach to how stages combine.
@@ -27,9 +26,5 @@ export default interface Stage {
     // This is the actual directory in which the output will be. It's guaranteed
     // to not change once you get it.
     readonly outputPath: string;
-
-    // Stages must propagate their PackageCache forward to the next stage so we
-    // don't repeat a lot of resolving work.
-    readonly packageCache: PackageCache;
   }>;
 }

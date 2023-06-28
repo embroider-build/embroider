@@ -1,6 +1,14 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
-import { AppMeta, explicitRelative, hbsToJS, Resolver, ResolverOptions } from '@embroider/core';
+import {
+  AppMeta,
+  explicitRelative,
+  hbsToJS,
+  locateEmbroiderWorkingDir,
+  Resolver,
+  ResolverOptions,
+  RewrittenPackageCache,
+} from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
@@ -213,18 +221,11 @@ export class Audit {
   private frames = new CodeFrameStorage();
 
   static async run(options: AuditBuildOptions): Promise<AuditResults> {
-    let dir: string;
-
-    if (options.outputDir) {
-      dir = options.outputDir;
-    } else {
-      if (!options['reuse-build']) {
-        await buildApp(options);
-      }
-      dir = await this.findStage2Output(options);
+    if (!options['reuse-build']) {
+      await buildApp(options);
     }
 
-    let audit = new this(dir, options);
+    let audit = new this(options.app, options);
     if (options['reuse-build']) {
       if (!audit.meta.babel.isParallelSafe) {
         throw new BuildError(
@@ -237,29 +238,17 @@ export class Audit {
     return audit.run();
   }
 
-  private static async findStage2Output(options: AuditBuildOptions): Promise<string> {
-    try {
-      if (!options.app) {
-        throw new Error(`AuditBuildOptions needs "app" directory`);
-      }
-      return readFileSync(join(options.app, 'dist/.stage2-output'), 'utf8');
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        throw new BuildError(
-          `${chalk.yellow(
-            'Your build'
-          )} did not produce expected Embroider stage2 output.\nMake sure you actually have Embroider configured.`
-        );
-      }
-      throw err;
-    }
-  }
-
-  constructor(private appDir: string, private options: AuditOptions = {}) {}
+  constructor(private originAppRoot: string, private options: AuditOptions = {}) {}
 
   @Memoize()
   private get pkg() {
-    return readJSONSync(join(this.appDir, 'package.json'));
+    return readJSONSync(join(this.movedAppRoot, 'package.json'));
+  }
+
+  @Memoize()
+  private get movedAppRoot() {
+    let cache = RewrittenPackageCache.shared('embroider', this.originAppRoot);
+    return cache.maybeMoved(cache.get(this.originAppRoot)).root;
   }
 
   private get meta() {
@@ -269,7 +258,7 @@ export class Audit {
   @Memoize()
   private get babelConfig() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let config = require(join(this.appDir, this.meta.babel.filename));
+    let config = require(join(this.movedAppRoot, this.meta.babel.filename));
     config = Object.assign({}, config);
     config.plugins = config.plugins.filter((p: any) => !isMacrosPlugin(p));
 
@@ -278,7 +267,7 @@ export class Audit {
   }
 
   private get resolverParams(): ResolverOptions {
-    return readJSONSync(join(this.appDir, '.embroider', 'resolver.json'));
+    return readJSONSync(join(locateEmbroiderWorkingDir(this.originAppRoot), 'resolver.json'));
   }
 
   private resolver = new Resolver(this.resolverParams);
@@ -344,13 +333,14 @@ export class Audit {
       this.debug(`meta`, this.meta);
       for (let asset of this.meta.assets) {
         if (asset.endsWith('.html')) {
-          this.scheduleVisit(resolvePath(this.appDir, asset), { isRoot: true });
+          this.scheduleVisit(resolvePath(this.movedAppRoot, asset), { isRoot: true });
         }
       }
       await this.drainQueue();
       this.linkModules();
       this.inspectModules();
-      return AuditResults.create(this.appDir, this.findings, this.modules);
+
+      return AuditResults.create(this.originAppRoot, this.findings, this.modules);
     } finally {
       delete (globalThis as any).embroider_audit;
     }
@@ -468,7 +458,10 @@ export class Audit {
       }
       if (src.startsWith(this.meta['root-url'])) {
         // root-relative URLs are actually relative to the appDir
-        src = explicitRelative(dirname(filename), resolvePath(this.appDir, src.replace(this.meta['root-url'], '')));
+        src = explicitRelative(
+          dirname(filename),
+          resolvePath(this.movedAppRoot, src.replace(this.meta['root-url'], ''))
+        );
       }
       dependencies.push(src);
     }
@@ -513,7 +506,7 @@ export class Audit {
           {
             filename,
             message: `failed to parse`,
-            detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
+            detail: err.toString().replace(filename, explicitRelative(this.originAppRoot, filename)),
           },
         ];
       } else {
@@ -544,7 +537,7 @@ export class Audit {
         {
           filename,
           message: `failed to parse JSON`,
-          detail: err.toString().replace(filename, explicitRelative(this.appDir, filename)),
+          detail: err.toString().replace(filename, explicitRelative(this.originAppRoot, filename)),
         },
       ];
     }

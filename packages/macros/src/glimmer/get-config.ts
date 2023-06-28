@@ -1,4 +1,4 @@
-import type { PackageCache } from '@embroider/shared-internals';
+import type { RewrittenPackageCache } from '@embroider/shared-internals';
 
 export default function getConfig(
   node: any,
@@ -10,7 +10,7 @@ export default function getConfig(
   baseDir: string | undefined,
   moduleName: string,
   own: boolean,
-  packageCache: PackageCache
+  packageCache: RewrittenPackageCache
 ) {
   let targetConfig;
   let params = node.params.slice();
@@ -24,6 +24,7 @@ export default function getConfig(
   }
 
   if (own) {
+    us = packageCache.original(us) || us;
     targetConfig = userConfigs[us.root];
   } else {
     let packageName = params.shift();
@@ -31,6 +32,7 @@ export default function getConfig(
       throw new Error(`macroGetConfig requires at least one argument`);
     }
     let targetPkg = packageCache.resolve(packageName.value, us);
+    targetPkg = packageCache.original(targetPkg) || targetPkg;
     targetConfig = userConfigs[targetPkg.root];
   }
   while (typeof targetConfig === 'object' && targetConfig && params.length > 0) {

@@ -60,10 +60,6 @@ export default interface Options extends CoreOptions {
   // setting your own value here (including null to completely disable it).
   compatAdapters?: Map<string, V1AddonConstructor | null>;
 
-  // temporary directory where we will work when we're rewriting your addons
-  // and/or app to v2-compatible formats.
-  workspaceDir?: string | null;
-
   // optional list of additional broccoli trees that should be incorporated into
   // the final build. This exists because the classic `app.toTree()` method
   // accepts an optional tree argument that has the same purpose.

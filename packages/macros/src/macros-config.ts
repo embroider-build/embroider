@@ -3,7 +3,7 @@ import { join } from 'path';
 import crypto from 'crypto';
 import findUp from 'find-up';
 import type { PluginItem } from '@babel/core';
-import { PackageCache, getOrCreate } from '@embroider/shared-internals';
+import { RewrittenPackageCache, getOrCreate } from '@embroider/shared-internals';
 import { FirstTransformParams, makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import State from './babel/state';
 import partition from 'lodash/partition';
@@ -166,11 +166,11 @@ export default class MacrosConfig {
   }
 
   private get packageCache() {
-    return PackageCache.shared('embroider-macros', this.origAppRoot);
+    return RewrittenPackageCache.shared('embroider', this.origAppRoot);
   }
 
   private get appRoot(): string {
-    return this.moves.get(this.origAppRoot) ?? this.origAppRoot;
+    return this.origAppRoot;
   }
 
   private _configWritable = true;
@@ -265,9 +265,6 @@ export default class MacrosConfig {
         }
         userConfigs[pkgRoot] = combined;
       }
-      for (let [oldPath, newPath] of this.moves) {
-        userConfigs[newPath] = userConfigs[oldPath];
-      }
       this.cachedUserConfigs = userConfigs;
     }
 
@@ -288,7 +285,9 @@ export default class MacrosConfig {
           `bug: unexpected error, we always check that fromPath is owned during internalSetConfig so this should never happen`
         );
       }
-      let pkg = maybePkg;
+      // our configs all deal in the original locations of packages, even if
+      // embroider is rewriting some of them
+      let pkg = this.packageCache.original(maybePkg) || maybePkg;
       return {
         get name() {
           return pkg.name;
@@ -325,9 +324,8 @@ export default class MacrosConfig {
       },
       owningPackageRoot,
 
-      isDevelopingPackageRoots: [...this.isDevelopingPackageRoots].map(root => this.moves.get(root) || root),
+      isDevelopingPackageRoots: [...this.isDevelopingPackageRoots],
 
-      // lazy so that packageMoved() can still affect this
       get appPackageRoot() {
         return self.appRoot;
       },
@@ -434,27 +432,16 @@ export default class MacrosConfig {
     return defaultMergerFor(pkgRoot);
   }
 
-  // this exists because @embroider/compat rewrites and moves v1 addons, and
-  // their macro configs need to follow them to their new homes.
-  packageMoved(oldPath: string, newPath: string) {
-    if (!this._configWritable) {
-      throw new Error(`[Embroider:MacrosConfig] attempted to call packageMoved after configs have been finalized`);
-    }
-
-    this.moves.set(oldPath, newPath);
-  }
-
-  private moves: Map<string, string> = new Map();
-
   private resolvePackage(fromPath: string, packageName?: string | undefined) {
     let us = this.packageCache.ownerOfFile(fromPath);
     if (!us) {
       throw new Error(`[Embroider:MacrosConfig] unable to determine which npm package owns the file ${fromPath}`);
     }
     if (packageName) {
-      return this.packageCache.resolve(packageName, us);
+      let target = this.packageCache.resolve(packageName, us);
+      return this.packageCache.original(target) || target;
     } else {
-      return us;
+      return this.packageCache.original(us) || us;
     }
   }
 

@@ -1,5 +1,6 @@
 import { install } from 'code-equality-assertions/qunit';
 import { AssertionAdapter, BoundExpectFile, ExpectFile } from '../file-assertions';
+import { getRewrittenLocation } from '../rewritten-path';
 
 class QUnitAdapter implements AssertionAdapter {
   constructor(private qassert: Assert) {
@@ -34,6 +35,26 @@ export function expectFilesAt(basePath: string, params: { qunit: Assert }): Expe
   Object.defineProperty(func, 'basePath', {
     get() {
       return basePath;
+    },
+  });
+  return func;
+}
+
+export function expectRewrittenFilesAt(
+  basePath: string,
+  params: { qunit: Assert }
+): ExpectFile & { toRewrittenPath: (s: string) => string } {
+  let func: any = (inputPath: string) => {
+    return new BoundExpectFile(basePath, getRewrittenLocation(basePath, inputPath), new QUnitAdapter(params.qunit));
+  };
+  Object.defineProperty(func, 'basePath', {
+    get() {
+      return basePath;
+    },
+  });
+  Object.defineProperty(func, 'toRewrittenPath', {
+    get() {
+      return (p: string) => getRewrittenLocation(basePath, p);
     },
   });
   return func;

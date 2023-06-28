@@ -162,4 +162,5 @@ export interface EngineSummary {
 
 export interface Engine extends EngineSummary {
   appFiles: AppFiles;
+  fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
 }

@@ -1,5 +1,5 @@
 import { satisfies } from 'semver';
-import type { PackageCache } from '@embroider/shared-internals';
+import type { RewrittenPackageCache } from '@embroider/shared-internals';
 
 export default function dependencySatisfies(
   node: any,
@@ -9,7 +9,7 @@ export default function dependencySatisfies(
   // unconfigured and moduleName will be the full path to the source file.
   baseDir: string | undefined,
   moduleName: string,
-  packageCache: PackageCache
+  packageCache: RewrittenPackageCache
 ) {
   if (node.params.length !== 2) {
     throw new Error(`macroDependencySatisfies requires two arguments, you passed ${node.params.length}`);

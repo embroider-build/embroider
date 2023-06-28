@@ -1,3 +1,5 @@
+import { readJSONSync } from 'fs-extra';
+
 export default function makePlugin(): any {
   // Dear future @rwjblue,
   //
@@ -9,3 +11,6 @@ export default function makePlugin(): any {
   // Contributor
   return {};
 }
+
+export const pluginPath = __filename;
+export const version = readJSONSync(`${__dirname}/../package.json`);

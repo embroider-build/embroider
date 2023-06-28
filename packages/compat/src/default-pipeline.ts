@@ -1,4 +1,4 @@
-import { App, Addons as CompatAddons, Options, PrebuiltAddons } from '.';
+import { App, Addons as CompatAddons, Options } from '.';
 import { toBroccoliPlugin, PackagerConstructor, Variant, EmberAppInstance } from '@embroider/core';
 import { tmpdir } from '@embroider/core';
 import { Node } from 'broccoli-node-api';
@@ -29,35 +29,24 @@ export default function defaultPipeline<PackagerOptions>(
   let outputPath: string;
   let addons;
 
-  if (process.env.REUSE_WORKSPACE) {
-    addons = new PrebuiltAddons(emberApp, options, process.env.REUSE_WORKSPACE);
-  } else {
-    if (process.env.SAVE_WORKSPACE) {
-      options.workspaceDir = process.env.SAVE_WORKSPACE;
-    } else {
-      options.workspaceDir = stableWorkspaceDir(emberApp.project.root, emberApp.env);
-    }
+  let embroiderApp = new App(emberApp, options);
 
-    emberApp.project.ui.write(`Building into ${options.workspaceDir}\n`);
-    addons = new CompatAddons(emberApp, options);
-    addons.ready().then(result => {
-      outputPath = result.outputPath;
-    });
-  }
+  addons = new CompatAddons(embroiderApp);
+  addons.ready().then(result => {
+    outputPath = result.outputPath;
+  });
 
   if (process.env.STAGE1_ONLY) {
     return mergeTrees([addons.tree, writeFile('.stage1-output', () => outputPath)]);
   }
 
-  let embroiderApp = new App(emberApp, addons, options);
-
   if (process.env.STAGE2_ONLY || !packager) {
-    return mergeTrees([embroiderApp.tree, writeFile('.stage2-output', () => outputPath)]);
+    return mergeTrees([embroiderApp.asStage(addons).tree, writeFile('.stage2-output', () => outputPath)]);
   }
 
   let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
-  return new BroccoliPackager(embroiderApp, variants, options && options.packagerOptions);
+  return new BroccoliPackager(embroiderApp.asStage(addons), variants, options && options.packagerOptions);
 }
 
 function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {

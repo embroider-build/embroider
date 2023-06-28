@@ -1,6 +1,5 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
-import { PackageCache } from '@embroider/shared-internals';
 import State, { initState } from './state';
 import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
@@ -17,8 +16,6 @@ export default function main(context: typeof Babel): unknown {
     Program: {
       enter(path: NodePath<t.Program>, state: State) {
         initState(t, path, state);
-
-        state.packageCache = PackageCache.shared('embroider-stage3', state.opts.appPackageRoot);
       },
       exit(_: NodePath<t.Program>, state: State) {
         // @embroider/macros itself has no runtime behaviors and should always be removed

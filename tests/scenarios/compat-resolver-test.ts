@@ -79,6 +79,7 @@ Scenarios.fromProject(() => new Project())
                 packageName: 'my-app',
                 root: app.dir,
                 activeAddons: [],
+                fastbootFiles: {},
               },
             ],
             modulePrefix: 'my-app',
@@ -110,7 +111,7 @@ Scenarios.fromProject(() => new Project())
             '_babel_filter.js': `
               module.exports = function(filename) { return true }
             `,
-            '.embroider/resolver.json': JSON.stringify(resolverOptions),
+            'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
           });
         };
       });

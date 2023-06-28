@@ -4,6 +4,7 @@ env:
   VOLTA_FEATURE_PNPM: 1
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 7 * * *' # daily, 7am
 

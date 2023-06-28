@@ -409,7 +409,7 @@ export class Evaluator {
     if (callee.referencesImport('@embroider/macros', 'isDevelopingThisPackage')) {
       return {
         confident: true,
-        value: this.state.opts.isDevelopingPackageRoots.includes(this.state.owningPackage().root),
+        value: this.state.opts.isDevelopingPackageRoots.includes(this.state.originalOwningPackage().root),
         hasRuntimeImplementation: false,
       };
     }

@@ -2,11 +2,15 @@ import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import { TransformOptions, transform } from '@babel/core';
 import { BoundExpectFile } from './file-assertions';
-import { AppMeta, hbsToJS } from '../../packages/core/src/index';
+import { AppMeta, hbsToJS, RewrittenPackageCache } from '../../packages/core/src/index';
 import { Memoize } from 'typescript-memoize';
+import { getRewrittenLocation } from './rewritten-path';
 
 export class Transpiler {
-  constructor(private outputPath: string) {
+  private appOutputPath: string;
+  constructor(private appDir: string) {
+    let packageCache = RewrittenPackageCache.shared('embroider', appDir);
+    this.appOutputPath = packageCache.maybeMoved(packageCache.get(appDir)).root;
     this.transpile = this.transpile.bind(this);
     this.shouldTranspile = this.shouldTranspile.bind(this);
   }
@@ -16,7 +20,7 @@ export class Transpiler {
       return transform(
         hbsToJS(contents, {
           filename: fileAssert.fullPath,
-          compatModuleNaming: { rootDir: this.outputPath, modulePrefix: this.pkgJSON.name },
+          compatModuleNaming: { rootDir: this.appOutputPath, modulePrefix: this.pkgJSON.name },
         }),
         Object.assign({ filename: fileAssert.fullPath }, this.babelConfig)
       )!.code!;
@@ -29,13 +33,13 @@ export class Transpiler {
 
   shouldTranspile(relativePath: string) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let shouldTranspile = require(join(this.outputPath, '_babel_filter_'));
-    return shouldTranspile(join(this.outputPath, relativePath)) as boolean;
+    let shouldTranspile = require(join(this.appOutputPath, '_babel_filter_'));
+    return shouldTranspile(join(this.appDir, getRewrittenLocation(this.appDir, relativePath))) as boolean;
   }
 
   @Memoize()
   private get pkgJSON() {
-    return readJSONSync(join(this.outputPath, 'package.json'));
+    return readJSONSync(join(this.appOutputPath, 'package.json'));
   }
 
   private get emberMeta(): AppMeta {
@@ -48,6 +52,6 @@ export class Transpiler {
       throw new Error(`@embroider/test-support only suports babel 7`);
     }
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require(join(this.outputPath, this.emberMeta['babel'].filename)) as TransformOptions;
+    return require(join(this.appOutputPath, this.emberMeta['babel'].filename)) as TransformOptions;
   }
 }

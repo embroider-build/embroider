@@ -3,9 +3,10 @@ import {
   emberVirtualPeerDeps,
   extensionsPattern,
   packageName as getPackageName,
+  packageName,
 } from '@embroider/shared-internals';
 import { dirname, resolve } from 'path';
-import { PackageCache, Package, V2Package, explicitRelative } from '@embroider/shared-internals';
+import { Package, V2Package, explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
@@ -18,8 +19,7 @@ import {
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
-import { existsSync, readFileSync } from 'fs';
-import { readJSONSync } from 'fs-extra';
+import { readFileSync } from 'fs';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -66,6 +66,7 @@ export interface Options {
 interface EngineConfig {
   packageName: string;
   activeAddons: { name: string; root: string }[];
+  fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
   root: string;
 }
 
@@ -154,11 +155,18 @@ export class Resolver {
       return logTransition('early exit', request);
     }
 
-    request = this.handleFastbootCompat(request);
+    request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
-    request = this.handleLegacyAddons(request);
     request = this.handleRenaming(request);
-    return this.preHandleExternal(request);
+    // we expect the specifier to be app relative at this point - must be after handleRenaming
+    request = this.generateFastbootSwitch(request);
+    request = this.preHandleExternal(request);
+
+    // this should probably stay the last step in beforeResolve, because it can
+    // rehome requests to their un-rewritten locations, and for the most part we
+    // want to be dealing with the rewritten packages.
+    request = this.handleRewrittenPackages(request);
+    return request;
   }
 
   // This encapsulates the whole resolving process. Given a `defaultResolve`
@@ -271,14 +279,18 @@ export class Resolver {
     }
   }
 
+  private get packageCache() {
+    return RewrittenPackageCache.shared('embroider', this.options.appRoot);
+  }
+
   owningPackage(fromFile: string): Package | undefined {
-    return PackageCache.shared('embroider-stage3', this.options.appRoot).ownerOfFile(fromFile);
+    return this.packageCache.ownerOfFile(fromFile);
   }
 
   private logicalPackage(owningPackage: V2Package, file: string): V2Package {
     let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
     if (logicalLocation) {
-      let pkg = PackageCache.shared('embroider-stage3', this.options.appRoot).get(logicalLocation.owningEngine.root);
+      let pkg = this.packageCache.get(logicalLocation.owningEngine.root);
       if (!pkg.isV2Ember()) {
         throw new Error(`bug: all engines should be v2 addons by the time we see them here`);
       }
@@ -287,7 +299,49 @@ export class Resolver {
     return owningPackage;
   }
 
-  private handleFastbootCompat<R extends ModuleRequest>(request: R): R {
+  private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
+    let pkg = this.owningPackage(request.fromFile);
+
+    if (!pkg) {
+      return request;
+    }
+
+    if (packageName(request.specifier)) {
+      // not a relative request, and we're assuming all within-engine requests
+      // are relative by this point due to `v1 self-import` which happens
+      // earlier
+      return request;
+    }
+
+    let engineConfig = this.engineConfig(pkg.name);
+    let appRelativePath = explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier));
+    if (engineConfig) {
+      for (let candidate of this.withResolvableExtensions(appRelativePath)) {
+        let fastbootFile = engineConfig.fastbootFiles[candidate];
+        if (fastbootFile) {
+          if (fastbootFile.shadowedFilename) {
+            let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {});
+            let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
+            if (switchFile === request.fromFile) {
+              return logTransition('internal lookup from fastbootSwitch', request);
+            } else {
+              return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
+            }
+          } else {
+            return logTransition(
+              'unshadowed app fastboot',
+              request,
+              request.alias(fastbootFile.localFilename).rehome(resolve(pkg.root, 'package.json'))
+            );
+          }
+        }
+      }
+    }
+
+    return request;
+  }
+
+  private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
     let match = decodeFastbootSwitch(request.fromFile);
     if (!match) {
       return request;
@@ -301,19 +355,46 @@ export class Resolver {
     }
 
     if (!section) {
-      return request;
+      return logTransition('non-special import in fastboot switch', request);
     }
 
     let pkg = this.owningPackage(match.filename);
     if (pkg) {
       let rel = explicitRelative(pkg.root, match.filename);
-      let entry = this.getEntryFromMergeMap(rel, pkg.root);
+
+      let engineConfig = this.engineConfig(pkg.name);
+      if (engineConfig) {
+        let fastbootFile = engineConfig.fastbootFiles[rel];
+        if (fastbootFile && fastbootFile.shadowedFilename) {
+          let targetFile: string;
+          if (section === 'app-js') {
+            targetFile = fastbootFile.shadowedFilename;
+          } else {
+            targetFile = fastbootFile.localFilename;
+          }
+          return logTransition(
+            'matched app entry',
+            request,
+            // deliberately not using rehome because we want
+            // generateFastbootSwitch to see that this request is coming *from*
+            // a fastboot switch so it won't cycle back around. Instead we make
+            // the targetFile relative to the fromFile that we already have.
+            request.alias(explicitRelative(dirname(request.fromFile), resolve(pkg.root, targetFile)))
+          );
+        }
+      }
+
+      let entry = this.getEntryFromMergeMap(rel, pkg.root)?.entry;
       if (entry?.type === 'both') {
-        return request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'));
+        return logTransition(
+          'matched addon entry',
+          request,
+          request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'))
+        );
       }
     }
 
-    return request;
+    return logTransition('failed to match in fastboot switch', request);
   }
 
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
@@ -481,12 +562,11 @@ export class Resolver {
   // out.
   @Memoize()
   private get mergeMap(): MergeMap {
-    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
     let result: MergeMap = new Map();
     for (let engine of this.options.engines) {
       let engineModules: Map<string, MergeEntry> = new Map();
       for (let addonConfig of engine.activeAddons) {
-        let addon = packageCache.get(addonConfig.root);
+        let addon = this.packageCache.get(addonConfig.root);
         if (!addon.isV2Addon()) {
           continue;
         }
@@ -585,10 +665,6 @@ export class Resolver {
   }
 
   owningEngine(pkg: Package) {
-    if (pkg.root === this.options.appRoot) {
-      // the app is always the first engine
-      return this.options.engines[0];
-    }
     let owningEngine = this.options.engines.find(e =>
       pkg.isEngine() ? e.root === pkg.root : e.activeAddons.find(a => a.root === pkg.root)
     );
@@ -600,66 +676,53 @@ export class Resolver {
     return owningEngine;
   }
 
-  private handleLegacyAddons<R extends ModuleRequest>(request: R): R {
-    let packageCache = PackageCache.shared('embroider-stage3', this.options.appRoot);
-
-    // first we handle output requests from moved packages
-    let pkg = this.owningPackage(request.fromFile);
-    if (!pkg) {
+  private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
+    let requestingPkg = this.owningPackage(request.fromFile);
+    if (!requestingPkg) {
       return request;
     }
-    let originalRoot = this.legacyAddonsIndex.v2toV1.get(pkg.root);
-    if (originalRoot) {
-      request = logTransition(
-        'outbound from moved v1 addon',
-        request,
-        request.rehome(resolve(originalRoot, 'package.json'))
-      );
-      pkg = packageCache.get(originalRoot)!;
+    let packageName = getPackageName(request.specifier);
+    if (!packageName) {
+      // relative request
+      return request;
     }
 
-    // then we handle inbound requests to moved packages
-    let packageName = getPackageName(request.specifier);
-    if (packageName && packageName !== pkg.name) {
+    let targetPkg: Package | undefined;
+    if (packageName !== requestingPkg.name) {
       // non-relative, non-self request, so check if it aims at a rewritten addon
       try {
-        let target = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, pkg);
-        if (target) {
-          let movedRoot = this.legacyAddonsIndex.v1ToV2.get(target.root);
-          if (movedRoot) {
-            request = logTransition(
-              'inbound to moved v1 addon',
-              request,
-              this.resolveWithinPackage(request, packageCache.get(movedRoot))
-            );
-          }
-        }
+        targetPkg = this.packageCache.resolve(packageName, requestingPkg);
       } catch (err) {
+        // this is not the place to report resolution failures. If the thing
+        // doesn't resolve, we're just not interested in redirecting it for
+        // backward-compat, that's all. The rest of the system will take care of
+        // reporting a failure to resolve (or handling it a different way)
         if (err.code !== 'MODULE_NOT_FOUND') {
           throw err;
         }
       }
     }
 
-    return request;
-  }
+    let originalRequestingPkg = this.packageCache.original(requestingPkg);
+    let originalTargetPkg = targetPkg ? this.packageCache.original(targetPkg) : undefined;
 
-  @Memoize()
-  private get legacyAddonsIndex(): { v1ToV2: Map<string, string>; v2toV1: Map<string, string> } {
-    let addonsDir = resolve(this.options.appRoot, 'node_modules', '.embroider', 'addons');
-    let indexFile = resolve(addonsDir, 'v1-addon-index.json');
-    if (existsSync(indexFile)) {
-      let { v1Addons } = readJSONSync(indexFile) as { v1Addons: Record<string, string> };
-      return {
-        v1ToV2: new Map(
-          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [oldRoot, resolve(addonsDir, relativeNewRoot)])
-        ),
-        v2toV1: new Map(
-          Object.entries(v1Addons).map(([oldRoot, relativeNewRoot]) => [resolve(addonsDir, relativeNewRoot), oldRoot])
-        ),
-      };
+    if (targetPkg && originalTargetPkg) {
+      // in this case it doesn't matter whether or not the requesting package
+      // was moved. RewrittenPackageCache.resolve already took care of finding
+      // the right target, and we redirect the request so it will look inside
+      // that target.
+      return logTransition('request targets a moved package', request, this.resolveWithinPackage(request, targetPkg));
+    } else if (originalRequestingPkg) {
+      // in this case, the requesting package is moved but its destination is
+      // not, so we need to rehome the request back to the original location.
+      return logTransition(
+        'outbound request from moved package',
+        request,
+        request.rehome(resolve(originalRequestingPkg.root, request.fromFile.slice(requestingPkg.root.length + 1)))
+      );
     }
-    return { v1ToV2: new Map(), v2toV1: new Map() };
+
+    return request;
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
@@ -782,7 +845,10 @@ export class Resolver {
       if (!this.options.activeAddons[packageName]) {
         throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
       }
-      let newHome = resolve(this.options.appRoot, 'package.json');
+      let newHome = resolve(
+        this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root,
+        'package.json'
+      );
       return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
     }
 
@@ -793,7 +859,7 @@ export class Resolver {
 
     if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
-        let dep = PackageCache.shared('embroider-stage3', this.options.appRoot).resolve(packageName, logicalPackage);
+        let dep = this.packageCache.resolve(packageName, logicalPackage);
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
@@ -842,7 +908,21 @@ export class Resolver {
     }
 
     let pkg = this.owningPackage(fromFile);
-    if (!pkg || !pkg.isV2Ember()) {
+    if (!pkg) {
+      return logTransition('no identifiable owningPackage', request);
+    }
+
+    // if we rehomed this request to its un-rewritten location in order to try
+    // to do the defaultResolve from there, now we refer back to the rewritten
+    // location because that's what we want to use when asking things like
+    // isV2Ember()
+    let movedPkg = this.packageCache.maybeMoved(pkg);
+    if (movedPkg !== pkg) {
+      fromFile = resolve(movedPkg.root, request.fromFile.slice(pkg.root.length + 1));
+      pkg = movedPkg;
+    }
+
+    if (!pkg.isV2Ember()) {
       return logTransition('fallbackResolve: not in an ember package', request);
     }
 
@@ -865,6 +945,27 @@ export class Resolver {
           return logTransition('fallbackResolve: relative appJs search failure', request);
         }
       } else {
+        if (pkg.meta['auto-upgraded'] && dirname(request.fromFile) === pkg.root) {
+          let otherRoot = this.options.activeAddons[pkg.name];
+          if (otherRoot && otherRoot !== pkg.root) {
+            // This provides some backward-compatibility with the way things
+            // would have resolved in earlier embroider versions, where the
+            // final fallback was always the activeAddons. These requests now
+            // end up getting converted to relative requests inside a particular
+            // moved package, which is why we need to handle them here.
+            //
+            // TODO: We shouldn't need this if we generate notional per-package
+            // entrypoints that pull in all the implicit-modules, so that the
+            // imports for implicit-modules happen in places with normal
+            // dependency resolvability.
+            return logTransition(
+              'fallbackResolve: relative path falling through to activeAddons',
+              request,
+              request.rehome(resolve(otherRoot, 'package.json'))
+            );
+          }
+        }
+
         // nothing else to do for relative imports
         return logTransition('fallbackResolve: relative failure', request);
       }
@@ -878,22 +979,11 @@ export class Resolver {
       return logTransition(
         `activeAddons`,
         request,
-        this.resolveWithinPackage(
-          request,
-          PackageCache.shared('embroider-stage3', this.options.appRoot).get(this.options.activeAddons[packageName])
-        )
+        this.resolveWithinPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
       );
     }
 
-    let targetingEngine = this.engineConfig(packageName);
-    if (targetingEngine) {
-      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
-      if (appJSMatch) {
-        return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
-      }
-    }
-
-    let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+    let logicalLocation = this.reverseSearchAppTree(pkg, fromFile);
     if (logicalLocation) {
       // the requesting file is in an addon's appTree. We didn't succeed in
       // resolving this (non-relative) request from inside the actual addon, so
@@ -904,6 +994,14 @@ export class Resolver {
         request,
         request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
       );
+    }
+
+    let targetingEngine = this.engineConfig(packageName);
+    if (targetingEngine) {
+      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
+      if (appJSMatch) {
+        return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
+      }
     }
 
     if (pkg.meta['auto-upgraded']) {
@@ -926,22 +1024,27 @@ export class Resolver {
     return logTransition('fallbackResolve final exit', request);
   }
 
-  private getEntryFromMergeMap(inEngineSpecifier: string, root: string): MergeEntry | undefined {
+  private getEntryFromMergeMap(
+    inEngineSpecifier: string,
+    root: string
+  ): { entry: MergeEntry; matched: string } | undefined {
     let entry: MergeEntry | undefined;
-
-    if (inEngineSpecifier.match(/\.(hbs|js|hbs\.js)$/)) {
-      entry = this.mergeMap.get(root)?.get(inEngineSpecifier);
-    } else {
-      // try looking up .hbs .js and .hbs.js in that order for specifiers without extenstions
-      ['.hbs', '.js', '.hbs.js'].forEach(ext => {
-        if (entry) {
-          return;
-        }
-
-        entry = this.mergeMap.get(root)?.get(`${inEngineSpecifier}${ext}`);
-      });
+    for (let candidate of this.withResolvableExtensions(inEngineSpecifier)) {
+      entry = this.mergeMap.get(root)?.get(candidate);
+      if (entry) {
+        return { entry, matched: candidate };
+      }
     }
-    return entry;
+  }
+
+  private *withResolvableExtensions(filename: string): Generator<string, void, void> {
+    if (filename.match(/\.(hbs|js|hbs\.js)$/)) {
+      yield filename;
+    } else {
+      for (let ext of ['.hbs', '.js', '.hbs.js']) {
+        yield `${filename}${ext}`;
+      }
+    }
   }
 
   private searchAppTree<R extends ModuleRequest>(
@@ -949,29 +1052,31 @@ export class Resolver {
     engine: EngineConfig,
     inEngineSpecifier: string
   ): R | undefined {
-    let entry = this.getEntryFromMergeMap(inEngineSpecifier, engine.root);
+    let matched = this.getEntryFromMergeMap(inEngineSpecifier, engine.root);
 
-    switch (entry?.type) {
+    switch (matched?.entry.type) {
       case undefined:
         return undefined;
       case 'app-only':
-        return request.alias(entry['app-js'].localPath).rehome(resolve(entry['app-js'].packageRoot, 'package.json'));
+        return request
+          .alias(matched.entry['app-js'].localPath)
+          .rehome(resolve(matched.entry['app-js'].packageRoot, 'package.json'));
       case 'fastboot-only':
         return request
-          .alias(entry['fastboot-js'].localPath)
-          .rehome(resolve(entry['fastboot-js'].packageRoot, 'package.json'));
+          .alias(matched.entry['fastboot-js'].localPath)
+          .rehome(resolve(matched.entry['fastboot-js'].packageRoot, 'package.json'));
       case 'both':
         let foundAppJS = this.nodeResolve(
-          entry['app-js'].localPath,
-          resolve(entry['app-js'].packageRoot, 'package.json')
+          matched.entry['app-js'].localPath,
+          resolve(matched.entry['app-js'].packageRoot, 'package.json')
         );
         if (foundAppJS.type !== 'real') {
           throw new Error(
-            `${entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
+            `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
           );
         }
         let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), {});
-        return request.virtualize(fastbootSwitch(request.specifier, request.fromFile, names));
+        return request.virtualize(fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names));
     }
   }
 

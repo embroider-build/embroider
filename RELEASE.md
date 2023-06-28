@@ -9,7 +9,7 @@
     - documentation
     - internal
 
-3. Once all the PRs are labeled, it will instead show you the release plain, explaining which packages are getting released, at which versions, and why.
+3. Once all the PRs are labeled, it will instead show you the release plan, explaining which packages are getting released, at which versions, and why.
 
 4. If you disagree with the plan, you can modify the list of changes before using it to `explain-plan` or `prepare` a release:
 

@@ -1,5 +1,41 @@
 # Embroider Changelog
 
+## Release (2023-06-28)
+
+@embroider/compat 3.1.0 (minor)
+@embroider/core 3.1.0 (minor)
+@embroider/macros 1.12.0 (minor)
+@embroider/router 2.1.2 (patch)
+@embroider/shared-internals 2.2.0 (minor)
+@embroider/webpack 3.1.0 (minor)
+
+#### :rocket: Enhancement
+* `compat`, `core`, `macros`, `shared-internals`, `webpack`
+  * [#1435](https://github.com/embroider-build/embroider/pull/1435) Eliminate node_modules rewriting ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1481](https://github.com/embroider-build/embroider/pull/1481) Properly serialize options ([@chancancode](https://github.com/chancancode))
+* `core`
+  * [#1365](https://github.com/embroider-build/embroider/pull/1365) Prevent HTML-escaping of module specifiers ([@simonihmig](https://github.com/simonihmig))
+
+#### :house: Internal
+* `compat`, `core`, `shared-internals`
+  * [#1482](https://github.com/embroider-build/embroider/pull/1482) Cleanup & refactor after 1435 ([@ef4](https://github.com/ef4))
+* Other
+  * [#1480](https://github.com/embroider-build/embroider/pull/1480) pinning "release" scenarios to ember-source 5.0 ([@ef4](https://github.com/ef4))
+  * [#1473](https://github.com/embroider-build/embroider/pull/1473) Bring back the addon watch tests, and use the rollup.watch JS API ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1477](https://github.com/embroider-build/embroider/pull/1477) Allow manual ci running ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1454](https://github.com/embroider-build/embroider/pull/1454) Refactor scenario helpers to a shared location ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `router`
+  * [#1476](https://github.com/embroider-build/embroider/pull/1476) Delete .DS_Store ([@wandroll](https://github.com/wandroll))
+
+#### Committers: 4
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- Wandrille Verlut ([@wandroll](https://github.com/wandroll))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-06-13)
 
 @embroider/compat 3.0.2 (patch)

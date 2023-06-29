@@ -2,6 +2,14 @@
 
 ## Release (2023-06-29)
 
+@embroider/compat 3.1.2 (patch)
+
+#### :bug: Bug Fix
+* `compat`
+  * Previous release was published incorrectly.
+
+## Release (2023-06-29)
+
 @embroider/compat 3.1.1 (patch)
 
 #### :bug: Bug Fix

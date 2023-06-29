@@ -1,6 +1,6 @@
 import PackageCache from './package-cache';
 import Package from './package';
-import { existsSync, readJSONSync, realpathSync } from 'fs-extra';
+import { ensureDirSync, existsSync, readJSONSync, realpathSync } from 'fs-extra';
 import { resolve } from 'path';
 import { getOrCreate } from './get-or-create';
 import { locateEmbroiderWorkingDir } from './working-dir';
@@ -142,6 +142,12 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
         extraResolutions: new Map(),
       };
     }
+
+    // this directory is a bit special because RewrittenPackageCache needs to
+    // exist before this dir has been produced. But the dir appears preemptively
+    // in our index, and we don't want that to blow up during the realpath
+    // below.
+    ensureDirSync(resolve(addonsDir, '..', 'rewritten-app'));
 
     let { packages, extraResolutions } = readJSONSync(indexFile) as RewrittenPackageIndex;
     return {

@@ -1,6 +1,6 @@
 import PackageCache from './package-cache';
 import Package from './package';
-import { existsSync, readJSONSync } from 'fs-extra';
+import { existsSync, readJSONSync, realpathSync } from 'fs-extra';
 import { resolve } from 'path';
 import { getOrCreate } from './get-or-create';
 import { locateEmbroiderWorkingDir } from './working-dir';
@@ -146,10 +146,16 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
     let { packages, extraResolutions } = readJSONSync(indexFile) as RewrittenPackageIndex;
     return {
       oldToNew: new Map(
-        Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, oldRoot), resolve(addonsDir, newRoot)])
+        Object.entries(packages).map(([oldRoot, newRoot]) => [
+          realpathSync(resolve(addonsDir, oldRoot)),
+          realpathSync(resolve(addonsDir, newRoot)),
+        ])
       ),
       newToOld: new Map(
-        Object.entries(packages).map(([oldRoot, newRoot]) => [resolve(addonsDir, newRoot), resolve(addonsDir, oldRoot)])
+        Object.entries(packages).map(([oldRoot, newRoot]) => [
+          realpathSync(resolve(addonsDir, newRoot)),
+          realpathSync(resolve(addonsDir, oldRoot)),
+        ])
       ),
       extraResolutions: new Map(
         Object.entries(extraResolutions).map(([fromRoot, toRoots]) => [

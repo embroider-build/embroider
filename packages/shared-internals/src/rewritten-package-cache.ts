@@ -232,28 +232,28 @@ class WrappedPackage implements PackageTheGoodParts {
     return this.plainPkg.meta;
   }
 
-  get isEmberPackage() {
-    return this.plainPkg.isEmberPackage;
+  isEmberPackage() {
+    return this.plainPkg.isEmberPackage();
   }
 
   isEngine() {
     return this.plainPkg.isEngine();
   }
 
-  get isLazyEngine() {
-    return this.plainPkg.isLazyEngine;
+  isLazyEngine() {
+    return this.plainPkg.isLazyEngine();
   }
 
-  get isV2Ember() {
-    return this.plainPkg.isV2Ember;
+  isV2Ember() {
+    return this.plainPkg.isV2Ember();
   }
 
-  get isV2App() {
-    return this.plainPkg.isV2App;
+  isV2App() {
+    return this.plainPkg.isV2App();
   }
 
-  get isV2Addon() {
-    return this.plainPkg.isV2Addon;
+  isV2Addon() {
+    return this.plainPkg.isV2Addon();
   }
 
   // it's important that we're calling this.dependencies here at this level, not

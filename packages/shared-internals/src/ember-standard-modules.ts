@@ -37,6 +37,11 @@ emberVirtualPackages.add('@embroider/macros');
 // the modules-api-polyfill. Newer APIs need to be added here.
 emberVirtualPackages.add('@ember/owner');
 
+// these are not public API but they're included in ember-source, so for
+// correctness we still want to understand that they come from there.
+emberVirtualPackages.add('@glimmer/validator');
+emberVirtualPackages.add('@glimmer/manager');
+
 // These are the known names that people use to import template precomiplation
 // macros from.
 export const templateCompilationModules = Object.freeze([

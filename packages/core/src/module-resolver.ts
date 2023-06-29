@@ -829,6 +829,10 @@ export class Resolver {
       return external('beforeResolve', request, specifier);
     }
 
+    if (emberVirtualPackages.has(packageName) && !pkg.hasDependency(packageName)) {
+      return external('beforeResolve emberVirtualPackages', request, specifier);
+    }
+
     if (!pkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
       // Native v2 addons are allowed to use the emberVirtualPeerDeps like
       // `@glimmer/component`. And like all v2 addons, it's important that they

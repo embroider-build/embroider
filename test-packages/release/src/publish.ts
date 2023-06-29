@@ -2,6 +2,7 @@ import execa from 'execa';
 import { loadSolution, Solution } from './plan';
 import { Octokit } from '@octokit/rest';
 import { absoluteDirname } from './utils';
+import latestVersion from 'latest-version';
 
 async function hasCleanRepo(): Promise<boolean> {
   let result = await execa('git', ['status', '--porcelain=v1'], { cwd: __dirname });
@@ -117,11 +118,29 @@ async function createGithubRelease(
   }
 }
 
+async function doesVersionExist(pkgName: string, version: string) {
+  let latest = await latestVersion(pkgName, { version });
+
+  if (latest) {
+    return true;
+  }
+
+  return false;
+}
+
 async function pnpmPublish(solution: Solution, reporter: IssueReporter): Promise<void> {
   for (let [pkgName, entry] of solution) {
     if (!entry.impact) {
       continue;
     }
+
+    let preExisting = await doesVersionExist(pkgName, entry.newVersion);
+
+    if (preExisting) {
+      reporter.reportInfo(`${pkgName} has already been publish @ version ${entry.newVersion}`);
+      return;
+    }
+
     try {
       await execa('pnpm', ['publish', '--access=public'], {
         cwd: absoluteDirname(entry.pkgJSONPath),

@@ -10,103 +10,31 @@
       "oldVersion": "3.0.0"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "3.0.2",
-      "newVersion": "3.1.0",
+      "impact": "patch",
+      "oldVersion": "3.1.0",
+      "newVersion": "3.1.1",
       "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/compat/package.json"
+      "pkgJSONPath": "/Users/mansona/git/opensource/ember/embroider/packages/compat/package.json"
     },
     "@embroider/core": {
-      "impact": "minor",
-      "oldVersion": "3.0.2",
-      "newVersion": "3.1.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/core/package.json"
+      "oldVersion": "3.1.0"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.0"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.11.1",
-      "newVersion": "1.12.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/macros/package.json"
+      "oldVersion": "1.12.0"
     },
     "@embroider/router": {
-      "impact": "patch",
-      "oldVersion": "2.1.1",
-      "newVersion": "2.1.2",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/router/package.json"
+      "oldVersion": "2.1.2"
     },
     "@embroider/shared-internals": {
-      "impact": "minor",
-      "oldVersion": "2.1.0",
-      "newVersion": "2.2.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/shared-internals/package.json"
+      "oldVersion": "2.2.0"
     },
     "@embroider/test-setup": {
       "oldVersion": "3.0.1"
@@ -115,21 +43,8 @@
       "oldVersion": "1.11.1"
     },
     "@embroider/webpack": {
-      "impact": "minor",
-      "oldVersion": "3.0.0",
-      "newVersion": "3.1.0",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/webpack/package.json"
+      "oldVersion": "3.1.0"
     }
   },
-  "description": "## Release (2023-06-28)\n\n@embroider/compat 3.1.0 (minor)\n@embroider/core 3.1.0 (minor)\n@embroider/macros 1.12.0 (minor)\n@embroider/router 2.1.2 (patch)\n@embroider/shared-internals 2.2.0 (minor)\n@embroider/webpack 3.1.0 (minor)\n\n#### :rocket: Enhancement\n* `compat`, `core`, `macros`, `shared-internals`, `webpack`\n  * [#1435](https://github.com/embroider-build/embroider/pull/1435) Eliminate node_modules rewriting ([@ef4](https://github.com/ef4))\n\n#### :bug: Bug Fix\n* `compat`\n  * [#1481](https://github.com/embroider-build/embroider/pull/1481) Properly serialize options ([@chancancode](https://github.com/chancancode))\n* `core`\n  * [#1365](https://github.com/embroider-build/embroider/pull/1365) Prevent HTML-escaping of module specifiers ([@simonihmig](https://github.com/simonihmig))\n\n#### :house: Internal\n* `compat`, `core`, `shared-internals`\n  * [#1482](https://github.com/embroider-build/embroider/pull/1482) Cleanup & refactor after 1435 ([@ef4](https://github.com/ef4))\n* Other\n  * [#1480](https://github.com/embroider-build/embroider/pull/1480) pinning \"release\" scenarios to ember-source 5.0 ([@ef4](https://github.com/ef4))\n  * [#1473](https://github.com/embroider-build/embroider/pull/1473) Bring back the addon watch tests, and use the rollup.watch JS API ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1477](https://github.com/embroider-build/embroider/pull/1477) Allow manual ci running ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#1454](https://github.com/embroider-build/embroider/pull/1454) Refactor scenario helpers to a shared location ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `router`\n  * [#1476](https://github.com/embroider-build/embroider/pull/1476) Delete .DS_Store ([@wandroll](https://github.com/wandroll))\n\n#### Committers: 4\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n- Wandrille Verlut ([@wandroll](https://github.com/wandroll))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2023-06-29)\n\n@embroider/compat 3.1.1 (patch)\n\n#### :bug: Bug Fix\n* `compat`\n  * [#1488](https://github.com/embroider-build/embroider/pull/1488) fix this.import from node_modules in v1 addons ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

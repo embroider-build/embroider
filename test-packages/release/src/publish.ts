@@ -76,6 +76,21 @@ function chooseRepresentativeTag(solution: Solution): string {
   process.exit(-1);
 }
 
+async function doesReleaseExist(octokit: Octokit, tagName: string, reporter: IssueReporter) {
+  try {
+    let response = await octokit.repos.getReleaseByTag({
+      owner: 'embroider-build',
+      repo: 'embroider',
+      tag: tagName,
+    });
+
+    return response.status === 200;
+  } catch (err) {
+    console.error(err);
+    reporter.reportFailure(`Problem while checking for existing GitHub release`);
+  }
+}
+
 async function createGithubRelease(
   octokit: Octokit,
   description: string,
@@ -83,6 +98,13 @@ async function createGithubRelease(
   reporter: IssueReporter
 ): Promise<void> {
   try {
+    let preExisting = await doesReleaseExist(octokit, tagName, reporter);
+
+    if (preExisting) {
+      reporter.reportInfo(`A release with the name '${tagName}' already exists`);
+      return;
+    }
+
     await octokit.repos.createRelease({
       owner: 'embroider-build',
       repo: 'embroider',

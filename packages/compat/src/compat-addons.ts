@@ -49,10 +49,7 @@ export default class CompatAddons implements Stage {
     if (!this.treeSync) {
       this.treeSync = new TreeSync(
         addons,
-        resolve(locateEmbroiderWorkingDir(this.compatApp.root), 'rewritten-packages'),
-        {
-          ignore: ['**/node_modules'],
-        }
+        resolve(locateEmbroiderWorkingDir(this.compatApp.root), 'rewritten-packages')
       );
     }
 

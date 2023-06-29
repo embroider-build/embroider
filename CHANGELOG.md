@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2023-06-29)
+
+@embroider/compat 3.1.1 (patch)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1488](https://github.com/embroider-build/embroider/pull/1488) fix this.import from node_modules in v1 addons ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2023-06-28)
 
 @embroider/compat 3.1.0 (minor)

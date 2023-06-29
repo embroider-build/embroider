@@ -11,15 +11,15 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.1.0",
-      "newVersion": "3.1.1",
+      "oldVersion": "3.1.1",
+      "newVersion": "3.1.2",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "/Users/mansona/git/opensource/ember/embroider/packages/compat/package.json"
+      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/compat/package.json"
     },
     "@embroider/core": {
       "oldVersion": "3.1.0"
@@ -46,5 +46,5 @@
       "oldVersion": "3.1.0"
     }
   },
-  "description": "## Release (2023-06-29)\n\n@embroider/compat 3.1.1 (patch)\n\n#### :bug: Bug Fix\n* `compat`\n  * [#1488](https://github.com/embroider-build/embroider/pull/1488) fix this.import from node_modules in v1 addons ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2023-06-29)\n\n@embroider/compat 3.1.2 (patch)\n\n#### :bug: Bug Fix\n* `compat`\n  * Previous release was published incorrectly.\n"
 }

@@ -18,6 +18,17 @@ class IssueReporter {
     this.hadIssues = true;
     process.stderr.write(message);
   }
+  reportInfo(message: string): void {
+    process.stdout.write(`ℹ️ ${message}`);
+  }
+}
+
+async function doesTagExist(tag: string, cwd: string) {
+  let { stdout } = await execa('git', ['ls-remote', '--tags', 'origin', '-l', tag], {
+    cwd,
+  });
+
+  return stdout.trim() !== '';
 }
 
 async function makeTags(solution: Solution, reporter: IssueReporter): Promise<void> {
@@ -26,8 +37,18 @@ async function makeTags(solution: Solution, reporter: IssueReporter): Promise<vo
       continue;
     }
     try {
-      await execa('git', ['tag', tagFor(pkgName, entry)], {
-        cwd: absoluteDirname(entry.pkgJSONPath),
+      let tag = tagFor(pkgName, entry);
+      let cwd = absoluteDirname(entry.pkgJSONPath);
+
+      let preExisting = await doesTagExist(tag, cwd);
+
+      if (preExisting) {
+        reporter.reportInfo(`The tag, ${tag}, has already been pushed up for ${pkgName}`);
+        return;
+      }
+
+      await execa('git', ['tag', tag], {
+        cwd,
         stderr: 'inherit',
         stdout: 'inherit',
       });

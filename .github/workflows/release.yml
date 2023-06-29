@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/setup
+
+      - name: "Generate Explanation and Prep Changelogs"
+        id: explanation
+        run: |
+          # Print each command out to the terminal before running
+          set -x
+          # For an unknown reason the `pnpm embroider-release` bin is not
+          # wired up as it is locally.
+          plan=$(node ./test-packages/release/src/cli.js explain-plan)
+          node ./test-packages/release/src/cli.js publish --ci
+        env:
+          GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

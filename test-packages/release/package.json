@@ -19,7 +19,7 @@
     "fs-extra": "^10.0.0",
     "globby": "^11.0.3",
     "js-yaml": "^4.1.0",
-    "latest-release": "^1.0.2",
+    "latest-version": "^5.0.0",
     "semver": "^7.3.5",
     "yargs": "^17.0.1"
   },

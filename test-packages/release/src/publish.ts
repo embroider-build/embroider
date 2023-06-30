@@ -20,7 +20,7 @@ class IssueReporter {
     process.stderr.write(message);
   }
   reportInfo(message: string): void {
-    process.stdout.write(`ℹ️ ${message}`);
+    process.stdout.write(`\n ℹ️  ${message}`);
   }
 }
 
@@ -32,7 +32,7 @@ async function doesTagExist(tag: string, cwd: string) {
   return stdout.trim() !== '';
 }
 
-async function makeTags(solution: Solution, reporter: IssueReporter): Promise<void> {
+async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boolean): Promise<void> {
   for (let [pkgName, entry] of solution) {
     if (!entry.impact) {
       continue;
@@ -48,6 +48,11 @@ async function makeTags(solution: Solution, reporter: IssueReporter): Promise<vo
         return;
       }
 
+      if (dryRun) {
+        reporter.reportInfo(`--dry-run active. Skipping \`git tag ${tag}\``);
+        return;
+      }
+
       await execa('git', ['tag', tag], {
         cwd,
         stderr: 'inherit',
@@ -59,7 +64,12 @@ async function makeTags(solution: Solution, reporter: IssueReporter): Promise<vo
   }
 }
 
-async function push(reporter: IssueReporter) {
+async function push(reporter: IssueReporter, dryRun: boolean) {
+  if (dryRun) {
+    reporter.reportInfo(`--dry-run active. Skipping \`git push --tags\``);
+    return;
+  }
+
   try {
     await execa('git', ['push', '--tags'], { cwd: __dirname });
   } catch (err) {
@@ -96,13 +106,19 @@ async function createGithubRelease(
   octokit: Octokit,
   description: string,
   tagName: string,
-  reporter: IssueReporter
+  reporter: IssueReporter,
+  dryRun: boolean
 ): Promise<void> {
   try {
     let preExisting = await doesReleaseExist(octokit, tagName, reporter);
 
     if (preExisting) {
       reporter.reportInfo(`A release with the name '${tagName}' already exists`);
+      return;
+    }
+
+    if (dryRun) {
+      reporter.reportInfo(`--dry-run active. Skipping creating a Release on GitHub for ${tagName}`);
       return;
     }
 
@@ -119,16 +135,16 @@ async function createGithubRelease(
 }
 
 async function doesVersionExist(pkgName: string, version: string) {
-  let latest = await latestVersion(pkgName, { version });
-
-  if (latest) {
-    return true;
+  try {
+    let latest = await latestVersion(pkgName, { version });
+    return Boolean(latest);
+  } catch (err) {
+    console.info(err);
+    return false;
   }
-
-  return false;
 }
 
-async function pnpmPublish(solution: Solution, reporter: IssueReporter): Promise<void> {
+async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: boolean): Promise<void> {
   for (let [pkgName, entry] of solution) {
     if (!entry.impact) {
       continue;
@@ -138,6 +154,13 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter): Promise
 
     if (preExisting) {
       reporter.reportInfo(`${pkgName} has already been publish @ version ${entry.newVersion}`);
+      return;
+    }
+
+    if (dryRun) {
+      reporter.reportInfo(
+        `--dry-run active. Skipping \`pnpm publish --access=public\` for ${pkgName}, which would publish version ${entry.newVersion}`
+      );
       return;
     }
 
@@ -153,7 +176,9 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter): Promise
   }
 }
 
-export async function publish(opts: { skipRepoSafetyCheck?: boolean }) {
+export async function publish(opts: { skipRepoSafetyCheck?: boolean; dryRun?: boolean }) {
+  let dryRun = opts.dryRun ?? false;
+
   if (!opts.skipRepoSafetyCheck) {
     if (!(await hasCleanRepo())) {
       process.stderr.write(`You have uncommitted changes.
@@ -166,9 +191,10 @@ To publish a release you should start from a clean repo. Run "embroider-release 
   let { solution, description } = loadSolution();
 
   if (!process.env.GITHUB_AUTH) {
-    process.stderr.write(`You need to set GITHUB_AUTH.`);
+    process.stderr.write(`\nYou need to set GITHUB_AUTH.`);
     process.exit(-1);
   }
+
   let octokit = new Octokit({ auth: process.env.GITHUB_AUTH });
 
   let representativeTag = chooseRepresentativeTag(solution);
@@ -178,10 +204,10 @@ To publish a release you should start from a clean repo. Run "embroider-release 
   // the end.
   let reporter = new IssueReporter();
 
-  await makeTags(solution, reporter);
-  await push(reporter);
-  await createGithubRelease(octokit, description, representativeTag, reporter);
-  await pnpmPublish(solution, reporter);
+  await makeTags(solution, reporter, dryRun);
+  await push(reporter, dryRun);
+  await createGithubRelease(octokit, description, representativeTag, reporter, dryRun);
+  await pnpmPublish(solution, reporter, dryRun);
 
   if (reporter.hadIssues) {
     process.stderr.write(`\nSome parts of the release were unsuccessful.\n`);

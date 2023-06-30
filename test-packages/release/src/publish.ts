@@ -1,7 +1,7 @@
 import execa from 'execa';
 import { loadSolution, Solution } from './plan';
-import { dirname } from 'path';
 import { Octokit } from '@octokit/rest';
+import { absoluteDirname } from './utils';
 
 async function hasCleanRepo(): Promise<boolean> {
   let result = await execa('git', ['status', '--porcelain=v1'], { cwd: __dirname });
@@ -27,7 +27,7 @@ async function makeTags(solution: Solution, reporter: IssueReporter): Promise<vo
     }
     try {
       await execa('git', ['tag', tagFor(pkgName, entry)], {
-        cwd: dirname(entry.pkgJSONPath),
+        cwd: absoluteDirname(entry.pkgJSONPath),
         stderr: 'inherit',
         stdout: 'inherit',
       });
@@ -81,7 +81,7 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter): Promise
     }
     try {
       await execa('pnpm', ['publish', '--access=public'], {
-        cwd: dirname(entry.pkgJSONPath),
+        cwd: absoluteDirname(entry.pkgJSONPath),
         stderr: 'inherit',
         stdout: 'inherit',
       });

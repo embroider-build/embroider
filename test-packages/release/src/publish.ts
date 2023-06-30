@@ -13,21 +13,24 @@ function tagFor(pkgName: string, entry: { newVersion: string }): string {
   return `v${entry.newVersion}-${pkgName.replace(/^@embroider\//, '')}`;
 }
 
+function info(message: string) {
+  process.stdout.write(`\n ℹ️  ${message}`);
+}
+
+function success(message: string) {
+  process.stdout.write(`\n 🎉 ${message} 🎉\n`);
+}
+
 class IssueReporter {
   hadIssues = false;
   reportFailure(message: string): void {
     this.hadIssues = true;
     process.stderr.write(message);
   }
-  reportInfo(message: string): void {
-    process.stdout.write(`\n ℹ️  ${message}`);
-  }
 }
 
-async function doesTagExist(tag: string, cwd: string) {
-  let { stdout } = await execa('git', ['ls-remote', '--tags', 'origin', '-l', tag], {
-    cwd,
-  });
+async function doesTagExist(tag: string) {
+  let { stdout } = await execa('git', ['ls-remote', '--tags', 'origin', '-l', tag]);
 
   return stdout.trim() !== '';
 }
@@ -41,17 +44,19 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
       let tag = tagFor(pkgName, entry);
       let cwd = absoluteDirname(entry.pkgJSONPath);
 
-      let preExisting = await doesTagExist(tag, cwd);
+      let preExisting = await doesTagExist(tag);
 
       if (preExisting) {
-        reporter.reportInfo(`The tag, ${tag}, has already been pushed up for ${pkgName}`);
+        info(`The tag, ${tag}, has already been pushed up for ${pkgName}`);
         return;
       }
 
+      console.log({ dryRun });
       if (dryRun) {
-        reporter.reportInfo(`--dry-run active. Skipping \`git tag ${tag}\``);
+        info(`--dry-run active. Skipping \`git tag ${tag}\``);
         return;
       }
+      console.log({ dryRun });
 
       await execa('git', ['tag', tag], {
         cwd,
@@ -59,6 +64,7 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
         stdout: 'inherit',
       });
     } catch (err) {
+      console.log(err);
       reporter.reportFailure(`Failed to create tag for ${pkgName}`);
     }
   }
@@ -66,7 +72,7 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
 
 async function push(reporter: IssueReporter, dryRun: boolean) {
   if (dryRun) {
-    reporter.reportInfo(`--dry-run active. Skipping \`git push --tags\``);
+    info(`--dry-run active. Skipping \`git push --tags\``);
     return;
   }
 
@@ -113,12 +119,12 @@ async function createGithubRelease(
     let preExisting = await doesReleaseExist(octokit, tagName, reporter);
 
     if (preExisting) {
-      reporter.reportInfo(`A release with the name '${tagName}' already exists`);
+      info(`A release with the name '${tagName}' already exists`);
       return;
     }
 
     if (dryRun) {
-      reporter.reportInfo(`--dry-run active. Skipping creating a Release on GitHub for ${tagName}`);
+      info(`--dry-run active. Skipping creating a Release on GitHub for ${tagName}`);
       return;
     }
 
@@ -153,12 +159,12 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: 
     let preExisting = await doesVersionExist(pkgName, entry.newVersion);
 
     if (preExisting) {
-      reporter.reportInfo(`${pkgName} has already been publish @ version ${entry.newVersion}`);
+      info(`${pkgName} has already been publish @ version ${entry.newVersion}`);
       return;
     }
 
     if (dryRun) {
-      reporter.reportInfo(
+      info(
         `--dry-run active. Skipping \`pnpm publish --access=public\` for ${pkgName}, which would publish version ${entry.newVersion}`
       );
       return;
@@ -213,6 +219,11 @@ To publish a release you should start from a clean repo. Run "embroider-release 
     process.stderr.write(`\nSome parts of the release were unsuccessful.\n`);
     process.exit(-1);
   } else {
-    process.stdout.write(`\nSuccessfully published release\n`);
+    if (dryRun) {
+      success(`--dryrun active. Would have successfully published release!`);
+      return;
+    }
+
+    success(`Successfully published release`);
   }
 }

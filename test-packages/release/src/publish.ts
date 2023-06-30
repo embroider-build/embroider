@@ -51,12 +51,10 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
         return;
       }
 
-      console.log({ dryRun });
       if (dryRun) {
         info(`--dry-run active. Skipping \`git tag ${tag}\``);
         return;
       }
-      console.log({ dryRun });
 
       await execa('git', ['tag', tag], {
         cwd,
@@ -64,7 +62,7 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
         stdout: 'inherit',
       });
     } catch (err) {
-      console.log(err);
+      console.error(err);
       reporter.reportFailure(`Failed to create tag for ${pkgName}`);
     }
   }

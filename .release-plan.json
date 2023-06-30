@@ -11,30 +11,69 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.1.1",
-      "newVersion": "3.1.2",
+      "oldVersion": "3.1.2",
+      "newVersion": "3.1.3",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "/Users/edward/hacking/embroider/packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.1.0"
+      "impact": "patch",
+      "oldVersion": "3.1.0",
+      "newVersion": "3.1.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.0"
     },
     "@embroider/macros": {
-      "oldVersion": "1.12.0"
+      "impact": "patch",
+      "oldVersion": "1.12.0",
+      "newVersion": "1.12.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/macros/package.json"
     },
     "@embroider/router": {
       "oldVersion": "2.1.2"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.2.0"
+      "impact": "patch",
+      "oldVersion": "2.2.0",
+      "newVersion": "2.2.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "3.0.1"
@@ -43,8 +82,17 @@
       "oldVersion": "1.11.1"
     },
     "@embroider/webpack": {
-      "oldVersion": "3.1.0"
+      "impact": "patch",
+      "oldVersion": "3.1.0",
+      "newVersion": "3.1.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "/Users/edward/hacking/embroider/packages/webpack/package.json"
     }
   },
-  "description": "## Release (2023-06-29)\n\n@embroider/compat 3.1.2 (patch)\n\n#### :bug: Bug Fix\n* `compat`\n  * Previous release was published incorrectly.\n"
+  "description": "## Release (2023-06-30)\n\n@embroider/compat 3.1.3 (patch)\n@embroider/core 3.1.1 (patch)\n@embroider/macros 1.12.1 (patch)\n@embroider/shared-internals 2.2.1 (patch)\n@embroider/webpack 3.1.1 (patch)\n\n#### :bug: Bug Fix\n* `core`, `shared-internals`\n  * [#1495](https://github.com/embroider-build/embroider/pull/1495) Eagerly virtualize emberVirtualPackages ([@ef4](https://github.com/ef4))\n* `shared-internals`\n  * [#1493](https://github.com/embroider-build/embroider/pull/1493) Fix rewritten-package-cache when app has symlink to node_modules ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* Other\n  * [#1496](https://github.com/embroider-build/embroider/pull/1496) Unskip some core-resolver tests ([@ef4](https://github.com/ef4))\n* `shared-internals`\n  * [#1494](https://github.com/embroider-build/embroider/pull/1494) Make proxied rewritten-package-cache methods clearer ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

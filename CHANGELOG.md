@@ -1,5 +1,28 @@
 # Embroider Changelog
 
+## Release (2023-06-30)
+
+@embroider/compat 3.1.3 (patch)
+@embroider/core 3.1.1 (patch)
+@embroider/macros 1.12.1 (patch)
+@embroider/shared-internals 2.2.1 (patch)
+@embroider/webpack 3.1.1 (patch)
+
+#### :bug: Bug Fix
+* `core`, `shared-internals`
+  * [#1495](https://github.com/embroider-build/embroider/pull/1495) Eagerly virtualize emberVirtualPackages ([@ef4](https://github.com/ef4))
+* `shared-internals`
+  * [#1493](https://github.com/embroider-build/embroider/pull/1493) Fix rewritten-package-cache when app has symlink to node_modules ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* Other
+  * [#1496](https://github.com/embroider-build/embroider/pull/1496) Unskip some core-resolver tests ([@ef4](https://github.com/ef4))
+* `shared-internals`
+  * [#1494](https://github.com/embroider-build/embroider/pull/1494) Make proxied rewritten-package-cache methods clearer ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2023-06-29)
 
 @embroider/compat 3.1.2 (patch)

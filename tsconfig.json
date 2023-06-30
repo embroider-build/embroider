@@ -7,7 +7,7 @@
     "./tests/scenarios/**/*.ts"
   ],
   "compilerOptions": {
-    "target": "es2019",
+    "target": "es2021",
     "module": "commonjs",
     "declaration": true,
     "typeRoots": ["types", "node_modules/@types"],
@@ -20,7 +20,7 @@
     "allowUnreachableCode": false,
     "strict": true,
     "skipLibCheck": true,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
   },
   "exclude": [
     "node_modules",

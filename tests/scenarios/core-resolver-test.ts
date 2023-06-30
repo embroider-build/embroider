@@ -1,6 +1,6 @@
 import { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
-import { outputFileSync } from 'fs-extra';
-import { resolve } from 'path';
+import { outputFileSync, readJsonSync, writeJSONSync } from 'fs-extra';
+import { resolve, sep } from 'path';
 import QUnit from 'qunit';
 import { PreparedApp, Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
@@ -551,6 +551,27 @@ Scenarios.fromProject(() => new Project())
             .module('./node_modules/my-addon/_app_/hello-world.js')
             .resolves('my-app/secondary')
             .to('./secondary.js');
+        });
+
+        test(`known ember-source-provided virtual packages are externalized even when accidentally resolvable`, async function () {
+          givenFiles({
+            'node_modules/rsvp/index.js': `export {}`,
+            'app.js': `import "rsvp"`,
+          });
+          await configure({});
+          expectAudit.module('./app.js').resolves('rsvp').to(resolve('/@embroider/external/rsvp').replaceAll(sep, '/'));
+        });
+
+        test(`known ember-source-provided virtual packages are not externalized when explicitly included in deps`, async function () {
+          let pkg = readJsonSync(resolve(app.dir, 'package.json'));
+          pkg.dependencies['rsvp'] = '*';
+          writeJSONSync(resolve(app.dir, 'package.json'), pkg);
+          givenFiles({
+            'node_modules/rsvp/index.js': '',
+            'app.js': `import "rsvp"`,
+          });
+          await configure({});
+          expectAudit.module('./app.js').resolves('rsvp').to('./node_modules/rsvp/index.js');
         });
 
         test(`resolves addon fastboot-js`, async function () {

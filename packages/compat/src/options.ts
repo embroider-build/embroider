@@ -43,6 +43,18 @@ export default interface Options extends CoreOptions {
   // apply.
   staticAddonTestSupportTrees?: boolean;
 
+  // Controls whether your addon's "addonServices" trees should be resolved
+  // statically at build time.
+  //
+  //   false (the default): implies maximum backward compatibility at the cost
+  //   of bigger builds. All services files will be forced into your Ember
+  //   app, which is the legacy behavior.
+  //
+  //   true: produces smaller builds. Only files that are explicitly referenced
+  //   will end up in your app.
+  //
+  staticAddonServices?: boolean;
+
   // Allows you to override how specific addons will build. Like:
   //
   //   import V1Addon from '@embroider/compat'; let compatAdapters = new Map();
@@ -89,6 +101,7 @@ export default interface Options extends CoreOptions {
 const defaults = Object.assign(coreWithDefaults(), {
   staticAddonTrees: false,
   staticAddonTestSupportTrees: false,
+  staticAddonServices: false,
   compatAdapters: new Map(),
   extraPublicTrees: [],
   workspaceDir: null,

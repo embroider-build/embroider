@@ -733,16 +733,32 @@ export default class V1Addon {
       templateExtensions: ['.hbs', '.hbs.js'],
     });
     if (this.addonOptions.staticAddonTrees) {
+      // for any addon we need to still need to register services so DI works as expected
       if (this.isEngine()) {
         // even when staticAddonTrees is enabled, engines may have a router map
         // that needs to be dynamically resolved.
         let hasRoutesModule = false;
-
+        let serviceFileNames: string[] = [];
         tree = new ObserveTree(tree, outputDir => {
           hasRoutesModule = existsSync(resolve(outputDir, 'routes.js'));
+          if (!this.addonOptions.staticAddonServices) {
+            serviceFileNames = walkSync(outputDir, { globs: ['**/services/*.js'] }).map(
+              f => `./${f.replace(/\.js$/i, '')}`
+            );
+          }
         });
         built.dynamicMeta.push(() => ({
-          'implicit-modules': hasRoutesModule ? ['./routes.js'] : [],
+          'implicit-modules': hasRoutesModule ? serviceFileNames.concat(['./routes.js']) : serviceFileNames,
+        }));
+      } else if (!this.addonOptions.staticAddonServices) {
+        let serviceFileNames: string[] = [];
+        tree = new ObserveTree(tree, outputDir => {
+          serviceFileNames = walkSync(outputDir, { globs: ['**/services/*.js'] }).map(
+            f => `./${f.replace(/\.js$/i, '')}`
+          );
+        });
+        built.dynamicMeta.push(() => ({
+          'implicit-modules': serviceFileNames,
         }));
       }
     } else {

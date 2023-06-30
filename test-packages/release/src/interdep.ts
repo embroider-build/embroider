@@ -1,5 +1,5 @@
 import glob from 'globby';
-import { resolve, relative } from 'path';
+import { resolve } from 'path';
 import { readFileSync, readJSONSync } from 'fs-extra';
 import yaml from 'js-yaml';
 

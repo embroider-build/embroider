@@ -1,4 +1,4 @@
-import { AddonMeta, AppMeta } from '@embroider/shared-internals';
+import { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
 import { outputFileSync, readJsonSync, writeJSONSync } from 'fs-extra';
 import { resolve } from 'path';
 import QUnit from 'qunit';
@@ -707,13 +707,15 @@ Scenarios.fromProject(() => new Project())
       });
 
       Qmodule('legacy-addons', function () {
-        QUnit.skip('app can resolve file in rewritten addon', async function () {
+        test('app can resolve file in rewritten addon', async function () {
+          let index: RewrittenPackageIndex = {
+            packages: {
+              [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
+            },
+            extraResolutions: {},
+          };
           givenFiles({
-            'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify({
-              packages: {
-                [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
-              },
-            }),
+            'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify(index),
             'node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js': ``,
             'node_modules/.embroider/rewritten-packages/my-addon.1234/package.json': addonPackageJSON(),
             'app.js': `import "my-addon/hello-world"`,
@@ -727,14 +729,16 @@ Scenarios.fromProject(() => new Project())
             .to('./node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js');
         });
 
-        QUnit.skip('moved addon resolves dependencies from its original location', async function () {
+        test('moved addon resolves dependencies from its original location', async function () {
+          let index: RewrittenPackageIndex = {
+            packages: {
+              [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
+            },
+            extraResolutions: {},
+          };
           givenFiles({
             'node_modules/my-addon/node_modules/inner-dep/index.js': '',
-            'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify({
-              packages: {
-                [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
-              },
-            }),
+            'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify(index),
             'node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js': `import "inner-dep"`,
             'node_modules/.embroider/rewritten-packages/my-addon.1234/package.json': addonPackageJSON(),
             'app.js': `import "my-addon/hello-world"`,

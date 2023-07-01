@@ -78,21 +78,16 @@ typescriptApp.forEachScenario(scenario => {
   });
 });
 
-typescriptApp
-  // these earlier releases of ember don't offer native types, and we're only
-  // testing under native types, not third-party types.
-  .skip('lts_3_28-typescript-app')
-  .skip('lts_4_4-typescript-app')
-  .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
-      let app: PreparedApp;
-      hooks.before(async () => {
-        app = await scenario.prepare();
-      });
+typescriptApp.forEachScenario(scenario => {
+  Qmodule(scenario.name, function (hooks) {
+    let app: PreparedApp;
+    hooks.before(async () => {
+      app = await scenario.prepare();
+    });
 
-      test(`check types`, async function (assert) {
-        let result = await app.execute(`pnpm tsc`);
-        assert.equal(result.exitCode, 0, result.output);
-      });
+    test(`check types`, async function (assert) {
+      let result = await app.execute(`pnpm tsc`);
+      assert.equal(result.exitCode, 0, result.output);
     });
   });
+});

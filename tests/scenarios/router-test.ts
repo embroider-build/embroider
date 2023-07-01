@@ -226,24 +226,19 @@ let routerApp = tsAppScenarios.map('router', project => {
   });
 });
 
-routerApp
-  // these earlier releases of ember don't offer native types, and we're only
-  // testing under native types, not third-party types.
-  .skip('lts_3_28-router')
-  .skip('lts_4_4-router')
-  .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
-      let app: PreparedApp;
-      hooks.before(async () => {
-        app = await scenario.prepare();
-      });
+routerApp.forEachScenario(scenario => {
+  Qmodule(scenario.name, function (hooks) {
+    let app: PreparedApp;
+    hooks.before(async () => {
+      app = await scenario.prepare();
+    });
 
-      test(`type checks`, async function (assert) {
-        let result = await app.execute('pnpm tsc');
-        assert.equal(result.exitCode, 0, result.output);
-      });
+    test(`type checks`, async function (assert) {
+      let result = await app.execute('pnpm tsc');
+      assert.equal(result.exitCode, 0, result.output);
     });
   });
+});
 
 routerApp.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {

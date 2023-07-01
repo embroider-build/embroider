@@ -802,6 +802,15 @@ export class Resolver {
       // a compat adapter). In the metadata, they would be listed in
       // package-relative form, so we need to convert this specifier to that.
       let absoluteSpecifier = resolve(dirname(fromFile), specifier);
+
+      if (!absoluteSpecifier.startsWith(pkg.root)) {
+        // this relative path escape its package. So it's not really using
+        // normal inter-package resolving and we should leave it alone. This
+        // case comes up especially when babel transforms are trying to insert
+        // references to runtime utilities, like we do in @embroider/macros.
+        return logTransition('beforeResolve: relative path escapes its package', request);
+      }
+
       let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
       if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
         let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);

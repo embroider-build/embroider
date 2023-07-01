@@ -479,6 +479,25 @@ Scenarios.fromProject(() => new Project())
             .to('./node_modules/my-addon/_app_/hello-world.js');
         });
 
+        test('app-js module in addon can still do relative imports that escape its package', async function () {
+          givenFiles({
+            'node_modules/extra.js': '',
+            'node_modules/my-addon/_app_/hello-world.js': 'import "../../extra.js"',
+            'app.js': `import "my-app/hello-world"`,
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('../../extra.js')
+            .to('./node_modules/extra.js');
+        });
+
         test('hbs in addon is found', async function () {
           givenFiles({
             'node_modules/my-addon/_app_/templates/hello-world.hbs': '',

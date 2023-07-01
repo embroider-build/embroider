@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2023-07-01)
+
+@embroider/compat 3.1.4 (patch)
+@embroider/core 3.1.2 (patch)
+@embroider/macros 1.12.2 (patch)
+@embroider/shared-internals 2.2.2 (patch)
+@embroider/webpack 3.1.2 (patch)
+
+#### :bug: Bug Fix
+* `shared-internals`
+  * [#1503](https://github.com/embroider-build/embroider/pull/1503) less aggressive realpathSync ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2023-06-30)
 
 @embroider/compat 3.1.3 (patch)

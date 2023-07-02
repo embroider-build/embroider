@@ -197,13 +197,13 @@ These methods can be used in conjunction with `macroCondition` to tree-shake cod
 ```js
 import { isTesting, isDevelopingApp, macroCondition } from '@embroider/macros';
 
-if (macroCondition(isTesting()) {
+if (macroCondition(isTesting())) {
   // some test code - stripped out when not running tests
 } else {
   // some non-test code
 }
 
-if (macroCondition(isDevelopingApp()) {
+if (macroCondition(isDevelopingApp())) {
   // some code when app is in development environment - stripped out in production builds
 } else {
   // some production code

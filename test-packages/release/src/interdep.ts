@@ -1,5 +1,5 @@
 import glob from 'globby';
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 import { readFileSync, readJSONSync } from 'fs-extra';
 import yaml from 'js-yaml';
 
@@ -29,7 +29,7 @@ export function publishedInterPackageDeps(): Map<string, PkgEntry> {
       pkgJSONS.set(pkg.name, pkg);
       packages.set(pkg.name, {
         version: pkg.version,
-        pkgJSONPath: dir,
+        pkgJSONPath: join(dir, 'package.json'),
         isDependencyOf: new Map(),
         isPeerDependencyOf: new Map(),
       });

@@ -842,19 +842,9 @@ export class Resolver {
       return external('beforeResolve emberVirtualPackages', request, specifier);
     }
 
-    if (!pkg.meta['auto-upgraded'] && emberVirtualPeerDeps.has(packageName)) {
-      // Native v2 addons are allowed to use the emberVirtualPeerDeps like
-      // `@glimmer/component`. And like all v2 addons, it's important that they
-      // see those dependencies after those dependencies have been converted to
-      // v2.
-      //
-      // But unlike auto-upgraded addons, native v2 addons are not necessarily
-      // copied out of their original place in node_modules. And from that
-      // original place they might accidentally resolve the emberVirtualPeerDeps
-      // that are present there in v1 format.
-      //
-      // So before we let normal resolving happen, we adjust these imports to
-      // point at the app's copies instead.
+    if (emberVirtualPeerDeps.has(packageName) && !pkg.hasDependency(packageName)) {
+      // addons (whether auto-upgraded or not) may use the app's
+      // emberVirtualPeerDeps, like "@glimmer/component" etc.
       if (!this.options.activeAddons[packageName]) {
         throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
       }

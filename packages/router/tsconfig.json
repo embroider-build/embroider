@@ -2,6 +2,9 @@
   "extends": "@tsconfig/ember/tsconfig.json",
   "include": ["src/**/*"],
   "compilerOptions": {
-    "typeRoots": ["types"]
+    "typeRoots": ["types"],
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "declarationDir": "dist"
   }
 }

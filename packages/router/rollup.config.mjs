@@ -1,6 +1,6 @@
-import typescript from 'rollup-plugin-ts';
-import copy from 'rollup-plugin-copy';
+import typescript from '@rollup/plugin-typescript';
 import { Addon } from '@embroider/addon-dev/rollup';
+import { babel } from '@rollup/plugin-babel';
 
 const addon = new Addon({
   srcDir: 'src',
@@ -24,10 +24,10 @@ export default {
 
     // compile TypeScript to latest JavaScript, including Babel transpilation
     typescript({
-      transpiler: 'babel',
-      browserslist: false,
-      transpileOnly: true,
+      noForceEmit: true,
     }),
+
+    babel({ extensions: ['.ts'], babelHelpers: 'inline' }),
 
     // Ensure that standalone .hbs files are properly integrated as Javascript.
     addon.hbs(),

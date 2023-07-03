@@ -25,6 +25,11 @@
 /packages/addon-dev/**/*.js
 /packages/addon-dev/**/*.d.ts
 /tests/fixtures/
+/packages/vite/index.mjs
+/packages/vite/index.d.ts
+/packages/vite/src/**/*.js
+/packages/vite/src/**/*.d.ts
+
 
 # unconventional js
 /blueprints/*/files/

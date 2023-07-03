@@ -1,9 +1,6 @@
 import { defineConfig } from 'vite';
+import { embroider } from '@embroider/vite';
 
-export default defineConfig(async () => {
-  const {
-    default: { default: embroiderVitePlugin },
-  } = await import('@embroider/vite');
-  debugger;
-  return { plugins: [embroiderVitePlugin()] };
+export default defineConfig({
+  plugins: [embroider()],
 });

@@ -1,0 +1,11 @@
+# compiled output
+/src/**/*.js
+/src/**/*.d.ts
+
+# shims
+/index.d.ts
+/index.mjs
+
+# dependencies
+/node_modules/
+

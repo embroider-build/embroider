@@ -1,5 +1,8 @@
 {
   "name": "@embroider/vite",
   "version": "0.0.0",
-  "main": "src/index.js"
+  "main": "index.mjs",
+  "devDependencies": {
+    "rollup": "^3.23.0"
+  }
 }

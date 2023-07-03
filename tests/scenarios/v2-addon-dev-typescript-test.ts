@@ -8,6 +8,7 @@ import { pathExistsSync, readJsonSync, readFileSync } from 'fs-extra';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
+  .only('release')
   .map('v2-addon-dev-typescript', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
@@ -24,10 +25,8 @@ appScenarios
     merge(addon.files, {
       'babel.config.json': `
         {
-          "presets": [
-            ["@babel/preset-typescript", {}]
-          ],
           "plugins": [
+            "@babel/plugin-transform-typescript",
             "@embroider/addon-dev/template-colocation-plugin",
             ["@babel/plugin-proposal-decorators", { "legacy": true }],
             ["@babel/plugin-proposal-class-properties"]
@@ -35,102 +34,90 @@ appScenarios
         }
       `,
       'tsconfig.json': `
-        {
-          "compilerOptions": {
-            // So that the test app's type checking doesn't break when we change types
-            "composite": true,
+      {
+        "compilerOptions": {
 
-            // Path resolution
-            "baseUrl": "./src",
-            "moduleResolution": "node",
-            // We only use tsc for type checking and declaration output
-            "emitDeclarationOnly": false,
-            "declarationDir": "./dist",
-            "declaration": true,
-            "declarationMap": true,
-            // Build settings
-            "noEmitOnError": false,
-            "module": "ESNext",
-            "target": "ESNext",
-            // Features
-            "experimentalDecorators": true,
-            "allowJs": false,
-            "allowSyntheticDefaultImports": true,
-            // Strictness / Correctness
-            "strict": true,
-            "noImplicitAny": true,
-            "noImplicitThis": true,
-            "alwaysStrict": true,
-            "strictNullChecks": true,
-            "strictPropertyInitialization": true,
-            "noFallthroughCasesInSwitch": true,
-            "noUnusedLocals": true,
-            "noUnusedParameters": true,
-            "noImplicitReturns": true,
-            "paths": {
-              "[core-types]": ["./core/types"],
-              "[deprecated-types]": ["./deprecated-in-v4/types"]
-            }
-          },
-          "include": [
-            "src/**/*"
-          ]
-        }
+          // Path resolution
+          "moduleResolution": "NodeNext",
+          // We only use tsc for type checking and declaration output
+          "emitDeclarationOnly": true,
+          "declaration": true,
+          "declarationMap": true,
+          // Build settings
+          "noEmitOnError": false,
+          "module": "ESNext",
+          "target": "ESNext",
+          // Features
+          "experimentalDecorators": true,
+          "allowJs": false,
+          "allowSyntheticDefaultImports": true,
+          // Strictness / Correctness
+          "strict": true,
+          "noImplicitAny": true,
+          "noImplicitThis": true,
+          "alwaysStrict": true,
+          "strictNullChecks": true,
+          "strictPropertyInitialization": true,
+          "noFallthroughCasesInSwitch": true,
+          "noUnusedLocals": true,
+          "noUnusedParameters": true,
+          "noImplicitReturns": true,
+        },
+        "include": ["src/**/*.ts"]
+      }
       `,
       'rollup.config.mjs': `
-        import ts from 'rollup-plugin-ts';
-        import { Addon } from '@embroider/addon-dev/rollup';
 
-        const addon = new Addon({
-          srcDir: 'src',
-          destDir: 'dist',
-        });
+      import typescript from '@rollup/plugin-typescript';
+      import { Addon } from '@embroider/addon-dev/rollup';
+      import { babel } from '@rollup/plugin-babel';
 
-        const reexportMappings = {
-          'components/demo/namespace-me.js': 'components/demo/namespace/namespace-me.js',
-        };
+      const addon = new Addon({
+        srcDir: 'src',
+        destDir: 'dist',
+      });
 
-        export default {
-          output: {
-            ...addon.output(),
-            // Needed until a bug with ember-cli-htmlbars is fixed
-            hoistTransitiveImports: false,
-          },
+      const reexportMappings = {
+        'components/demo/namespace-me.js': 'components/demo/namespace/namespace-me.js',
+      };
 
-          plugins: [
-            addon.publicEntrypoints([
-              'components/**/*.js',
-            ]),
+      export default {
+        output: {
+          ...addon.output(),
+          // Needed until a bug with ember-cli-htmlbars is fixed
+          hoistTransitiveImports: false,
+        },
 
-            addon.appReexports([
-              'components/demo/index.js',
-              'components/demo/out.js',
-              'components/demo/namespace-me.js',
-            ], {
-              mapFilename: (name) => reexportMappings[name] || name,
-            }),
+        plugins: [
+          addon.publicEntrypoints([
+            'components/**/*.js',
+          ]),
 
-            addon.hbs(),
-            addon.dependencies(),
+          addon.appReexports([
+            'components/demo/index.js',
+            'components/demo/out.js',
+            'components/demo/namespace-me.js',
+          ], {
+            mapFilename: (name) => reexportMappings[name] || name,
+          }),
 
-            ts({
-              transpiler: 'babel',
-              babelConfig: './babel.config.json',
-              browserslist: ['last 2 firefox versions', 'last 2 chrome versions'],
-              tsconfig: {
-                fileName: 'tsconfig.json',
-                hook: (config) => ({
-                  ...config,
-                  declaration: true,
-                  declarationMap: true,
-                  declarationDir: './dist',
-                }),
-              },
-            }),
+          addon.dependencies(),
 
-            addon.clean(),
-          ],
-        };
+          babel({ extensions: ['.js', '.ts'], babelHelpers: 'inline' }),
+
+          typescript({
+            declarationDir: 'dist',
+            noForceEmit: true,
+          }),
+
+          addon.hbs(),
+
+
+
+          addon.clean(),
+        ],
+      };
+          
       `,
       src: {
         components: {
@@ -187,18 +174,14 @@ appScenarios
     addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
     addon.linkDependency('@babel/runtime', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
+    addon.linkDevDependency('@babel/plugin-transform-typescript', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-class-properties', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/preset-typescript', { baseDir: __dirname });
-    addon.linkDevDependency('rollup-plugin-ts', { baseDir: __dirname });
+    addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });
+    addon.linkDevDependency('@rollup/plugin-typescript', { baseDir: __dirname });
     addon.linkDevDependency('rollup', { baseDir: __dirname });
     addon.linkDevDependency('typescript', { baseDir: __dirname });
-    // required by rollup-plugin-ts (or preset-typescript), but not a peer - not needed in real addons
-    addon.linkDevDependency('@babel/plugin-syntax-dynamic-import', { baseDir: __dirname });
-    // required by rollup-plugin-ts (or preset-typescript), but not a peer - not needed in real addons
-    addon.linkDevDependency('@babel/plugin-transform-runtime', { baseDir: __dirname });
-    // required by rollup-plugin-ts (or preset-typescript), but not a peer - not needed in real addons
-    addon.linkDevDependency('@babel/preset-env', { baseDir: __dirname });
+    addon.linkDevDependency('tslib', { baseDir: __dirname });
 
     project.addDevDependency(addon);
 

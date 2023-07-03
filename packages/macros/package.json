@@ -50,7 +50,7 @@
     "babel-plugin-ember-template-compilation": "^2.0.0",
     "code-equality-assertions": "^0.9.0",
     "scenario-tester": "^2.1.2",
-    "typescript": "^4.9.0"
+    "typescript": "^5.1.6"
   },
   "peerDependencies": {
     "@glint/template": "^1.0.0"

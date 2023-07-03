@@ -20,7 +20,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/node": "^15.12.2",
-    "typescript": "^4.9.0"
+    "typescript": "^5.1.6"
   },
   "peerDependencies": {
     "@embroider/core": "workspace:^",

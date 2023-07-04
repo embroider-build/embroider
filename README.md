@@ -100,6 +100,37 @@ The recommended steps when introducing Embroider into an existing app are:
 4. Enable `staticComponents`, and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
 5. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work. See the packages/router/README.md for details and limitations.
 
+## Common Webpack Configurations
+Embroider doesn't currently [include](https://github.com/embroider-build/embroider/pull/1323) an image or font loader. This can be a problem if, for example, your css includes fonts or images through CSS's url function.
+
+```js
+return require('@embroider/compat').compatBuild(app, Webpack, {
+  // Embroider options...
+
+  packagerOptions: {
+    webpackConfig: {
+      module: {
+        rules: [
+          {
+            test: /\.(jpg|jpeg|png|woff|woff2|eot|ttf|svg)$/,
+            use: [
+              {
+                loader: 'url-loader',
+                options: {
+                  limit: 8192,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  },
+});
+```
+
+In the long-run, an [asset import spec](https://github.com/emberjs/rfcs/blob/asset-importing-spec/text/0763-asset-importing-spec.md) will provide guidance on a standard going forward and efforts should be directed towards moving the RFC forward.
+
 ## Configuring asset URLs
 
 If you are serving your assets from a different origin (like a CDN) from where your index.html content will

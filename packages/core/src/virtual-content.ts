@@ -9,8 +9,9 @@ const externalPrefix = '/@embroider/external/';
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
 export function virtualContent(filename: string): string {
-  if (filename.startsWith(externalPrefix)) {
-    return externalShim({ moduleName: filename.slice(externalPrefix.length) });
+  let extern = decodeVirtualExternalModule(filename);
+  if (extern) {
+    return renderExternalShim(extern);
   }
   let match = decodeVirtualPairComponent(filename);
   if (match) {
@@ -28,25 +29,26 @@ export function virtualContent(filename: string): string {
 const externalShim = compile(`
 {{#if (eq moduleName "require")}}
 const m = window.requirejs;
+export default m.default;
 {{else}}
 const m = window.require("{{{js-string-escape moduleName}}}");
+{{#if default}}
+export default m.default;
 {{/if}}
-{{!-
-  There are plenty of hand-written AMD defines floating around
-  that lack this, and they will break when other build systems
-  encounter them.
+{{#if names}}
+const { {{#each names as |name|}}{{name}}, {{/each}} } = m;
+export { {{#each names as |name|}}{{name}}, {{/each}} }
+{{/if}}
+{{/if}}
+`) as (params: { moduleName: string; default: boolean; names: string[] }) => string;
 
-  As far as I can tell, Ember's loader was already treating this
-  case as a module, so in theory we aren't breaking anything by
-  marking it as such when other packagers come looking.
-
-  todo: get review on this part.
--}}
-if (m.default && !m.__esModule) {
-  m.__esModule = true;
+function renderExternalShim(params: { moduleName: string; exports: string[] }): string {
+  return externalShim({
+    moduleName: params.moduleName,
+    default: params.exports.includes('default'),
+    names: params.exports.filter(n => n !== 'default'),
+  });
 }
-module.exports = m;
-`) as (params: { moduleName: string }) => string;
 
 const pairedComponentShim = compile(`
 import { setComponentTemplate } from "@ember/component";
@@ -60,8 +62,21 @@ export default setComponentTemplate(template, templateOnlyComponent(undefined, "
 {{/if}}
 `) as (params: { relativeHBSModule: string; relativeJSModule: string | null; debugName: string }) => string;
 
-export function virtualExternalModule(specifier: string): string {
-  return externalPrefix + specifier;
+export function virtualExternalModule(specifier: string, exports: string[]): string {
+  return externalPrefix + specifier + `?exports=${exports.join(',')}`;
+}
+
+function decodeVirtualExternalModule(filename: string) {
+  if (filename.startsWith(externalPrefix)) {
+    let exports: string[] = [];
+    let url = new URL(filename.slice(externalPrefix.length), 'http://example.com');
+    let nameString = url.searchParams.get('exports');
+    if (nameString) {
+      exports = nameString.split(',');
+    }
+    let moduleName = url.pathname.slice(1);
+    return { moduleName, exports };
+  }
 }
 
 const pairComponentMarker = '/embroider-pair-component';

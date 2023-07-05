@@ -445,7 +445,7 @@ Scenarios.fromProject(() => new Project())
       });
 
       Qmodule('engine-relative resolving', function () {
-        test('module in app takes precedence', async function () {
+        test('module in app takes precedence over module in addon', async function () {
           givenFiles({
             'node_modules/my-addon/_app_/hello-world.js': '',
             './hello-world.js': '',
@@ -526,6 +526,26 @@ Scenarios.fromProject(() => new Project())
           await configure({
             addonMeta: {
               'app-js': { './hello-world.js': './_app_/hello-world.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('./secondary')
+            .to('./secondary.js');
+        });
+
+        QUnit.only(`relative import in addon's app tree correctly prioritizes app`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "./secondary"`,
+            'node_modules/my-addon/_app_/secondary.js': ``,
+            'app.js': `import "my-app/hello-world"`,
+            'secondary.js': '',
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js', './secondary.js': './_app_/secondary.js' },
             },
           });
 

@@ -2,7 +2,16 @@
   "name": "@embroider/vite",
   "version": "0.0.0",
   "main": "index.mjs",
+  "peerDependencies": {
+    "@embroider/core": "workspace:^"
+  },
+  "dependencies": {
+    "assert-never": "^1.2.1",
+    "fs-extra": "^10.0.0"
+  },
   "devDependencies": {
+    "@embroider/core": "workspace:^",
+    "@types/fs-extra": "^9.0.12",
     "rollup": "^3.23.0"
   }
 }

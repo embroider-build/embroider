@@ -2144,6 +2144,6 @@ const knownExports: Map<string, string[]> = (() => {
   };
 
   let m = new Map(Object.entries(dumped));
-  m.set('require', []);
+  m.set('require', ['default', 'has']);
   return m;
 })();

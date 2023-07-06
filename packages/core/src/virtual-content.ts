@@ -30,6 +30,8 @@ const externalShim = compile(`
 {{#if (eq moduleName "require")}}
 const m = window.requirejs;
 export default m.default;
+const has = m.has;
+export { has }
 {{else}}
 const m = window.require("{{{js-string-escape moduleName}}}");
 {{#if default}}

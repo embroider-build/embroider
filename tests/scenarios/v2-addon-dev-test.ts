@@ -34,6 +34,7 @@ appScenarios
           ],
           "plugins": [
             "@embroider/addon-dev/template-colocation-plugin",
+            "@babel/plugin-proposal-class-static-block",
             ["babel-plugin-ember-template-compilation", {
               targetFormat: 'hbs',
               compilerPath: 'ember-source/dist/ember-template-compiler',
@@ -67,15 +68,12 @@ appScenarios
               'components/**/*.js',
             ]),
 
-            addon.appReexports([
-              'components/demo/index.js',
-              'components/demo/out.js',
-              'components/demo/namespace-me.js',
-            ], {
+            addon.appReexports(['components/**/*.js'], {
               mapFilename: (name) => reexportMappings[name] || name,
             }),
 
             addon.hbs(),
+            addon.gjs(),
             addon.dependencies(),
 
             babel({ babelHelpers: 'bundled' }),
@@ -102,6 +100,10 @@ appScenarios
       },
       src: {
         components: {
+          'single-file-component.gjs': `import Component from '@glimmer/component';
+          export default class SingleFileComponent extends Component {
+            <template><div data-test-single-file-component>Hello {{@message}}</div></template>
+          }`,
           demo: {
             'button.hbs': `
               <button {{on 'click' @onClick}}>
@@ -176,6 +178,12 @@ appScenarios
               assert.dom('out').containsText('true');
             });
 
+            test('<SingleFileComponent @message="bob" />', async function(assert) {
+              await render(hbs\`<SingleFileComponent @message="bob" />\`);
+
+              assert.dom().containsText('hello bob');
+            })
+
             test('transform worked', async function (assert) {
               await render(hbs\`<Demo />\`);
               assert.dom('[data-test="should-transform"]').containsText('iWasTransformed');
@@ -222,6 +230,8 @@ appScenarios
 
         test('package.json is modified appropriately', async function () {
           expectFile('package.json').json('ember-addon.app-js').deepEquals({
+            './components/demo/button.js': './dist/_app_/components/demo/button.js',
+            './components/single-file-component.js': './dist/_app_/components/single-file-component.js',
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
             './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
@@ -247,6 +257,23 @@ appScenarios
             /TEMPLATE = precompileTemplate\("Hello there/,
             'template is still in hbs format'
           );
+        });
+
+        test('gjs components compiled correctly', async function () {
+          expectFile(
+            'dist/components/single-file-component.js'
+          ).matches(`import templateOnly from '@ember/component/template-only';
+import { setComponentTemplate } from '@ember/component';
+import { precompileTemplate } from '@ember/template-compilation';
+import Component from '@glimmer/component';
+
+class SingleFileComponent extends Component {}
+setComponentTemplate(precompileTemplate(\"<div data-test-single-file-component>Hello {{@message}}</div>\", {
+  strictMode: true
+}), templateOnly());
+
+export { SingleFileComponent as default };
+//# sourceMappingURL=single-file-component.js.map`);
         });
       });
 

@@ -64,6 +64,9 @@ importers:
       assert-never:
         specifier: ^1.2.1
         version: 1.2.1
+      content-tag:
+        specifier: ^1.0.0
+        version: 1.0.0
       fs-extra:
         specifier: ^10.0.0
         version: 10.0.0
@@ -1609,6 +1612,9 @@ importers:
       '@babel/plugin-transform-class-properties':
         specifier: ^7.16.7
         version: 7.22.0(@babel/core@7.22.6)
+      '@babel/plugin-transform-class-static-block':
+        specifier: ^7.22.5
+        version: 7.22.5(@babel/core@7.22.6)
       '@babel/plugin-transform-runtime':
         specifier: ^7.18.6
         version: 7.18.6(@babel/core@7.22.6)
@@ -1731,7 +1737,7 @@ importers:
         version: /ember-source@4.4.0(@babel/core@7.22.6)
       ember-source-beta:
         specifier: npm:ember-source@beta
-        version: /ember-source@5.2.0-beta.4(@babel/core@7.22.6)
+        version: /ember-source@5.2.0-beta.3(@babel/core@7.22.6)
       ember-source-latest:
         specifier: npm:ember-source@latest
         version: /ember-source@5.1.2(@babel/core@7.22.6)
@@ -2325,7 +2331,7 @@ packages:
       '@babel/helper-plugin-utils': 7.22.5
       debug: 4.3.4(supports-color@8.1.0)
       lodash.debounce: 4.0.8
-      resolve: 1.20.0
+      resolve: 1.22.2
     transitivePeerDependencies:
       - supports-color
 
@@ -9567,7 +9573,7 @@ packages:
       wordwrap: 0.0.3
 
   /bower-endpoint-parser@0.2.2:
-    resolution: {integrity: sha1-ALVlrb+rby01rd3pd+l5Yqy8s/Y=}
+    resolution: {integrity: sha512-YWZHhWkPdXtIfH3VRu3QIV95sa75O9vrQWBOHjexWCLBCTy5qJvRr36LXTqFwTchSXVlzy5piYJOjzHr7qhsNg==}
     engines: {node: '>=0.8.0'}
 
   /brace-expansion@1.1.11:
@@ -14752,8 +14758,8 @@ packages:
       - webpack
     dev: true
 
-  /ember-source@5.2.0-beta.4(@babel/core@7.22.6):
-    resolution: {integrity: sha512-b1Obm3gCkOk5KimtEoXTMbzxXemU8N+WT2mTTa4+9cMxv2qCO8ZVBpkyEmZvQl+W6BrF7tFVl+k6pUDQvuwWKA==}
+  /ember-source@5.2.0-beta.3(@babel/core@7.22.6):
+    resolution: {integrity: sha512-UuhLgcLKWGxTJKgx9fpDG5PV+kjUp707LA7blG9GClCrdgGgGiHlGP5IslPZrSx3oTQhg1KNPIyX/PzjTquwIg==}
     engines: {node: '>= 16.*'}
     dependencies:
       '@babel/helper-module-imports': 7.22.5

@@ -20,12 +20,23 @@ export function hbsToJS(hbsContents: string, options?: Options): string {
     let filename = options.filename;
     let { compatModuleNaming: renaming } = options;
     if (renaming) {
-      if (filename.startsWith(renaming.rootDir)) {
-        filename = renaming.modulePrefix + filename.slice(renaming.rootDir.length);
+      let rootDir = renaming.rootDir;
+      if (filename.startsWith(rootDir)) {
+        filename = renaming.modulePrefix + filename.slice(rootDir.length);
+      }
+      if (rootDir.endsWith('rewritten-app')) {
+        rootDir = rootDir.replace(/rewritten-app$/, 'rewritten-packages');
+        if (filename.startsWith(rootDir)) {
+          filename = filename.slice(rootDir.length);
+        }
+      }
+      if (filename.includes('node_modules')) {
+        filename = filename.split('node_modules').slice(-1)[0];
       }
       if (sep !== '/') {
         filename = filename.replace(/\\/g, '/');
       }
+      filename = filename.replace(/^\//, '');
     }
     optsSource = `,{ moduleName: "${jsStringEscape(filename)}" }`;
   }

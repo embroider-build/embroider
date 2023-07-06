@@ -31,7 +31,10 @@ emberVirtualPeerDeps.add('@ember/string');
 // (like snowpack) not to worry about these packages.
 emberVirtualPackages.add('@glimmer/env');
 emberVirtualPackages.add('ember');
-emberVirtualPackages.add('@embroider/macros');
+
+// this is a real package and even though most of its primary API is implemented
+// as transforms, it does include some runtime code.
+emberVirtualPeerDeps.add('@embroider/macros');
 
 // rfc176-data only covers things up to the point where Ember stopped needing
 // the modules-api-polyfill. Newer APIs need to be added here.

@@ -42,7 +42,7 @@ appScenarios
               ],
             }],
             ["@babel/plugin-proposal-decorators", { "legacy": true }],
-            [ "@babel/plugin-proposal-class-properties" ]
+            [ "@babel/plugin-transform-class-properties" ]
           ]
         }
       `,
@@ -147,7 +147,7 @@ appScenarios
     addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
     addon.linkDependency('babel-plugin-ember-template-compilation', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/plugin-proposal-class-properties', { baseDir: __dirname });
+    addon.linkDevDependency('@babel/plugin-transform-class-properties', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
     addon.linkDevDependency('@babel/preset-env', { baseDir: __dirname });
     addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });

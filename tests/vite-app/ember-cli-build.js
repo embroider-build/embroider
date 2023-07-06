@@ -8,5 +8,11 @@ module.exports = function (defaults) {
     // Add options here
   });
 
-  return compatBuild(app);
+  return compatBuild(app, undefined, {
+    staticAddonTrees: true,
+    staticAddonTestSupportTrees: true,
+    staticComponents: true,
+    staticHelpers: true,
+    staticModifiers: true,
+  });
 };

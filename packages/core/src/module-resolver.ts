@@ -896,7 +896,8 @@ export class Resolver {
   private external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
     let exports = knownExports.get(specifier) ?? knownExports.get(specifier + '/index');
     if (!exports) {
-      throw new Error(`don't know exports for external: ${specifier}`);
+      console.log(`don't know exports for external: ${specifier}`);
+      exports = [];
     }
     let filename = virtualExternalModule(specifier, exports);
     return logTransition(label, request, request.virtualize(filename));
@@ -1192,7 +1193,8 @@ function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, impor
   return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
 }
 
-export function buildKnownExports(window) {
+/*
+function buildKnownExports(window) {
   console.log(
     JSON.stringify(
       Object.fromEntries(
@@ -1217,7 +1219,9 @@ export function buildKnownExports(window) {
     )
   );
 }
+*/
 
+// Temporary solution, dumped from runtime via the above commented function.
 const knownExports: Map<string, string[]> = (() => {
   let dumped = {
     '@ember/-internals/browser-environment/index': [

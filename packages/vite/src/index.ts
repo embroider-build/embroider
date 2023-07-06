@@ -1,4 +1,5 @@
-import type { Plugin, PluginContext, ResolveIdHook, ResolveIdResult } from 'rollup';
+import type { PluginContext, ResolveIdHook, ResolveIdResult } from 'rollup';
+import { Plugin } from 'vite';
 import { join } from 'path';
 import {
   Resolution,

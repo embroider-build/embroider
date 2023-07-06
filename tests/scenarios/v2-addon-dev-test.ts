@@ -34,7 +34,7 @@ appScenarios
           ],
           "plugins": [
             "@embroider/addon-dev/template-colocation-plugin",
-            "@babel/plugin-proposal-class-static-block",
+            "@babel/plugin-transform-class-static-block",
             ["babel-plugin-ember-template-compilation", {
               targetFormat: 'hbs',
               compilerPath: 'ember-source/dist/ember-template-compiler',
@@ -149,6 +149,7 @@ appScenarios
     addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
     addon.linkDependency('babel-plugin-ember-template-compilation', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
+    addon.linkDevDependency('@babel/plugin-transform-class-static-block', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-transform-class-properties', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
     addon.linkDevDependency('@babel/preset-env', { baseDir: __dirname });
@@ -181,7 +182,7 @@ appScenarios
             test('<SingleFileComponent @message="bob" />', async function(assert) {
               await render(hbs\`<SingleFileComponent @message="bob" />\`);
 
-              assert.dom().containsText('hello bob');
+              assert.dom().containsText('Hello bob');
             })
 
             test('transform worked', async function (assert) {
@@ -260,17 +261,14 @@ appScenarios
         });
 
         test('gjs components compiled correctly', async function () {
-          expectFile(
-            'dist/components/single-file-component.js'
-          ).matches(`import templateOnly from '@ember/component/template-only';
-import { setComponentTemplate } from '@ember/component';
+          expectFile('dist/components/single-file-component.js').equalsCode(`import Component from '@glimmer/component';
 import { precompileTemplate } from '@ember/template-compilation';
-import Component from '@glimmer/component';
+import { setComponentTemplate } from '@ember/component';
 
 class SingleFileComponent extends Component {}
 setComponentTemplate(precompileTemplate(\"<div data-test-single-file-component>Hello {{@message}}</div>\", {
   strictMode: true
-}), templateOnly());
+}), SingleFileComponent);
 
 export { SingleFileComponent as default };
 //# sourceMappingURL=single-file-component.js.map`);

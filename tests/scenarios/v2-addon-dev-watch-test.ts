@@ -31,7 +31,7 @@ Scenarios.fromProject(() => baseV2Addon())
           "plugins": [
             "@embroider/addon-dev/template-colocation-plugin",
             ["@babel/plugin-proposal-decorators", { "legacy": true }],
-            [ "@babel/plugin-proposal-class-properties" ]
+            [ "@babel/plugin-transform-class-properties" ]
           ]
         }
       `,
@@ -101,7 +101,7 @@ Scenarios.fromProject(() => baseV2Addon())
     addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
     addon.linkDependency('babel-plugin-ember-template-compilation', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/plugin-proposal-class-properties', { baseDir: __dirname });
+    addon.linkDevDependency('@babel/plugin-transform-class-properties', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
     addon.linkDevDependency('@babel/preset-env', { baseDir: __dirname });
     addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });

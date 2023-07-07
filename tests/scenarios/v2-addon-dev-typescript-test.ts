@@ -29,7 +29,7 @@ appScenarios
             "@babel/plugin-transform-typescript",
             "@embroider/addon-dev/template-colocation-plugin",
             ["@babel/plugin-proposal-decorators", { "legacy": true }],
-            ["@babel/plugin-proposal-class-properties"]
+            ["@babel/plugin-transform-class-properties"]
           ]
         }
       `,
@@ -117,7 +117,7 @@ appScenarios
           addon.clean(),
         ],
       };
-          
+
       `,
       src: {
         components: {
@@ -175,7 +175,7 @@ appScenarios
     addon.linkDependency('@babel/runtime', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-transform-typescript', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/plugin-proposal-class-properties', { baseDir: __dirname });
+    addon.linkDevDependency('@babel/plugin-transform-class-properties', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
     addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });
     addon.linkDevDependency('@rollup/plugin-typescript', { baseDir: __dirname });

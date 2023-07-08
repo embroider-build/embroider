@@ -1071,7 +1071,7 @@ export class CompatAppBuilder {
   }
 
   private addResolverConfig(config: CompatResolverOptions) {
-    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config);
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config, { spaces: 2 });
   }
 
   private shouldSplitRoute(routeName: string) {

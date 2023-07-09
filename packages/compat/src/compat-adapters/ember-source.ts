@@ -2,12 +2,45 @@ import V1Addon from '../v1-addon';
 import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AddToTree from '../add-to-tree';
-import { outputFileSync, unlinkSync } from 'fs-extra';
-import { join } from 'path';
+import { outputFileSync, readdirSync, unlinkSync } from 'fs-extra';
+import { join, resolve } from 'path';
+import { Memoize } from 'typescript-memoize';
 
 export default class extends V1Addon {
   get v2Tree() {
     return mergeTrees([super.v2Tree, buildFunnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);
+  }
+
+  // ember-source inlines a whole bunch of dependencies into itself
+  @Memoize()
+  private get includedDependencies() {
+    let result: string[] = [];
+    for (let name of readdirSync(resolve(this.root, 'dist', 'dependencies'))) {
+      if (name[0] === '@') {
+        for (let innerName of readdirSync(resolve(this.root, 'dist', 'dependencies', name))) {
+          if (innerName.endsWith('.js')) {
+            result.push(name + '/' + innerName.slice(0, -3));
+          }
+        }
+      } else {
+        if (name.endsWith('.js')) {
+          result.push(name.slice(0, -3));
+        }
+      }
+    }
+    return result;
+  }
+
+  get newPackageJSON() {
+    let json = super.newPackageJSON;
+    for (let name of this.includedDependencies) {
+      // weirdly, many of the inlined dependency are still listed as real
+      // dependencies too. If we don't delete them here, they will take
+      // precedence over the inlined ones, because the embroider module-resolver
+      // tries to prioritize real deps.
+      delete json.dependencies?.[name];
+    }
+    return json;
   }
 
   customizes(treeName: string) {

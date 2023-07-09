@@ -95,15 +95,10 @@ export default class extends V1Addon {
     }
     meta['implicit-modules'].push('./ember/index.js');
 
-    // this is the same check ember-source's own code does
-    const isProduction = process.env.EMBER_ENV === 'production';
-
-    if (!isProduction) {
-      // one might ask whether we could use implicit-test-modules instead.
-      // Unfortunately, no, ember-source includes these things in dev not just
-      // test, and some addons like ember-data break without it.
-      meta['implicit-modules'].push('./ember-testing/index.js');
+    if (!meta['implicit-test-modules']) {
+      meta['implicit-test-modules'] = [];
     }
+    meta['implicit-test-modules'].push('./ember-testing/index.js');
 
     return meta;
   }

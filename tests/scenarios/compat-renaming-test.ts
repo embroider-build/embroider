@@ -1,6 +1,7 @@
 import { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
 import QUnit from 'qunit';
+import { resolve, sep } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 import { definesPattern } from '@embroider/test-support';
@@ -47,10 +48,6 @@ appScenarios
         },
       },
     });
-
-    let somebodyElses = baseAddon();
-    somebodyElses.pkg.name = 'somebody-elses-package';
-    app.addDevDependency(somebodyElses);
 
     let emberLodash = baseAddon();
     emberLodash.pkg.name = 'ember-lodash';
@@ -148,13 +145,6 @@ appScenarios
         },
       },
     });
-
-    app.addDevDependency('somebody-elses-package', {
-      files: {
-        'index.js': `export default function() {}`,
-        'deeper.js': `export default function() {}`,
-      },
-    });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -243,16 +233,16 @@ appScenarios
           )
         );
       });
-      test('rewriting one modules does not capture entire package namespace', function () {
+      test('rewriting one module does not capture entire package namespace', function () {
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package')
-          .to('./node_modules/somebody-elses-package/index.js');
+          .to(resolve('/@embroider/external/somebody-elses-package').replaceAll(sep, '/'));
 
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package/deeper')
-          .to('./node_modules/somebody-elses-package/deeper.js');
+          .to(resolve('/@embroider/external/somebody-elses-package/deeper').replaceAll(sep, '/'));
       });
       test('single file package gets captured and renamed', function () {
         expectAudit

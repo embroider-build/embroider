@@ -2,9 +2,15 @@ import V1Addon from '../v1-addon';
 import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import AddToTree from '../add-to-tree';
-import { outputFileSync, readdirSync, unlinkSync } from 'fs-extra';
+import { outputFileSync, readFileSync, readdirSync, unlinkSync } from 'fs-extra';
 import { join, resolve } from 'path';
 import { Memoize } from 'typescript-memoize';
+import { satisfies } from 'semver';
+import { transform } from '@babel/core';
+import type * as Babel from '@babel/core';
+import type { NodePath } from '@babel/traverse';
+import Plugin from 'broccoli-plugin';
+import { Node } from 'broccoli-node-api';
 
 export default class extends V1Addon {
   get v2Tree() {
@@ -61,14 +67,26 @@ export default class extends V1Addon {
   // Our addon tree is all of the "packages" we share. @embroider/compat already
   // supports that pattern of emitting modules into other package's namespaces.
   private customAddonTree() {
-    return mergeTrees([
-      buildFunnel(this.rootTree, {
-        srcDir: 'dist/packages',
-      }),
+    let packages = buildFunnel(this.rootTree, {
+      srcDir: 'dist/packages',
+    });
+
+    let trees: Node[] = [
+      packages,
       buildFunnel(this.rootTree, {
         srcDir: 'dist/dependencies',
       }),
-    ]);
+    ];
+
+    if (satisfies(this.packageJSON.version, '>= 4.0.0-alpha.0 <4.10.0-alpha.0', { includePrerelease: true })) {
+      // import { loc } from '@ember/string' was removed in 4.0. but the
+      // top-level `ember` package tries to import it until 4.10. A
+      // spec-compliant ES modules implementation will treat this as a parse
+      // error.
+      trees.push(new FixStringLoc([packages]));
+    }
+
+    return mergeTrees(trees, { overwrite: true });
   }
 
   // We're zeroing out these files in vendor rather than deleting them, because
@@ -102,4 +120,43 @@ export default class extends V1Addon {
 
     return meta;
   }
+}
+
+class FixStringLoc extends Plugin {
+  build() {
+    let inSource = readFileSync(resolve(this.inputPaths[0], 'ember', 'index.js'), 'utf8');
+    let outSource = transform(inSource, {
+      plugins: [fixStringLoc],
+    })!.code!;
+    outputFileSync(resolve(this.outputPath, 'ember', 'index.js'), outSource, 'utf8');
+  }
+}
+
+function fixStringLoc(babel: typeof Babel) {
+  let t = babel.types;
+  return {
+    visitor: {
+      Program(path: NodePath<Babel.types.Program>) {
+        path.node.body.unshift(
+          t.variableDeclaration('const', [t.variableDeclarator(t.identifier('loc'), t.identifier('undefined'))])
+        );
+      },
+      ImportDeclaration: {
+        enter(path: NodePath<Babel.types.ImportDeclaration>, state: { inEmberString: boolean }) {
+          if (path.node.source.value === '@ember/string') {
+            state.inEmberString = true;
+          }
+        },
+        exit(_path: NodePath<Babel.types.ImportDeclaration>, state: { inEmberString: boolean }) {
+          state.inEmberString = false;
+        },
+      },
+      ImportSpecifier(path: NodePath<Babel.types.ImportSpecifier>, state: { inEmberString: boolean }) {
+        let name = 'value' in path.node.imported ? path.node.imported.value : path.node.imported.name;
+        if (state.inEmberString && name === 'loc') {
+          path.remove();
+        }
+      },
+    },
+  };
 }

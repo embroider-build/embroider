@@ -14,7 +14,7 @@ function tagFor(pkgName: string, entry: { newVersion: string }): string {
 }
 
 function info(message: string) {
-  process.stdout.write(`\n ℹ️  ${message}`);
+  process.stdout.write(`\n ℹ️ ${message}`);
 }
 
 function success(message: string) {
@@ -52,7 +52,7 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
       }
 
       if (dryRun) {
-        info(`--dry-run active. Skipping \`git tag ${tag}\``);
+        info(`--dryRun active. Skipping \`git tag ${tag}\``);
         return;
       }
 
@@ -68,9 +68,9 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
   }
 }
 
-async function push(reporter: IssueReporter, dryRun: boolean) {
+async function pushTags(reporter: IssueReporter, dryRun: boolean) {
   if (dryRun) {
-    info(`--dry-run active. Skipping \`git push --tags\``);
+    info(`--dryRun active. Skipping \`git push --tags\``);
     return;
   }
 
@@ -122,7 +122,7 @@ async function createGithubRelease(
     }
 
     if (dryRun) {
-      info(`--dry-run active. Skipping creating a Release on GitHub for ${tagName}`);
+      info(`--dryRun active. Skipping creating a Release on GitHub for ${tagName}`);
       return;
     }
 
@@ -163,7 +163,7 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: 
 
     if (dryRun) {
       info(
-        `--dry-run active. Skipping \`pnpm publish --access=public\` for ${pkgName}, which would publish version ${entry.newVersion}`
+        `--dryRun active. Skipping \`pnpm publish --access=public\` for ${pkgName}, which would publish version ${entry.newVersion}`
       );
       return;
     }
@@ -209,16 +209,16 @@ To publish a release you should start from a clean repo. Run "embroider-release 
   let reporter = new IssueReporter();
 
   await makeTags(solution, reporter, dryRun);
-  await push(reporter, dryRun);
-  await createGithubRelease(octokit, description, representativeTag, reporter, dryRun);
   await pnpmPublish(solution, reporter, dryRun);
+  await pushTags(reporter, dryRun);
+  await createGithubRelease(octokit, description, representativeTag, reporter, dryRun);
 
   if (reporter.hadIssues) {
     process.stderr.write(`\nSome parts of the release were unsuccessful.\n`);
     process.exit(-1);
   } else {
     if (dryRun) {
-      success(`--dryrun active. Would have successfully published release!`);
+      success(`--dryRun active. Would have successfully published release!`);
       return;
     }
 

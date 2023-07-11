@@ -30,9 +30,9 @@ yargs(process.argv.slice(2))
         .option('skipRepoSafetyCheck', {
           type: 'boolean',
           description:
-            'Allows you to run "publish" even if there are uncommited changes in your repo. Useful only for developing "publish" itself.',
+            'Allows you to run "publish" even if there are uncommitted changes in your repo. Useful only for developing "publish" itself.',
         })
-        .option('dry-run', {
+        .option('dryRun', {
           type: 'boolean',
           description: 'Run through the release, but log to stdout instead of tagging/pushing/publishing',
         }),

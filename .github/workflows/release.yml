@@ -22,13 +22,11 @@ jobs:
         run: echo "$(node ./test-packages/release/src/cli.js explain-plan)"
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: "Publish Dry Run"
         run: node ./test-packages/release/src/cli.js publish --dry-run
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: "Publish"
         run: node ./test-packages/release/src/cli.js publish

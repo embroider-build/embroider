@@ -19,9 +19,7 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: "Show the Plan"
-        run: echo "$(node ./test-packages/release/src/cli.js explain-plan)"
-        env:
-          GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+        run: cat .release-plan.json
 
       - name: "Publish Dry Run"
         run: node ./test-packages/release/src/cli.js publish --dry-run

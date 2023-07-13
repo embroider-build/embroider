@@ -9,6 +9,8 @@ import {
   moduleExists,
 } from '../src/index';
 
+import esc from '../src/addon/es-compat';
+
 const ERROR_REGEX =
   /this method is really implemented at compile time via a babel plugin. If you're seeing this exception, something went wrong/;
 
@@ -51,5 +53,30 @@ describe(`type-only exports`, function () {
   test('moduleExists exists', function () {
     expect(moduleExists).toBeDefined();
     expect(moduleExists).toThrow(ERROR_REGEX);
+  });
+});
+
+describe(`es-compat`, function () {
+  test('ES module are untouched', function () {
+    let esm = {
+      __esModule: true,
+      default: class ESM {},
+      named: function named() {},
+    };
+
+    expect(esc(esm)).toEqual(esm);
+  });
+
+  test('CJS module are shimmed', function () {
+    let cjs = {
+      named: function named() {},
+      another: function another() {},
+    };
+
+    expect(esc(cjs).default.named).toEqual(cjs.named);
+    expect(esc(cjs).default.another).toEqual(cjs.another);
+
+    expect(esc(cjs).named).toEqual(cjs.named);
+    expect(esc(cjs).another).toEqual(cjs.another);
   });
 });

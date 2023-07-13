@@ -1,5 +1,51 @@
 # Embroider Changelog
 
+## Release (2023-07-13)
+
+@embroider/addon-dev 3.1.2 (patch)
+@embroider/addon-shim 1.8.6 (patch)
+@embroider/compat 3.1.5 (patch)
+@embroider/core 3.1.3 (patch)
+@embroider/hbs-loader 3.0.1 (patch)
+@embroider/macros 1.12.3 (patch)
+@embroider/router 2.1.3 (patch)
+@embroider/shared-internals 2.2.3 (patch)
+@embroider/util 1.11.2 (patch)
+@embroider/webpack 3.1.3 (patch)
+
+#### :bug: Bug Fix
+* `shared-internals`
+  * [#1516](https://github.com/embroider-build/embroider/pull/1516) Move @embroider/macros from emberVirtualPackages to emberVirtualPeerDeps ([@ef4](https://github.com/ef4))
+  * [#1513](https://github.com/embroider-build/embroider/pull/1513) Add `@glimmer/reference` as a virtual package ([@chancancode](https://github.com/chancancode))
+  * [#1528](https://github.com/embroider-build/embroider/pull/1528) Restore older node support ([@ef4](https://github.com/ef4))
+* `core`
+  * [#1524](https://github.com/embroider-build/embroider/pull/1524) Fix the `EMBROIDER_CONCAT_STATS` build error ([@Windvis](https://github.com/Windvis))
+  * [#1509](https://github.com/embroider-build/embroider/pull/1509) All addons may need emberVirtualPeerDep handling ([@ef4](https://github.com/ef4))
+* `addon-dev`, `macros`
+  * [#1520](https://github.com/embroider-build/embroider/pull/1520) use transform babel plugins instead of proposal ([@mansona](https://github.com/mansona))
+
+#### :memo: Documentation
+* `macros`
+  * [#1507](https://github.com/embroider-build/embroider/pull/1507) fix(macros-readme): fix isTesting, isDevelopingApp typos ([@olenderhub](https://github.com/olenderhub))
+
+#### :house: Internal
+* `compat`
+  * [#1522](https://github.com/embroider-build/embroider/pull/1522) format resolver.json more nicely ([@ef4](https://github.com/ef4))
+* Other
+  * [#1500](https://github.com/embroider-build/embroider/pull/1500) Make the package-json path repo-relative ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `addon-dev`, `addon-shim`, `compat`, `core`, `hbs-loader`, `macros`, `router`, `shared-internals`, `util`, `webpack`
+  * [#1512](https://github.com/embroider-build/embroider/pull/1512) Upgrade typescript ([@ef4](https://github.com/ef4))
+* `router`
+  * [#1510](https://github.com/embroider-build/embroider/pull/1510) Replace rollup-plugin-ts with @rollup/plugin-typescript ([@ef4](https://github.com/ef4))
+
+#### Committers: 6
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Godfrey Chan ([@chancancode](https://github.com/chancancode))
+- Hubert Olender ([@olenderhub](https://github.com/olenderhub))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-07-01)
 
 @embroider/compat 3.1.4 (patch)

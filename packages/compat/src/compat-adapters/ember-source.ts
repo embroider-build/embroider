@@ -17,6 +17,10 @@ export default class extends V1Addon {
     return mergeTrees([super.v2Tree, buildFunnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);
   }
 
+  private get useStaticEmber(): boolean {
+    return this.app.options.staticEmberSource;
+  }
+
   // ember-source inlines a whole bunch of dependencies into itself
   @Memoize()
   private get includedDependencies() {
@@ -39,27 +43,35 @@ export default class extends V1Addon {
 
   get newPackageJSON() {
     let json = super.newPackageJSON;
-    for (let name of this.includedDependencies) {
-      // weirdly, many of the inlined dependency are still listed as real
-      // dependencies too. If we don't delete them here, they will take
-      // precedence over the inlined ones, because the embroider module-resolver
-      // tries to prioritize real deps.
-      delete json.dependencies?.[name];
+    if (this.useStaticEmber) {
+      for (let name of this.includedDependencies) {
+        // weirdly, many of the inlined dependency are still listed as real
+        // dependencies too. If we don't delete them here, they will take
+        // precedence over the inlined ones, because the embroider module-resolver
+        // tries to prioritize real deps.
+        delete json.dependencies?.[name];
+      }
     }
     return json;
   }
 
   customizes(treeName: string) {
-    // we are adding custom implementations of these
-    return treeName === 'treeForAddon' || treeName === 'treeForVendor' || super.customizes(treeName);
+    if (this.useStaticEmber) {
+      // we are adding custom implementations of these
+      return treeName === 'treeForAddon' || treeName === 'treeForVendor' || super.customizes(treeName);
+    } else {
+      return super.customizes(treeName);
+    }
   }
 
   invokeOriginalTreeFor(name: string, opts: { neuterPreprocessors: boolean } = { neuterPreprocessors: false }) {
-    if (name === 'addon') {
-      return this.customAddonTree();
-    }
-    if (name === 'vendor') {
-      return this.customVendorTree();
+    if (this.useStaticEmber) {
+      if (name === 'addon') {
+        return this.customAddonTree();
+      }
+      if (name === 'vendor') {
+        return this.customVendorTree();
+      }
     }
     return super.invokeOriginalTreeFor(name, opts);
   }
@@ -107,17 +119,17 @@ export default class extends V1Addon {
 
   get packageMeta() {
     let meta = super.packageMeta;
+    if (this.useStaticEmber) {
+      if (!meta['implicit-modules']) {
+        meta['implicit-modules'] = [];
+      }
+      meta['implicit-modules'].push('./ember/index.js');
 
-    if (!meta['implicit-modules']) {
-      meta['implicit-modules'] = [];
+      if (!meta['implicit-test-modules']) {
+        meta['implicit-test-modules'] = [];
+      }
+      meta['implicit-test-modules'].push('./ember-testing/index.js');
     }
-    meta['implicit-modules'].push('./ember/index.js');
-
-    if (!meta['implicit-test-modules']) {
-      meta['implicit-test-modules'] = [];
-    }
-    meta['implicit-test-modules'].push('./ember-testing/index.js');
-
     return meta;
   }
 }

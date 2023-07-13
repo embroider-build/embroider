@@ -237,12 +237,12 @@ appScenarios
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package')
-          .to(resolve('/@embroider/external/somebody-elses-package').replaceAll(sep, '/'));
+          .to(resolve('/@embroider/external/somebody-elses-package').split(sep).join('/'));
 
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package/deeper')
-          .to(resolve('/@embroider/external/somebody-elses-package/deeper').replaceAll(sep, '/'));
+          .to(resolve('/@embroider/external/somebody-elses-package/deeper').split(sep).join('/'));
       });
       test('single file package gets captured and renamed', function () {
         expectAudit

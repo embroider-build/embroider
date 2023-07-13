@@ -46,7 +46,7 @@ Scenarios.fromProject(() => new Project('shared-internals-tests'))
           throw new Error('unable to locate our node version');
         }
         let nodebin = tryit.output.trim();
-        let result = await app.execute(`${nodebin} ./node_modules/.bin/qunit ./test.js`);
+        let result = await app.execute(`${nodebin} ./node_modules/qunit/bin/qunit.js ./test.js`);
         assert.equal(result.exitCode, 0, result.output);
       });
     });

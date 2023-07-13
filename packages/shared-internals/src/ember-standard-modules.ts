@@ -31,7 +31,10 @@ emberVirtualPeerDeps.add('@ember/string');
 // (like snowpack) not to worry about these packages.
 emberVirtualPackages.add('@glimmer/env');
 emberVirtualPackages.add('ember');
-emberVirtualPackages.add('@embroider/macros');
+
+// this is a real package and even though most of its primary API is implemented
+// as transforms, it does include some runtime code.
+emberVirtualPeerDeps.add('@embroider/macros');
 
 // while people don't manually import from ember-source, our v1-to-v2 conversion
 // of ember-source can send requests to here, and therefore any addon might need

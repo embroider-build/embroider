@@ -356,14 +356,11 @@ appScenarios
             return app.toTree();
           }
 
+          const { compatBuild, recommendedOptions } = require('@embroider/compat');
+
           const Webpack = require('@embroider/webpack').Webpack;
-          return require('@embroider/compat').compatBuild(app, Webpack, {
-            workspaceDir: process.env.WORKSPACE_DIR,
-            staticAddonTestSupportTrees: true,
-            staticAddonTrees: true,
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+          return compatBuild(app, Webpack, {
+            ...recommendedOptions.optimized,
             packageRules: [
               {
                 package: 'app-template',

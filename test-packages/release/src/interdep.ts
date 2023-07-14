@@ -1,5 +1,5 @@
 import glob from 'globby';
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 import { readFileSync, readJSONSync } from 'fs-extra';
 import yaml from 'js-yaml';
 
@@ -21,15 +21,15 @@ export function publishedInterPackageDeps(): Map<string, PkgEntry> {
   for (let pattern of (yaml.load(readFileSync(resolve(__dirname, '../../../pnpm-workspace.yaml'), 'utf8')) as any)
     .packages) {
     for (let dir of glob.sync(pattern, { cwd: rootDir, expandDirectories: false, onlyDirectories: true })) {
-      let pkgJSONPath = resolve(rootDir, dir, 'package.json');
-      let pkg = readJSONSync(pkgJSONPath);
+      let absolutePkgJSONPath = resolve(rootDir, dir, 'package.json');
+      let pkg = readJSONSync(absolutePkgJSONPath);
       if (pkg.private) {
         continue;
       }
       pkgJSONS.set(pkg.name, pkg);
       packages.set(pkg.name, {
         version: pkg.version,
-        pkgJSONPath,
+        pkgJSONPath: join(dir, 'package.json'),
         isDependencyOf: new Map(),
         isPeerDependencyOf: new Map(),
       });

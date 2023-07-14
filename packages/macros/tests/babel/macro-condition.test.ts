@@ -24,7 +24,7 @@ describe('macroCondition', function () {
     babelConfig(version: number) {
       let babelConfig = makeBabelConfig(version, config);
       if (version === 7) {
-        babelConfig.plugins.push('@babel/plugin-proposal-class-properties');
+        babelConfig.plugins.push('@babel/plugin-transform-class-properties');
       }
       babelConfig.filename = filename;
       return babelConfig;

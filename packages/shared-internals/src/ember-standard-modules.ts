@@ -36,6 +36,11 @@ emberVirtualPackages.add('ember');
 // as transforms, it does include some runtime code.
 emberVirtualPeerDeps.add('@embroider/macros');
 
+// while people don't manually import from ember-source, our v1-to-v2 conversion
+// of ember-source can send requests to here, and therefore any addon might need
+// to see it as a peer.
+emberVirtualPeerDeps.add('ember-source');
+
 // rfc176-data only covers things up to the point where Ember stopped needing
 // the modules-api-polyfill. Newer APIs need to be added here.
 emberVirtualPackages.add('@ember/owner');

@@ -737,31 +737,37 @@ export class Resolver {
       return request;
     }
 
-    for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
-      if (candidate === request.specifier) {
-        return logTransition(`renameModules`, request, request.alias(replacement));
-      }
-      for (let extension of this.options.resolvableExtensions) {
-        if (candidate === request.specifier + '/index' + extension) {
-          return logTransition(`renameModules`, request, request.alias(replacement));
-        }
-        if (candidate === request.specifier + extension) {
-          return logTransition(`renameModules`, request, request.alias(replacement));
-        }
-      }
-    }
-
-    if (this.options.renamePackages[packageName]) {
-      return logTransition(
-        `renamePackages`,
-        request,
-        request.alias(request.specifier.replace(packageName, this.options.renamePackages[packageName]))
-      );
-    }
-
     let pkg = this.owningPackage(request.fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return request;
+    }
+
+    // real deps take precedence over renaming rules. That is, a package like
+    // ember-source might provide backburner via module renaming, but if you
+    // have an explicit dependency on backburner you should still get that real
+    // copy.
+    if (!pkg.hasDependency(packageName)) {
+      for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
+        if (candidate === request.specifier) {
+          return logTransition(`renameModules`, request, request.alias(replacement));
+        }
+        for (let extension of this.options.resolvableExtensions) {
+          if (candidate === request.specifier + '/index' + extension) {
+            return logTransition(`renameModules`, request, request.alias(replacement));
+          }
+          if (candidate === request.specifier + extension) {
+            return logTransition(`renameModules`, request, request.alias(replacement));
+          }
+        }
+      }
+
+      if (this.options.renamePackages[packageName]) {
+        return logTransition(
+          `renamePackages`,
+          request,
+          request.alias(request.specifier.replace(packageName, this.options.renamePackages[packageName]))
+        );
+      }
     }
 
     if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {

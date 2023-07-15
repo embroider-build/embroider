@@ -139,19 +139,16 @@ export const {{name}} = mod.{{name}};
 {{/each}}
 `) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
 
+const implicitModulesPattern = /(?<filename>.*)[\\/]#embroider-implicit-(?<test>test-)?modules$/;
+
 export function decodeImplicitModules(
   filename: string
 ): { type: 'implicit-modules' | 'implicit-test-modules'; fromFile: string } | undefined {
-  if (filename.endsWith('/#embroider-implicit-modules')) {
+  let m = implicitModulesPattern.exec(filename);
+  if (m) {
     return {
-      type: 'implicit-modules',
-      fromFile: filename.slice(0, -1 * '/#embroider-implicit-modules'.length),
-    };
-  }
-  if (filename.endsWith('/#embroider-implicit-test-modules')) {
-    return {
-      type: 'implicit-test-modules',
-      fromFile: filename.slice(0, -1 * '/#embroider-implicit-test-modules'.length),
+      type: m.groups!.test ? 'implicit-test-modules' : 'implicit-modules',
+      fromFile: m.groups!.filename,
     };
   }
 }

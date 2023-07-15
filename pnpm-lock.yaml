@@ -182,8 +182,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       babel-plugin-ember-template-compilation:
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^2.1.1
+        version: 2.1.1
       babel-plugin-syntax-dynamic-import:
         specifier: ^6.18.0
         version: 6.18.0
@@ -279,8 +279,8 @@ importers:
         specifier: workspace:*
         version: link:../../test-packages/support
       '@glimmer/syntax':
-        specifier: ^0.84.2
-        version: 0.84.2
+        specifier: ^0.84.3
+        version: 0.84.3
       '@glint/template':
         specifier: ^1.0.0
         version: 1.0.0
@@ -360,8 +360,8 @@ importers:
         specifier: ^1.2.1
         version: 1.2.1
       babel-plugin-ember-template-compilation:
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^2.1.1
+        version: 2.1.1
       broccoli-node-api:
         specifier: ^1.7.0
         version: 1.7.0
@@ -551,8 +551,8 @@ importers:
         specifier: ^7.3.6
         version: 7.3.6
       babel-plugin-ember-template-compilation:
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^2.1.1
+        version: 2.1.1
       code-equality-assertions:
         specifier: ^0.9.0
         version: 0.9.0(@types/jest@29.2.0)(qunit@2.14.1)
@@ -1616,8 +1616,8 @@ importers:
         specifier: ^7.3.6
         version: 7.3.6
       babel-plugin-ember-template-compilation:
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^2.1.1
+        version: 2.1.1
       bootstrap:
         specifier: ^4.3.1
         version: 4.3.1
@@ -8150,7 +8150,6 @@ packages:
   /babel-import-util@2.0.0:
     resolution: {integrity: sha512-pkWynbLwru0RZmA9iKeQL63+CkkW0RCP3kL5njCtudd6YPUKb5Pa0kL4fb3bmuKn2QDBFwY5mvvhEK/+jv2Ynw==}
     engines: {node: '>= 12.*'}
-    dev: false
 
   /babel-jest@29.6.1(@babel/core@7.22.9):
     resolution: {integrity: sha512-qu+3bdPEQC6KZSPz+4Fyjbga5OODNcp49j6GKzG1EKbkfyJBxEYGVUmVGpwCSeGouG52R4EgYMLb6p9YeEEQ4A==}
@@ -8280,18 +8279,12 @@ packages:
     dependencies:
       ember-rfc176-data: 0.3.18
 
-  /babel-plugin-ember-template-compilation@2.0.0:
-    resolution: {integrity: sha512-d+4jaB2ik0rt9TH0K9kOlKJeRBHEb373FgFMcU9ZaJL2zYuVXe19bqy+cWlLpLf1tpOBcBG9QTlFBCoImlOt1g==}
-    engines: {node: '>= 12.*'}
-    dependencies:
-      babel-import-util: 1.4.0
-
-  /babel-plugin-ember-template-compilation@2.1.0:
-    resolution: {integrity: sha512-hAAH5WS36Go/z7wQf9V8FITElTmSC5ybGFSqefpQxqkKuLeDO1XYtmVlG43ww3QJEE1tsH3pb7uLXQTzhV9nXg==}
+  /babel-plugin-ember-template-compilation@2.1.1:
+    resolution: {integrity: sha512-vwEUw7qfwAgwUokQc5xMxrcJMhCu2dVvDDMIXFyOpXwxt+kqZ2FKvXFV+rJjYchIgHH5rBduEtt4Qk1qeZ6RDA==}
     engines: {node: '>= 12.*'}
     dependencies:
       '@glimmer/syntax': 0.84.3
-      babel-import-util: 1.4.0
+      babel-import-util: 2.0.0
 
   /babel-plugin-filter-imports@4.0.0:
     resolution: {integrity: sha512-jDLlxI8QnfKd7PtieH6pl4tZJzymzfCDCPGdTq/grgbiYAikwDPp/oL0IlFJn0HQjLpcLkyYhPKkUVneRESw5w==}
@@ -11199,7 +11192,7 @@ packages:
       '@embroider/shared-internals': 2.2.3
       babel-loader: 8.3.0(@babel/core@7.19.6)(webpack@5.78.0)
       babel-plugin-ember-modules-api-polyfill: 3.5.0
-      babel-plugin-ember-template-compilation: 2.1.0
+      babel-plugin-ember-template-compilation: 2.1.1
       babel-plugin-htmlbars-inline-precompile: 5.3.1
       babel-plugin-syntax-dynamic-import: 6.18.0
       broccoli-debug: 0.6.5
@@ -11239,7 +11232,7 @@ packages:
       '@embroider/shared-internals': 2.2.3
       babel-loader: 8.3.0(@babel/core@7.19.6)(webpack@5.78.0)
       babel-plugin-ember-modules-api-polyfill: 3.5.0
-      babel-plugin-ember-template-compilation: 2.1.0
+      babel-plugin-ember-template-compilation: 2.1.1
       babel-plugin-htmlbars-inline-precompile: 5.3.1
       babel-plugin-syntax-dynamic-import: 6.18.0
       broccoli-debug: 0.6.5
@@ -11570,7 +11563,7 @@ packages:
     engines: {node: 12.* || 14.* || >= 16}
     dependencies:
       '@ember/edition-utils': 1.2.0
-      babel-plugin-ember-template-compilation: 2.1.0
+      babel-plugin-ember-template-compilation: 2.1.1
       babel-plugin-htmlbars-inline-precompile: 5.3.1
       broccoli-debug: 0.6.5
       broccoli-persistent-filter: 3.1.3

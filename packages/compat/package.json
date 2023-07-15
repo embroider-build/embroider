@@ -66,6 +66,7 @@
     "yargs": "^17.0.1"
   },
   "devDependencies": {
+    "@embroider/core": "workspace:^",
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.84.2",

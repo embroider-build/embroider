@@ -25,7 +25,7 @@
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
-    "babel-import-util": "^1.1.0",
+    "babel-import-util": "^2.0.0",
     "ember-cli-babel": "^7.26.6",
     "find-up": "^5.0.0",
     "lodash": "^4.17.21",
@@ -47,7 +47,7 @@
     "@types/node": "^15.12.2",
     "@types/resolve": "^1.20.0",
     "@types/semver": "^7.3.6",
-    "babel-plugin-ember-template-compilation": "^2.0.0",
+    "babel-plugin-ember-template-compilation": "^2.1.1",
     "code-equality-assertions": "^0.9.0",
     "scenario-tester": "^2.1.2",
     "typescript": "^5.1.6"

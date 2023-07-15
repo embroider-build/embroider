@@ -539,11 +539,11 @@ stage2Scenarios
         window.define("my-addon/synthetic-import-1", function () {
           return importSync("../synthetic-import-1");
         });
-        import { importSync } from "@embroider/macros";
         import Component from '@ember/component';
         import layout from '../templates/components/hello-world';
         import computed from '@ember/object/computed';
         import somethingExternal from 'not-a-resolvable-package';
+        import { importSync } from "@embroider/macros";
         export default Component.extend({
           dynamicComponentName: computed('useDynamic', function () {
             return this.useDynamic || 'default-dynamic';

@@ -370,7 +370,7 @@ splitScenarios
   });
 
 splitScenarios
-  .map('pods under app/routes', app => {
+  .map('pods-under-app/routes', app => {
     merge(app.files, {
       app: {
         routes: {

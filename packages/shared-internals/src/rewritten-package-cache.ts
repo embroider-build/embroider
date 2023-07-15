@@ -324,4 +324,8 @@ class WrappedPackage implements PackageTheGoodParts {
     // package.json.ß
     return this.plainPkg.hasDependency(name);
   }
+
+  categorizeDependency(name: string): 'dependencies' | 'devDependencies' | 'peerDependencies' | undefined {
+    return this.plainPkg.categorizeDependency(name);
+  }
 }

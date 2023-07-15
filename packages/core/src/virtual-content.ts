@@ -1,5 +1,5 @@
-import { dirname, basename, resolve } from 'path';
-import { explicitRelative } from '.';
+import { dirname, basename, resolve, posix, sep, join } from 'path';
+import { Resolver, explicitRelative, extensionsPattern, AddonPackage, Package } from '.';
 import { compile } from './js-handlebars';
 
 const externalPrefix = '/@embroider/external/';
@@ -8,7 +8,7 @@ const externalPrefix = '/@embroider/external/';
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
-export function virtualContent(filename: string): string {
+export function virtualContent(filename: string, resolver: Resolver): string {
   if (filename.startsWith(externalPrefix)) {
     return externalShim({ moduleName: filename.slice(externalPrefix.length) });
   }
@@ -20,6 +20,11 @@ export function virtualContent(filename: string): string {
   let fb = decodeFastbootSwitch(filename);
   if (fb) {
     return fastbootSwitchTemplate(fb);
+  }
+
+  let im = decodeImplicitModules(filename);
+  if (im) {
+    return renderImplicitModules(im, resolver);
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
@@ -133,3 +138,131 @@ export default mod.default;
 export const {{name}} = mod.{{name}};
 {{/each}}
 `) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
+
+export function decodeImplicitModules(
+  filename: string
+): { type: 'implicit-modules' | 'implicit-test-modules'; fromFile: string } | undefined {
+  if (filename.endsWith('/#embroider-implicit-modules')) {
+    return {
+      type: 'implicit-modules',
+      fromFile: filename.slice(0, -1 * '/#embroider-implicit-modules'.length),
+    };
+  }
+  if (filename.endsWith('/#embroider-implicit-test-modules')) {
+    return {
+      type: 'implicit-test-modules',
+      fromFile: filename.slice(0, -1 * '/#embroider-implicit-test-modules'.length),
+    };
+  }
+}
+
+function renderImplicitModules(
+  {
+    type,
+    fromFile,
+  }: {
+    type: 'implicit-modules' | 'implicit-test-modules';
+    fromFile: string;
+  },
+  resolver: Resolver
+): string {
+  let resolvableExtensionsPattern = extensionsPattern(resolver.options.resolvableExtensions);
+
+  const pkg = resolver.packageCache.ownerOfFile(fromFile);
+  if (!pkg?.isV2Ember()) {
+    throw new Error(`bug: saw special implicit modules import in non-ember package at ${fromFile}`);
+  }
+
+  let lazyModules: { runtime: string; buildtime: string }[] = [];
+  let eagerModules: string[] = [];
+
+  let deps = pkg.dependencies.sort(orderAddons);
+
+  for (let dep of deps) {
+    // anything that isn't a v2 ember package by this point is not an active
+    // addon.
+    if (!dep.isV2Addon()) {
+      continue;
+    }
+
+    // we ignore peerDependencies here because classic ember-cli ignores
+    // peerDependencies here, and we're implementing the implicit-modules
+    // backward-comptibility feature.
+    if (pkg.categorizeDependency(dep.name) === 'peerDependencies') {
+      continue;
+    }
+
+    let implicitModules = dep.meta[type];
+    if (implicitModules) {
+      let renamedModules = inverseRenamedModules(dep.meta, resolvableExtensionsPattern);
+      for (let name of implicitModules) {
+        let packageName = dep.name;
+
+        let renamedMeta = dep.meta['renamed-packages'];
+        if (renamedMeta) {
+          Object.entries(renamedMeta).forEach(([key, value]) => {
+            if (value === dep.name) {
+              packageName = key;
+            }
+          });
+        }
+
+        let runtime = join(packageName, name).replace(resolvableExtensionsPattern, '');
+        let runtimeRenameLookup = runtime.split('\\').join('/');
+        if (renamedModules && renamedModules[runtimeRenameLookup]) {
+          runtime = renamedModules[runtimeRenameLookup];
+        }
+        runtime = runtime.split(sep).join('/');
+        lazyModules.push({
+          runtime,
+          buildtime: posix.join(packageName, name),
+        });
+      }
+    }
+    // we don't recurse across an engine boundary. Engines import their own
+    // implicit-modules.
+    if (!dep.isEngine()) {
+      eagerModules.push(posix.join(dep.name, `#embroider-${type}`));
+    }
+  }
+  return implicitModulesTemplate({ lazyModules, eagerModules });
+}
+
+const implicitModulesTemplate = compile(`
+import { importSync as i } from '@embroider/macros';
+let d = window.define;
+{{#each lazyModules as |module|}}
+d("{{js-string-escape module.runtime}}", function(){ return i("{{js-string-escape module.buildtime}}");});
+{{/each}}
+{{#each eagerModules as |module|}}
+import "{{js-string-escape module}}";
+{{/each}}
+`) as (params: { eagerModules: string[]; lazyModules: { runtime: string; buildtime: string }[] }) => string;
+
+// meta['renamed-modules'] has mapping from classic filename to real filename.
+// This takes that and converts it to the inverst mapping from real import path
+// to classic import path.
+function inverseRenamedModules(meta: AddonPackage['meta'], extensions: RegExp) {
+  let renamed = meta['renamed-modules'];
+  if (renamed) {
+    let inverted = {} as { [name: string]: string };
+    for (let [classic, real] of Object.entries(renamed)) {
+      inverted[real.replace(extensions, '')] = classic.replace(extensions, '');
+    }
+    return inverted;
+  }
+}
+
+function orderAddons(depA: Package, depB: Package): number {
+  let depAIdx = 0;
+  let depBIdx = 0;
+
+  if (depA && depA.meta && depA.isV2Addon()) {
+    depAIdx = depA.meta['order-index'] || 0;
+  }
+  if (depB && depB.meta && depB.isV2Addon()) {
+    depBIdx = depB.meta['order-index'] || 0;
+  }
+
+  return depAIdx - depBIdx;
+}

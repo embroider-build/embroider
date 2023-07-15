@@ -182,7 +182,7 @@ function lazyPackageLookup(config: InternalConfig, filename: string) {
   return {
     get owningPackage() {
       if (!owningPackage) {
-        owningPackage = { result: config.resolver.owningPackage(filename) };
+        owningPackage = { result: config.resolver.packageCache.ownerOfFile(filename) };
       }
       return owningPackage.result;
     },

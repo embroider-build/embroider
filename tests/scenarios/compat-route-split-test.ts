@@ -368,3 +368,175 @@ splitScenarios
       });
     });
   });
+
+splitScenarios
+  .map('pods-under-app/routes', app => {
+    merge(app.files, {
+      app: {
+        routes: {
+          index: {
+            'template.hbs': '<Welcome/>',
+            'controller.js': '',
+            'route.js': '',
+          },
+          people: {
+            'template.hbs': '<h1>People</h1>{{outlet}}',
+            'controller.js': '',
+            'route.js': '',
+            index: {
+              'template.hbs': '<AllPeople/>',
+            },
+            show: {
+              'template.hbs': '<OnePerson/>',
+              'controller.js': '',
+              'route.js': '',
+            },
+            edit: {
+              'template.hbs': '<input {{auto-focus}} />',
+              'controller.js': '',
+              'route.js': '',
+            },
+          },
+        },
+      },
+      config: {
+        'environment.js': `
+            module.exports = function(environment) {
+            let ENV = {
+              modulePrefix: 'my-app',
+              podModulePrefix: 'my-app/routes',
+              environment,
+              rootURL: '/',
+              locationType: 'history',
+              EmberENV: {
+                FEATURES: {
+                },
+                EXTEND_PROTOTYPES: {
+                  Date: false
+                }
+              },
+              APP: {}
+            };
+            return ENV;
+            };`,
+      },
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      throwOnWarnings(hooks);
+
+      let app: PreparedApp;
+      let expectFile: ExpectFile;
+
+      hooks.before(async assert => {
+        app = await scenario.prepare();
+        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      hooks.beforeEach(assert => {
+        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
+      });
+
+      test('has no components in main entrypoint', function () {
+        expectFile('./assets/my-app.js').doesNotMatch('all-people');
+        expectFile('./assets/my-app.js').doesNotMatch('welcome');
+        expectFile('./assets/my-app.js').doesNotMatch('unused');
+      });
+
+      test('has no helpers in main entrypoint', function () {
+        expectFile('./assets/my-app.js').doesNotMatch('capitalize');
+      });
+
+      test('has no modifiers in main entrypoint', function () {
+        expectFile('./assets/my-app.js').doesNotMatch('auto-focus');
+      });
+
+      test('has non-split controllers in main entrypoint', function () {
+        expectFile('./assets/my-app.js').matches('routes/index/controller');
+      });
+
+      test('has non-split route templates in main entrypoint', function () {
+        expectFile('./assets/my-app.js').matches('routes/index/template');
+      });
+
+      test('has non-split routes in main entrypoint', function () {
+        expectFile('./assets/my-app.js').matches('routes/index/route');
+      });
+
+      test('does not have split controllers in main entrypoint', function () {
+        expectFile('./assets/my-app.js').doesNotMatch('routes/people/controller');
+        expectFile('./assets/my-app.js').doesNotMatch('routes/people/show/controller');
+      });
+
+      test('does not have split route templates in main entrypoint', function () {
+        expectFile('./assets/my-app.js').doesNotMatch('routes/people/template');
+        expectFile('./assets/my-app.js').doesNotMatch('routes/people/index/template');
+        expectFile('./assets/my-app.js').doesNotMatch('routes/people/show/template');
+      });
+
+      test('does not have split routes in main entrypoint', function () {
+        expectFile('./assets/my-app.js').doesNotMatch('routes/people/route');
+        expectFile('./assets/my-app.js').doesNotMatch('routes/people/show/route');
+      });
+
+      test('dynamically imports the route entrypoint from the main entrypoint', function () {
+        expectFile('./assets/my-app.js').matches('import("my-app/assets/_route_/people.js")');
+      });
+
+      test('has split controllers in route entrypoint', function () {
+        expectFile('./assets/_route_/people.js').matches('routes/people/controller');
+        expectFile('./assets/_route_/people.js').matches('routes/people/show/controller');
+      });
+
+      test('has split route templates in route entrypoint', function () {
+        expectFile('./assets/_route_/people.js').matches('routes/people/template');
+        expectFile('./assets/_route_/people.js').matches('routes/people/index/template');
+        expectFile('./assets/_route_/people.js').matches('routes/people/show/template');
+      });
+
+      test('has split routes in route entrypoint', function () {
+        expectFile('./assets/_route_/people.js').matches('routes/people/route');
+        expectFile('./assets/_route_/people.js').matches('routes/people/show/route');
+      });
+
+      test('has no components in route entrypoint', function () {
+        expectFile('./assets/_route_/people.js').doesNotMatch('all-people');
+        expectFile('./assets/_route_/people.js').doesNotMatch('welcome');
+        expectFile('./assets/_route_/people.js').doesNotMatch('unused');
+      });
+
+      test('has no helpers in route entrypoint', function () {
+        expectFile('./assets/_route_/people.js').doesNotMatch('capitalize');
+      });
+
+      test('has no modifiers in route entrypoint', function () {
+        expectFile('./assets/_route_/people.js').doesNotMatch('auto-focus');
+      });
+
+      Qmodule('audit', function (hooks) {
+        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+
+        test('has no issues', function () {
+          expectAudit.hasNoFindings();
+        });
+
+        test('helper is consumed only from the template that uses it', function () {
+          expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
+        });
+
+        test('component is consumed only from the template that uses it', function () {
+          expectAudit.module('./components/one-person.js').hasConsumers(['./routes/people/show/template.hbs']);
+        });
+
+        test('modifier is consumed only from the template that uses it', function () {
+          expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./routes/people/edit/template.hbs']);
+        });
+
+        test('does not include unused component', function () {
+          expectAudit.module('./components/unused.hbs').doesNotExist();
+        });
+      });
+    });
+  });

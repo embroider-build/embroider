@@ -980,27 +980,6 @@ export class Resolver {
           return logTransition('fallbackResolve: relative appJs search failure', request);
         }
       } else {
-        if (pkg.meta['auto-upgraded'] && dirname(request.fromFile) === pkg.root) {
-          let otherRoot = this.options.activeAddons[pkg.name];
-          if (otherRoot && otherRoot !== pkg.root) {
-            // This provides some backward-compatibility with the way things
-            // would have resolved in earlier embroider versions, where the
-            // final fallback was always the activeAddons. These requests now
-            // end up getting converted to relative requests inside a particular
-            // moved package, which is why we need to handle them here.
-            //
-            // TODO: We shouldn't need this if we generate notional per-package
-            // entrypoints that pull in all the implicit-modules, so that the
-            // imports for implicit-modules happen in places with normal
-            // dependency resolvability.
-            return logTransition(
-              'fallbackResolve: relative path falling through to activeAddons',
-              request,
-              request.rehome(resolve(otherRoot, 'package.json'))
-            );
-          }
-        }
-
         // nothing else to do for relative imports
         return logTransition('fallbackResolve: relative failure', request);
       }

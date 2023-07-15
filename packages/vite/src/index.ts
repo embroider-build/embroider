@@ -22,7 +22,7 @@ export function embroider(): Plugin {
     enforce: 'pre',
     async resolveId(source, importer, options) {
       let request = RollupModuleRequest.from(source, importer);
-      if (!request) {
+      if (!request || !(options.custom?.embroider?.enableCustomResolver ?? true)) {
         // fallthrough to other rollup plugins
         return null;
       }

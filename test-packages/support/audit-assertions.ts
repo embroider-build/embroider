@@ -116,6 +116,14 @@ export class ExpectModule {
     this.expectAudit.assert.codeEqual(this.module.content, expectedSource);
   }
 
+  codeContains(expectedSource: string) {
+    if (!this.module) {
+      this.emitMissingModule();
+      return;
+    }
+    this.expectAudit.assert.codeContains(this.module.content, expectedSource);
+  }
+
   resolves(specifier: string): PublicAPI<ExpectResolution> {
     if (!this.module) {
       this.emitMissingModule();

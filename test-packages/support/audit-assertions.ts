@@ -210,6 +210,8 @@ type PublicAPI<T> = { [K in keyof T]: T[K] };
 class EmptyExpectModule implements PublicAPI<ExpectModule> {
   doesNotExist() {}
   codeEquals() {}
+  codeContains() {}
+
   resolves(): PublicAPI<ExpectResolution> {
     return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;
   }

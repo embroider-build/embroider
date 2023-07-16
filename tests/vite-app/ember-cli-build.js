@@ -14,5 +14,6 @@ module.exports = function (defaults) {
     staticComponents: true,
     staticHelpers: true,
     staticModifiers: true,
+    staticEmberSource: true,
   });
 };

@@ -114,7 +114,7 @@ describe('audit', function () {
       './index.html',
       './app.js',
       './hello.hbs',
-      '/@embroider/external/@ember/template-factory',
+      '/@embroider/ext-cjs/@ember/template-factory',
     ]);
   });
 

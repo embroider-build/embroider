@@ -599,7 +599,7 @@ Scenarios.fromProject(() => new Project())
             'app.js': `import "rsvp"`,
           });
           await configure({});
-          expectAudit.module('./app.js').resolves('rsvp').to(resolve('/@embroider/external/rsvp').split(sep).join('/'));
+          expectAudit.module('./app.js').resolves('rsvp').to(resolve('/@embroider/ext-cjs/rsvp').split(sep).join('/'));
         });
 
         test(`known ember-source-provided virtual packages are not externalized when explicitly included in deps`, async function () {

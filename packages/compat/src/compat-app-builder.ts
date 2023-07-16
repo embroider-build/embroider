@@ -43,7 +43,7 @@ import { AppFiles, RouteFiles } from '@embroider/core/src/app-files';
 import { PortableHint, maybeNodeModuleVersion } from '@embroider/core/src/portable';
 import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
-import { join, dirname, sep } from 'path';
+import { join, dirname } from 'path';
 import resolve from 'resolve';
 import { V1Config } from './v1-config';
 import { AddonMeta, Package, PackageInfo } from '@embroider/core';
@@ -140,9 +140,9 @@ export class CompatAppBuilder {
     let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
       // When looking for child addons, we want to ignore 'peerDependencies' of
       // a given package, to align with how ember-cli resolves addons. So here
-      // we only include dependencies that definitely appear in one of the other
-      // sections.
-      addon => pkg.packageJSON.dependencies?.[addon.name] || pkg.packageJSON.devDependencies?.[addon.name]
+      // we only include dependencies that are definitely active due to one of
+      // the other sections.
+      addon => pkg.categorizeDependency(addon.name) !== 'peerDependencies'
     );
     if (pkg === this.appPackageWithMovedDeps) {
       let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
@@ -703,10 +703,10 @@ export class CompatAppBuilder {
 
   private engines: { engine: Engine; appSync: SyncDir; fastbootSync: SyncDir | undefined }[] | undefined;
 
-  private updateAppJS(inputPaths: OutputPaths<TreeNames>): AppFiles[] {
+  private updateAppJS(appJSPath: string): AppFiles[] {
     if (!this.engines) {
-      this.engines = this.partitionEngines(inputPaths.appJS).map(engine => {
-        if (engine.sourcePath === inputPaths.appJS) {
+      this.engines = this.partitionEngines(appJSPath).map(engine => {
+        if (engine.sourcePath === appJSPath) {
           // this is the app. We have more to do for the app than for other
           // engines.
           let fastbootSync: SyncDir | undefined;
@@ -718,7 +718,7 @@ export class CompatAppBuilder {
           }
           return {
             engine,
-            appSync: new SyncDir(inputPaths.appJS, this.root),
+            appSync: new SyncDir(appJSPath, this.root),
             fastbootSync,
           };
         } else {
@@ -938,7 +938,7 @@ export class CompatAppBuilder {
       this.firstBuild = false;
     }
 
-    let appFiles = this.updateAppJS(inputPaths);
+    let appFiles = this.updateAppJS(inputPaths.appJS);
     let emberENV = this.configTree.readConfig().EmberENV;
     let assets = this.gatherAssets(inputPaths);
 
@@ -1192,7 +1192,7 @@ export class CompatAppBuilder {
       return cached;
     }
 
-    let eagerModules = [];
+    let eagerModules: string[] = [];
 
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
     if (!this.options.staticComponents) {
@@ -1272,7 +1272,7 @@ export class CompatAppBuilder {
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    this.gatherImplicitModules('implicit-modules', appFiles, amdModules);
+    eagerModules.push('./#embroider-implicit-modules');
 
     let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
     if (entryParams) {
@@ -1337,7 +1337,7 @@ export class CompatAppBuilder {
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    this.gatherImplicitModules('implicit-test-modules', engine, amdModules);
+    eagerModules.push('./#embroider-implicit-test-modules');
 
     for (let relativePath of engine.tests) {
       amdModules.push(this.importPaths(engine, relativePath));
@@ -1356,44 +1356,6 @@ export class CompatAppBuilder {
     };
     prepared.set(asset.relativePath, asset);
     return asset;
-  }
-
-  private gatherImplicitModules(
-    section: 'implicit-modules' | 'implicit-test-modules',
-    { engine }: AppFiles,
-    lazyModules: { runtime: string; buildtime: string }[]
-  ) {
-    for (let addon of engine.addons) {
-      let implicitModules = addon.meta[section];
-      if (implicitModules) {
-        let renamedModules = inverseRenamedModules(addon.meta, this.resolvableExtensionsPattern);
-        for (let name of implicitModules) {
-          let packageName = addon.name;
-
-          if (addon.isV2Addon()) {
-            let renamedMeta = addon.meta['renamed-packages'];
-            if (renamedMeta) {
-              Object.entries(renamedMeta).forEach(([key, value]) => {
-                if (value === addon!.name) {
-                  packageName = key;
-                }
-              });
-            }
-          }
-
-          let runtime = join(packageName, name).replace(this.resolvableExtensionsPattern, '');
-          let runtimeRenameLookup = runtime.split('\\').join('/');
-          if (renamedModules && renamedModules[runtimeRenameLookup]) {
-            runtime = renamedModules[runtimeRenameLookup];
-          }
-          runtime = runtime.split(sep).join('/');
-          lazyModules.push({
-            runtime,
-            buildtime: posix.join(packageName, name),
-          });
-        }
-      }
-    }
   }
 }
 
@@ -1540,20 +1502,6 @@ const babelFilterTemplate = jsHandlebarsCompile(`
 const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
 module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
 `) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
-
-// meta['renamed-modules'] has mapping from classic filename to real filename.
-// This takes that and converts it to the inverst mapping from real import path
-// to classic import path.
-function inverseRenamedModules(meta: AddonPackage['meta'], extensions: RegExp) {
-  let renamed = meta['renamed-modules'];
-  if (renamed) {
-    let inverted = {} as { [name: string]: string };
-    for (let [classic, real] of Object.entries(renamed)) {
-      inverted[real.replace(extensions, '')] = classic.replace(extensions, '');
-    }
-    return inverted;
-  }
-}
 
 function combinePackageJSON(...layers: object[]) {
   function custom(objValue: any, srcValue: any, key: string, _object: any, _source: any, stack: { size: number }) {

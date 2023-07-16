@@ -230,7 +230,7 @@ export function activePackageRules(
 }
 
 export function appTreeRulesDir(root: string, resolver: Resolver) {
-  let pkg = resolver.owningPackage(root);
+  let pkg = resolver.packageCache.ownerOfFile(root);
   if (pkg?.isV2Addon()) {
     // in general v2 addons can keep their app tree stuff in other places than
     // "_app_" and we would need to check their package.json to see. But this code

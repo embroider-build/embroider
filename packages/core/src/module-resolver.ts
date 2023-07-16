@@ -16,6 +16,7 @@ import {
   virtualContent,
   fastbootSwitch,
   decodeFastbootSwitch,
+  decodeImplicitModules,
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -144,7 +145,7 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 ) => Res;
 
 export class Resolver {
-  constructor(private options: Options) {}
+  constructor(readonly options: Options) {}
 
   beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
@@ -157,6 +158,7 @@ export class Resolver {
 
     request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
+    request = this.handleImplicitModules(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -251,7 +253,7 @@ export class Resolver {
           type: 'found',
           result: {
             type: 'virtual' as 'virtual',
-            content: virtualContent(request.specifier),
+            content: virtualContent(request.specifier, this),
             filename: request.specifier,
           },
         };
@@ -279,12 +281,8 @@ export class Resolver {
     }
   }
 
-  private get packageCache() {
+  get packageCache() {
     return RewrittenPackageCache.shared('embroider', this.options.appRoot);
-  }
-
-  owningPackage(fromFile: string): Package | undefined {
-    return this.packageCache.ownerOfFile(fromFile);
   }
 
   private logicalPackage(owningPackage: V2Package, file: string): V2Package {
@@ -300,7 +298,7 @@ export class Resolver {
   }
 
   private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
-    let pkg = this.owningPackage(request.fromFile);
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg) {
       return request;
@@ -358,7 +356,7 @@ export class Resolver {
       return logTransition('non-special import in fastboot switch', request);
     }
 
-    let pkg = this.owningPackage(match.filename);
+    let pkg = this.packageCache.ownerOfFile(match.filename);
     if (pkg) {
       let rel = explicitRelative(pkg.root, match.filename);
 
@@ -397,13 +395,41 @@ export class Resolver {
     return logTransition('failed to match in fastboot switch', request);
   }
 
+  private handleImplicitModules<R extends ModuleRequest>(request: R): R {
+    let im = decodeImplicitModules(request.specifier);
+    if (!im) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
+    }
+
+    let packageName = getPackageName(im.fromFile);
+    if (packageName) {
+      let dep = this.packageCache.resolve(packageName, pkg);
+      return logTransition(
+        `dep's implicit modules`,
+        request,
+        request.virtualize(resolve(dep.root, `#embroider-${im.type}`))
+      );
+    } else {
+      return logTransition(
+        `own implicit modules`,
+        request,
+        request.virtualize(resolve(pkg.root, `#embroider-${im.type}`))
+      );
+    }
+  }
+
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
     let match = compatPattern.exec(request.specifier);
     if (!match) {
       return request;
     }
     let { type, rest } = match.groups!;
-    let fromPkg = this.owningPackage(request.fromFile);
+    let fromPkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!fromPkg?.isV2Ember()) {
       return request;
     }
@@ -677,7 +703,7 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    let requestingPkg = this.owningPackage(request.fromFile);
+    let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!requestingPkg) {
       return request;
     }
@@ -734,7 +760,7 @@ export class Resolver {
       return request;
     }
 
-    let pkg = this.owningPackage(request.fromFile);
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return request;
     }
@@ -795,7 +821,7 @@ export class Resolver {
       return request;
     }
     let { specifier, fromFile } = request;
-    let pkg = this.owningPackage(fromFile);
+    let pkg = this.packageCache.ownerOfFile(fromFile);
     if (!pkg || !pkg.isV2Ember()) {
       return request;
     }
@@ -916,7 +942,7 @@ export class Resolver {
       return request;
     }
 
-    let pkg = this.owningPackage(fromFile);
+    let pkg = this.packageCache.ownerOfFile(fromFile);
     if (!pkg) {
       return logTransition('no identifiable owningPackage', request);
     }
@@ -1116,7 +1142,7 @@ export class Resolver {
   // check if this file is resolvable as a global component, and if so return
   // its dasherized name
   reverseComponentLookup(filename: string): string | undefined {
-    const owningPackage = this.owningPackage(filename);
+    const owningPackage = this.packageCache.ownerOfFile(filename);
     if (!owningPackage?.isV2Ember()) {
       return;
     }

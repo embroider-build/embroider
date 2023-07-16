@@ -108,8 +108,8 @@ export class AppFiles {
       }
 
       if (
-        this.handleClassicRouteFile(relativePath) ||
-        (podModulePrefix !== undefined && this.handlePodsRouteFile(relativePath, podModulePrefix))
+        (podModulePrefix !== undefined && this.handlePodsRouteFile(relativePath, podModulePrefix)) ||
+        this.handleClassicRouteFile(relativePath)
       ) {
         continue;
       }

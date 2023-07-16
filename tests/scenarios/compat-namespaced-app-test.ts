@@ -6,6 +6,7 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 appScenarios
   .map('compat-namespaced-app', app => {
@@ -35,6 +36,8 @@ appScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
@@ -43,15 +46,16 @@ appScenarios
       });
 
       test(`imports within app js`, function () {
-        let assertFile = expectFile('assets/@ef4/namespaced-app.js');
-        assertFile.matches(
-          /d\(["'"]my-addon\/my-implicit-module["'], function\(\)\{ return i\(["']my-addon\/my-implicit-module\.js["']\);/,
-          'implicit-modules have correct paths'
-        );
-        assertFile.matches(
-          /d\(["']@ef4\/namespaced-app\/app['"], function\(\)\{ return i\(['"]@ef4\/namespaced-app\/app\.js"\);\}\);/,
-          `app's own modules are correct`
-        );
+        expectAudit
+          .module('assets/@ef4/namespaced-app.js')
+          .resolves('./#embroider-implicit-modules')
+          .toModule()
+          .resolves('my-addon/my-implicit-module.js')
+          .to('./node_modules/my-addon/my-implicit-module.js');
+
+        expectAudit.module('assets/@ef4/namespaced-app.js').codeContains(`
+          d('@ef4/namespaced-app/app', function(){ return i('@ef4/namespaced-app/app.js');});
+        `);
       });
 
       test(`app css location`, function () {

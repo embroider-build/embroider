@@ -42,6 +42,7 @@
     "thread-loader": "^3.0.4"
   },
   "devDependencies": {
+    "@embroider/core": "workspace:^",
     "@types/csso": "^3.5.1",
     "@types/debug": "^4.1.5",
     "@types/fs-extra": "^9.0.12",

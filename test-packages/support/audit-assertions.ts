@@ -116,6 +116,14 @@ export class ExpectModule {
     this.expectAudit.assert.codeEqual(this.module.content, expectedSource);
   }
 
+  codeContains(expectedSource: string) {
+    if (!this.module) {
+      this.emitMissingModule();
+      return;
+    }
+    this.expectAudit.assert.codeContains(this.module.content, expectedSource);
+  }
+
   resolves(specifier: string): PublicAPI<ExpectResolution> {
     if (!this.module) {
       this.emitMissingModule();
@@ -202,6 +210,8 @@ type PublicAPI<T> = { [K in keyof T]: T[K] };
 class EmptyExpectModule implements PublicAPI<ExpectModule> {
   doesNotExist() {}
   codeEquals() {}
+  codeContains() {}
+
   resolves(): PublicAPI<ExpectResolution> {
     return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;
   }

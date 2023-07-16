@@ -28,7 +28,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "babel-import-util": "^1.1.0",
+    "babel-import-util": "^2.0.0",
     "ember-rfc176-data": "^0.3.17",
     "js-string-escape": "^1.0.1",
     "resolve-package-path": "^4.0.1",

@@ -1397,6 +1397,10 @@ let d = w.define;
   }
 {{/if}}
 
+{{#each eagerModules as |eagerModule| ~}}
+  i("{{js-string-escape eagerModule}}");
+{{/each}}
+
 {{#each amdModules as |amdModule| ~}}
   d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
 {{/each}}
@@ -1409,9 +1413,6 @@ let d = w.define;
   }
 {{/if}}
 
-{{#each eagerModules as |eagerModule| ~}}
-  i("{{js-string-escape eagerModule}}");
-{{/each}}
 
 {{#if lazyRoutes}}
 w._embroiderRouteBundles_ = [

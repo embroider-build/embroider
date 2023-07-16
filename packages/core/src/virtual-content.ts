@@ -40,7 +40,7 @@ export function virtualContent(filename: string, resolver: Resolver): string {
 const externalESShim = compile(`
 {{#if (eq moduleName "require")}}
 const m = window.requirejs;
-export default m.default;
+export default m;
 const has = m.has;
 export { has }
 {{else}}

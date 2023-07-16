@@ -38,6 +38,40 @@ function scenarioSetup(project: Project) {
 
   project.addDevDependency(macroSampleAddon);
   project.addDevDependency(funkySampleAddon);
+
+  project.addDependency('cjs-example-lib', {
+    files: {
+      'named.js': `
+      exports.hello = function() { return "hello worked" };
+    `,
+      'default.js': `
+      module.exports = function() { return "default worked" };
+    `,
+    },
+  });
+
+  project.mergeFiles({
+    tests: {
+      unit: {
+        'import-sync-test.js': `
+          import { module, test } from 'qunit';
+          import { importSync } from '@embroider/macros';
+
+          module('Unit | Macro | importSync', function () {
+            test('cjs interop for default export', async function (assert) {
+              let mod = importSync("cjs-example-lib/default");
+              assert.strictEqual(mod.default(), "default worked");
+            });
+
+            test('cjs interop for named export', async function (assert) {
+              let mod = importSync("cjs-example-lib/named");
+              assert.strictEqual(mod.hello(), "hello worked");
+            });
+          });
+      `,
+      },
+    },
+  });
 }
 
 appScenarios

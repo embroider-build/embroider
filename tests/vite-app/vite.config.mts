@@ -1,12 +1,12 @@
 import { defineConfig } from "vite";
 import { embroider, hbs } from "@embroider/vite";
-
-console.log(hbs);
-
+import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
+const root = "node_modules/.embroider/rewritten-app";
+
 export default defineConfig({
-  root: "node_modules/.embroider/rewritten-app",
+  root,
   plugins: [
     embroider(),
     { ...hbs(), enforce: "pre" },
@@ -27,6 +27,14 @@ export default defineConfig({
   server: {
     watch: {
       ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
+    },
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(root, "index.html"),
+        tests: resolve(root, "tests/index.html"),
+      },
     },
   },
 });

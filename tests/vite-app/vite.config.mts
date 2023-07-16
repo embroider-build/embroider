@@ -6,6 +6,7 @@ console.log(hbs);
 import { babel } from "@rollup/plugin-babel";
 
 export default defineConfig({
+  root: "node_modules/.embroider/rewritten-app",
   plugins: [
     embroider(),
     { ...hbs(), enforce: "pre" },

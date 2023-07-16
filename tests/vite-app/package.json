@@ -21,7 +21,7 @@
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
     "start:prebuild": "ember build --watch",
-    "start:dev": "vite --config vite.config.mts node_modules/.embroider/rewritten-app",
+    "start:dev": "vite",
     "start": "concurrently \"npm:start:*\" --names \"start:\"",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
     "test:ember": "ember test"

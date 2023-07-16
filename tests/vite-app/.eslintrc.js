@@ -8,6 +8,7 @@ module.exports = {
     sourceType: 'module',
     requireConfigFile: false,
     babelOptions: {
+      configFile: false,
       plugins: [
         ['@babel/plugin-proposal-decorators', { decoratorsBeforeExport: true }],
       ],
@@ -37,6 +38,7 @@ module.exports = {
         './config/**/*.js',
         './lib/*/index.js',
         './server/**/*.js',
+        './babel.config.js',
       ],
       parserOptions: {
         sourceType: 'script',

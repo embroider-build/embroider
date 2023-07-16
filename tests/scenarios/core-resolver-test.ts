@@ -536,7 +536,7 @@ Scenarios.fromProject(() => new Project())
             .to('./secondary.js');
         });
 
-        QUnit.only(`relative import in addon's app tree correctly prioritizes app`, async function () {
+        test(`relative import in addon's app tree correctly prioritizes app`, async function () {
           givenFiles({
             'node_modules/my-addon/_app_/hello-world.js': `import "./secondary"`,
             'node_modules/my-addon/_app_/secondary.js': ``,

@@ -38,7 +38,7 @@ export function embroider(): Plugin {
     },
     load(id) {
       if (id.startsWith(virtualPrefix)) {
-        return virtualContent(id.slice(virtualPrefix.length));
+        return virtualContent(id.slice(virtualPrefix.length), resolver);
       }
     },
   };

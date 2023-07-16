@@ -224,7 +224,10 @@ appScenarios
           .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
       });
       test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
-        expectAudit.module('assets/app-template.js').resolves('./#embroider-implicit-modules').toModule().codeContains(`
+        expectAudit
+          .module('assets/app-template.js')
+          .resolves('./-embroider-implicit-modules.js')
+          .toModule().codeContains(`
           d('somebody-elses-package/environment', function() {
             return i('emits-multiple-packages/somebody-elses-package/environment')
           });

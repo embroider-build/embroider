@@ -156,7 +156,7 @@ export const {{name}} = mod.{{name}};
 {{/each}}
 `) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
 
-const implicitModulesPattern = /(?<filename>.*)[\\/]#embroider-implicit-(?<test>test-)?modules$/;
+const implicitModulesPattern = /(?<filename>.*)[\\/]-embroider-implicit-(?<test>test-)?modules\.js$/;
 
 export function decodeImplicitModules(
   filename: string
@@ -236,7 +236,7 @@ function renderImplicitModules(
     // we don't recurse across an engine boundary. Engines import their own
     // implicit-modules.
     if (!dep.isEngine()) {
-      eagerModules.push(posix.join(dep.name, `#embroider-${type}`));
+      eagerModules.push(posix.join(dep.name, `-embroider-${type}.js`));
     }
   }
   return implicitModulesTemplate({ lazyModules, eagerModules });

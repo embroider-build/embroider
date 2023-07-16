@@ -412,13 +412,13 @@ export class Resolver {
       return logTransition(
         `dep's implicit modules`,
         request,
-        request.virtualize(resolve(dep.root, `#embroider-${im.type}`))
+        request.virtualize(resolve(dep.root, `-embroider-${im.type}.js`))
       );
     } else {
       return logTransition(
         `own implicit modules`,
         request,
-        request.virtualize(resolve(pkg.root, `#embroider-${im.type}`))
+        request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
       );
     }
   }

@@ -1272,7 +1272,7 @@ export class CompatAppBuilder {
 
     // this is a backward-compatibility feature: addons can force inclusion of
     // modules.
-    eagerModules.push('./#embroider-implicit-modules');
+    eagerModules.push('./-embroider-implicit-modules.js');
 
     let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
     if (entryParams) {
@@ -1337,7 +1337,7 @@ export class CompatAppBuilder {
     let amdModules: { runtime: string; buildtime: string }[] = [];
     // this is a backward-compatibility feature: addons can force inclusion of
     // test support modules.
-    eagerModules.push('./#embroider-implicit-test-modules');
+    eagerModules.push('./-embroider-implicit-test-modules.js');
 
     for (let relativePath of engine.tests) {
       amdModules.push(this.importPaths(engine, relativePath));

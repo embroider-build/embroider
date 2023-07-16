@@ -4,7 +4,6 @@ import QUnit from 'qunit';
 import { resolve, sep } from 'path';
 const { module: Qmodule, test } = QUnit;
 
-import { definesPattern } from '@embroider/test-support';
 import { ExpectFile, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 
 import { throwOnWarnings } from '@embroider/core';
@@ -225,13 +224,11 @@ appScenarios
           .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
       });
       test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
-        let assertFile = expectFile('assets/app-template.js');
-        assertFile.matches(
-          definesPattern(
-            'somebody-elses-package/environment',
-            'emits-multiple-packages/somebody-elses-package/environment'
-          )
-        );
+        expectAudit.module('assets/app-template.js').resolves('./#embroider-implicit-modules').toModule().codeContains(`
+          d('somebody-elses-package/environment', function() {
+            return i('emits-multiple-packages/somebody-elses-package/environment')
+          });
+        `);
       });
       test('rewriting one module does not capture entire package namespace', function () {
         expectAudit

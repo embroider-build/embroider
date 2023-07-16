@@ -6,6 +6,7 @@ import { AddonMeta, AppMeta, PackageInfo } from './metadata';
 import PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
 export default class Package {
+  // order here matters because we rely on it in categorizeDependency
   private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
 
   constructor(readonly root: string, protected packageCache: PackageCache, private isApp: boolean) {
@@ -164,6 +165,23 @@ export default class Package {
 
   get dependencyNames(): string[] {
     return flatMap(this.dependencyKeys, key => Object.keys(this.packageJSON[key] || {}));
+  }
+
+  // this answers the question, "why is this thing in `this.dependencies`?". The
+  // order of the dependency keys is important, because "dependencies" always
+  // dominates (if it's your dependency, it's always your dependency). Next
+  // comes devDependencies, so that if you're the topmost package, your
+  // devDependencies are active dependenceis. Last comes peerDependencies. It's
+  // common for a peerDep to also appear in devDependencies, but unless your
+  // pacakge is the topmost your devDependencies won't be included in
+  // this.dependencyKeys, so we'll see that you are now getting the package via
+  // peerDeps.
+  categorizeDependency(name: string) {
+    for (let key of this.dependencyKeys) {
+      if (this.packageJSON[key]?.[name]) {
+        return key;
+      }
+    }
   }
 
   @Memoize()

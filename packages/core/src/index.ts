@@ -22,6 +22,7 @@ export {
   ResolverFunction,
   SyncResolverFunction,
 } from './module-resolver';
+export { ResolverLoader } from './resolver-loader';
 export { virtualContent } from './virtual-content';
 export type { Engine } from './app-files';
 

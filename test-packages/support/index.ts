@@ -1,7 +1,6 @@
 import { join } from 'path';
 import 'jest';
 import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
-import escapeRegExp from 'lodash/escapeRegExp';
 import { createContext, Script } from 'vm';
 
 interface RunDefaultOptions {
@@ -100,14 +99,6 @@ export function emberTemplateCompiler() {
     path: join(__dirname, 'vendor', 'ember-template-compiler.js'),
     version: '4.8.1',
   };
-}
-
-export function definesPattern(runtimeName: string, buildTimeName: string): RegExp {
-  runtimeName = escapeRegExp(runtimeName);
-  buildTimeName = escapeRegExp(buildTimeName);
-  return new RegExp(
-    `d\\(['"]${runtimeName}['"], *function *\\(\\) *\\{[\\s\\n]*return i\\(['"]${buildTimeName}['"]\\);?[\\s\\n]*\\}\\)`
-  );
 }
 
 export { ExpectFile } from './file-assertions';

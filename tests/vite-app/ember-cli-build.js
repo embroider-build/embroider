@@ -15,5 +15,8 @@ module.exports = function (defaults) {
     staticHelpers: true,
     staticModifiers: true,
     staticEmberSource: true,
+    amdCompatibility: {
+      es: [],
+    },
   });
 };

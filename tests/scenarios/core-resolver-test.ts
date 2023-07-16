@@ -84,6 +84,7 @@ Scenarios.fromProject(() => new Project())
         };
         configure = async function (opts?: ConfigureOpts) {
           let resolverOptions: CompatResolverOptions = {
+            amdCompatibility: 'cjs',
             activeAddons: {},
             renameModules: {},
             renamePackages: opts?.renamePackages ?? {},

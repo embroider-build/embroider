@@ -292,6 +292,7 @@ export class CompatAppBuilder {
           // search, so first one wins.
           .reverse(),
       })),
+      amdCompatibility: this.options.amdCompatibility,
 
       // this is the additional stufff that @embroider/compat adds on top to do
       // global template resolving

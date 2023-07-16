@@ -11,7 +11,8 @@ import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
 import {
-  virtualExternalModule,
+  virtualExternalESModule,
+  virtualExternalCJSModule,
   virtualPairComponent,
   virtualContent,
   fastbootSwitch,
@@ -21,6 +22,7 @@ import {
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
+import UserOptions from './options';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -62,6 +64,7 @@ export interface Options {
   engines: EngineConfig[];
   modulePrefix: string;
   podModulePrefix?: string;
+  amdCompatibility: Required<UserOptions['amdCompatibility']>;
 }
 
 interface EngineConfig {
@@ -926,13 +929,40 @@ export class Resolver {
   }
 
   private external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
-    let exports = knownExports.get(specifier) ?? knownExports.get(specifier + '/index');
-    if (!exports) {
-      console.warn(`don't know exports for external: ${specifier}`);
-      exports = [];
+    if (this.options.amdCompatibility === 'cjs') {
+      let filename = virtualExternalCJSModule(specifier);
+      return logTransition(label, request, request.virtualize(filename));
+    } else if (this.options.amdCompatibility) {
+      let entry = this.options.amdCompatibility.es.find(
+        entry => entry[0] === specifier || entry[0] + '/index' === specifier
+      );
+      if (!entry && request.specifier === 'require') {
+        entry = ['require', ['default', 'has']];
+      }
+      if (!entry) {
+        throw new Error(
+          `Embroider's amdCompatibility option is in "es" mode, which requires you to manually list the shims you need. 
+
+Something attempted to access "${request.specifier}" via the classic AMD loader and no shim is defined for it.
+
+You can fix this by adding it to your config:
+
+  amdCompatibility: {
+    es: [
+      ["${request.specifier}", ["default", "yourNamedExportsGoHere"]],
+    ]
+  }
+
+`
+        );
+      }
+      let filename = virtualExternalESModule(specifier, entry[1]);
+      return logTransition(label, request, request.virtualize(filename));
+    } else {
+      throw new Error(
+        `Embroider's amdCompatibility option is disabled, but something tried to use it to access "${request.specifier}"`
+      );
     }
-    let filename = virtualExternalModule(specifier, exports);
-    return logTransition(label, request, request.virtualize(filename));
   }
 
   fallbackResolve<R extends ModuleRequest>(request: R): R {
@@ -1203,5 +1233,3 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, importedPackageName: string): boolean {
   return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
 }
-
-const knownExports: Map<string, string[]> = new Map([['require', ['default', 'has']]]);

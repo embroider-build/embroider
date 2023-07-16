@@ -28,6 +28,7 @@ describe('audit', function () {
     const resolvableExtensions = ['.js', '.hbs'];
 
     let resolverConfig: CompatResolverOptions = {
+      amdCompatibility: 'cjs',
       appRoot: app.baseDir,
       modulePrefix: 'audit-this-app',
       options: {

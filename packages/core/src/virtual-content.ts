@@ -2,16 +2,22 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import { Resolver, explicitRelative, extensionsPattern, AddonPackage, Package } from '.';
 import { compile } from './js-handlebars';
 
-const externalPrefix = '/@embroider/external/';
+const externalESPrefix = '/@embroider/ext-es/';
+const externalCJSPrefix = '/@embroider/ext-cjs/';
 
 // Given a filename that was passed to your ModuleRequest's `virtualize()`,
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
 export function virtualContent(filename: string, resolver: Resolver): string {
-  let extern = decodeVirtualExternalModule(filename);
+  let cjsExtern = decodeVirtualExternalCJSModule(filename);
+  if (cjsExtern) {
+    return renderCJSExternalShim(cjsExtern);
+  }
+
+  let extern = decodeVirtualExternalESModule(filename);
   if (extern) {
-    return renderExternalShim(extern);
+    return renderESExternalShim(extern);
   }
   let match = decodeVirtualPairComponent(filename);
   if (match) {
@@ -31,7 +37,7 @@ export function virtualContent(filename: string, resolver: Resolver): string {
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
 }
 
-const externalShim = compile(`
+const externalESShim = compile(`
 {{#if (eq moduleName "require")}}
 const m = window.requirejs;
 export default m.default;
@@ -49,11 +55,11 @@ export { {{#each names as |name|}}{{name}}, {{/each}} }
 {{/if}}
 `) as (params: { moduleName: string; default: boolean; names: string[] }) => string;
 
-function renderExternalShim(params: { moduleName: string; exports: string[] }): string {
-  return externalShim({
-    moduleName: params.moduleName,
-    default: params.exports.includes('default'),
-    names: params.exports.filter(n => n !== 'default'),
+function renderESExternalShim({ moduleName, exports }: { moduleName: string; exports: string[] }): string {
+  return externalESShim({
+    moduleName,
+    default: exports.includes('default'),
+    names: exports.filter(n => n !== 'default'),
   });
 }
 
@@ -69,20 +75,34 @@ export default setComponentTemplate(template, templateOnlyComponent(undefined, "
 {{/if}}
 `) as (params: { relativeHBSModule: string; relativeJSModule: string | null; debugName: string }) => string;
 
-export function virtualExternalModule(specifier: string, exports: string[]): string {
-  return externalPrefix + specifier + `?exports=${exports.join(',')}`;
+export function virtualExternalESModule(specifier: string, exports: string[] | undefined): string {
+  if (exports) {
+    return externalESPrefix + specifier + `?exports=${exports.join(',')}`;
+  } else {
+    return externalESPrefix + specifier;
+  }
 }
 
-function decodeVirtualExternalModule(filename: string) {
-  if (filename.startsWith(externalPrefix)) {
+export function virtualExternalCJSModule(specifier: string): string {
+  return externalCJSPrefix + specifier;
+}
+
+function decodeVirtualExternalESModule(filename: string): { moduleName: string; exports: string[] } | undefined {
+  if (filename.startsWith(externalESPrefix)) {
     let exports: string[] = [];
-    let url = new URL(filename.slice(externalPrefix.length), 'http://example.com');
+    let url = new URL(filename.slice(externalESPrefix.length), 'http://example.com');
     let nameString = url.searchParams.get('exports');
     if (nameString) {
       exports = nameString.split(',');
     }
     let moduleName = url.pathname.slice(1);
     return { moduleName, exports };
+  }
+}
+
+function decodeVirtualExternalCJSModule(filename: string) {
+  if (filename.startsWith(externalCJSPrefix)) {
+    return { moduleName: filename.slice(externalCJSPrefix.length) };
   }
 }
 
@@ -280,3 +300,26 @@ function orderAddons(depA: Package, depB: Package): number {
 
   return depAIdx - depBIdx;
 }
+
+const renderCJSExternalShim = compile(`
+{{#if (eq moduleName "require")}}
+const m = window.requirejs;
+{{else}}
+const m = window.require("{{{js-string-escape moduleName}}}");
+{{/if}}
+{{!-
+  There are plenty of hand-written AMD defines floating around
+  that lack this, and they will break when other build systems
+  encounter them.
+
+  As far as I can tell, Ember's loader was already treating this
+  case as a module, so in theory we aren't breaking anything by
+  marking it as such when other packagers come looking.
+
+  todo: get review on this part.
+-}}
+if (m.default && !m.__esModule) {
+  m.__esModule = true;
+}
+module.exports = m;
+`) as (params: { moduleName: string }) => string;

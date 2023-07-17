@@ -17,7 +17,6 @@
     "ember-cli": "~3.28.0",
     "ember-cli-babel": "^7.20.5",
     "ember-cli-htmlbars": "^6.0.0",
-    "ember-resolver": "^10.1.0",
     "ember-source": "~3.26",
     "execa": "^4.0.3",
     "fastest-levenshtein": "^1.0.16",

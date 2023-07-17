@@ -1,4 +1,10 @@
-import { Package, PackageCache, RewrittenPackageIndex } from '@embroider/core';
+import {
+  Package,
+  PackageCache,
+  RewrittenPackageIndex,
+  summarizePeerDepViolations,
+  validatePeerDependencies,
+} from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import buildCompatAddon from './build-compat-addon';
 import { Funnel } from 'broccoli-funnel';
@@ -14,6 +20,25 @@ export function convertLegacyAddons(compatApp: CompatApp) {
   let instanceCache = new V1InstanceCache(compatApp, packageCache);
 
   let appPackage = compatApp.appPackage();
+
+  let violations = validatePeerDependencies(appPackage).filter(({ dep }) => dep.isEmberPackage() && !dep.isV2Ember());
+  if (violations.length > 0) {
+    if (process.env.I_HAVE_BAD_PEER_DEPS_AND_WANT_A_BROKEN_BUILD) {
+      console.warn(
+        `You have set process.env.I_HAVE_BAD_PEER_DEPS_AND_WANT_A_BROKEN_BUILD, so we're ignoring your broken peer deps. Please don't bother reporting any Embroider bugs until you unset it.\n${summarizePeerDepViolations(
+          violations
+        )}`
+      );
+    } else {
+      throw new Error(
+        `Some V1 ember addons are resolving as incorrect peer dependencies. This makes it impossible for us to safely convert them to v2 format.
+See https://github.com/embroider-build/embroider/blob/main/docs/peer-dependency-resolution-issues.md for an explanation of the problem and suggestions for fixing it.
+
+${summarizePeerDepViolations(violations)}`
+      );
+    }
+  }
+
   let v1Addons = findV1Addons(appPackage);
   let index = buildAddonIndex(compatApp, appPackage, v1Addons);
 

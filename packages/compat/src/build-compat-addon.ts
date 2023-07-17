@@ -3,17 +3,13 @@ import { Package } from '@embroider/core';
 import SmooshPackageJSON from './smoosh-package-json';
 import broccoliMergeTrees from 'broccoli-merge-trees';
 import { Node } from 'broccoli-node-api';
-import buildFunnel from 'broccoli-funnel';
-import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import EmptyPackageTree from './empty-package-tree';
 
 export default function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {
   if (originalPackage.isV2Addon()) {
-    // this case is needed when a native-v2 addon depends on a
-    // non-native-v2 addon. (The non-native one will get rewritten and
-    // therefore moved, so to continue depending on it the native one needs to
-    // move too.)
-    return withoutNodeModules(originalPackage);
+    throw new Error(
+      `bug in @embroider/compat. We should not see any v2 addons here, but ${originalPackage.name} as ${originalPackage.root} is a v2 addon`
+    );
   }
 
   let oldPackages = v1Cache.getAddons(originalPackage.root);
@@ -45,11 +41,4 @@ export default function buildCompatAddon(originalPackage: Package, v1Cache: V1In
   } else {
     return oldPackages[0].v2Tree;
   }
-}
-
-function withoutNodeModules(originalPackage: Package): Node {
-  let Klass = originalPackage.mayRebuild ? WatchedDir : UnwatchedDir;
-  return buildFunnel(new Klass(originalPackage.root), {
-    exclude: ['node_modules', '*/node_modules'],
-  });
 }

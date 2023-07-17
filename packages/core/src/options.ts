@@ -133,7 +133,6 @@ export function optionsWithDefaults(options?: Options): Required<Options> {
     staticAppPaths: [],
     skipBabel: [],
     pluginHints: [],
-    implicitModulesStrategy: 'relativePaths' as 'relativePaths',
     amdCompatibility: 'cjs' as const,
   };
   if (options) {

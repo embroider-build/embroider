@@ -23,3 +23,5 @@ export {
   version as cacheBustingPluginVersion,
 } from './babel-plugin-cache-busting';
 export { locateEmbroiderWorkingDir } from './working-dir';
+
+export * from './dep-validation';

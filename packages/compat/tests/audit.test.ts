@@ -28,6 +28,7 @@ describe('audit', function () {
     const resolvableExtensions = ['.js', '.hbs'];
 
     let resolverConfig: CompatResolverOptions = {
+      amdCompatibility: 'cjs',
       appRoot: app.baseDir,
       modulePrefix: 'audit-this-app',
       options: {
@@ -113,7 +114,7 @@ describe('audit', function () {
       './index.html',
       './app.js',
       './hello.hbs',
-      '/@embroider/external/@ember/template-factory',
+      '/@embroider/ext-cjs/@ember/template-factory',
     ]);
   });
 

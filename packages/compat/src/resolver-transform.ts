@@ -734,10 +734,12 @@ class TemplateResolver implements ASTPlugin {
         });
         return;
       }
-      let resolution = this.targetHelper(node.path.original);
-      this.emit(path, resolution, (node, newId) => {
-        node.path = newId;
-      });
+      if (node.path.tail.length === 0 && node.path.head.type === 'VarHead') {
+        let resolution = this.targetHelper(node.path.original);
+        this.emit(path, resolution, (node, newId) => {
+          node.path = newId;
+        });
+      }
     },
     MustacheStatement: {
       enter: (node, path) => {

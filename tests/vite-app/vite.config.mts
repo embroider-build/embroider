@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { embroider, hbs } from "@embroider/vite";
+import { resolver, hbs, scripts } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
@@ -8,7 +8,8 @@ const root = "node_modules/.embroider/rewritten-app";
 export default defineConfig({
   root,
   plugins: [
-    embroider(),
+    scripts(),
+    resolver(),
     { ...hbs(), enforce: "pre" },
 
     babel({

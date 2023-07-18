@@ -13,12 +13,12 @@ import { readJSONSync } from 'fs-extra';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 
-export function embroider(): Plugin {
+export function resolver(): Plugin {
   let resolverOptions: ResolverOptions = readJSONSync(join(locateEmbroiderWorkingDir(process.cwd()), 'resolver.json'));
   let resolver = new Resolver(resolverOptions);
 
   return {
-    name: 'embroider',
+    name: 'embroider-resolver',
     enforce: 'pre',
     async resolveId(source, importer, options) {
       let request = RollupModuleRequest.from(source, importer);

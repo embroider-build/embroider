@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { resolver, hbs, scripts } from "@embroider/vite";
+import { resolver, hbs, scripts, templateTag } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
@@ -8,9 +8,10 @@ const root = "node_modules/.embroider/rewritten-app";
 export default defineConfig({
   root,
   plugins: [
+    { ...hbs(), enforce: "pre" },
+    { ...templateTag(), enforce: "pre" },
     scripts(),
     resolver(),
-    { ...hbs(), enforce: "pre" },
 
     babel({
       babelHelpers: "runtime",
@@ -19,11 +20,11 @@ export default defineConfig({
       // javascript but the javascript still also needs babel, but we don't want
       // to rename them because vite isn't great about knowing how to hot-reload
       // them if we resolve them to made-up names.
-      extensions: [".js", ".hbs"],
+      extensions: [".gjs", ".js", ".hbs"],
     }),
   ],
   optimizeDeps: {
-    exclude: ["@embroider/macros"],
+    disabled: true,
   },
   server: {
     watch: {

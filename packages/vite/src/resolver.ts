@@ -1,4 +1,4 @@
-import type { PluginContext, ResolveIdHook, ResolveIdResult } from 'rollup';
+import type { PluginContext, ResolveIdResult } from 'rollup';
 import { Plugin } from 'vite';
 import { join } from 'path';
 import {
@@ -21,12 +21,12 @@ export function resolver(): Plugin {
     name: 'embroider-resolver',
     enforce: 'pre',
     async resolveId(source, importer, options) {
-      let request = RollupModuleRequest.from(source, importer);
-      if (!request || !(options.custom?.embroider?.enableCustomResolver ?? true)) {
+      let request = RollupModuleRequest.from(source, importer, options.custom);
+      if (!request) {
         // fallthrough to other rollup plugins
         return null;
       }
-      let resolution = await resolver.resolve(request, defaultResolve(this, options));
+      let resolution = await resolver.resolve(request, defaultResolve(this));
       switch (resolution.type) {
         case 'found':
           return resolution.result;
@@ -44,10 +44,7 @@ export function resolver(): Plugin {
   };
 }
 
-function defaultResolve(
-  context: PluginContext,
-  options: Parameters<ResolveIdHook>[2]
-): ResolverFunction<RollupModuleRequest, Resolution<ResolveIdResult>> {
+function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRequest, Resolution<ResolveIdResult>> {
   return async (request: RollupModuleRequest) => {
     if (request.isVirtual) {
       return {
@@ -56,8 +53,12 @@ function defaultResolve(
       };
     }
     let result = await context.resolve(request.specifier, request.fromFile, {
-      ...options,
       skipSelf: true,
+      custom: {
+        embroider: {
+          meta: request.meta,
+        },
+      },
     });
     if (result) {
       return { type: 'found', result };

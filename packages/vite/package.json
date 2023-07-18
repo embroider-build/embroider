@@ -9,6 +9,7 @@
   "dependencies": {
     "@rollup/pluginutils": "^4.1.1",
     "assert-never": "^1.2.1",
+    "content-tag": "^1.0.0",
     "debug": "^4.3.2",
     "fs-extra": "^10.0.0",
     "jsdom": "^16.6.0",

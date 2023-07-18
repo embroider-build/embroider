@@ -24,7 +24,7 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: {
-    disabled: true,
+    exclude: ["@embroider/macros"],
   },
   server: {
     watch: {

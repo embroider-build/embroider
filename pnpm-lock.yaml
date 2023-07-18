@@ -640,6 +640,9 @@ importers:
       babel-import-util:
         specifier: ^2.0.0
         version: 2.0.0
+      debug:
+        specifier: ^4.3.2
+        version: 4.3.2(supports-color@8.1.0)
       ember-rfc176-data:
         specifier: ^0.3.17
         version: 0.3.17
@@ -671,6 +674,9 @@ importers:
       '@types/babel__traverse':
         specifier: ^7.18.5
         version: 7.18.5
+      '@types/debug':
+        specifier: ^4.1.5
+        version: 4.1.5
       '@types/fs-extra':
         specifier: ^9.0.12
         version: 9.0.12
@@ -883,6 +889,9 @@ importers:
       assert-never:
         specifier: ^1.2.1
         version: 1.2.1
+      content-tag:
+        specifier: ^1.0.0
+        version: 1.0.0
       debug:
         specifier: ^4.3.2
         version: 4.3.2(supports-color@8.1.0)
@@ -2283,7 +2292,7 @@ packages:
       '@babel/core': 7.22.6(supports-color@8.1.0)
       '@babel/helper-compilation-targets': 7.22.9(@babel/core@7.22.6)
       '@babel/helper-plugin-utils': 7.22.5
-      debug: 4.3.2(supports-color@8.1.0)
+      debug: 4.3.4(supports-color@8.1.0)
       lodash.debounce: 4.0.8
       resolve: 1.20.0
       semver: 6.3.1
@@ -2298,7 +2307,7 @@ packages:
       '@babel/core': 7.22.9
       '@babel/helper-compilation-targets': 7.22.9(@babel/core@7.22.9)
       '@babel/helper-plugin-utils': 7.22.5
-      debug: 4.3.2(supports-color@8.1.0)
+      debug: 4.3.4(supports-color@8.1.0)
       lodash.debounce: 4.0.8
       resolve: 1.20.0
       semver: 6.3.1
@@ -8541,7 +8550,7 @@ packages:
     resolution: {integrity: sha512-iH+boep2xivfD9wMaZWkywYIURSmsL96d6MoqrC94BnGSvXE4Quf8hnJiHGFYhw/nLeIa1XyRaf4vvcvkwAefg==}
     engines: {node: 8.* || >= 10.*}
     dependencies:
-      debug: 4.3.2(supports-color@8.1.0)
+      debug: 4.3.4(supports-color@8.1.0)
       heimdalljs: 0.2.6
       istextorbinary: 2.6.0
       mkdirp: 0.5.6
@@ -11136,6 +11145,10 @@ packages:
     engines: {node: '>= 0.6'}
     dependencies:
       safe-buffer: 5.2.1
+
+  /content-tag@1.0.0:
+    resolution: {integrity: sha512-M1EcjnwPN/CWtgXHO3YgUGEe/oqxdtBtbeWdvlht9EZ0JinVaMTuNU6V1XV7BMe2GdPxD9sNXl+NMbpojfviIQ==}
+    dev: false
 
   /content-type@1.0.5:
     resolution: {integrity: sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==}
@@ -22227,7 +22240,7 @@ packages:
     resolution: {integrity: sha512-vngT2JmkSapgq0z7uIoYtB9kWOOzMihAAYq/D3Pjm/ODOGMgS4r++B+OZ09U4hWR6EaOdy9eqQ7/8ygbH3wehA==}
     engines: {node: 8.* || >= 10.*}
     dependencies:
-      debug: 4.3.2(supports-color@8.1.0)
+      debug: 4.3.4(supports-color@8.1.0)
       heimdalljs: 0.2.6
       mkdirp: 0.5.6
       rimraf: 3.0.2

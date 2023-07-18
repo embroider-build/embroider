@@ -41,3 +41,11 @@ export function unrelativize(pkg: Package, specifier: string, fromFile: string) 
   }
   return result;
 }
+
+const postfixRE = /[?#].*$/s;
+
+// this is the same implementation Vite uses internally to keep its
+// cache-busting query params from leaking where they shouldn't.
+export function cleanUrl(url: string): string {
+  return url.replace(postfixRE, '');
+}

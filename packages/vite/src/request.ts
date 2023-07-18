@@ -1,4 +1,4 @@
-import { ModuleRequest } from '@embroider/core';
+import { ModuleRequest, cleanUrl } from '@embroider/core';
 
 export const virtualPrefix = 'embroider_virtual:';
 
@@ -21,7 +21,7 @@ export class RollupModuleRequest implements ModuleRequest {
       }
 
       // strip query params off the importer
-      let fromFile = new URL(nonVirtual, 'http://example.com').pathname;
+      let fromFile = cleanUrl(nonVirtual);
       return new RollupModuleRequest(source, fromFile, custom?.embroider?.meta);
     }
   }

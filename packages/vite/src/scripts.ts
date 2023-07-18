@@ -11,7 +11,7 @@ import type { MinifyOptions } from 'terser';
 
 const defaults = ['/assets/vendor.js', '/assets/test-support.js'];
 
-export function scripts(params: { include?: string[]; exclude?: string[] }): Plugin {
+export function scripts(params?: { include?: string[]; exclude?: string[] }): Plugin {
   let optimizer: ScriptOptimizer;
 
   // configured names are always interpreted as origin-absolute URLs.

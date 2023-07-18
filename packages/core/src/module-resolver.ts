@@ -941,11 +941,11 @@ export class Resolver {
       }
       if (!entry) {
         throw new Error(
-          `Embroider's amdCompatibility option is in "es" mode, which requires you to manually list the shims you need. 
+          `A module tried to resolve "${request.specifier}" and didn't find it.
 
-Something attempted to access "${request.specifier}" via the classic AMD loader and no shim is defined for it.
-
-You can fix this by adding it to your config:
+ - Maybe a dependency declaration is missing? 
+ - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.
+ - If this dependency is available in the AMD loader (because someone manually called "define()" for it), you can configure a shim like:
 
   amdCompatibility: {
     es: [

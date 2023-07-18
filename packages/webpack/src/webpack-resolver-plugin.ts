@@ -108,8 +108,9 @@ function getAdaptedResolve(
 }
 
 class WebpackModuleRequest implements ModuleRequest {
-  specifier: string;
-  fromFile: string;
+  readonly specifier: string;
+  readonly fromFile: string;
+  readonly meta: Record<string, any> | undefined;
 
   static from(state: any, babelLoaderPrefix: string, appRoot: string): WebpackModuleRequest | undefined {
     // when the files emitted from our virtual-loader try to import things,
@@ -146,6 +147,7 @@ class WebpackModuleRequest implements ModuleRequest {
       context: string;
       contextInfo: {
         issuer: string;
+        _embroiderMeta?: Record<string, any> | undefined;
       };
     },
     public isVirtual = false
@@ -157,6 +159,7 @@ class WebpackModuleRequest implements ModuleRequest {
     // that can actually be handed back to webpack)
     this.specifier = state.request;
     this.fromFile = state.contextInfo.issuer;
+    this.meta = state.contextInfo._embroiderMeta ? { ...state.contextInfo._embroiderMeta } : undefined;
   }
 
   alias(newSpecifier: string) {
@@ -179,5 +182,9 @@ class WebpackModuleRequest implements ModuleRequest {
     let next = this.alias(`${this.babelLoaderPrefix}${virtualLoaderName}?${params.toString()}!`);
     next.isVirtual = true;
     return next;
+  }
+  withMeta(meta: Record<string, any> | undefined): this {
+    this.state.contextInfo._embroiderMeta = meta;
+    return new WebpackModuleRequest(this.babelLoaderPrefix, this.appRoot, this.state) as this;
   }
 }

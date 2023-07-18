@@ -110,28 +110,38 @@ type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName 
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
 export interface ModuleRequest {
-  specifier: string;
-  fromFile: string;
-  isVirtual: boolean;
+  readonly specifier: string;
+  readonly fromFile: string;
+  readonly isVirtual: boolean;
+  readonly meta: Record<string, unknown> | undefined;
   alias(newSpecifier: string): this;
   rehome(newFromFile: string): this;
   virtualize(virtualFilename: string): this;
+  withMeta(meta: Record<string, any> | undefined): this;
 }
 
 class NodeModuleRequest implements ModuleRequest {
-  constructor(readonly specifier: string, readonly fromFile: string, readonly isVirtual = false) {}
+  constructor(
+    readonly specifier: string,
+    readonly fromFile: string,
+    readonly isVirtual: boolean,
+    readonly meta: Record<string, any> | undefined
+  ) {}
   alias(specifier: string): this {
-    return new NodeModuleRequest(specifier, this.fromFile) as this;
+    return new NodeModuleRequest(specifier, this.fromFile, false, this.meta) as this;
   }
   rehome(fromFile: string): this {
     if (this.fromFile === fromFile) {
       return this;
     } else {
-      return new NodeModuleRequest(this.specifier, fromFile) as this;
+      return new NodeModuleRequest(this.specifier, fromFile, false, this.meta) as this;
     }
   }
-  virtualize(filename: string) {
-    return new NodeModuleRequest(filename, this.fromFile, true) as this;
+  virtualize(filename: string): this {
+    return new NodeModuleRequest(filename, this.fromFile, true, this.meta) as this;
+  }
+  withMeta(meta: Record<string, any> | undefined): this {
+    return new NodeModuleRequest(this.specifier, this.fromFile, this.isVirtual, meta) as this;
   }
 }
 
@@ -250,7 +260,7 @@ export class Resolver {
     | { type: 'virtual'; filename: string; content: string }
     | { type: 'real'; filename: string }
     | { type: 'not_found'; err: Error } {
-    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile), request => {
+    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile, false, undefined), request => {
       if (request.isVirtual) {
         return {
           type: 'found',
@@ -750,7 +760,7 @@ export class Resolver {
       return logTransition(
         'outbound request from moved package',
         request,
-        request.rehome(resolve(originalRequestingPkg.root, request.fromFile.slice(requestingPkg.root.length + 1)))
+        request.withMeta({ wasMovedTo: request.fromFile }).rehome(resolve(originalRequestingPkg.root, 'package.json'))
       );
     }
 
@@ -996,7 +1006,10 @@ export class Resolver {
     // isV2Ember()
     let movedPkg = this.packageCache.maybeMoved(pkg);
     if (movedPkg !== pkg) {
-      fromFile = resolve(movedPkg.root, request.fromFile.slice(pkg.root.length + 1));
+      if (!request.meta?.wasMovedTo) {
+        throw new Error(`bug: embroider resolver's meta is not propagating`);
+      }
+      fromFile = request.meta.wasMovedTo as string;
       pkg = movedPkg;
     }
 

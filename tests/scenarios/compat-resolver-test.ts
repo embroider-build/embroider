@@ -648,6 +648,40 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
+      test('ignores dot-rule subexpression helper invocation', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#if (thing.is 1) }}{{/if}}`,
+        });
+        await configure({
+          staticComponents: true,
+          staticHelpers: true,
+          staticModifiers: true,
+        });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{#if (thing.is 1)}}{{/if}}", {
+          moduleName: "my-app/templates/application.hbs"
+        });
+      `);
+      });
+
+      test('ignores at-rule subexpression helper invocation', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{#if (@thing 1) }}{{/if}}`,
+        });
+        await configure({
+          staticComponents: true,
+          staticHelpers: true,
+          staticModifiers: true,
+        });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{#if (@thing 1)}}{{/if}}", {
+          moduleName: "my-app/templates/application.hbs"
+        });
+      `);
+      });
+
       test('helper in component argument', async function () {
         givenFiles({
           'templates/application.hbs': `<Stuff @value={{myHelper 1}}/>`,

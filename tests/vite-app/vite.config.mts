@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import { resolver, hbs, scripts, templateTag } from "@embroider/vite";
+import { resolver, hbs, scripts, templateTag, addons } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
@@ -24,7 +24,7 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: {
-    exclude: ["@embroider/macros"],
+    exclude: addons(__dirname),
   },
   server: {
     watch: {

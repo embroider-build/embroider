@@ -48,7 +48,7 @@ appScenarios
       test(`imports within app js`, function () {
         expectAudit
           .module('assets/@ef4/namespaced-app.js')
-          .resolves('./#embroider-implicit-modules')
+          .resolves('./-embroider-implicit-modules.js')
           .toModule()
           .resolves('my-addon/my-implicit-module.js')
           .to('./node_modules/my-addon/my-implicit-module.js');

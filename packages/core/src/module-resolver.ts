@@ -11,7 +11,8 @@ import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
 import {
-  virtualExternalModule,
+  virtualExternalESModule,
+  virtualExternalCJSModule,
   virtualPairComponent,
   virtualContent,
   fastbootSwitch,
@@ -21,6 +22,7 @@ import {
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
+import UserOptions from './options';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -62,6 +64,7 @@ export interface Options {
   engines: EngineConfig[];
   modulePrefix: string;
   podModulePrefix?: string;
+  amdCompatibility: Required<UserOptions['amdCompatibility']>;
 }
 
 interface EngineConfig {
@@ -422,13 +425,13 @@ export class Resolver {
       return logTransition(
         `dep's implicit modules`,
         request,
-        request.virtualize(resolve(dep.root, `#embroider-${im.type}`))
+        request.virtualize(resolve(dep.root, `-embroider-${im.type}.js`))
       );
     } else {
       return logTransition(
         `own implicit modules`,
         request,
-        request.virtualize(resolve(pkg.root, `#embroider-${im.type}`))
+        request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
       );
     }
   }
@@ -713,6 +716,9 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
+    if (request.isVirtual) {
+      return request;
+    }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!requestingPkg) {
       return request;
@@ -856,7 +862,7 @@ export class Resolver {
       let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
       if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
         let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
-        return external('beforeResolve', request, publicSpecifier);
+        return this.external('beforeResolve', request, publicSpecifier);
       }
 
       // if the requesting file is in an addon's app-js, the relative request
@@ -877,11 +883,11 @@ export class Resolver {
     // absolute package imports can also be explicitly external based on their
     // full specifier name
     if (isExplicitlyExternal(specifier, pkg)) {
-      return external('beforeResolve', request, specifier);
+      return this.external('beforeResolve', request, specifier);
     }
 
     if (emberVirtualPackages.has(packageName) && !pkg.hasDependency(packageName)) {
-      return external('beforeResolve emberVirtualPackages', request, specifier);
+      return this.external('beforeResolve emberVirtualPackages', request, specifier);
     }
 
     if (emberVirtualPeerDeps.has(packageName) && !pkg.hasDependency(packageName)) {
@@ -908,7 +914,7 @@ export class Resolver {
         if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
-          return external('v1 package without auto-import', request, specifier);
+          return this.external('v1 package without auto-import', request, specifier);
         }
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {
@@ -930,6 +936,43 @@ export class Resolver {
       }
     }
     return request;
+  }
+
+  private external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
+    if (this.options.amdCompatibility === 'cjs') {
+      let filename = virtualExternalCJSModule(specifier);
+      return logTransition(label, request, request.virtualize(filename));
+    } else if (this.options.amdCompatibility) {
+      let entry = this.options.amdCompatibility.es.find(
+        entry => entry[0] === specifier || entry[0] + '/index' === specifier
+      );
+      if (!entry && request.specifier === 'require') {
+        entry = ['require', ['default', 'has']];
+      }
+      if (!entry) {
+        throw new Error(
+          `A module tried to resolve "${request.specifier}" and didn't find it (${label}).
+
+ - Maybe a dependency declaration is missing? 
+ - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.
+ - If this dependency is available in the AMD loader (because someone manually called "define()" for it), you can configure a shim like:
+
+  amdCompatibility: {
+    es: [
+      ["${request.specifier}", ["default", "yourNamedExportsGoHere"]],
+    ]
+  }
+
+`
+        );
+      }
+      let filename = virtualExternalESModule(specifier, entry[1]);
+      return logTransition(label, request, request.virtualize(filename));
+    } else {
+      throw new Error(
+        `Embroider's amdCompatibility option is disabled, but something tried to use it to access "${request.specifier}"`
+      );
+    }
   }
 
   fallbackResolve<R extends ModuleRequest>(request: R): R {
@@ -1036,13 +1079,13 @@ export class Resolver {
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for
       // externals.
-      return external('v1 catch-all fallback', request, specifier);
+      return this.external('v1 catch-all fallback', request, specifier);
     } else {
       // native v2 packages don't automatically externalize *everything* the way
       // auto-upgraded packages do, but they still externalize known and approved
       // ember virtual packages (like @ember/component)
       if (emberVirtualPackages.has(packageName)) {
-        return external('emberVirtualPackages', request, specifier);
+        return this.external('emberVirtualPackages', request, specifier);
       }
     }
 
@@ -1202,9 +1245,4 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 //
 function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, importedPackageName: string): boolean {
   return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
-}
-
-function external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
-  let filename = virtualExternalModule(specifier);
-  return logTransition(label, request, request.virtualize(filename));
 }

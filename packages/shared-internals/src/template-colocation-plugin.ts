@@ -5,6 +5,10 @@ import type { types as t } from '@babel/core';
 import { dirname } from 'path';
 import { explicitRelative, PackageCache } from '.';
 import { ImportUtil } from 'babel-import-util';
+import makeDebug from 'debug';
+import { cleanUrl } from './paths';
+
+const debug = makeDebug('embroider:template-colocation-plugin');
 
 export const pluginPath = __filename;
 
@@ -52,20 +56,25 @@ export default function main(babel: typeof Babel) {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
           state.adder = new ImportUtil(t, path);
-          let filename = (path.hub as any).file.opts.filename;
+          let filename = cleanUrl((path.hub as any).file.opts.filename);
 
           if (state.opts.packageGuard) {
             let owningPackage = PackageCache.shared('embroider', state.opts.appRoot).ownerOfFile(filename);
             if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
+              debug('not handling colocation for %s', filename);
               return;
             }
           }
 
+          debug('handling colocation for %s', filename);
           let extensions = state.opts.templateExtensions ?? ['.hbs'];
           for (let ext of extensions) {
             let hbsFilename = filename.replace(/\.\w{1,3}$/, '') + ext;
+            debug('checking %s', hbsFilename);
             if (hbsFilename !== filename && existsSync(hbsFilename)) {
               state.colocatedTemplate = hbsFilename;
+              debug('found colocated template %s', hbsFilename);
+              break;
             }
           }
         },

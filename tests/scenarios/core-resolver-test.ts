@@ -84,6 +84,7 @@ Scenarios.fromProject(() => new Project())
         };
         configure = async function (opts?: ConfigureOpts) {
           let resolverOptions: CompatResolverOptions = {
+            amdCompatibility: 'cjs',
             activeAddons: {},
             renameModules: {},
             renamePackages: opts?.renamePackages ?? {},
@@ -445,7 +446,7 @@ Scenarios.fromProject(() => new Project())
       });
 
       Qmodule('engine-relative resolving', function () {
-        test('module in app takes precedence', async function () {
+        test('module in app takes precedence over module in addon', async function () {
           givenFiles({
             'node_modules/my-addon/_app_/hello-world.js': '',
             './hello-world.js': '',
@@ -535,6 +536,26 @@ Scenarios.fromProject(() => new Project())
             .to('./secondary.js');
         });
 
+        test(`relative import in addon's app tree correctly prioritizes app`, async function () {
+          givenFiles({
+            'node_modules/my-addon/_app_/hello-world.js': `import "./secondary"`,
+            'node_modules/my-addon/_app_/secondary.js': ``,
+            'app.js': `import "my-app/hello-world"`,
+            'secondary.js': '',
+          });
+
+          await configure({
+            addonMeta: {
+              'app-js': { './hello-world.js': './_app_/hello-world.js', './secondary.js': './_app_/secondary.js' },
+            },
+          });
+
+          expectAudit
+            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .resolves('./secondary')
+            .to('./secondary.js');
+        });
+
         test(`classic addon's app tree can resolve app's dependencies`, async function () {
           givenFiles({
             'node_modules/my-addon/_app_/hello-world.js': `import "the-apps-dep"`,
@@ -578,7 +599,7 @@ Scenarios.fromProject(() => new Project())
             'app.js': `import "rsvp"`,
           });
           await configure({});
-          expectAudit.module('./app.js').resolves('rsvp').to(resolve('/@embroider/external/rsvp').split(sep).join('/'));
+          expectAudit.module('./app.js').resolves('rsvp').to(resolve('/@embroider/ext-cjs/rsvp').split(sep).join('/'));
         });
 
         test(`known ember-source-provided virtual packages are not externalized when explicitly included in deps`, async function () {

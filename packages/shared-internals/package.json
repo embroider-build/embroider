@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "babel-import-util": "^2.0.0",
+    "debug": "^4.3.2",
     "ember-rfc176-data": "^0.3.17",
     "js-string-escape": "^1.0.1",
     "resolve-package-path": "^4.0.1",
@@ -42,6 +43,7 @@
     "@embroider/test-support": "workspace:*",
     "@types/babel__core": "^7.1.14",
     "@types/babel__traverse": "^7.18.5",
+    "@types/debug": "^4.1.5",
     "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
     "@types/js-string-escape": "^1.0.0",

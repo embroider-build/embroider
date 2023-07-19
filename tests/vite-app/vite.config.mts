@@ -8,8 +8,8 @@ const root = "node_modules/.embroider/rewritten-app";
 export default defineConfig({
   root,
   plugins: [
-    { ...hbs(), enforce: "pre" },
-    { ...templateTag(), enforce: "pre" },
+    hbs(),
+    templateTag(),
     scripts(),
     resolver(),
 

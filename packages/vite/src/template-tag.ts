@@ -1,5 +1,5 @@
 import { createFilter } from '@rollup/pluginutils';
-import type { Plugin } from 'rollup';
+import type { Plugin } from 'vite';
 import { readFileSync } from 'fs';
 import { Preprocessor } from 'content-tag';
 
@@ -14,6 +14,7 @@ export function templateTag(): Plugin {
 
   return {
     name: 'embroider-template-tag',
+    enforce: 'pre',
 
     async resolveId(id: string, importer: string | undefined) {
       let resolution = await this.resolve(id, importer, {

@@ -1,7 +1,8 @@
 // TODO: I copied this from @embroider/addon-dev, it needs to be its own package
 // (or be in shared-internals or core)
 import { createFilter } from '@rollup/pluginutils';
-import type { Plugin, PluginContext, ResolvedId } from 'rollup';
+import type { PluginContext, ResolvedId } from 'rollup';
+import type { Plugin } from 'vite';
 import { readFileSync } from 'fs';
 import { hbsToJS } from '@embroider/core';
 import assertNever from 'assert-never';
@@ -13,6 +14,7 @@ const debug = makeDebug('embroider:hbs-plugin');
 export function hbs(): Plugin {
   return {
     name: 'rollup-hbs-plugin',
+    enforce: 'pre',
     async resolveId(source: string, importer: string | undefined) {
       let resolution = await this.resolve(source, importer, {
         skipSelf: true,

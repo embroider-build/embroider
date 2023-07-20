@@ -51,17 +51,29 @@ function getMeta(context: PluginContext, id: string): Meta | null {
   }
 }
 
-const gjsFilter = createFilter('**/*.gjs');
+const gjsFilter = createFilter('**/*.g{j,t}s');
 
 function maybeRewriteGJS(resolution: ResolvedId) {
   if (!gjsFilter(resolution.id)) {
     return null;
   }
 
-  // This creates an `*.gjs.js` that we will populate in `load()` hook.
+  let id;
+
+  if (resolution.id.endsWith('.gjs')) {
+    id = resolution.id.replace(/\.gjs$/, '.js');
+  } else if (resolution.id.endsWith('.gts')) {
+    id = resolution.id.replace(/\.gts$/, '.ts');
+  } else {
+    throw new Error(
+      'Unexpected issues in the plugin-rollup-gjs - an unexpected file made its way throught the pluginUtils filter'
+    );
+  }
+
+  // This creates an `*.js` or `*.ts` that **replaces** the .gjs or .gts file that we will populate in `load()` hook.
   return {
     ...resolution,
-    id: resolution.id.replace(/\.gjs$/, '') + '.js',
+    id,
     meta: {
       [PLUGIN_NAME]: {
         originalId: resolution.id,

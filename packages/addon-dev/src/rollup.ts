@@ -1,4 +1,5 @@
 import { default as hbs } from './rollup-hbs-plugin';
+import { default as gjs } from './rollup-gjs-plugin';
 import { default as publicEntrypoints } from './rollup-public-entrypoints';
 import { default as appReexports } from './rollup-app-reexports';
 import { default as clean } from 'rollup-plugin-delete';
@@ -43,6 +44,10 @@ export class Addon {
   // required for javascript tooling to understand your package.
   hbs() {
     return hbs();
+  }
+
+  gjs() {
+    return gjs();
   }
 
   // By default rollup does not clear the output directory between builds. This

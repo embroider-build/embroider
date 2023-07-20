@@ -2,6 +2,7 @@ import execa from 'execa';
 import { loadSolution, Solution } from './plan';
 import { Octokit } from '@octokit/rest';
 import { absoluteDirname } from './utils';
+import latestVersion from 'latest-version';
 
 async function hasCleanRepo(): Promise<boolean> {
   let result = await execa('git', ['status', '--porcelain=v1'], { cwd: __dirname });
@@ -12,6 +13,14 @@ function tagFor(pkgName: string, entry: { newVersion: string }): string {
   return `v${entry.newVersion}-${pkgName.replace(/^@embroider\//, '')}`;
 }
 
+function info(message: string) {
+  process.stdout.write(`\n ℹ️ ${message}`);
+}
+
+function success(message: string) {
+  process.stdout.write(`\n 🎉 ${message} 🎉\n`);
+}
+
 class IssueReporter {
   hadIssues = false;
   reportFailure(message: string): void {
@@ -20,24 +29,51 @@ class IssueReporter {
   }
 }
 
-async function makeTags(solution: Solution, reporter: IssueReporter): Promise<void> {
+async function doesTagExist(tag: string) {
+  let { stdout } = await execa('git', ['ls-remote', '--tags', 'origin', '-l', tag]);
+
+  return stdout.trim() !== '';
+}
+
+async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boolean): Promise<void> {
   for (let [pkgName, entry] of solution) {
     if (!entry.impact) {
       continue;
     }
     try {
-      await execa('git', ['tag', tagFor(pkgName, entry)], {
-        cwd: absoluteDirname(entry.pkgJSONPath),
+      let tag = tagFor(pkgName, entry);
+      let cwd = absoluteDirname(entry.pkgJSONPath);
+
+      let preExisting = await doesTagExist(tag);
+
+      if (preExisting) {
+        info(`The tag, ${tag}, has already been pushed up for ${pkgName}`);
+        return;
+      }
+
+      if (dryRun) {
+        info(`--dryRun active. Skipping \`git tag ${tag}\``);
+        return;
+      }
+
+      await execa('git', ['tag', tag], {
+        cwd,
         stderr: 'inherit',
         stdout: 'inherit',
       });
     } catch (err) {
+      console.error(err);
       reporter.reportFailure(`Failed to create tag for ${pkgName}`);
     }
   }
 }
 
-async function push(reporter: IssueReporter) {
+async function pushTags(reporter: IssueReporter, dryRun: boolean) {
+  if (dryRun) {
+    info(`--dryRun active. Skipping \`git push --tags\``);
+    return;
+  }
+
   try {
     await execa('git', ['push', '--tags'], { cwd: __dirname });
   } catch (err) {
@@ -55,13 +91,41 @@ function chooseRepresentativeTag(solution: Solution): string {
   process.exit(-1);
 }
 
+async function doesReleaseExist(octokit: Octokit, tagName: string, reporter: IssueReporter) {
+  try {
+    let response = await octokit.repos.getReleaseByTag({
+      owner: 'embroider-build',
+      repo: 'embroider',
+      tag: tagName,
+    });
+
+    return response.status === 200;
+  } catch (err) {
+    console.error(err);
+    reporter.reportFailure(`Problem while checking for existing GitHub release`);
+  }
+}
+
 async function createGithubRelease(
   octokit: Octokit,
   description: string,
   tagName: string,
-  reporter: IssueReporter
+  reporter: IssueReporter,
+  dryRun: boolean
 ): Promise<void> {
   try {
+    let preExisting = await doesReleaseExist(octokit, tagName, reporter);
+
+    if (preExisting) {
+      info(`A release with the name '${tagName}' already exists`);
+      return;
+    }
+
+    if (dryRun) {
+      info(`--dryRun active. Skipping creating a Release on GitHub for ${tagName}`);
+      return;
+    }
+
     await octokit.repos.createRelease({
       owner: 'embroider-build',
       repo: 'embroider',
@@ -74,11 +138,36 @@ async function createGithubRelease(
   }
 }
 
-async function pnpmPublish(solution: Solution, reporter: IssueReporter): Promise<void> {
+async function doesVersionExist(pkgName: string, version: string) {
+  try {
+    let latest = await latestVersion(pkgName, { version });
+    return Boolean(latest);
+  } catch (err) {
+    console.info(err);
+    return false;
+  }
+}
+
+async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: boolean): Promise<void> {
   for (let [pkgName, entry] of solution) {
     if (!entry.impact) {
       continue;
     }
+
+    let preExisting = await doesVersionExist(pkgName, entry.newVersion);
+
+    if (preExisting) {
+      info(`${pkgName} has already been publish @ version ${entry.newVersion}`);
+      return;
+    }
+
+    if (dryRun) {
+      info(
+        `--dryRun active. Skipping \`pnpm publish --access=public\` for ${pkgName}, which would publish version ${entry.newVersion}`
+      );
+      return;
+    }
+
     try {
       await execa('pnpm', ['publish', '--access=public'], {
         cwd: absoluteDirname(entry.pkgJSONPath),
@@ -91,7 +180,9 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter): Promise
   }
 }
 
-export async function publish(opts: { skipRepoSafetyCheck?: boolean }) {
+export async function publish(opts: { skipRepoSafetyCheck?: boolean; dryRun?: boolean }) {
+  let dryRun = opts.dryRun ?? false;
+
   if (!opts.skipRepoSafetyCheck) {
     if (!(await hasCleanRepo())) {
       process.stderr.write(`You have uncommitted changes.
@@ -104,9 +195,10 @@ To publish a release you should start from a clean repo. Run "embroider-release 
   let { solution, description } = loadSolution();
 
   if (!process.env.GITHUB_AUTH) {
-    process.stderr.write(`You need to set GITHUB_AUTH.`);
+    process.stderr.write(`\nYou need to set GITHUB_AUTH.`);
     process.exit(-1);
   }
+
   let octokit = new Octokit({ auth: process.env.GITHUB_AUTH });
 
   let representativeTag = chooseRepresentativeTag(solution);
@@ -116,15 +208,20 @@ To publish a release you should start from a clean repo. Run "embroider-release 
   // the end.
   let reporter = new IssueReporter();
 
-  await makeTags(solution, reporter);
-  await push(reporter);
-  await createGithubRelease(octokit, description, representativeTag, reporter);
-  await pnpmPublish(solution, reporter);
+  await makeTags(solution, reporter, dryRun);
+  await pnpmPublish(solution, reporter, dryRun);
+  await pushTags(reporter, dryRun);
+  await createGithubRelease(octokit, description, representativeTag, reporter, dryRun);
 
   if (reporter.hadIssues) {
     process.stderr.write(`\nSome parts of the release were unsuccessful.\n`);
     process.exit(-1);
   } else {
-    process.stdout.write(`\nSuccessfully published release\n`);
+    if (dryRun) {
+      success(`--dryRun active. Would have successfully published release!`);
+      return;
+    }
+
+    success(`Successfully published release`);
   }
 }

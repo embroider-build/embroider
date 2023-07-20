@@ -1,1 +1,1 @@
-<template>Yay for gjs</template>
+<template>Yay for gjs!</template>

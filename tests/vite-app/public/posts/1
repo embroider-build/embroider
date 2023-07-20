@@ -3,7 +3,7 @@
     "type": "post",
     "id": "1",
     "attributes": {
-      "message": "Hi"
+      "message": "From Ember Data"
     }
   }
 }

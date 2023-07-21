@@ -101,7 +101,10 @@ async function doesReleaseExist(octokit: Octokit, tagName: string, reporter: Iss
 
     return response.status === 200;
   } catch (err) {
-    console.error(err);
+    if (err.status === 404) {
+      return false;
+    }
+    console.error(err.message);
     reporter.reportFailure(`Problem while checking for existing GitHub release`);
   }
 }
@@ -138,13 +141,17 @@ async function createGithubRelease(
   }
 }
 
-async function doesVersionExist(pkgName: string, version: string) {
+async function doesVersionExist(pkgName: string, version: string, reporter: IssueReporter) {
   try {
     let latest = await latestVersion(pkgName, { version });
     return Boolean(latest);
   } catch (err) {
-    console.info(err);
-    return false;
+    if (err.name === 'VersionNotFoundError') {
+      return false;
+    }
+
+    console.error(err.message);
+    reporter.reportFailure(`Problem while checking for existing npm release`);
   }
 }
 
@@ -154,7 +161,7 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: 
       continue;
     }
 
-    let preExisting = await doesVersionExist(pkgName, entry.newVersion);
+    let preExisting = await doesVersionExist(pkgName, entry.newVersion, reporter);
 
     if (preExisting) {
       info(`${pkgName} has already been publish @ version ${entry.newVersion}`);

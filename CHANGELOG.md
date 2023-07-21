@@ -1,5 +1,65 @@
 # Embroider Changelog
 
+## Release (2023-07-20)
+
+@embroider/addon-dev 3.2.0 (minor)
+@embroider/compat 3.2.0 (minor)
+@embroider/core 3.2.0 (minor)
+@embroider/hbs-loader 3.0.2 (patch)
+@embroider/macros 1.13.0 (minor)
+@embroider/shared-internals 2.3.0 (minor)
+@embroider/util 1.12.0 (minor)
+@embroider/vite 0.1.0 (minor)
+@embroider/webpack 3.1.4 (patch)
+
+#### :rocket: Enhancement
+* `addon-dev`
+  * [#1518](https://github.com/embroider-build/embroider/pull/1518) add a basic implementation of the gjs rollup plugin ([@mansona](https://github.com/mansona))
+* `util`, `vite`
+  * [#1550](https://github.com/embroider-build/embroider/pull/1550) Initial test of vite integration ([@ef4](https://github.com/ef4))
+* `compat`, `core`, `macros`, `shared-internals`
+  * [#1548](https://github.com/embroider-build/embroider/pull/1548) optional ES-module compatibility setting ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1543](https://github.com/embroider-build/embroider/pull/1543) compat adapter to add re-export observer-manager service ([@void-mAlex](https://github.com/void-mAlex))
+* `compat`, `core`, `shared-internals`
+  * [#1521](https://github.com/embroider-build/embroider/pull/1521) New option: staticEmberSource ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `core`, `webpack`
+  * [#1547](https://github.com/embroider-build/embroider/pull/1547) Rehome moved requests to real on-disk files ([@ef4](https://github.com/ef4))
+* `compat`
+  * [#1544](https://github.com/embroider-build/embroider/pull/1544) Bugfix: contextual staticHelpers in subexpression position ([@ef4](https://github.com/ef4))
+* `compat`, `shared-internals`
+  * [#1542](https://github.com/embroider-build/embroider/pull/1542) Refuse to accept v1 addons as invalid peerDeps ([@ef4](https://github.com/ef4))
+* Other
+  * [#1541](https://github.com/embroider-build/embroider/pull/1541) Create peer-dependency-resolution-issues.md ([@ef4](https://github.com/ef4))
+* `macros`
+  * [#1531](https://github.com/embroider-build/embroider/pull/1531) Include named exports in CJS shims when using `importSync` ([@chancancode](https://github.com/chancancode))
+* `compat`, `core`, `shared-internals`, `webpack`
+  * [#1536](https://github.com/embroider-build/embroider/pull/1536) Generate per-package implicit-modules imports ([@ef4](https://github.com/ef4))
+* `core`
+  * [#1534](https://github.com/embroider-build/embroider/pull/1534) Fixes case when podModulePrefix is set to `my-app/routes` ([@evoactivity](https://github.com/evoactivity))
+
+#### :house: Internal
+* Other
+  * [#1492](https://github.com/embroider-build/embroider/pull/1492) Make release idempotent (+dry-run) ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#1552](https://github.com/embroider-build/embroider/pull/1552) add --access=public to npm publish unstable ([@mansona](https://github.com/mansona))
+  * [#1540](https://github.com/embroider-build/embroider/pull/1540) remove an overridden dependency ([@ef4](https://github.com/ef4))
+* `core`
+  * [#1538](https://github.com/embroider-build/embroider/pull/1538) Removing workaround ([@ef4](https://github.com/ef4))
+* `compat`, `core`, `macros`, `shared-internals`
+  * [#1537](https://github.com/embroider-build/embroider/pull/1537) Update babel-import-util ([@ef4](https://github.com/ef4))
+* `compat`, `hbs-loader`, `webpack`
+  * [#1535](https://github.com/embroider-build/embroider/pull/1535) Updating pnpm ([@ef4](https://github.com/ef4))
+
+#### Committers: 6
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Godfrey Chan ([@chancancode](https://github.com/chancancode))
+- Liam Potter ([@evoactivity](https://github.com/evoactivity))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-07-13)
 
 @embroider/addon-dev 3.1.2 (patch)

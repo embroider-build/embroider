@@ -53,7 +53,7 @@ async function makeTags(solution: Solution, reporter: IssueReporter, dryRun: boo
 
       if (dryRun) {
         info(`--dryRun active. Skipping \`git tag ${tag}\``);
-        return;
+        continue;
       }
 
       await execa('git', ['tag', tag], {
@@ -165,7 +165,7 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: 
       info(
         `--dryRun active. Skipping \`pnpm publish --access=public\` for ${pkgName}, which would publish version ${entry.newVersion}`
       );
-      return;
+      continue;
     }
 
     try {

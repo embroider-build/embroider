@@ -155,7 +155,7 @@ async function doesVersionExist(pkgName: string, version: string, reporter: Issu
   }
 }
 
-async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: boolean): Promise<void> {
+async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: boolean, otp?: string): Promise<void> {
   for (let [pkgName, entry] of solution) {
     if (!entry.impact) {
       continue;
@@ -170,12 +170,20 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: 
 
     if (dryRun) {
       info(
-        `--dryRun active. Skipping \`pnpm publish --access=public\` for ${pkgName}, which would publish version ${entry.newVersion}`
+        `--dryRun active. Skipping \`pnpm publish --access=public${
+          otp ? ' --otp=*redacted*' : ''
+        }\` for ${pkgName}, which would publish version ${entry.newVersion}`
       );
       continue;
     }
 
     try {
+      const args = ['publish', '--access=public'];
+
+      if (otp) {
+        args.push(`--otp=${otp}`);
+      }
+
       await execa('pnpm', ['publish', '--access=public'], {
         cwd: absoluteDirname(entry.pkgJSONPath),
         stderr: 'inherit',
@@ -187,7 +195,7 @@ async function pnpmPublish(solution: Solution, reporter: IssueReporter, dryRun: 
   }
 }
 
-export async function publish(opts: { skipRepoSafetyCheck?: boolean; dryRun?: boolean }) {
+export async function publish(opts: { skipRepoSafetyCheck?: boolean; dryRun?: boolean; otp?: string }) {
   let dryRun = opts.dryRun ?? false;
 
   if (!opts.skipRepoSafetyCheck) {
@@ -216,7 +224,7 @@ To publish a release you should start from a clean repo. Run "embroider-release 
   let reporter = new IssueReporter();
 
   await makeTags(solution, reporter, dryRun);
-  await pnpmPublish(solution, reporter, dryRun);
+  await pnpmPublish(solution, reporter, dryRun, opts.otp);
   await pushTags(reporter, dryRun);
   await createGithubRelease(octokit, description, representativeTag, reporter, dryRun);
 

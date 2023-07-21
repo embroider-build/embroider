@@ -32,6 +32,10 @@ yargs(process.argv.slice(2))
           description:
             'Allows you to run "publish" even if there are uncommitted changes in your repo. Useful only for developing "publish" itself.',
         })
+        .option('otp', {
+          type: 'string',
+          description: 'This is an OTP that will be passed to npm publish',
+        })
         .option('dryRun', {
           type: 'boolean',
           description: 'Run through the release, but log to stdout instead of tagging/pushing/publishing',

@@ -287,7 +287,7 @@ export default class MacrosConfig {
       }
       // our configs all deal in the original locations of packages, even if
       // embroider is rewriting some of them
-      let pkg = this.packageCache.original(maybePkg) || maybePkg;
+      let pkg = this.packageCache.original(maybePkg);
       return {
         get name() {
           return pkg.name;
@@ -439,9 +439,9 @@ export default class MacrosConfig {
     }
     if (packageName) {
       let target = this.packageCache.resolve(packageName, us);
-      return this.packageCache.original(target) || target;
+      return this.packageCache.original(target);
     } else {
-      return this.packageCache.original(us) || us;
+      return this.packageCache.original(us);
     }
   }
 

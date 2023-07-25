@@ -93,7 +93,7 @@ function owningPackage(this: State): Package {
 
 function originalOwningPackage(this: State): Package {
   let pkg = this.owningPackage();
-  return this.packageCache.original(pkg) || pkg;
+  return this.packageCache.original(pkg);
 }
 
 function cloneDeep(this: State, node: Node): Node {

@@ -24,7 +24,7 @@ export default function getConfig(
   }
 
   if (own) {
-    us = packageCache.original(us) || us;
+    us = packageCache.original(us);
     targetConfig = userConfigs[us.root];
   } else {
     let packageName = params.shift();
@@ -32,7 +32,7 @@ export default function getConfig(
       throw new Error(`macroGetConfig requires at least one argument`);
     }
     let targetPkg = packageCache.resolve(packageName.value, us);
-    targetPkg = packageCache.original(targetPkg) || targetPkg;
+    targetPkg = packageCache.original(targetPkg);
     targetConfig = userConfigs[targetPkg.root];
   }
   while (typeof targetConfig === 'object' && targetConfig && params.length > 0) {

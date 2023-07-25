@@ -49,5 +49,5 @@ You can use [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides), [yarn 
 
 You can satisfy a missing peer dependency by adding it to your application, and potentially also adjusting settings like [pnpm's resolve-peers-from-workspace-root](https://pnpm.io/npmrc#resolve-peers-from-workspace-root).
 
-In monorepo setups, you can use pnpm's [peerDependenciesMeta.*.injected](https://pnpm.io/npmrc#resolve-peers-from-workspace-root) to make your workspaces see correct peer dependencies (at the cost of needing to maintain per-file hardlinks, see [discussion on pnpm issue](https://github.com/pnpm/pnpm/issues/6088#issuecomment-1634302377)).
+In monorepo setups, you can use pnpm's [peerDependenciesMeta.*.injected](https://pnpm.io/package_json#dependenciesmetainjected) to make your workspaces see correct peer dependencies (at the cost of needing to maintain per-file hardlinks, see [discussion on pnpm issue](https://github.com/pnpm/pnpm/issues/6088#issuecomment-1634302377)).
 

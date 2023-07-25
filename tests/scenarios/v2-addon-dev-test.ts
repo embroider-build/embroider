@@ -76,7 +76,7 @@ appScenarios
             addon.gjs(),
             addon.dependencies(),
 
-            babel({ babelHelpers: 'bundled' }),
+            babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
 
             addon.clean(),
           ],
@@ -101,12 +101,16 @@ appScenarios
       src: {
         components: {
           'single-file-component.gjs': `import Component from '@glimmer/component';
+          import Button from './demo/button.js';
+          import Another from './another.gjs';
           export default class SingleFileComponent extends Component {
-            <template><div data-test-single-file-component>Hello {{@message}}</div></template>
+            <template><div data-test-single-file-component>Hello {{@message}}</div><div data-test-another><Another /></div><Button data-test-button @onClick={{this.doIt}} /></template>
+            doIt = () => {}
           }`,
+          'another.gjs': `<template>Another GJS</template>`,
           demo: {
             'button.hbs': `
-              <button {{on 'click' @onClick}}>
+              <button ...attributes {{on 'click' @onClick}}>
                 flip
               </button>
             `,
@@ -182,7 +186,9 @@ appScenarios
             test('<SingleFileComponent @message="bob" />', async function(assert) {
               await render(hbs\`<SingleFileComponent @message="bob" />\`);
 
-              assert.dom().containsText('Hello bob');
+              assert.dom('[data-test-single-file-component]').containsText('Hello bob');
+              assert.dom('[data-test-another]').containsText('Another GJS');
+              assert.dom('[data-test-button]').containsText('flip');
             })
 
             test('transform worked', async function (assert) {

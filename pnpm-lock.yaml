@@ -141,6 +141,10 @@ importers:
       babel-loader:
         specifier: '8'
         version: 8.2.2(@babel/core@7.22.6)(webpack@5.78.0)
+    devDependencies:
+      '@embroider/core':
+        specifier: workspace:^
+        version: link:../core
 
   packages/compat:
     dependencies:
@@ -9635,7 +9639,7 @@ packages:
       wordwrap: 0.0.3
 
   /bower-endpoint-parser@0.2.2:
-    resolution: {integrity: sha512-YWZHhWkPdXtIfH3VRu3QIV95sa75O9vrQWBOHjexWCLBCTy5qJvRr36LXTqFwTchSXVlzy5piYJOjzHr7qhsNg==}
+    resolution: {integrity: sha1-ALVlrb+rby01rd3pd+l5Yqy8s/Y=}
     engines: {node: '>=0.8.0'}
 
   /brace-expansion@1.1.11:

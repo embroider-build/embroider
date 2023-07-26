@@ -43,7 +43,7 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
       for (let depRoot of extraResolutions) {
         let depPkg = this.plainCache.get(depRoot);
         if (depPkg.name === packageName) {
-          return this.maybeMoved(depPkg);
+          return this.maybeMoved(this.withRewrittenDeps(depPkg));
         }
       }
     }
@@ -58,7 +58,7 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
       resolveFromPkg = fromPackage;
     }
 
-    let oldDest = this.plainCache.resolve(packageName, resolveFromPkg);
+    let oldDest = this.withRewrittenDeps(this.plainCache.resolve(packageName, resolveFromPkg));
 
     // if the package we found was itself moved return the moved one.
     return this.maybeMoved(oldDest);
@@ -75,18 +75,20 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
   }
 
   get(packageRoot: string): Package {
-    return this.maybeWrap(this.plainCache.get(packageRoot));
+    return this.withRewrittenDeps(this.plainCache.get(packageRoot));
   }
 
-  original(pkg: Package): Package | undefined {
+  original(pkg: Package): Package {
     let oldRoot = this.index.newToOld.get(pkg.root);
     if (oldRoot) {
-      return this.plainCache.get(oldRoot);
+      return this.withRewrittenDeps(this.plainCache.get(oldRoot));
+    } else {
+      return pkg;
     }
   }
 
   // given any package, give us a new representation of it where its deps are
-  // replaced with rewritten versions of those deps, as needed.
+  // replaced with rewritten versions of those deps, as needed
   withRewrittenDeps(pkg: Package): Package {
     let found = wrapped.get(pkg);
     if (!found) {
@@ -105,7 +107,7 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
   ownerOfFile(filename: string): Package | undefined {
     let owner = this.plainCache.ownerOfFile(filename);
     if (owner) {
-      return this.maybeWrap(owner);
+      return this.withRewrittenDeps(owner);
     }
   }
 
@@ -163,16 +165,6 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
     };
   }
 
-  // put a WrappedPackage around Packages that do in fact represent ones that we
-  // have moved, leaving other Packages alone.
-  private maybeWrap(pkg: Package) {
-    let oldRoot = this.index.newToOld.get(pkg.root);
-    if (oldRoot) {
-      return this.withRewrittenDeps(pkg);
-    } else {
-      return pkg;
-    }
-  }
   static shared(identifier: string, appRoot: string) {
     let pk = getOrCreate(
       shared,
@@ -296,12 +288,14 @@ class WrappedPackage implements PackageTheGoodParts {
     return this.plainPkg.dependencyNames
       .map(name => {
         try {
-          // when this.plainPkg was itself moved, the result from resolve() is
-          // already a moved package if that dep was moved. In that case, the
-          // maybeMoved() is not needed. But when this.plainPkg is not moved and
-          // wants to see moved deps (which is the case for the app package in
-          // stage2), we do need the final maybeMoved() call to adjust them.
-          return this.packageCache.maybeMoved(this.packageCache.resolve(name, castToPackage(this)));
+          // this is going through the rewriting-aware resolve in
+          // RewrittenPackageCache.
+          let dep = this.packageCache.resolve(name, this.plainPkg);
+
+          // and this ensures that regardless of whether the package we found
+          // was itself moved, if any of its deps have moved it will see those
+          // ones.
+          return this.packageCache.withRewrittenDeps(dep);
         } catch (error) {
           // if the package was not found do not error out here. this is relevant
           // for the case where a package might be an optional peerDependency and we dont

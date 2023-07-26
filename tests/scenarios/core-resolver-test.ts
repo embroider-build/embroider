@@ -6,6 +6,7 @@ import { PreparedApp, Project, Scenarios } from 'scenario-tester';
 import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 import { installAuditAssertions } from '@embroider/test-support/audit-assertions';
+import { baseAddon } from './scenarios';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -38,6 +39,10 @@ Scenarios.fromProject(() => new Project())
       },
     });
 
+    let v1Addon = baseAddon();
+    v1Addon.name = 'a-v1-addon';
+    app.addDependency(v1Addon);
+
     // this is just an empty fixture package, it's the presence of a dependency
     // named ember-auto-import that tells us that the app was allowed to import
     // deps from npm.
@@ -58,12 +63,12 @@ Scenarios.fromProject(() => new Project())
       let configure: (opts?: ConfigureOpts) => Promise<void>;
       let app: PreparedApp;
 
-      function addonPackageJSON(addonMeta?: Partial<AddonMeta>) {
+      function addonPackageJSON(name = 'my-addon', addonMeta?: Partial<AddonMeta>) {
         return JSON.stringify(
           (() => {
             let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true, ...(addonMeta ?? {}) };
             return {
-              name: 'my-addon',
+              name,
               keywords: ['ember-addon'],
               'ember-addon': meta,
             };
@@ -100,6 +105,10 @@ Scenarios.fromProject(() => new Project())
                     name: 'my-addon',
                     root: resolve(app.dir, 'node_modules', 'my-addon'),
                   },
+                  {
+                    name: 'a-v1-addon',
+                    root: resolve(app.dir, 'node_modules', 'a-v1-addon'),
+                  },
                 ],
               },
             ],
@@ -129,7 +138,7 @@ Scenarios.fromProject(() => new Project())
               module.exports = function(filename) { return true }
             `,
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
-            'node_modules/my-addon/package.json': addonPackageJSON(opts?.addonMeta),
+            'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
           });
 
           expectAudit = await assert.audit({ app: app.dir, 'reuse-build': true });
@@ -790,6 +799,31 @@ Scenarios.fromProject(() => new Project())
             .module('./node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js')
             .resolves('inner-dep')
             .to('./node_modules/my-addon/node_modules/inner-dep/index.js');
+        });
+
+        test('implicit modules in moved dependencies', async function () {
+          let index: RewrittenPackageIndex = {
+            packages: {
+              [resolve(app.dir, 'node_modules/a-v1-addon')]: 'a-v1-addon.1234',
+            },
+            extraResolutions: {},
+          };
+          givenFiles({
+            'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify(index),
+            'node_modules/.embroider/rewritten-packages/a-v1-addon.1234/_app_/components/i-am-implicit.js': ``,
+            'node_modules/.embroider/rewritten-packages/a-v1-addon.1234/package.json': addonPackageJSON('a-v1-addon', {
+              'implicit-modules': ['./_app_/components/i-am-implicit.js'],
+            }),
+            'app.js': `import "./-embroider-implicit-modules.js"`,
+          });
+
+          await configure({});
+
+          expectAudit
+            .module('./app.js')
+            .resolves('./-embroider-implicit-modules.js')
+            .toModule()
+            .resolves('a-v1-addon/-embroider-implicit-modules.js');
         });
       });
     });

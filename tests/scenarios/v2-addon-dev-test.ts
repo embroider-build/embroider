@@ -27,11 +27,6 @@ appScenarios
     merge(addon.files, {
       'babel.config.json': `
         {
-          "presets": [
-            ["@babel/preset-env", {
-              "targets": ["last 1 firefox versions"]
-            }]
-          ],
           "plugins": [
             "@embroider/addon-dev/template-colocation-plugin",
             "@babel/plugin-transform-class-static-block",
@@ -76,7 +71,7 @@ appScenarios
             addon.gjs(),
             addon.dependencies(),
 
-            babel({ babelHelpers: 'bundled' }),
+            babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
 
             addon.clean(),
           ],
@@ -101,12 +96,16 @@ appScenarios
       src: {
         components: {
           'single-file-component.gjs': `import Component from '@glimmer/component';
+          import Button from './demo/button.js';
+          import Another from './another.gjs';
           export default class SingleFileComponent extends Component {
-            <template><div data-test-single-file-component>Hello {{@message}}</div></template>
+            <template><div data-test-single-file-component>Hello {{@message}}</div><div data-test-another><Another /></div><Button data-test-button @onClick={{this.doIt}} /></template>
+            doIt() {}
           }`,
+          'another.gjs': `<template>Another GJS</template>`,
           demo: {
             'button.hbs': `
-              <button {{on 'click' @onClick}}>
+              <button ...attributes {{on 'click' @onClick}}>
                 flip
               </button>
             `,
@@ -152,7 +151,6 @@ appScenarios
     addon.linkDevDependency('@babel/plugin-transform-class-static-block', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-transform-class-properties', { baseDir: __dirname });
     addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/preset-env', { baseDir: __dirname });
     addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });
     addon.linkDevDependency('rollup', { baseDir: __dirname });
 
@@ -182,7 +180,9 @@ appScenarios
             test('<SingleFileComponent @message="bob" />', async function(assert) {
               await render(hbs\`<SingleFileComponent @message="bob" />\`);
 
-              assert.dom().containsText('Hello bob');
+              assert.dom('[data-test-single-file-component]').containsText('Hello bob');
+              assert.dom('[data-test-another]').containsText('Another GJS');
+              assert.dom('[data-test-button]').containsText('flip');
             })
 
             test('transform worked', async function (assert) {
@@ -231,6 +231,7 @@ appScenarios
 
         test('package.json is modified appropriately', async function () {
           expectFile('package.json').json('ember-addon.app-js').deepEquals({
+            './components/another.js': './dist/_app_/components/another.js',
             './components/demo/button.js': './dist/_app_/components/demo/button.js',
             './components/single-file-component.js': './dist/_app_/components/single-file-component.js',
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
@@ -262,11 +263,22 @@ appScenarios
 
         test('gjs components compiled correctly', async function () {
           expectFile('dist/components/single-file-component.js').equalsCode(`import Component from '@glimmer/component';
+import Button from "./demo/button.js";
+import Another from "./another.js";
 import { precompileTemplate } from '@ember/template-compilation';
 import { setComponentTemplate } from '@ember/component';
 
-class SingleFileComponent extends Component {}
-setComponentTemplate(precompileTemplate(\"<div data-test-single-file-component>Hello {{@message}}</div>\", {
+class SingleFileComponent extends Component {
+  doIt() {}
+}
+setComponentTemplate(
+  precompileTemplate(
+  "<div data-test-single-file-component>Hello {{@message}}</div><div data-test-another><Another /></div><Button data-test-button @onClick={{this.doIt}} />",
+  {
+  scope: () => ({
+    Another,
+    Button,
+  }),
   strictMode: true
 }), SingleFileComponent);
 

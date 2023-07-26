@@ -1,13 +1,7 @@
 import { createFilter } from '@rollup/pluginutils';
-import type {
-  Plugin,
-  PluginContext,
-  CustomPluginOptions,
-  ResolvedId,
-} from 'rollup';
+import type { Plugin, PluginContext, CustomPluginOptions } from 'rollup';
 import { readFileSync } from 'fs';
 import { hbsToJS } from '@embroider/core';
-import assertNever from 'assert-never';
 import { parse as pathParse } from 'path';
 
 export default function rollupHbsPlugin(): Plugin {
@@ -19,33 +13,25 @@ export default function rollupHbsPlugin(): Plugin {
         ...options,
       });
 
-      if (!resolution) {
-        return maybeSynthesizeComponentJS(this, source, importer, options);
+      if (resolution) {
+        return resolution;
       } else {
-        return maybeRewriteHBS(resolution);
+        return maybeSynthesizeComponentJS(this, source, importer, options);
       }
     },
 
     load(id: string) {
-      const meta = getMeta(this, id);
-      if (!meta) {
-        return;
+      if (hbsFilter(id)) {
+        let input = readFileSync(id, 'utf8');
+        let code = hbsToJS(input);
+        return {
+          code,
+        };
       }
-
-      switch (meta.type) {
-        case 'template':
-          this.addWatchFile(meta.originalId);
-          let input = readFileSync(meta.originalId, 'utf8');
-          let code = hbsToJS(input);
-          return {
-            code,
-          };
-        case 'template-only-component-js':
-          return {
-            code: templateOnlyComponent,
-          };
-        default:
-          assertNever(meta);
+      if (getMeta(this, id)) {
+        return {
+          code: templateOnlyComponent,
+        };
       }
     },
   };
@@ -55,14 +41,9 @@ const templateOnlyComponent =
   `import templateOnly from '@ember/component/template-only';\n` +
   `export default templateOnly();\n`;
 
-type Meta =
-  | {
-      type: 'template';
-      originalId: string;
-    }
-  | {
-      type: 'template-only-component-js';
-    };
+type Meta = {
+  type: 'template-only-component-js';
+};
 
 function getMeta(context: PluginContext, id: string): Meta | null {
   const meta = context.getModuleInfo(id)?.meta?.['rollup-hbs-plugin'];
@@ -108,21 +89,3 @@ async function maybeSynthesizeComponentJS(
 }
 
 const hbsFilter = createFilter('**/*.hbs');
-
-function maybeRewriteHBS(resolution: ResolvedId) {
-  if (!hbsFilter(resolution.id)) {
-    return null;
-  }
-
-  // This creates an `*.hbs.js` that we will populate in `load()` hook.
-  return {
-    ...resolution,
-    id: resolution.id + '.js',
-    meta: {
-      'rollup-hbs-plugin': {
-        type: 'template',
-        originalId: resolution.id,
-      },
-    },
-  };
-}

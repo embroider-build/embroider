@@ -1,0 +1,12 @@
+{
+  "name": "@embroider/build",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@rollup/plugin-babel": "^5.3.1",
+    "@rollup/plugin-typescript": "^11.1.2",
+    "rollup": "^3.23.0",
+    "rollup-plugin-delete": "^2.0.0"
+  }
+}

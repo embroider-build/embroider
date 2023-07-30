@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@embroider/test-support": "workspace:*",
+    "@embroider/build": "workspace:*",
     "@glimmer/syntax": "^0.84.2",
     "@types/fs-extra": "^9.0.12",
     "@types/minimatch": "^3.0.4",

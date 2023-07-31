@@ -11,6 +11,11 @@
     "build": {
       "outputs": ["dist/**"],
       "dependsOn": ["^build"]
+    },
+
+    "test": {
+      // build self and dependencies
+      "dependsOn": ["build"]
     }
   }
 }

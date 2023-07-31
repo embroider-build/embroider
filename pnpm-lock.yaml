@@ -683,13 +683,25 @@ importers:
       semver:
         specifier: ^7.3.5
         version: 7.3.8
+      tslib:
+        specifier: ^2.6.0
+        version: 2.6.0
       typescript-memoize:
         specifier: ^1.0.1
         version: 1.0.1
     devDependencies:
+      '@embroider/build':
+        specifier: workspace:*
+        version: link:../../test-packages/build
       '@embroider/test-support':
         specifier: workspace:*
         version: link:../../test-packages/support
+      '@tsconfig/node14':
+        specifier: ^14.1.0
+        version: 14.1.0
+      '@tsconfig/strictest':
+        specifier: ^2.0.1
+        version: 2.0.1
       '@types/babel__core':
         specifier: ^7.1.14
         version: 7.1.14
@@ -720,6 +732,9 @@ importers:
       fixturify:
         specifier: ^2.1.1
         version: 2.1.1
+      rollup:
+        specifier: ^3.23.0
+        version: 3.23.0
       tmp:
         specifier: ^0.1.0
         version: 0.1.0

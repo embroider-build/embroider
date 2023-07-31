@@ -12,9 +12,7 @@
   "author": "Edward Faulkner",
   "main": "src/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist"
   ],
   "scripts": {
     "test": "jest",

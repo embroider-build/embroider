@@ -44,9 +44,9 @@ export function rollupConfig(meta, options) {
       typescript({
         tsconfig,
       }),
-      autoExternal({
-        packagePath: path.join(callerDir, 'package.json'),
-      }),
+      // autoExternal({
+      //   packagePath: path.join(callerDir, 'package.json'),
+      // }),
 
       clean({ targets: `${destDir}/*` }),
     ],

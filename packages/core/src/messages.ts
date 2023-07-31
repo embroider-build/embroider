@@ -1,6 +1,8 @@
 import makeDebug from 'debug';
 import { format } from 'util';
 
+import type { NestedHooks } from 'ember-qunit';
+
 const todo = makeDebug('embroider:todo');
 const unsupported = makeDebug('embroider:unsupported');
 const debug = makeDebug('embroider:debug');

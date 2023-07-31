@@ -1,0 +1,20 @@
+{
+  "extends": ["@tsconfig/node14", "@tsconfig/strictest"],
+  "compilerOptions": {
+    "sourceMap": true,
+    "inlineSources": true,
+
+    // features
+    "experimentalDecorators": true,
+
+    // type checking
+    "skipLibCheck": false,
+    "allowUnreachableCode": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "noUncheckedIndexedAccess": false,
+
+    // linting
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+  }
+}

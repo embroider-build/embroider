@@ -1,6 +1,6 @@
-// @ts-check
 import path from 'node:path';
 import url from 'node:url';
+import fs from 'node:fs';
 
 import { defineConfig } from 'rollup';
 import typescript from '@rollup/plugin-typescript';
@@ -10,7 +10,7 @@ import autoExternal from 'rollup-plugin-auto-external';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 const repoRoot = path.join(__dirname, '../../../');
-const tsconfig = path.join(repoRoot, 'tsconfig.json');
+const rootTsConfig = path.join(repoRoot, 'tsconfig.json');
 
 /**
  * @param {ImportMeta} meta
@@ -19,10 +19,13 @@ const tsconfig = path.join(repoRoot, 'tsconfig.json');
 export function rollupConfig(meta, options) {
   let callerUrl = new URL('.', meta.url);
   let callerDir = url.fileURLToPath(callerUrl);
+  let localTsConfig = path.join(callerDir, 'tsconfig.json');
+
+  let tsconfig = fs.existsSync(localTsConfig) ? localTsConfig : rootTsConfig;
 
   let dist = options.distDir ?? 'dist';
   let src = options.srcDir ?? 'src';
-  let destDir = path.join(callerDir, dist);
+  let distDir = path.join(callerDir, dist);
   let srcDir = path.join(callerDir, src);
 
   let input = options.publicEntrypoints.map(entry => {
@@ -34,9 +37,13 @@ export function rollupConfig(meta, options) {
     output: [
       {
         format: 'cjs',
+        sourcemap: true,
+        dir: path.join(distDir, 'cjs'),
       },
       {
         format: 'esm',
+        sourcemap: true,
+        dir: path.join(distDir, 'esm'),
       },
     ],
     plugins: [
@@ -44,11 +51,11 @@ export function rollupConfig(meta, options) {
       typescript({
         tsconfig,
       }),
-      // autoExternal({
-      //   packagePath: path.join(callerDir, 'package.json'),
-      // }),
+      autoExternal({
+        packagePath: path.join(callerDir, 'package.json'),
+      }),
 
-      clean({ targets: `${destDir}/*` }),
+      clean({ targets: `${distDir}/*` }),
     ],
   });
 }

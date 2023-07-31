@@ -6,7 +6,7 @@
   },
   "scripts": {
     "clean": "git clean -x -f",
-    "compile": "tsc",
+    "compile": "turbo build",
     "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
     "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
     "lint:eslint": "eslint . --cache --report-unused-disable-directives",

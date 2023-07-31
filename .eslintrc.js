@@ -47,7 +47,7 @@ module.exports = {
       },
     },
     {
-      files: ['test-packages/**/*.[jt]s'],
+      files: ['test-packages/**/*.[jt]s', '**/rollup.config.mjs'],
       rules: {
         'import/no-extraneous-dependencies': 'off',
       },

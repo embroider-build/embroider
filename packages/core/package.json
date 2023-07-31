@@ -17,7 +17,10 @@
     "src/**/*.js.map"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "rollup -c ./rollup.config.mjs",
+    "start": "pnpm build --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/core' build"
   },
   "dependencies": {
     "@babel/core": "^7.14.5",
@@ -46,6 +49,7 @@
     "walk-sync": "^3.0.0"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.84.2",

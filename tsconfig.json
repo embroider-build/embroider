@@ -7,8 +7,7 @@
     "./tests/scenarios/**/*.ts"
   ],
   "compilerOptions": {
-    "target": "es2019",
-    "module": "commonjs",
+    "target": "esnext",
     "declaration": true,
     "typeRoots": ["types", "node_modules/@types"],
     "esModuleInterop": true,

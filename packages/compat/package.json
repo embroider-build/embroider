@@ -24,7 +24,7 @@
     "build": "concurrently 'npm:build:*'",
     "build:js": "rollup -c ./rollup.config.mjs",
     "build:types": "build-types",
-    "start": "pnpm build --watch",
+    "start": "pnpm build:js --watch",
     "prepack": "pnpm -w exec turbo --filter '@embroider/compat' build"
   },
   "dependencies": {

@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "lint": "concurrently 'npm:build:*'",
+    "build": "concurrently 'npm:build:*'",
     "build:js": "rollup -c ./rollup.config.mjs",
     "build:types": "build-types",
     "start": "pnpm build --watch",

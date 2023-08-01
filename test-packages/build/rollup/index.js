@@ -1,6 +1,5 @@
 import path from 'node:path';
 import url from 'node:url';
-import fs from 'node:fs';
 
 import { defineConfig } from 'rollup';
 import autoExternal from 'rollup-plugin-auto-external';
@@ -17,9 +16,6 @@ const rootTsConfig = path.join(repoRoot, 'tsconfig.json');
 export function rollupConfig(meta, options) {
   let callerUrl = new URL('.', meta.url);
   let callerDir = url.fileURLToPath(callerUrl);
-  let localTsConfig = path.join(callerDir, 'tsconfig.json');
-
-  let tsconfig = fs.existsSync(localTsConfig) ? localTsConfig : rootTsConfig;
 
   let dist = options.distDir ?? 'dist';
   let src = options.srcDir ?? 'src';

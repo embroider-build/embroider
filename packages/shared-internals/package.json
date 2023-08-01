@@ -37,14 +37,11 @@
     "lodash": "^4.17.21",
     "resolve-package-path": "^4.0.1",
     "semver": "^7.3.5",
-    "tslib": "^2.6.0",
     "typescript-memoize": "^1.0.1"
   },
   "devDependencies": {
     "@embroider/build": "workspace:*",
     "@embroider/test-support": "workspace:*",
-    "@tsconfig/node14": "^14.1.0",
-    "@tsconfig/strictest": "^2.0.1",
     "@types/babel__core": "^7.1.14",
     "@types/babel__traverse": "^7.18.5",
     "@types/debug": "^4.1.5",

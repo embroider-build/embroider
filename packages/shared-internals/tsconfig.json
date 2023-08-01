@@ -12,6 +12,7 @@
     "allowUnreachableCode": false,
     "noPropertyAccessFromIndexSignature": false,
     "noUncheckedIndexedAccess": false,
+    "typeRoots": ["../../node_modules/@types", "../../types"],
 
     // linting
     "noUnusedLocals": true,

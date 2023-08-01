@@ -3,10 +3,8 @@ import url from 'node:url';
 import fs from 'node:fs';
 
 import { defineConfig } from 'rollup';
-import typescript from '@rollup/plugin-typescript';
-import multi from '@rollup/plugin-multi-entry';
-import { default as clean } from 'rollup-plugin-delete';
 import autoExternal from 'rollup-plugin-auto-external';
+import swc from 'rollup-plugin-swc3';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 const repoRoot = path.join(__dirname, '../../../');
@@ -32,30 +30,49 @@ export function rollupConfig(meta, options) {
     return path.join(srcDir, entry);
   });
 
-  return defineConfig({
-    input,
-    output: [
-      {
+  const swcCompiler = swc({
+    tsconfig: rootTsConfig,
+    sourceMaps: true,
+    jsc: {
+      parser: {
+        sourceMap: 'inline',
+        syntax: 'typescript',
+        tsx: false,
+        decorators: true,
+        dynamicImport: true,
+      },
+      target: 'esnext',
+    },
+  });
+
+  return defineConfig([
+    {
+      input,
+      output: {
         format: 'cjs',
         sourcemap: true,
         dir: path.join(distDir, 'cjs'),
       },
-      {
+      plugins: [
+        swcCompiler,
+        autoExternal({
+          packagePath: path.join(callerDir, 'package.json'),
+        }),
+      ],
+    },
+    {
+      input,
+      output: {
         format: 'esm',
         sourcemap: true,
         dir: path.join(distDir, 'esm'),
       },
-    ],
-    plugins: [
-      multi(),
-      typescript({
-        tsconfig,
-      }),
-      autoExternal({
-        packagePath: path.join(callerDir, 'package.json'),
-      }),
-
-      clean({ targets: `${distDir}/*` }),
-    ],
-  });
+      plugins: [
+        swcCompiler,
+        autoExternal({
+          packagePath: path.join(callerDir, 'package.json'),
+        }),
+      ],
+    },
+  ]);
 }

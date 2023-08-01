@@ -16,7 +16,9 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "rollup -c ./rollup.config.mjs",
+    "lint": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
     "start": "pnpm build --watch",
     "prepack": "pnpm -w exec turbo --filter '@embroider/core' build"
   },

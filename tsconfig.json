@@ -9,6 +9,7 @@
   "compilerOptions": {
     "target": "esnext",
     "declaration": true,
+    "declarationDir": "dist/types",
     "typeRoots": ["types", "node_modules/@types"],
     "esModuleInterop": true,
     "noUnusedLocals": true,

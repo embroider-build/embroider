@@ -7,16 +7,16 @@
   "scripts": {
     "clean": "git clean -x -f",
     "compile": "turbo build",
+    "build": "pnpm compile",
     "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
     "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
     "lint:eslint": "eslint . --cache --report-unused-disable-directives",
     "lint:eslint:fix": "eslint . --fix --report-unused-disable-directives",
+    "lint:types": "tsc --watch --noEmit",
     "lint:prettier": "prettier . -c",
     "lint:prettier:fix": "prettier . -w",
     "lint:router-types": "cd packages/router && pnpm lint:types",
-    "prepare": "tsc && pnpm build-v2-addons",
-    "build-v2-addons": "concurrently 'pnpm:build-v2-addons:*'",
-    "build-v2-addons:router": "cd packages/router && pnpm build",
+    "prepare": "pnpm build",
     "test": "cd tests/scenarios && pnpm test"
   },
   "jest": {

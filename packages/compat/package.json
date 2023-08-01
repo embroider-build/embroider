@@ -20,7 +20,12 @@
     "embroider-compat-audit": "./src/audit-cli.js"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/compat' build"
   },
   "dependencies": {
     "@babel/code-frame": "^7.14.5",
@@ -66,6 +71,7 @@
     "yargs": "^17.0.1"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@embroider/core": "workspace:^",
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",

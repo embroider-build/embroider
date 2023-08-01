@@ -19,6 +19,13 @@
     "src/**/*.d.ts",
     "src/**/*.js.map"
   ],
+  "scripts": {
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build:js --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/macros' build"
+  },
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
@@ -30,6 +37,7 @@
     "semver": "^7.3.2"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@babel/core": "^7.14.5",
     "@babel/plugin-transform-modules-amd": "^7.19.6",
     "@babel/traverse": "^7.14.5",

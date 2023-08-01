@@ -6,6 +6,13 @@
     "@embroider/core": "workspace:^",
     "vite": "^4.3.9"
   },
+  "scripts": {
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build:js --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/vite' build"
+  },
   "dependencies": {
     "@rollup/pluginutils": "^4.1.1",
     "assert-never": "^1.2.1",
@@ -17,6 +24,7 @@
     "terser": "^5.7.0"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@embroider/core": "workspace:^",
     "@types/debug": "^4.1.5",
     "@types/jsdom": "^16.2.11",

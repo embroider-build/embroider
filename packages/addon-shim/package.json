@@ -15,13 +15,20 @@
     "doc": "doc",
     "test": "tests"
   },
-  "scripts": {},
+  "scripts": {
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build:js --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/addon-shim' build"
+  },
   "dependencies": {
     "@embroider/shared-internals": "workspace:^",
     "broccoli-funnel": "^3.0.8",
     "semver": "^7.3.8"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@types/semver": "^7.3.6",
     "broccoli-node-api": "^1.7.0",
     "typescript": "^5.1.6",

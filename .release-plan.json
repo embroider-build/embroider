@@ -1,13 +1,13 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "major",
-      "oldVersion": "3.2.0",
-      "newVersion": "4.0.0",
+      "impact": "minor",
+      "oldVersion": "4.0.0",
+      "newVersion": "4.1.0",
       "constraints": [
         {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "packages/addon-dev/package.json"
@@ -16,90 +16,25 @@
       "oldVersion": "1.8.6"
     },
     "@embroider/babel-loader-8": {
-      "impact": "patch",
-      "oldVersion": "3.0.0",
-      "newVersion": "3.0.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "packages/babel-loader-8/package.json"
+      "oldVersion": "3.0.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.2.0",
-      "newVersion": "3.2.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "packages/compat/package.json"
+      "oldVersion": "3.2.1"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.2.0",
-      "newVersion": "3.2.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "packages/core/package.json"
+      "oldVersion": "3.2.1"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.2"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.13.0",
-      "newVersion": "1.13.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "packages/macros/package.json"
+      "oldVersion": "1.13.1"
     },
     "@embroider/router": {
       "oldVersion": "2.1.3"
     },
     "@embroider/shared-internals": {
-      "impact": "minor",
-      "oldVersion": "2.3.0",
-      "newVersion": "2.4.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "packages/shared-internals/package.json"
+      "oldVersion": "2.4.0"
     },
     "@embroider/test-setup": {
       "oldVersion": "3.0.1"
@@ -109,32 +44,19 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "0.1.0",
-      "newVersion": "0.1.1",
+      "oldVersion": "0.1.1",
+      "newVersion": "0.1.2",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "packages/vite/package.json"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "3.1.4",
-      "newVersion": "3.1.5",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/babel-loader-8"
-        }
-      ],
-      "pkgJSONPath": "packages/webpack/package.json"
+      "oldVersion": "3.1.5"
     }
   },
-  "description": "## Release (2023-08-02)\n\n@embroider/addon-dev 4.0.0 (major)\n@embroider/babel-loader-8 3.0.1 (patch)\n@embroider/compat 3.2.1 (patch)\n@embroider/core 3.2.1 (patch)\n@embroider/macros 1.13.1 (patch)\n@embroider/shared-internals 2.4.0 (minor)\n@embroider/vite 0.1.1 (patch)\n@embroider/webpack 3.1.5 (patch)\n\n#### :boom: Breaking Change\n* `addon-dev`\n  * [#1558](https://github.com/embroider-build/embroider/pull/1558) Simplification of gjs and hbs handling in addon-dev ([@ef4](https://github.com/ef4))\n\n#### :rocket: Enhancement\n* `shared-internals`\n  * [#1556](https://github.com/embroider-build/embroider/pull/1556) support packages that use modules ([@void-mAlex](https://github.com/void-mAlex))\n\n#### :bug: Bug Fix\n* `compat`\n  * [#1563](https://github.com/embroider-build/embroider/pull/1563) Add semverRange <=4.11.0 for ember-data debug ([@mkszepp](https://github.com/mkszepp))\n* `babel-loader-8`, `core`, `macros`, `shared-internals`\n  * [#1560](https://github.com/embroider-build/embroider/pull/1560) Fix rewritten package cache encapsulation ([@ef4](https://github.com/ef4))\n* `vite`\n  * [#1550](https://github.com/embroider-build/embroider/pull/1550) Initial test of vite integration ([@ef4](https://github.com/ef4))\n\n#### :memo: Documentation\n* [#1559](https://github.com/embroider-build/embroider/pull/1559) Fix link to `dependenciesMeta.*.injected` ([@gossi](https://github.com/gossi))\n\n#### :house: Internal\n* [#1565](https://github.com/embroider-build/embroider/pull/1565) add an auto-deploy action for stable releases ([@mansona](https://github.com/mansona))\n\n#### Committers: 5\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Thomas Gossmann ([@gossi](https://github.com/gossi))\n- [@mkszepp](https://github.com/mkszepp)\n"
+  "description": "## Release (2023-08-02)\n\n@embroider/addon-dev 4.1.0 (minor)\n@embroider/vite 0.1.2 (patch)\n\n#### :rocket: Enhancement\n* `addon-dev`\n  * [#1448](https://github.com/embroider-build/embroider/pull/1448) Add the ability to customise rollup-plugin-clean's config ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* `vite`\n  * [#1567](https://github.com/embroider-build/embroider/pull/1567) add files block to the vite package ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

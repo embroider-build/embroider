@@ -1,5 +1,45 @@
 # Embroider Changelog
 
+## Release (2023-08-02)
+
+@embroider/addon-dev 4.0.0 (major)
+@embroider/babel-loader-8 3.0.1 (patch)
+@embroider/compat 3.2.1 (patch)
+@embroider/core 3.2.1 (patch)
+@embroider/macros 1.13.1 (patch)
+@embroider/shared-internals 2.4.0 (minor)
+@embroider/vite 0.1.1 (patch)
+@embroider/webpack 3.1.5 (patch)
+
+#### :boom: Breaking Change
+* `addon-dev`
+  * [#1558](https://github.com/embroider-build/embroider/pull/1558) Simplification of gjs and hbs handling in addon-dev ([@ef4](https://github.com/ef4))
+
+#### :rocket: Enhancement
+* `shared-internals`
+  * [#1556](https://github.com/embroider-build/embroider/pull/1556) support packages that use modules ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1563](https://github.com/embroider-build/embroider/pull/1563) Add semverRange <=4.11.0 for ember-data debug ([@mkszepp](https://github.com/mkszepp))
+* `babel-loader-8`, `core`, `macros`, `shared-internals`
+  * [#1560](https://github.com/embroider-build/embroider/pull/1560) Fix rewritten package cache encapsulation ([@ef4](https://github.com/ef4))
+* `vite`
+  * [#1550](https://github.com/embroider-build/embroider/pull/1550) Initial test of vite integration ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* [#1559](https://github.com/embroider-build/embroider/pull/1559) Fix link to `dependenciesMeta.*.injected` ([@gossi](https://github.com/gossi))
+
+#### :house: Internal
+* [#1565](https://github.com/embroider-build/embroider/pull/1565) add an auto-deploy action for stable releases ([@mansona](https://github.com/mansona))
+
+#### Committers: 5
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Thomas Gossmann ([@gossi](https://github.com/gossi))
+- [@mkszepp](https://github.com/mkszepp)
+
 ## Release (2023-07-20)
 
 @embroider/addon-dev 3.2.0 (minor)

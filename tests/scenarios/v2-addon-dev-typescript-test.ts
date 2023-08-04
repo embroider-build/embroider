@@ -16,7 +16,7 @@ appScenarios
     addon.pkg.files = ['dist'];
     addon.pkg.exports = {
       './*': './dist/*.js',
-      './addon-main.js': './addon-main.js',
+      './addon-main.js': './addon-main.cjs',
       './package.json': './package.json',
     };
     addon.pkg.scripts = {

@@ -150,3 +150,11 @@ This project is licensed under the [MIT License](LICENSE).
 ## Acknowledgements
 
 Thanks to [Cardstack](https://github.com/cardstack) for sponsoring Embroider's development.
+
+Thanks to the [Embroider Initiative](https://mainmatter.com/embroider-initiative/) sponsors for contributing to Embroider's development: 
+
+- [Intercom](https://www.intercom.com/)
+- [Ticketsolve](https://www.ticketsolve.com/)
+- [HashiCorp](https://www.hashicorp.com/)
+- [OTA Insight](https://www.otainsight.com/)
+- [XBE](https://www.x-b-e.com/)

@@ -19,7 +19,7 @@
   "scripts": {},
   "dependencies": {
     "@babel/core": "^7.14.5",
-    "@embroider/babel-loader-8": "workspace:*",
+    "@embroider/babel-loader-9": "workspace:*",
     "@embroider/hbs-loader": "workspace:*",
     "@embroider/shared-internals": "workspace:*",
     "@types/supports-color": "^8.1.0",

@@ -1,16 +1,16 @@
 {
-  "name": "@embroider/babel-loader-8",
+  "name": "@embroider/babel-loader-9",
   "version": "3.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
-    "directory": "packages/babel-loader-8"
+    "directory": "packages/babel-loader-9"
   },
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
     "@babel/core": "^7.14.5",
-    "babel-loader": "8"
+    "babel-loader": "^9.0.0"
   },
   "devDependencies": {
     "@embroider/core": "workspace:^"

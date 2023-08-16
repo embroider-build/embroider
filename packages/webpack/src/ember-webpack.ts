@@ -207,7 +207,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       this.extraBabelLoaderOptions
     );
 
-    let babelLoaderPrefix = `babel-loader-8?${JSON.stringify(babelLoaderOptions.options)}!`;
+    let babelLoaderPrefix = `babel-loader-9?${JSON.stringify(babelLoaderOptions.options)}!`;
 
     return {
       mode: variant.optimizeForProduction ? 'production' : 'development',
@@ -287,7 +287,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           // not overriding the default loader resolution rules in case the app also
           // wants to control those.
           'thread-loader': require.resolve('thread-loader'),
-          'babel-loader-8': require.resolve('@embroider/babel-loader-8'),
+          'babel-loader-9': require.resolve('@embroider/babel-loader-9'),
           'css-loader': require.resolve('css-loader'),
           'style-loader': require.resolve('style-loader'),
         },
@@ -673,7 +673,7 @@ function warmUp(extraOptions: object | false | undefined) {
 
   threadLoaderWarmup(Object.assign({}, threadLoaderOptions, extraOptions), [
     require.resolve('@embroider/hbs-loader'),
-    require.resolve('@embroider/babel-loader-8'),
+    require.resolve('@embroider/babel-loader-9'),
   ]);
 }
 
@@ -718,7 +718,7 @@ function makeBabelLoaderOptions(
     ...extraOptions,
   };
   return {
-    loader: 'babel-loader-8',
+    loader: 'babel-loader-9',
     options,
   };
 }

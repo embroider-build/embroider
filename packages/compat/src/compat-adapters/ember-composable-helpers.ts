@@ -33,6 +33,6 @@ class MatchHelpers extends Funnel {
     }
     let src = readFileSync(join(this.inputPaths[0], 'index.js'), 'utf8');
     let plugins = [stripBadReexportsPlugin({ resolveBase: this.outputPath })];
-    writeFileSync(join(this.outputPath, 'index.js'), transform(src, { plugins })!.code!);
+    writeFileSync(join(this.outputPath, 'index.js'), transform(src, { plugins, configFile: false })!.code!);
   }
 }

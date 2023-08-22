@@ -139,6 +139,7 @@ class FixStringLoc extends Plugin {
     let inSource = readFileSync(resolve(this.inputPaths[0], 'ember', 'index.js'), 'utf8');
     let outSource = transform(inSource, {
       plugins: [fixStringLoc],
+      configFile: false,
     })!.code!;
     outputFileSync(resolve(this.outputPath, 'ember', 'index.js'), outSource, 'utf8');
   }

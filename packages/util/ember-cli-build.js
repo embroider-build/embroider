@@ -1,6 +1,7 @@
 'use strict';
 
 const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
+// eslint-disable-next-line node/no-missing-require
 const { maybeEmbroider } = require('@embroider/test-setup');
 
 module.exports = function (defaults) {

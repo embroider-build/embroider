@@ -58,5 +58,11 @@ module.exports = {
         'import/no-extraneous-dependencies': 'off',
       },
     },
+    {
+      files: ['tests/**/*'],
+      rules: {
+        'node/no-missing-require': 'off',
+      },
+    },
   ],
 };

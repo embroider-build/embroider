@@ -12,6 +12,7 @@ export { runDefault, Project };
 const runtimeFilename = join(__dirname, '../../src/addon/runtime.js');
 
 export function makeRunner(transform: Transform) {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   let cachedMacrosPackage: typeof import('../../src/index');
 
   return function run(code: string, opts?: { filename: string }) {

@@ -43,6 +43,9 @@ module.exports = {
       },
       plugins: ['node'],
       extends: ['plugin:node/recommended'],
+      rules: {
+        'node/no-missing-require': 'off',
+      },
     },
     {
       // test files

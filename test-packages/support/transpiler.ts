@@ -34,7 +34,6 @@ export class Transpiler {
   }
 
   shouldTranspile(relativePath: string) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     let shouldTranspile = require(join(this.appOutputPath, '_babel_filter_'));
     return shouldTranspile(join(this.appDir, getRewrittenLocation(this.appDir, relativePath))) as boolean;
   }
@@ -53,7 +52,7 @@ export class Transpiler {
     if (this.emberMeta['babel'].majorVersion !== 7) {
       throw new Error(`@embroider/test-support only suports babel 7`);
     }
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+
     return require(join(this.appOutputPath, this.emberMeta['babel'].filename)) as TransformOptions;
   }
 }

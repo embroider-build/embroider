@@ -9,21 +9,13 @@
   getting script vs module context correct).
 */
 
-import {
-  AppMeta,
-  HTMLEntrypoint,
-  BundleSummary,
-  Packager,
-  PackagerConstructor,
-  Variant,
-  getAppMeta,
-  getPackagerCacheDir,
-  getOrCreate,
-  ResolverOptions,
-} from '@embroider/core';
+import type { AppMeta, BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
+import { HTMLEntrypoint, getAppMeta, getPackagerCacheDir, getOrCreate } from '@embroider/core';
 import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
-import webpack, { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
-import { readFileSync, outputFileSync, copySync, Stats, statSync, readJSONSync } from 'fs-extra';
+import type { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
+import webpack from 'webpack';
+import type { Stats } from 'fs-extra';
+import { readFileSync, outputFileSync, copySync, statSync, readJSONSync } from 'fs-extra';
 import { join, dirname, relative, sep } from 'path';
 import isEqual from 'lodash/isEqual';
 import mergeWith from 'lodash/mergeWith';
@@ -32,12 +24,13 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import makeDebug from 'debug';
 import { format } from 'util';
 import { warmup as threadLoaderWarmup } from 'thread-loader';
-import { Options, BabelLoaderOptions } from './options';
+import type { Options, BabelLoaderOptions } from './options';
 import crypto from 'crypto';
 import semverSatisfies from 'semver/functions/satisfies';
 import supportsColor from 'supports-color';
-import { Options as HbsLoaderOptions } from '@embroider/hbs-loader';
-import { EmbroiderPlugin, Options as EmbroiderPluginOptions } from './webpack-resolver-plugin';
+import type { Options as HbsLoaderOptions } from '@embroider/hbs-loader';
+import type { Options as EmbroiderPluginOptions } from './webpack-resolver-plugin';
+import { EmbroiderPlugin } from './webpack-resolver-plugin';
 
 const debug = makeDebug('embroider:debug');
 

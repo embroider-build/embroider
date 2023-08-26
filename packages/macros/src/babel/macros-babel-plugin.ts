@@ -1,7 +1,9 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
-import State, { initState } from './state';
-import { inlineRuntimeConfig, insertConfig, Mode as GetConfigMode } from './get-config';
+import type State from './state';
+import { initState } from './state';
+import type { Mode as GetConfigMode } from './get-config';
+import { inlineRuntimeConfig, insertConfig } from './get-config';
 import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
 

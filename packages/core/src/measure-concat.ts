@@ -1,4 +1,4 @@
-import SourceMapConcat from 'fast-sourcemap-concat';
+import type SourceMapConcat from 'fast-sourcemap-concat';
 import { join } from 'path';
 import { statSync } from 'fs';
 import { filesize } from 'filesize';

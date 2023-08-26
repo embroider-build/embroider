@@ -1,5 +1,5 @@
 import Plugin from 'broccoli-plugin';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { join, basename } from 'path';
 import walkSync from 'walk-sync';
 import { remove, outputFileSync, pathExistsSync } from 'fs-extra';

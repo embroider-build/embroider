@@ -1,6 +1,7 @@
 import { Project } from 'scenario-tester';
 import { join } from 'path';
-import { templateTests, TemplateTransformOptions } from './helpers';
+import type { TemplateTransformOptions } from './helpers';
+import { templateTests } from './helpers';
 
 describe(`macroCondition`, function () {
   let project: Project;

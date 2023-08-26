@@ -1,4 +1,5 @@
-import { getOrCreate, Resolver } from '@embroider/core';
+import type { Resolver } from '@embroider/core';
+import { getOrCreate } from '@embroider/core';
 import { resolve } from 'path';
 import { satisfies } from 'semver';
 

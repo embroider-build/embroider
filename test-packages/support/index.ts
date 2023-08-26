@@ -1,6 +1,7 @@
 import { join } from 'path';
 import 'jest';
-import { transform as transform7, TransformOptions as Options7 } from '@babel/core';
+import type { TransformOptions as Options7 } from '@babel/core';
+import { transform as transform7 } from '@babel/core';
 import { createContext, Script } from 'vm';
 
 interface RunDefaultOptions {

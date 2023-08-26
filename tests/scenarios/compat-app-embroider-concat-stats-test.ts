@@ -1,5 +1,5 @@
 import { throwOnWarnings } from '@embroider/core';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import { appScenarios } from './scenarios';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;

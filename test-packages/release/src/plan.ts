@@ -1,4 +1,4 @@
-import { Impact, ParsedChangelog } from './change-parser';
+import type { Impact, ParsedChangelog } from './change-parser';
 import { publishedInterPackageDeps } from './interdep';
 import assertNever from 'assert-never';
 import { inc, satisfies } from 'semver';

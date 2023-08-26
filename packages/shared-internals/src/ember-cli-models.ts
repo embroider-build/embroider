@@ -1,6 +1,6 @@
 import type { Funnel } from 'broccoli-funnel';
 import type { Node } from 'broccoli-node-api';
-import { PackageInfo } from './metadata';
+import type { PackageInfo } from './metadata';
 export interface Project {
   targets: unknown;
   ui: {

@@ -1,5 +1,7 @@
-import { parse, TransformOptions } from '@babel/core';
-import traverse, { NodePath } from '@babel/traverse';
+import type { TransformOptions } from '@babel/core';
+import { parse } from '@babel/core';
+import type { NodePath } from '@babel/traverse';
+import traverse from '@babel/traverse';
 import { types as t } from '@babel/core';
 import assertNever from 'assert-never';
 

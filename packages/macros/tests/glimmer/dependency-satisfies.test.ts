@@ -1,4 +1,5 @@
-import { Project, templateTests, TemplateTransformOptions } from './helpers';
+import type { TemplateTransformOptions } from './helpers';
+import { Project, templateTests } from './helpers';
 import { join } from 'path';
 
 describe('dependency satisfies', () => {

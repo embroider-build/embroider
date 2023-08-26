@@ -1,4 +1,4 @@
-import { PluginItem } from '@babel/core';
+import type { PluginItem } from '@babel/core';
 import { join, sep } from 'path';
 
 export function isEmberAutoImportDynamic(item: PluginItem): boolean {

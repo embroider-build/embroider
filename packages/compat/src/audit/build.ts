@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { AuditBuildOptions } from '../audit';
+import type { AuditBuildOptions } from '../audit';
 import { spawn } from 'child_process';
 
 export async function buildApp(options: AuditBuildOptions): Promise<void> {

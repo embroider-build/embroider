@@ -1,8 +1,10 @@
 import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
-import { TransformOptions, transform } from '@babel/core';
-import { BoundExpectFile } from './file-assertions';
-import { AppMeta, hbsToJS, RewrittenPackageCache } from '../../packages/core/src/index';
+import type { TransformOptions } from '@babel/core';
+import { transform } from '@babel/core';
+import type { BoundExpectFile } from './file-assertions';
+import type { AppMeta } from '../../packages/core/src/index';
+import { hbsToJS, RewrittenPackageCache } from '../../packages/core/src/index';
 import { Memoize } from 'typescript-memoize';
 import { getRewrittenLocation } from './rewritten-path';
 

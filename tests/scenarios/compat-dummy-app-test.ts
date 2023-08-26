@@ -1,6 +1,7 @@
-import { ExpectFile, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { Rebuilder } from '@embroider/test-support';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import { writeFileSync } from 'fs';

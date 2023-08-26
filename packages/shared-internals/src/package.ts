@@ -2,8 +2,8 @@ import { Memoize } from 'typescript-memoize';
 import { readFileSync, existsSync } from 'fs-extra';
 import { join, extname } from 'path';
 import get from 'lodash/get';
-import { AddonMeta, AppMeta, PackageInfo } from './metadata';
-import PackageCache from './package-cache';
+import type { AddonMeta, AppMeta, PackageInfo } from './metadata';
+import type PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
 export default class Package {
   // order here matters because we rely on it in categorizeDependency

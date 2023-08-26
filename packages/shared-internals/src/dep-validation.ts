@@ -1,4 +1,4 @@
-import Package from './package';
+import type Package from './package';
 
 // For each package in the graph, discover all the paths to reach that package.
 // That is, we're identifying all its consumers.

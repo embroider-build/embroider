@@ -1,6 +1,6 @@
-import { AppInstance } from '@embroider/shared-internals';
+import type { AppInstance } from '@embroider/shared-internals';
 import { join } from 'path';
-import { BuildPluginParams } from './glimmer/ast-transform';
+import type { BuildPluginParams } from './glimmer/ast-transform';
 import { MacrosConfig, isEmbroiderMacrosPlugin } from './node';
 
 let hasWrappedToTree = false;

@@ -1,4 +1,5 @@
-import { Audit, AuditBuildOptions, AuditResults, Module } from '../../packages/compat/src/audit';
+import type { AuditBuildOptions, AuditResults, Module } from '../../packages/compat/src/audit';
+import { Audit } from '../../packages/compat/src/audit';
 import { explicitRelative } from '../../packages/shared-internals';
 import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
 import { posix } from 'path';

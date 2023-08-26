@@ -5,7 +5,7 @@ import { JSDOM } from 'jsdom';
 import partition from 'lodash/partition';
 import zip from 'lodash/zip';
 import Placeholder from './html-placeholder';
-import { Variant } from './packager';
+import type { Variant } from './packager';
 
 export class HTMLEntrypoint {
   private dom: JSDOM;

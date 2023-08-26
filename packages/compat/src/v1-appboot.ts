@@ -1,5 +1,5 @@
 import Plugin from 'broccoli-plugin';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { join } from 'path';
 import { readFileSync, outputFileSync } from 'fs-extra';
 

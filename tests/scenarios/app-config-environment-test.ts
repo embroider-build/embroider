@@ -1,6 +1,6 @@
 import merge from 'lodash/merge';
 import { appScenarios } from './scenarios';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 
 const { module: Qmodule, test } = QUnit;

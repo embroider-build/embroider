@@ -1,27 +1,14 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, join, resolve as resolvePath } from 'path';
-import {
-  AppMeta,
-  explicitRelative,
-  hbsToJS,
-  locateEmbroiderWorkingDir,
-  Resolver,
-  ResolverOptions,
-  RewrittenPackageCache,
-} from '@embroider/core';
+import type { AppMeta, ResolverOptions } from '@embroider/core';
+import { explicitRelative, hbsToJS, locateEmbroiderWorkingDir, Resolver, RewrittenPackageCache } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
 import jsdom from 'jsdom';
 import groupBy from 'lodash/groupBy';
 import fromPairs from 'lodash/fromPairs';
-import {
-  auditJS,
-  CodeFrameStorage,
-  ExportAll,
-  InternalImport,
-  isNamespaceMarker,
-  NamespaceMarker,
-} from './audit/babel-visitor';
+import type { ExportAll, InternalImport, NamespaceMarker } from './audit/babel-visitor';
+import { auditJS, CodeFrameStorage, isNamespaceMarker } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
 

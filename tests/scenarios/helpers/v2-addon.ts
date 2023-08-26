@@ -1,5 +1,5 @@
 import path from 'path';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 // @ts-expect-error
 import { loadConfigFile } from 'rollup/loadConfigFile';
 import rollup from 'rollup';

@@ -2,7 +2,8 @@ import type { NodePath, Node } from '@babel/traverse';
 import cloneDeepWith from 'lodash/cloneDeepWith';
 import lodashCloneDeep from 'lodash/cloneDeep';
 import { join, dirname, resolve } from 'path';
-import { cleanUrl, explicitRelative, Package, RewrittenPackageCache } from '@embroider/shared-internals';
+import type { Package } from '@embroider/shared-internals';
+import { cleanUrl, explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import { ImportUtil } from 'babel-import-util';
 import type * as Babel from '@babel/core';
 

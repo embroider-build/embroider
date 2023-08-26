@@ -1,8 +1,8 @@
 import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import Snitch from './snitch';
-import { Node } from 'broccoli-node-api';
-import { AddonMeta } from '@embroider/core';
+import type { Node } from 'broccoli-node-api';
+import type { AddonMeta } from '@embroider/core';
 import AddToTree from './add-to-tree';
 import { moveSync, readdirSync, statSync } from 'fs-extra';
 import { join, basename } from 'path';

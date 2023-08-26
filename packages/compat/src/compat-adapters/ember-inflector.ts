@@ -1,6 +1,6 @@
 import V1Addon from '../v1-addon';
 import AddToTree from '../add-to-tree';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { removeSync } from 'fs-extra';

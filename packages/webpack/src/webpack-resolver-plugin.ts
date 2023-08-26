@@ -1,11 +1,6 @@
 import { dirname, resolve } from 'path';
-import {
-  Resolver as EmbroiderResolver,
-  ResolverOptions as EmbroiderResolverOptions,
-  ModuleRequest,
-  ResolverFunction,
-  Resolution,
-} from '@embroider/core';
+import type { ModuleRequest, ResolverFunction, Resolution } from '@embroider/core';
+import { Resolver as EmbroiderResolver, ResolverOptions as EmbroiderResolverOptions } from '@embroider/core';
 import type { Compiler, Module } from 'webpack';
 import assertNever from 'assert-never';
 import escapeRegExp from 'escape-string-regexp';

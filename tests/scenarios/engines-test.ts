@@ -1,9 +1,11 @@
 import { appScenarios, baseAddon } from './scenarios';
-import { PreparedApp, Project } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
+import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { setupFastboot, loadFromFixtureData } from './helpers';
-import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
 

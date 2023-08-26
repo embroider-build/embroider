@@ -2,7 +2,7 @@ import type { NodePath } from '@babel/traverse';
 import { Evaluator } from './evaluate-json';
 import type { types as t } from '@babel/core';
 import error from './error';
-import State from './state';
+import type State from './state';
 
 export type MacroConditionPath = NodePath<t.IfStatement | t.ConditionalExpression> & {
   get(test: 'test'): NodePath<t.CallExpression> & { get(callee: 'callee'): NodePath<t.Identifier> };

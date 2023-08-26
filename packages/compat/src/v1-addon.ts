@@ -2,22 +2,24 @@ import { Memoize } from 'typescript-memoize';
 import { dirname, join, relative, resolve } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
 import { existsSync, pathExistsSync } from 'fs-extra';
-import buildFunnel, { Options as FunnelOptions } from 'broccoli-funnel';
+import type { Options as FunnelOptions } from 'broccoli-funnel';
+import buildFunnel from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
 import { todo, unsupported } from '@embroider/core/src/messages';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
-import { AddonMeta, debug, PackageCache, AddonInstance, AddonTreePath } from '@embroider/core';
-import Options from './options';
+import type { AddonMeta, PackageCache, AddonInstance, AddonTreePath } from '@embroider/core';
+import { debug } from '@embroider/core';
+import type Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
 import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
-import { TransformOptions, PluginItem } from '@babel/core';
+import type { TransformOptions, PluginItem } from '@babel/core';
 import modulesCompat from './modules-compat';
 import writeFile from 'broccoli-file-creator';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
@@ -32,7 +34,7 @@ import { fromPairs } from 'lodash';
 import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
 import getRealAddon from './get-real-addon';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
-import CompatApp from './compat-app';
+import type CompatApp from './compat-app';
 
 const stockTreeNames: AddonTreePath[] = Object.freeze([
   'addon',

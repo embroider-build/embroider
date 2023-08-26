@@ -1,7 +1,8 @@
 import { parseChangeLogOrExit } from './change-parser';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { planVersionBumps, saveSolution, Solution } from './plan';
+import type { Solution } from './plan';
+import { planVersionBumps, saveSolution } from './plan';
 import { readJSONSync, writeJSONSync } from 'fs-extra';
 import { relativeToAbsolute } from './utils';
 

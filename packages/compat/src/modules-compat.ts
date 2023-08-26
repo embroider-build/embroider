@@ -1,5 +1,5 @@
 import buildFunnel from 'broccoli-funnel';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 
 // there is a weirder, older behavior where addons wrapped their addon tree

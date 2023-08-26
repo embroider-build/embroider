@@ -1,5 +1,5 @@
 import Plugin from 'broccoli-plugin';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { mergeWithUniq } from './merges';

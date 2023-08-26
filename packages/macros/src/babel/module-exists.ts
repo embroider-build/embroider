@@ -1,6 +1,6 @@
 import type { NodePath } from '@babel/traverse';
 import type { types as t } from '@babel/core';
-import State from './state';
+import type State from './state';
 import error from './error';
 import { assertArray } from './evaluate-json';
 import resolve from 'resolve';

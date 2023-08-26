@@ -4,10 +4,12 @@ import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { ImportUtil } from 'babel-import-util';
 import { readJSONSync } from 'fs-extra';
-import { CompatResolverOptions } from './resolver-transform';
-import { locateEmbroiderWorkingDir, Package, packageName, Resolver, unrelativize } from '@embroider/core';
+import type { CompatResolverOptions } from './resolver-transform';
+import type { Package } from '@embroider/core';
+import { locateEmbroiderWorkingDir, packageName, Resolver, unrelativize } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
-import { ActivePackageRules, appTreeRulesDir, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
+import type { ActivePackageRules, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
+import { appTreeRulesDir } from './dependency-rules';
 
 export type Options = { appRoot: string };
 

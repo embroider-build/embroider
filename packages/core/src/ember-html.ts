@@ -1,6 +1,6 @@
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'fs';
-import { EmberAsset } from './asset';
+import type { EmberAsset } from './asset';
 
 export interface EmberHTML {
   // each of the Nodes in here points at where we should insert the

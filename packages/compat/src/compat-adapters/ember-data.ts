@@ -1,7 +1,7 @@
 import V1Addon from '../v1-addon';
 import { join } from 'path';
 import { Memoize } from 'typescript-memoize';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { sync as resolveSync } from 'resolve';
 import semver from 'semver';
 

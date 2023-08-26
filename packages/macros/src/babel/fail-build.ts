@@ -1,9 +1,10 @@
 import type { NodePath } from '@babel/traverse';
-import { Evaluator, ConfidentResult } from './evaluate-json';
+import type { ConfidentResult } from './evaluate-json';
+import { Evaluator } from './evaluate-json';
 import type { types as t } from '@babel/core';
 import error from './error';
 import { format } from 'util';
-import State from './state';
+import type State from './state';
 
 export default function failBuild(path: NodePath<t.CallExpression>, state: State) {
   let args = path.get('arguments');

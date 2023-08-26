@@ -1,5 +1,6 @@
 import { supportMatrix } from './scenarios';
-import { PreparedApp, Scenarios } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
+import { Scenarios } from 'scenario-tester';
 import QUnit from 'qunit';
 import { dirname } from 'path';
 

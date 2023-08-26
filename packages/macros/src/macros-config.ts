@@ -4,8 +4,9 @@ import crypto from 'crypto';
 import findUp from 'find-up';
 import type { PluginItem } from '@babel/core';
 import { RewrittenPackageCache, getOrCreate } from '@embroider/shared-internals';
-import { FirstTransformParams, makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
-import State from './babel/state';
+import type { FirstTransformParams } from './glimmer/ast-transform';
+import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
+import type State from './babel/state';
 import partition from 'lodash/partition';
 
 export type SourceOfConfig = (config: object) => {

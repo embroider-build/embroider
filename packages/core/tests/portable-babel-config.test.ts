@@ -1,4 +1,4 @@
-import { PluginItem, TransformOptions } from '@babel/core';
+import type { PluginItem, TransformOptions } from '@babel/core';
 import { makePortable } from '../src/portable-babel-config';
 import { join, sep, resolve } from 'path';
 import exampleTarget from './example-target';

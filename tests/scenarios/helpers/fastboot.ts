@@ -1,4 +1,4 @@
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 import type { JSDOM } from 'jsdom';

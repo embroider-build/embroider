@@ -1,8 +1,8 @@
-import V1InstanceCache from './v1-instance-cache';
-import { Package } from '@embroider/core';
+import type V1InstanceCache from './v1-instance-cache';
+import type { Package } from '@embroider/core';
 import SmooshPackageJSON from './smoosh-package-json';
 import broccoliMergeTrees from 'broccoli-merge-trees';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import EmptyPackageTree from './empty-package-tree';
 
 export default function buildCompatAddon(originalPackage: Package, v1Cache: V1InstanceCache): Node {

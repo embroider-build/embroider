@@ -2,7 +2,7 @@ import type { NodePath } from '@babel/traverse';
 import { buildLiterals, Evaluator } from './evaluate-json';
 import type { types as t } from '@babel/core';
 import error from './error';
-import State from './state';
+import type State from './state';
 import type * as Babel from '@babel/core';
 
 type CallEachExpression = NodePath<t.CallExpression> & {

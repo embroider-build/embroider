@@ -1,6 +1,7 @@
-import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import { appScenarios } from './scenarios';
 import { readFileSync } from 'fs';
 import { join } from 'path';

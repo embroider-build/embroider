@@ -1,8 +1,9 @@
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { resolve } from 'path';
-import { locateEmbroiderWorkingDir, RewrittenPackageCache, Stage, WaitForTrees } from '@embroider/core';
+import type { Stage } from '@embroider/core';
+import { locateEmbroiderWorkingDir, RewrittenPackageCache, WaitForTrees } from '@embroider/core';
 import TreeSync from 'tree-sync';
-import CompatApp from './compat-app';
+import type CompatApp from './compat-app';
 import { convertLegacyAddons } from './standalone-addon-build';
 
 // This build stage expects to be run with broccoli memoization enabled in order

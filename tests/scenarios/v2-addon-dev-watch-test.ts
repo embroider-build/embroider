@@ -1,6 +1,7 @@
 import path from 'path';
 import { baseV2Addon } from './scenarios';
-import { PreparedApp, Scenarios } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
+import { Scenarios } from 'scenario-tester';
 import fs from 'fs/promises';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';

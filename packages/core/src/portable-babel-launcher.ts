@@ -1,4 +1,5 @@
-import { Portable, PortableHint } from './portable';
+import type { PortableHint } from './portable';
+import { Portable } from './portable';
 
 export default function babelLauncher(
   this: any,

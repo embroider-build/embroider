@@ -1,5 +1,6 @@
 import { dirname, basename, resolve, posix, sep, join } from 'path';
-import { Resolver, explicitRelative, extensionsPattern, AddonPackage, Package } from '.';
+import type { Resolver, AddonPackage, Package } from '.';
+import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 
 const externalESPrefix = '/@embroider/ext-es/';

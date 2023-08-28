@@ -1,9 +1,11 @@
 import { appScenarios, baseAddon, baseV2Addon } from './scenarios';
-import { PreparedApp, Project } from 'scenario-tester';
-import { setupFastboot, loadFromFixtureData, FastbootTestHelpers } from './helpers';
+import type { PreparedApp } from 'scenario-tester';
+import { Project } from 'scenario-tester';
+import type { FastbootTestHelpers } from './helpers';
+import { setupFastboot, loadFromFixtureData } from './helpers';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { JSDOM } from 'jsdom';
+import type { JSDOM } from 'jsdom';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios

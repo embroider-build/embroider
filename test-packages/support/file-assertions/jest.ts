@@ -1,5 +1,6 @@
 import 'code-equality-assertions/jest';
-import { AssertionAdapter, BoundExpectFile, ExpectFile } from '../file-assertions';
+import type { AssertionAdapter } from '../file-assertions';
+import { BoundExpectFile, ExpectFile } from '../file-assertions';
 
 class JestAdapter implements AssertionAdapter {
   constructor(private stack: Error, private path: string) {}

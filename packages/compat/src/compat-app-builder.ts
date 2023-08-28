@@ -1,14 +1,16 @@
-import { Node as BroccoliNode } from 'broccoli-node-api';
-import {
+import type { Node as BroccoliNode } from 'broccoli-node-api';
+import type {
   OutputPaths,
   Asset,
   EmberAsset,
   AddonPackage,
   Engine,
   AppMeta,
+  TemplateColocationPluginOptions,
+} from '@embroider/core';
+import {
   explicitRelative,
   extensionsPattern,
-  TemplateColocationPluginOptions,
   debug,
   warn,
   jsHandlebarsCompile,
@@ -20,10 +22,11 @@ import {
 } from '@embroider/core';
 import walkSync from 'walk-sync';
 import { resolve as resolvePath, posix } from 'path';
-import { JSDOM } from 'jsdom';
-import Options from './options';
-import { CompatResolverOptions } from './resolver-transform';
-import { activePackageRules, PackageRules } from './dependency-rules';
+import type { JSDOM } from 'jsdom';
+import type Options from './options';
+import type { CompatResolverOptions } from './resolver-transform';
+import type { PackageRules } from './dependency-rules';
+import { activePackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
@@ -37,18 +40,20 @@ import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilat
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
-import { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
+import type { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
-import { AppFiles, RouteFiles } from '@embroider/core/src/app-files';
-import { PortableHint, maybeNodeModuleVersion } from '@embroider/core/src/portable';
+import type { RouteFiles } from '@embroider/core/src/app-files';
+import { AppFiles } from '@embroider/core/src/app-files';
+import type { PortableHint } from '@embroider/core/src/portable';
+import { maybeNodeModuleVersion } from '@embroider/core/src/portable';
 import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import resolve from 'resolve';
-import { V1Config } from './v1-config';
-import { AddonMeta, Package, PackageInfo } from '@embroider/core';
+import type { V1Config } from './v1-config';
+import type { AddonMeta, Package, PackageInfo } from '@embroider/core';
 import { ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
-import { TransformOptions } from '@babel/core';
+import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import escapeRegExp from 'escape-string-regexp';

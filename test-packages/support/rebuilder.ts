@@ -1,4 +1,5 @@
-import { ChildProcess, fork } from 'child_process';
+import type { ChildProcess } from 'child_process';
+import { fork } from 'child_process';
 import type Project from 'ember-cli/lib/models/project';
 import type { Builder } from 'broccoli';
 

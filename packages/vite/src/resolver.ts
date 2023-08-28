@@ -1,14 +1,8 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
-import { Plugin } from 'vite';
+import type { Plugin } from 'vite';
 import { join } from 'path';
-import {
-  Resolution,
-  Resolver,
-  ResolverFunction,
-  ResolverOptions,
-  locateEmbroiderWorkingDir,
-  virtualContent,
-} from '@embroider/core';
+import type { Resolution, ResolverFunction, ResolverOptions } from '@embroider/core';
+import { Resolver, locateEmbroiderWorkingDir, virtualContent } from '@embroider/core';
 import { readJSONSync } from 'fs-extra';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';

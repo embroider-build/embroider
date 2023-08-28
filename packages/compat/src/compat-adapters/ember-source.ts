@@ -10,7 +10,7 @@ import { transform } from '@babel/core';
 import type * as Babel from '@babel/core';
 import type { NodePath } from '@babel/traverse';
 import Plugin from 'broccoli-plugin';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 
 export default class extends V1Addon {
   get v2Tree() {

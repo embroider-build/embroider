@@ -1,4 +1,4 @@
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { Funnel } from 'broccoli-funnel';
 
 export default class AddToTree extends Funnel {

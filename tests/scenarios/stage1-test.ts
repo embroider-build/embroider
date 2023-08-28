@@ -1,9 +1,10 @@
 import merge from 'lodash/merge';
 import { loadFromFixtureData } from './helpers';
 import { baseAddon, appScenarios } from './scenarios';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import { expectRewrittenFilesAt, ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 
 const { module: Qmodule, test } = QUnit;
 

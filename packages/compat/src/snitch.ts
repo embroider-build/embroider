@@ -1,6 +1,7 @@
-import { Funnel, Options as FunnelOptions } from 'broccoli-funnel';
+import type { Options as FunnelOptions } from 'broccoli-funnel';
+import { Funnel } from 'broccoli-funnel';
 import walkSync from 'walk-sync';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 
 /*
   This is used to monitor when addons are emitting badly-behaved broccoli

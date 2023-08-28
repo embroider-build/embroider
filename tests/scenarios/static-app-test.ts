@@ -1,5 +1,6 @@
 import { appScenarios } from './scenarios';
-import { PreparedApp, Project } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
+import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { dirname } from 'path';

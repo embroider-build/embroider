@@ -1,6 +1,6 @@
 import V1Addon from '../v1-addon';
 import { join } from 'path';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 import { readdirSync, writeFileSync, readFileSync } from 'fs';
 import { pathExistsSync, removeSync } from 'fs-extra';
 import { Funnel } from 'broccoli-funnel';

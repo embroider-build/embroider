@@ -1,5 +1,5 @@
 import BroccoliPlugin from 'broccoli-plugin';
-import { Node } from 'broccoli-node-api';
+import type { Node } from 'broccoli-node-api';
 
 /*
   Takes some named broccoli trees and/or lists of broccoli trees and gives you

@@ -1,4 +1,5 @@
-import { ModuleRequest, cleanUrl } from '@embroider/core';
+import type { ModuleRequest } from '@embroider/core';
+import { cleanUrl } from '@embroider/core';
 
 export const virtualPrefix = 'embroider_virtual:';
 

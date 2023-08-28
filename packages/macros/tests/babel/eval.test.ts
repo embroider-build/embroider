@@ -1,10 +1,11 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
-import { NodePath } from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import { types as t } from '@babel/core';
 import 'code-equality-assertions/jest';
-import State, { initState } from '../../src/babel/state';
+import type State from '../../src/babel/state';
+import { initState } from '../../src/babel/state';
 import { resolve } from 'path';
 
 describe('evaluation', function () {

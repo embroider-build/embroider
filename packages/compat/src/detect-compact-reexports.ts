@@ -1,4 +1,4 @@
-import { PluginItem } from '@babel/core';
+import type { PluginItem } from '@babel/core';
 
 export function isCompactReexports(item: PluginItem): boolean {
   let pluginPath: string;

@@ -1,10 +1,11 @@
-import { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
+import type { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
 import { outputFileSync, readJsonSync, writeJSONSync } from 'fs-extra';
 import { resolve, sep } from 'path';
 import QUnit from 'qunit';
-import { PreparedApp, Project, Scenarios } from 'scenario-tester';
-import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
-import { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
+import type { PreparedApp } from 'scenario-tester';
+import { Project, Scenarios } from 'scenario-tester';
+import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
+import type { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 import { installAuditAssertions } from '@embroider/test-support/audit-assertions';
 import { baseAddon } from './scenarios';
 

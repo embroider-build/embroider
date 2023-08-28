@@ -1,13 +1,8 @@
-import { Node as BroccoliNode } from 'broccoli-node-api';
-import {
-  PackageCache,
-  WaitForTrees,
-  Stage,
-  RewrittenPackageCache,
-  Package,
-  locateEmbroiderWorkingDir,
-} from '@embroider/core';
-import Options, { optionsWithDefaults } from './options';
+import type { Node as BroccoliNode } from 'broccoli-node-api';
+import type { Stage, Package } from '@embroider/core';
+import { PackageCache, WaitForTrees, RewrittenPackageCache, locateEmbroiderWorkingDir } from '@embroider/core';
+import type Options from './options';
+import { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join, dirname, isAbsolute, sep } from 'path';
@@ -17,11 +12,17 @@ import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
-import { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo, AddonInstance } from '@embroider/core';
+import type {
+  AddonMeta,
+  EmberAppInstance,
+  OutputFileToInputFileMap,
+  PackageInfo,
+  AddonInstance,
+} from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
-import { TransformOptions } from '@babel/core';
+import type { TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/node';
 import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';

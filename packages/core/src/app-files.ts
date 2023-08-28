@@ -1,5 +1,5 @@
 import { sep } from 'path';
-import { Package, AddonPackage } from '@embroider/shared-internals';
+import type { Package, AddonPackage } from '@embroider/shared-internals';
 
 export interface RouteFiles {
   route?: string;

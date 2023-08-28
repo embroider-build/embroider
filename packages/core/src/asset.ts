@@ -1,5 +1,5 @@
-import { JSDOM } from 'jsdom';
-import { EmberHTML } from './ember-html';
+import type { JSDOM } from 'jsdom';
+import type { EmberHTML } from './ember-html';
 
 export interface ImplicitAssetPaths {
   'implicit-scripts': string[];

@@ -1,10 +1,12 @@
 import { emberTemplateCompiler } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
-import { AppMeta, throwOnWarnings } from '@embroider/core';
+import type { AppMeta } from '@embroider/core';
+import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
-import { Audit, Finding } from '../src/audit';
-import { CompatResolverOptions } from '../src/resolver-transform';
+import type { Finding } from '../src/audit';
+import { Audit } from '../src/audit';
+import type { CompatResolverOptions } from '../src/resolver-transform';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
 import { makePortable } from '@embroider/core/src/portable-babel-config';

@@ -1,5 +1,6 @@
 import execa from 'execa';
-import { loadSolution, Solution } from './plan';
+import type { Solution } from './plan';
+import { loadSolution } from './plan';
 import { Octokit } from '@octokit/rest';
 import { absoluteDirname } from './utils';
 import latestVersion from 'latest-version';

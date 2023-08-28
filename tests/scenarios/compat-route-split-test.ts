@@ -1,8 +1,9 @@
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import { appScenarios, renameApp } from './scenarios';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';

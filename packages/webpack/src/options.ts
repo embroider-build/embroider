@@ -1,4 +1,4 @@
-import { Configuration } from 'webpack';
+import type { Configuration } from 'webpack';
 
 // [babel-loader](https://webpack.js.org/loaders/babel-loader/#options) specific options.
 // This does not include the babel configuration, which is pulled from the app, only the

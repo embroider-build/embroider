@@ -1,6 +1,7 @@
 import { MacrosConfig } from '../../src/node';
 import { join, dirname } from 'path';
-import { allBabelVersions as allBabel, runDefault, Transform, toCJS } from '@embroider/test-support';
+import type { Transform } from '@embroider/test-support';
+import { allBabelVersions as allBabel, runDefault, toCJS } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { readFileSync } from 'fs';
 import { Script, createContext } from 'vm';
@@ -11,6 +12,7 @@ export { runDefault, Project };
 const runtimeFilename = join(__dirname, '../../src/addon/runtime.js');
 
 export function makeRunner(transform: Transform) {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   let cachedMacrosPackage: typeof import('../../src/index');
 
   return function run(code: string, opts?: { filename: string }) {

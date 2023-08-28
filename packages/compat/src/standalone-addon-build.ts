@@ -1,10 +1,5 @@
-import {
-  Package,
-  PackageCache,
-  RewrittenPackageIndex,
-  summarizePeerDepViolations,
-  validatePeerDependencies,
-} from '@embroider/core';
+import type { Package, RewrittenPackageIndex } from '@embroider/core';
+import { PackageCache, summarizePeerDepViolations, validatePeerDependencies } from '@embroider/core';
 import V1InstanceCache from './v1-instance-cache';
 import buildCompatAddon from './build-compat-addon';
 import { Funnel } from 'broccoli-funnel';
@@ -12,7 +7,7 @@ import crypto from 'crypto';
 import broccoliMergeTrees from 'broccoli-merge-trees';
 import writeFile from 'broccoli-file-creator';
 import type { Node } from 'broccoli-node-api';
-import CompatApp from './compat-app';
+import type CompatApp from './compat-app';
 import { join } from 'path';
 
 export function convertLegacyAddons(compatApp: CompatApp) {

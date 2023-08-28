@@ -1,4 +1,5 @@
-import { AppMeta, getAppMeta, getPackagerCacheDir } from '../src';
+import type { AppMeta } from '../src';
+import { getAppMeta, getPackagerCacheDir } from '../src';
 import { tmpdir } from 'os';
 import { writeJSONSync, realpathSync } from 'fs-extra';
 import { join } from 'path';

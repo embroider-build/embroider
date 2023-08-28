@@ -1,4 +1,4 @@
-import { PackageRules } from '..';
+import type { PackageRules } from '..';
 
 const rules: PackageRules[] = [
   {

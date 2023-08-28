@@ -32,10 +32,13 @@ export function maybeEmbroider(app: any, opts: PipelineOptions<EmberWebpackOptio
   /* eslint-disable @typescript-eslint/no-require-imports */
   let { Webpack } = require(require.resolve('@embroider/webpack', {
     paths: [app.project.root],
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   })) as typeof import('@embroider/webpack');
   let Compat = require(require.resolve('@embroider/compat', {
     paths: [app.project.root],
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   })) as typeof import('@embroider/compat');
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   let mergeWith = require('lodash/mergeWith') as typeof import('lodash/mergeWith');
   /* eslint-enable @typescript-eslint/no-require-imports */
 
@@ -83,7 +86,7 @@ export function embroiderOptimized(extension?: object) {
 }
 
 function extendScenario(scenario: object, extension?: object) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports
   let mergeWith = require('lodash/mergeWith') as typeof import('lodash/mergeWith');
   return mergeWith(scenario, extension, appendArrays);
 }

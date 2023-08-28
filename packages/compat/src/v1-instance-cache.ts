@@ -2,10 +2,12 @@
 // packages is supposed to go through here. This lets us control the boundary
 // between the new and old words.
 
-import V1Addon, { V1AddonConstructor } from './v1-addon';
+import type { V1AddonConstructor } from './v1-addon';
+import V1Addon from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
-import { AddonInstance, getOrCreate, PackageCache } from '@embroider/core';
-import CompatApp from './compat-app';
+import type { AddonInstance, PackageCache } from '@embroider/core';
+import { getOrCreate } from '@embroider/core';
+import type CompatApp from './compat-app';
 
 export default class V1InstanceCache {
   // maps from package root directories to known V1 instances of that packages.

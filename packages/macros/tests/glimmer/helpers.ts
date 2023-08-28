@@ -4,7 +4,7 @@ import { MacrosConfig } from '../../src/node';
 import { join, resolve } from 'path';
 import { hbsToJS } from '@embroider/shared-internals';
 import { transformSync } from '@babel/core';
-import { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
+import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 
 const compilerPath = emberTemplateCompiler().path;
 

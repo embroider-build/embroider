@@ -27,6 +27,7 @@ module.exports = {
         project: './tsconfig.json',
       },
       rules: {
+        '@typescript-eslint/consistent-type-imports': 'error',
         '@typescript-eslint/naming-convention': [
           'error',
           {
@@ -55,6 +56,12 @@ module.exports = {
       files: ['types/**/*.ts'],
       rules: {
         'import/no-extraneous-dependencies': 'off',
+      },
+    },
+    {
+      files: ['tests/**/*'],
+      rules: {
+        'node/no-missing-require': 'off',
       },
     },
   ],

@@ -1,14 +1,15 @@
-import { AppMeta } from '@embroider/shared-internals';
+import type { AppMeta } from '@embroider/shared-internals';
 import { Transpiler } from '@embroider/test-support';
-import { ExpectFile, expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
+import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { outputFileSync } from 'fs-extra';
 import { resolve, sep } from 'path';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 
 import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
-import { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
-import { PackageRules } from '@embroider/compat';
+import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
+import type { PackageRules } from '@embroider/compat';
 
 const { module: Qmodule, test } = QUnit;
 

@@ -1,22 +1,22 @@
 import type { ASTv1, ASTPlugin, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
-import {
+import type {
   PreprocessedComponentRule,
-  preprocessComponentRule,
   ActivePackageRules,
   ComponentRules,
   PackageRules,
   ModuleRules,
-  appTreeRulesDir,
 } from './dependency-rules';
+import { preprocessComponentRule, appTreeRulesDir } from './dependency-rules';
 import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
 import { join, sep } from 'path';
 import { readJSONSync } from 'fs-extra';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
-import { ResolverOptions as CoreResolverOptions, Resolver, locateEmbroiderWorkingDir } from '@embroider/core';
-import CompatOptions from './options';
-import { AuditMessage, Loc } from './audit';
+import type { ResolverOptions as CoreResolverOptions } from '@embroider/core';
+import { Resolver, locateEmbroiderWorkingDir } from '@embroider/core';
+import type CompatOptions from './options';
+import type { AuditMessage, Loc } from './audit';
 import { camelCase, mergeWith } from 'lodash';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {

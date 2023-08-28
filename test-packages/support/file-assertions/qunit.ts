@@ -1,5 +1,6 @@
 import { install } from 'code-equality-assertions/qunit';
-import { AssertionAdapter, BoundExpectFile, ExpectFile } from '../file-assertions';
+import type { AssertionAdapter } from '../file-assertions';
+import { BoundExpectFile, ExpectFile } from '../file-assertions';
 import { getRewrittenLocation } from '../rewritten-path';
 
 class QUnitAdapter implements AssertionAdapter {

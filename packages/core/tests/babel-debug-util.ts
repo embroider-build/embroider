@@ -1,4 +1,5 @@
-import { transform, TransformOptions } from '@babel/core';
+import type { TransformOptions } from '@babel/core';
+import { transform } from '@babel/core';
 import { readJSONSync, readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { argv } from 'process';

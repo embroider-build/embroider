@@ -1,6 +1,9 @@
-import traverse, { NodePath, Node } from '@babel/traverse';
-import { TransformOptions, transformSync, types as t } from '@babel/core';
-import { codeFrameColumns, SourceLocation } from '@babel/code-frame';
+import type { NodePath, Node } from '@babel/traverse';
+import traverse from '@babel/traverse';
+import type { TransformOptions } from '@babel/core';
+import { transformSync, types as t } from '@babel/core';
+import type { SourceLocation } from '@babel/code-frame';
+import { codeFrameColumns } from '@babel/code-frame';
 
 export class VisitorState {}
 

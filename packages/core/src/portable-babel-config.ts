@@ -1,7 +1,8 @@
-import { TransformOptions } from '@babel/core';
+import type { TransformOptions } from '@babel/core';
 import { join } from 'path';
 import resolve from 'resolve';
-import { Portable, PortableHint } from './portable';
+import type { PortableHint } from './portable';
+import { Portable } from './portable';
 
 export type ResolveOptions = { basedir: string } | { resolve: (name: string) => any };
 

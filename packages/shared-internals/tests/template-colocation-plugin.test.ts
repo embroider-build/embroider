@@ -3,7 +3,7 @@ import { join } from 'path';
 import tmp from 'tmp';
 import { writeFileSync } from 'fs';
 import { writeJSONSync } from 'fs-extra';
-import { AppMeta } from '../src';
+import type { AppMeta } from '../src';
 
 tmp.setGracefulCleanup();
 

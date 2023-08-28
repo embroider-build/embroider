@@ -1,8 +1,10 @@
 import { readJSONSync } from 'fs-extra';
-import { Resolver, Options } from './module-resolver';
+import type { Options } from './module-resolver';
+import { Resolver } from './module-resolver';
 import { locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import { join } from 'path';
-import { watch as fsWatch, FSWatcher } from 'fs';
+import type { FSWatcher } from 'fs';
+import { watch as fsWatch } from 'fs';
 
 export class ResolverLoader {
   #resolver: Resolver | undefined;

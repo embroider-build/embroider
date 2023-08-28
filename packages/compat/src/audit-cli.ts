@@ -3,7 +3,8 @@
 import { readFileSync, readJSONSync, writeFileSync } from 'fs-extra';
 import { resolve } from 'path';
 import yargs from 'yargs/yargs';
-import { Audit, AuditResults, Finding, isBuildError } from './audit';
+import type { Finding } from './audit';
+import { Audit, AuditResults, isBuildError } from './audit';
 
 // slightly wacky because yargs types don't cover this, but you can't access the
 // other documented place to find `hideBin` on node < 12.17

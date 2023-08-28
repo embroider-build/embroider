@@ -1,4 +1,4 @@
-import { PackageRules } from '..';
+import type { PackageRules } from '..';
 
 let rulesForV1: PackageRules = {
   package: 'ember-basic-dropdown',

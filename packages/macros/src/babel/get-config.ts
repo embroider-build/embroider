@@ -1,8 +1,9 @@
 import type { NodePath } from '@babel/traverse';
-import State from './state';
-import { RewrittenPackageCache, Package } from '@embroider/shared-internals';
+import type State from './state';
+import type { RewrittenPackageCache, Package } from '@embroider/shared-internals';
 import error from './error';
-import { Evaluator, assertArray, buildLiterals, ConfidentResult } from './evaluate-json';
+import type { ConfidentResult } from './evaluate-json';
+import { Evaluator, assertArray, buildLiterals } from './evaluate-json';
 import assertNever from 'assert-never';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';

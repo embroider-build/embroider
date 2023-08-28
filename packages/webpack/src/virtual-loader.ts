@@ -1,5 +1,5 @@
 import { ResolverLoader, virtualContent } from '@embroider/core';
-import { LoaderContext } from 'webpack';
+import type { LoaderContext } from 'webpack';
 
 let resolverLoader: ResolverLoader | undefined;
 

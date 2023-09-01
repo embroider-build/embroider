@@ -11,10 +11,16 @@ appScenarios
     addon.pkg.name = 'v2-addon';
     (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
       './app/components/example-component.js';
+    (addon.pkg as any)['ember-addon']['app-js']['./components/nested-layout-example-component/index.js'] =
+      './app/components/nested-layout-example-component/index.js';
+
     merge(addon.files, {
       app: {
         components: {
           'example-component.js': `export { default } from 'v2-addon/components/example-component';`,
+          'nested-layout-example-component': {
+            'index.js': `export { default } from 'v2-addon/components/nested-layout-example-component/index';`,
+          },
         },
       },
       components: {
@@ -30,11 +36,24 @@ appScenarios
           setComponentTemplate(TEMPLATE, ExampleComponent);
         `,
         'example-component.css': '/* not empty */ h1 { color: red }',
+        'nested-layout-example-component': {
+          'index.js': `
+            import Component from '@glimmer/component';
+            import { hbs } from 'ember-cli-htmlbars';
+            import { setComponentTemplate } from '@ember/component';
+            import '../example-component.css';
+            const TEMPLATE = hbs('<div data-test-nested-layout-example>{{this.message}}</div>')
+            export default class NestedLayoutExampleComponent extends Component {
+              message = "nested layout components work"
+            }
+            setComponentTemplate(TEMPLATE, NestedLayoutExampleComponent);
+          `,
+        },
       },
       'import-from-npm.js': `
-        export default async function() { 
+        export default async function() {
           let { message } = await import('third-party');
-          return message() 
+          return message()
         }
         `,
     });
@@ -97,6 +116,7 @@ appScenarios
         templates: {
           'index.hbs': `
             <ExampleComponent />
+            <NestedLayoutExampleComponent />
           `,
         },
       },
@@ -114,6 +134,7 @@ appScenarios
               test('hello world', async function(assert) {
                 await visit('/');
                 assert.ok(document.querySelector('[data-test-example]'), 'it worked');
+                assert.dom('[data-test-nested-layout-example]').hasText('nested layout components work');
               });
             });
           `,

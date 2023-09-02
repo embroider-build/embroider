@@ -57,6 +57,34 @@ module.exports = {
 };
 ```
 
+## Setting Configuration: from a v2 Ember Addon
+
+1. Add `@embroider/macros` as `dependency`.
+2. In `addon-main.js`, do:
+
+```js
+'use strict';
+
+const { addonV1Shim } = require('@embroider/addon-shim');
+
+module.exports = {
+  ...addonV1Shim(__dirname),
+  options: {
+    '@embroider/macros': {
+      setOwnConfig: {
+        // your config goes here
+      },
+      setConfig: {
+        'some-dependency': {
+          // config for some-dependency
+        },
+      },
+    },
+  },
+};
+
+```
+
 ## The Macros
 
 ### macroCondition

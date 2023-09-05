@@ -10,11 +10,9 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/ember-webpack.js",
+  "main": "build/ember-webpack.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "build"
   ],
   "scripts": {},
   "dependencies": {

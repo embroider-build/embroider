@@ -9,7 +9,9 @@
       { "path": "./packages/hbs-loader" },
       { "path": "./packages/macros" },
       { "path": "./packages/shared-internals" },
+      { "path": "./packages/webpack" },
       { "path": "./packages/test-setup" },
+      { "path": "./packages/vite" },
       { "path": "./test-packages/release" },
       { "path": "./test-packages/support" },
   ]

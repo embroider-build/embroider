@@ -3,7 +3,6 @@
   "include": ["src/*.ts"],
   "compilerOptions": {
     "rootDir": "./src",
-    "moduleResolution": "Node16",
     "outDir": "./build"
   }
 }

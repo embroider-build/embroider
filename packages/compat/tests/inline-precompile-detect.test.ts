@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { isInlinePrecompilePlugin } from '../src/detect-babel-plugins';
 
 describe('isInlinePrecompilePlugin', () => {

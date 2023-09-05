@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { templateTests } from './helpers';
 import type { MacrosConfig } from '../../src/node';
 

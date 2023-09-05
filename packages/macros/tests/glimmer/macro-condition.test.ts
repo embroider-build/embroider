@@ -1,3 +1,5 @@
+import { describe, expect, test, afterEach } from 'vitest';
+
 import { Project } from 'scenario-tester';
 import { join } from 'path';
 import type { TemplateTransformOptions } from './helpers';

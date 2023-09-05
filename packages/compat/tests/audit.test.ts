@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { emberTemplateCompiler } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import type { AppMeta } from '@embroider/core';

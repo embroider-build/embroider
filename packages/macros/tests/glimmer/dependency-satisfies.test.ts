@@ -1,3 +1,5 @@
+import { describe, expect, test, afterAll, beforeAll } from 'vitest';
+
 import type { TemplateTransformOptions } from './helpers';
 import { Project, templateTests } from './helpers';
 import { join } from 'path';

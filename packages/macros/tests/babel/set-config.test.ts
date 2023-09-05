@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { MacrosConfig } from '../../src/node';
 import { allBabelVersions } from './helpers';
 

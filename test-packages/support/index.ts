@@ -1,5 +1,7 @@
 import { join } from 'path';
-import 'jest';
+
+import { describe } from 'vitest';
+
 import type { TransformOptions as Options7 } from '@babel/core';
 import { transform as transform7 } from '@babel/core';
 import { createContext, Script } from 'vm';

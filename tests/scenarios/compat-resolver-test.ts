@@ -8,7 +8,7 @@ import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilat
 
 import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
-import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
+import type { CompatResolverOptions } from '@embroider/compat/resolver-transform';
 import type { PackageRules } from '@embroider/compat';
 
 const { module: Qmodule, test } = QUnit;

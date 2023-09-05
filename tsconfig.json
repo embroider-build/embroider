@@ -1,37 +1,16 @@
 {
-  "include": [
-    "./packages/*/src/**/*.ts",
-    "./packages/*/tests/**/*.ts",
-    "./test-packages/support/**/*.ts",
-    "./test-packages/release/src/**/*.ts",
-    "./tests/scenarios/**/*.ts"
-  ],
-  "compilerOptions": {
-    "target": "es2019",
-    "module": "commonjs",
-    "declaration": true,
-    "typeRoots": ["types", "node_modules/@types"],
-    "esModuleInterop": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "sourceMap": true,
-    "inlineSources": true,
-    "experimentalDecorators": true,
-    "allowUnreachableCode": false,
-    "strict": true,
-    "skipLibCheck": true,
-    "useUnknownInCatchVariables": false,
-  },
-  "exclude": [
-    "node_modules",
-    "packages/*/tmp",
-    "packages/*/dist",
-    "packages/*/node_modules",
-    "test-packages/*/tmp",
-    "test-packages/*/dist",
-    "test-packages/*/node_modules",
-    "tmp",
-    "tests/scenarios/output",
-    "packages/router/src"
+  "files": [],
+  "include": [],
+  "references": [
+      { "path": "./packages/addon-dev" },
+      { "path": "./packages/addon-shim" },
+      { "path": "./packages/compat" },
+      { "path": "./packages/core" },
+      { "path": "./packages/hbs-loader" },
+      { "path": "./packages/macros" },
+      { "path": "./packages/shared-internals" },
+      { "path": "./packages/test-setup" },
+      { "path": "./test-packages/release" },
+      { "path": "./test-packages/support" },
   ]
 }

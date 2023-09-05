@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig-base",
+  "include": ["*.ts"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "moduleResolution": "Node16",
+    "outDir": "./build"
+  }
+}

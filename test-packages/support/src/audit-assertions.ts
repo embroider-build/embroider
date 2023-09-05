@@ -1,11 +1,16 @@
-import type { AuditBuildOptions, AuditResults, Module } from '../../packages/compat/src/audit';
-import { Audit } from '../../packages/compat/src/audit';
-import { explicitRelative } from '../../packages/shared-internals';
+import type { AuditBuildOptions, AuditResults, Module } from '@embroider/compat/audit';
+import { Audit } from '@embroider/compat/audit';
+import { explicitRelative } from '@embroider/shared-internals';
 import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
 import { posix } from 'path';
 import { distance } from 'fastest-levenshtein';
 import { sortBy } from 'lodash';
 import { getRewrittenLocation } from './rewritten-path';
+
+// this is here to make TS happy :( qunit only defines global types and this is the only way to
+// explicitly import them in this file. It would have been better if we could import NestedHooks
+// from qunit
+import 'qunit';
 
 /*
   The audit tool in @embroider/compat can be used directly to tell you about

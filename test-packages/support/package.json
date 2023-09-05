@@ -8,6 +8,8 @@
     "@babel/plugin-transform-typescript": "^7.8.7",
     "@babel/preset-env": "^7.9.0",
     "@ember/string": "^3.1.1",
+    "@embroider/compat": "workspace:*",
+    "@embroider/shared-internals": "workspace:*",
     "@glimmer/component": "^1.0.0",
     "babel-preset-env": "^1.7.0",
     "broccoli": "^3.4.2",
@@ -33,6 +35,7 @@
     "@types/babel__traverse": "^7.18.5",
     "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
-    "@types/node": "^10.5.2"
+    "@types/node": "^10.5.2",
+    "@types/qunit": "^2.19.6"
   }
 }

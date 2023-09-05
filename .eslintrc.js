@@ -23,9 +23,6 @@ module.exports = {
   overrides: [
     {
       files: ['**/*.ts'],
-      parserOptions: {
-        project: './tsconfig.json',
-      },
       rules: {
         '@typescript-eslint/consistent-type-imports': 'error',
         '@typescript-eslint/naming-convention': [

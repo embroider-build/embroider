@@ -7,38 +7,22 @@
 
 
 # Compiled output
-/packages/core/**/*.js
-/packages/core/**/*.d.ts
-/packages/shared-internals/**/*.js
-/packages/shared-internals/**/*.d.ts
-/packages/compat/**/*.js
-/packages/compat/**/*.d.ts
-/packages/macros/**/*.js
-/packages/macros/**/*.d.ts
-/packages/util/src/**/*.js
-/packages/util/src/**/*.d.ts
-/packages/webpack/**/*.js
-/packages/webpack/**/*.d.ts
-/packages/hbs-loader/**/*.js
-/packages/hbs-loader/**/*.d.ts
-/test-packages/support/**/*.js
-/test-packages/**/*.d.ts
-/test-packages/release/src/*.js
-/test-packages/release/src/*.d.ts
-/tests/scenarios/**/*.js
-/tests/scenarios/**/*.d.ts
-/packages/test-setup/**/*.js
-/packages/test-setup/**/*.d.ts
-/packages/addon-shim/**/*.js
-/packages/addon-shim/**/*.d.ts
-/packages/addon-dev/**/*.js
-/packages/addon-dev/**/*.d.ts
+/packages/core/build
+/packages/shared-internals/build
+/packages/compat/build
+/packages/macros/build
+/packages/webpack/build
+/packages/hbs-loader/build
+/test-packages/support/build
+/test-packages/release/build
+/tests/scenarios/build
+/packages/test-setup/build
+/packages/addon-shim/build
+/packages/addon-dev/build
 /tests/fixtures/
 /packages/vite/index.mjs
-/packages/vite/**/*.js
-/packages/vite/**/*.d.ts
-/packages/reverse-exports/**/*.js
-/packages/reverse-exports/**/*.d.ts
+/packages/vite/build
+/packages/reverse-exports/build
 
 # unconventional js
 /blueprints/*/files/

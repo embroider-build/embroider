@@ -66,6 +66,7 @@
     "@types/js-string-escape": "^1.0.0",
     "@types/lodash": "^4.14.170",
     "@types/node": "^15.12.2",
+    "@types/qunit": "^2.19.6",
     "@types/resolve": "^1.20.0",
     "@types/tmp": "^0.1.0",
     "fixturify": "^2.1.1",

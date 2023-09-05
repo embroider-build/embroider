@@ -20,7 +20,7 @@
     "src/**/*.js.map"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",

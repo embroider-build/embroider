@@ -1,5 +1,6 @@
 import makeDebug from 'debug';
 import { format } from 'util';
+import { beforeAll, afterAll } from 'vitest';
 
 const todo = makeDebug('embroider:todo');
 const unsupported = makeDebug('embroider:unsupported');

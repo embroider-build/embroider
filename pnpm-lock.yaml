@@ -343,7 +343,7 @@ importers:
         version: 1.7.0
       code-equality-assertions:
         specifier: ^0.9.0
-        version: 0.9.0(@types/jest@29.5.11)(qunit@2.20.0)
+        version: 0.9.0(@types/jest@29.5.11)
       ember-engines:
         specifier: ^0.8.19
         version: 0.8.23(@glint/template@1.3.0)
@@ -468,6 +468,9 @@ importers:
       '@types/node':
         specifier: ^15.12.2
         version: 15.14.9
+      '@types/qunit':
+        specifier: ^2.19.6
+        version: 2.19.10
       '@types/resolve':
         specifier: ^1.20.0
         version: 1.20.6
@@ -573,7 +576,7 @@ importers:
         version: 2.2.1
       code-equality-assertions:
         specifier: ^0.9.0
-        version: 0.9.0(@types/jest@29.5.11)(qunit@2.20.0)
+        version: 0.9.0(@types/jest@29.5.11)
       scenario-tester:
         specifier: ^3.0.1
         version: 3.1.0
@@ -1172,6 +1175,12 @@ importers:
       '@ember/string':
         specifier: ^3.1.1
         version: 3.1.1
+      '@embroider/compat':
+        specifier: workspace:*
+        version: link:../../packages/compat
+      '@embroider/shared-internals':
+        specifier: workspace:*
+        version: link:../../packages/shared-internals
       '@glimmer/component':
         specifier: ^1.0.0
         version: 1.1.2(@babel/core@7.23.9)
@@ -1182,8 +1191,8 @@ importers:
         specifier: ^3.4.2
         version: 3.5.2
       code-equality-assertions:
-        specifier: ^0.9.0
-        version: 0.9.0(@types/jest@29.5.11)(qunit@2.20.0)
+        specifier: github:mansona/code-equality-assertions#esm-cjs-build
+        version: github.com/mansona/code-equality-assertions/a84b55b3cc7b7a18fd51e5f7d84cf4f475853c36(@types/jest@29.5.11)(@types/qunit@2.19.10)(qunit@2.20.0)
       console-ui:
         specifier: ^3.0.0
         version: 3.1.2
@@ -1245,6 +1254,9 @@ importers:
       '@types/node':
         specifier: ^10.5.2
         version: 10.17.60
+      '@types/qunit':
+        specifier: ^2.19.6
+        version: 2.19.10
 
   test-packages/unstable-release:
     dependencies:
@@ -10291,7 +10303,7 @@ packages:
       q: 1.5.1
     dev: true
 
-  /code-equality-assertions@0.9.0(@types/jest@29.5.11)(qunit@2.20.0):
+  /code-equality-assertions@0.9.0(@types/jest@29.5.11):
     resolution: {integrity: sha512-8t2+ZiCU9TIr/78TyVSEFii9khSic293zVCfndsG7bOymAsdDFmN1GSwjRdyQxz7+tHE+biUvt08Qlx4Xvfuxw==}
     peerDependencies:
       '@types/jest': '2'
@@ -10309,9 +10321,9 @@ packages:
       '@types/jest': 29.5.11
       diff: 5.1.0
       prettier: 2.8.8
-      qunit: 2.20.0
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /collect-v8-coverage@1.0.2:
     resolution: {integrity: sha512-lHl4d5/ONEbLlJvaJNtsF/Lz+WvB07u2ycqTYbdrq7UypDXailES4valYb2eWiJFxZlVmpGekfqoxQhzyFdT4Q==}
@@ -22679,7 +22691,7 @@ packages:
     resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
     hasBin: true
     peerDependencies:
-      browserslist: '>= 4.21.0'
+      browserslist: ^4.14.0
     dependencies:
       browserslist: 4.22.3
       escalade: 3.1.1
@@ -23435,3 +23447,30 @@ packages:
       - supports-color
       - webpack
     dev: true
+
+  github.com/mansona/code-equality-assertions/a84b55b3cc7b7a18fd51e5f7d84cf4f475853c36(@types/jest@29.5.11)(@types/qunit@2.19.10)(qunit@2.20.0):
+    resolution: {tarball: https://codeload.github.com/mansona/code-equality-assertions/tar.gz/a84b55b3cc7b7a18fd51e5f7d84cf4f475853c36}
+    id: github.com/mansona/code-equality-assertions/a84b55b3cc7b7a18fd51e5f7d84cf4f475853c36
+    name: code-equality-assertions
+    version: 0.9.0
+    peerDependencies:
+      '@types/jest': '2'
+      '@types/qunit': '2'
+      qunit: '2'
+    peerDependenciesMeta:
+      '@types/jest':
+        optional: true
+      '@types/qunit':
+        optional: true
+      qunit:
+        optional: true
+    dependencies:
+      '@babel/core': 7.23.9(supports-color@8.1.1)
+      '@types/jest': 29.5.11
+      '@types/qunit': 2.19.10
+      diff: 5.1.0
+      prettier: 2.8.8
+      qunit: 2.20.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false

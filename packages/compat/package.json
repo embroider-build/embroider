@@ -10,14 +10,19 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/index.js",
+  "main": "build/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "build"
   ],
   "bin": {
-    "embroider-compat-audit": "./src/audit-cli.js"
+    "embroider-compat-audit": "./build/audit-cli.js"
+  },
+  "exports": {
+    ".": "./build/index.js",
+    "./*": {
+      "types": "./build/*.d.ts",
+      "default": "./build/*.js"
+    }
   },
   "scripts": {
     "test": "jest"

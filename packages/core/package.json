@@ -19,6 +19,13 @@
   "scripts": {
     "test": "jest"
   },
+  "exports": {
+    ".": "./build/src/index.js",
+    "./*": {
+      "types": "./build/*.d.ts",
+      "default": "./build/*.js"
+    }
+  },
   "dependencies": {
     "@babel/core": "^7.14.5",
     "@babel/parser": "^7.14.5",

@@ -37,5 +37,15 @@
     "@types/lodash": "^4.14.170",
     "@types/node": "^10.5.2",
     "@types/qunit": "^2.19.6"
+  },
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./*": {
+      "types": "./build/*.d.ts",
+      "default": "./build/*.js"
+    }
   }
 }

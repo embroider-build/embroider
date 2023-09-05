@@ -10,19 +10,17 @@
   },
   "exports": {
     ".": {
-      "browser": "./src/browser-index.js",
-      "default": "./src/index.js"
+      "browser": "./build/browser-index.js",
+      "default": "./build/index.js"
     },
-    "./src/babel-plugin-cache-busting.js": "./src/babel-plugin-cache-busting.js",
-    "./src/template-colocation-plugin": "./src/template-colocation-plugin.js"
+    "./src/babel-plugin-cache-busting.js": "./build/babel-plugin-cache-busting.js",
+    "./src/template-colocation-plugin": "./build/template-colocation-plugin.js"
   },
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "build/src/"
   ],
   "scripts": {
     "test": "jest"

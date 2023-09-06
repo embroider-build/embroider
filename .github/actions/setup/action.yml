@@ -8,19 +8,14 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: volta-cli/action@v4
-      env:
-        ACTIONS_STEP_DEBUG: truex 
-    - name: Get pnpm cache directory path
-      id: pnpm-cache-dir-path
-      run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-      shell: bash
-    - uses: actions/cache@v3
-      id: pnpm-cache
+    - uses: pnpm/action-setup@v2
+      name: Install pnpm
       with:
-        path: ${{ steps.pnpm-cache-dir-path.outputs.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}-v1
-        restore-keys: |
-          ${{ runner.os }}-pnpm-
+        version: 8
+        run_install: false
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: pnpm
     - run: pnpm install ${{ fromJSON('{"false":"--no-lockfile", "true":"--frozen-lockfile"}')[inputs.use_lockfile] }}
       shell: bash

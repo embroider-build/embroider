@@ -21,6 +21,35 @@ async function release(project: Project) {
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
 }
 
+async function release_strict(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: '@ember/test-helpers-3' });
+  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
+  project.files['ember-cli-build.js'] = `'use strict';
+
+const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const { Webpack } = require('@embroider/webpack');
+
+module.exports = function (defaults) {
+  let app = new EmberApp(defaults, {});
+
+  return require('@embroider/compat').compatBuild(app, Webpack, {
+    staticAddonTestSupportTrees: true,
+    staticAddonTrees: true,
+    staticHelpers: true,
+    staticModifiers: true,
+    staticComponents: true,
+    staticEmberSource: true,
+    //splitAtRoutes: ['route.name'], // can also be a RegExp
+    // packagerOptions: {
+    //    webpackConfig: { }
+    // }
+  });
+};`;
+}
+
 export function supportMatrix(scenarios: Scenarios) {
   return scenarios.expand({
     lts_3_28,
@@ -48,7 +77,7 @@ export function baseTSApp() {
   return Project.fromDir(dirname(require.resolve('../ts-app-template/package.json')), { linkDevDeps: true });
 }
 
-export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
+export const appScenarios = Scenarios.fromProject(baseApp).expand({ release_strict, lts_3_28, lts_4_4, release });
 
 // we're standardizing on Ember's native types, which become available starting
 // at 4.8. So we're not going to run type tests on older releases that don't

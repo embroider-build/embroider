@@ -36,7 +36,7 @@ jobs:
       - id: set-matrix
         working-directory: test-packages/support
         run: |
-          matrix_json=$(node ./suite-setup-util --matrix)
+          matrix_json=$(node ./build/suite-setup-util --matrix)
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
   test:

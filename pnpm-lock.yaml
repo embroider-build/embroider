@@ -1257,6 +1257,9 @@ importers:
       '@types/qunit':
         specifier: ^2.19.6
         version: 2.19.10
+      scenario-tester:
+        specifier: ^2.1.2
+        version: 2.1.2
 
   test-packages/unstable-release:
     dependencies:
@@ -15915,6 +15918,19 @@ packages:
       tmp: 0.0.33
       type-fest: 0.11.0
 
+  /fixturify-project@5.2.0:
+    resolution: {integrity: sha512-7H20FpTbA8P586gS/5SuVmKYLBdOs1oPTF7R2If5lhlcmI+ht48p9atbBtD6kOIuRUPrx6W2yLxUCToBl8W22w==}
+    engines: {node: '>= 14.*'}
+    dependencies:
+      bin-links: 3.0.3
+      deepmerge: 4.3.1
+      fixturify: 2.1.1
+      resolve-package-path: 4.0.3
+      tmp: 0.0.33
+      type-fest: 2.19.0
+      walk-sync: 3.0.0
+    dev: true
+
   /fixturify-project@6.0.0:
     resolution: {integrity: sha512-cT+rudgGhYKJ4h5DIrDj4T2HfZMzF17c+PtQ3gYGXr67hsPkptjAvm6HhmHa7TuzJ2/yHYTGBlVXh5HB3LhVhQ==}
     engines: {node: '>= 14.*'}
@@ -21054,6 +21070,17 @@ packages:
     dependencies:
       xmlchars: 2.2.0
 
+  /scenario-tester@2.1.2:
+    resolution: {integrity: sha512-fuwZoavM2v3CyfghIc3gCi36vFDSzIAW1mdgxjUXVQIsoR0aTG657CMnwYAagIN8Aqn1Qt9oJMuqIpggOvybQg==}
+    hasBin: true
+    dependencies:
+      fixturify-project: 5.2.0
+      fs-extra: 9.1.0
+      glob: 7.2.3
+      tmp: 0.2.1
+      yargs: 16.2.0
+    dev: true
+
   /scenario-tester@3.1.0:
     resolution: {integrity: sha512-Xb7Kk8etl71QObHLC00zSHCacOdqZW2IRI6pta1blQ8oLxyhqmHsmqQLVHTBysbVvOrqSkr4wCK8mY3t7tQt1w==}
     hasBin: true
@@ -22505,6 +22532,11 @@ packages:
   /type-fest@1.4.0:
     resolution: {integrity: sha512-yGSza74xk0UG8k+pLh5oeoYirvIiWo5t0/o3zHHAO2tRDiZcxWP7fywNlXhqb6/r6sWvwi+RsyQMWhVLe4BVuA==}
     engines: {node: '>=10'}
+    dev: true
+
+  /type-fest@2.19.0:
+    resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
+    engines: {node: '>=12.20'}
     dev: true
 
   /type-fest@4.10.2:

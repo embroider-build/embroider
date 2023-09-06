@@ -115,7 +115,8 @@ function sendToParent(message: BuiltMessage) {
 }
 
 async function main() {
-  const { Builder } = await import('broccoli');
+  const { default: broccoli } = await import('broccoli');
+  const { Builder } = broccoli;
   const { default: Project } = await import(
     require.resolve('ember-cli/lib/models/project', { paths: [process.cwd()] })
   );

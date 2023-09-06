@@ -10,7 +10,7 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/index.js",
+  "main": "build/index.js",
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",

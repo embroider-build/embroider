@@ -3,7 +3,7 @@
   "version": "1.8.7",
   "description": "Make v2 addons work in non-Embroider apps.",
   "keywords": [],
-  "main": "./src/index.js",
+  "main": "./build/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -29,5 +29,15 @@
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"
+  },
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    },
+    "./*": {
+      "types": "./build/*.d.ts",
+      "default": "./build/*.js"
+    }
   }
 }

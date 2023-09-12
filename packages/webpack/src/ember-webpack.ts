@@ -215,7 +215,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         compiler => {
           compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
             this.summarizeStats(stats, variant, variantIndex);
-            await this.writeFiles(this.bundleSummary, appInfo, variantIndex);
+            await this.writeFiles(this.bundleSummary, this.lastAppInfo!, variantIndex);
           });
         },
       ],
@@ -294,6 +294,12 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private getWebpack(appInfo: AppInfo) {
     if (this.lastWebpack && this.lastAppInfo && equalAppInfo(appInfo, this.lastAppInfo)) {
       debug(`reusing webpack config`);
+      // the appInfos result in equal webpack configs so we don't need to
+      // reconfigure webpack. But they may contain other changes (like HTML
+      // content changes that don't alter the webpack config) so we still want
+      // lastAppInfo to update so that the latest one will be seen in the
+      // webpack post-build.
+      this.lastAppInfo = appInfo;
       return this.lastWebpack;
     }
     debug(`configuring webpack`);

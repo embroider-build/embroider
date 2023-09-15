@@ -29,6 +29,11 @@ export function convertLegacyAddons(compatApp: CompatApp) {
         `Some V1 ember addons are resolving as incorrect peer dependencies. This makes it impossible for us to safely convert them to v2 format.
 See https://github.com/embroider-build/embroider/blob/main/docs/peer-dependency-resolution-issues.md for an explanation of the problem and suggestions for fixing it.
 
+Some potential ways to address the following issues:
+  - ensure your package-manager version is up to date
+  - delete all node_modules directories and re-install your dependencies
+  - deduplicate dependencies (e.g.: pnpm dedupe)
+
 ${summarizePeerDepViolations(violations)}`
       );
     }

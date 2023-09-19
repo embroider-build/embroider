@@ -223,16 +223,15 @@ export class CompatAppBuilder {
         rootURL: this.rootURL(),
         prepare: (dom: JSDOM) => {
           let scripts = [...dom.window.document.querySelectorAll('script')];
-          let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
-
+          let styles = [...dom.window.document.querySelectorAll('link[rel*="stylesheet"]')] as HTMLLinkElement[];
           return {
-            javascript: definitelyReplace(dom, this.compatApp.findAppScript(scripts, entrypoint)),
-            styles: definitelyReplace(dom, this.compatApp.findAppStyles(styles, entrypoint)),
-            implicitScripts: definitelyReplace(dom, this.compatApp.findVendorScript(scripts, entrypoint)),
-            implicitStyles: definitelyReplace(dom, this.compatApp.findVendorStyles(styles, entrypoint)),
-            testJavascript: maybeReplace(dom, this.compatApp.findTestScript(scripts)),
-            implicitTestScripts: maybeReplace(dom, this.compatApp.findTestSupportScript(scripts)),
-            implicitTestStyles: maybeReplace(dom, this.compatApp.findTestSupportStyles(styles)),
+            javascript: this.compatApp.findAppScript(scripts, entrypoint),
+            styles: this.compatApp.findAppStyles(styles, entrypoint),
+            implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
+            implicitStyles: this.compatApp.findVendorStyles(styles, entrypoint),
+            testJavascript: this.compatApp.findTestScript(scripts),
+            implicitTestScripts: this.compatApp.findTestSupportScript(scripts),
+            implicitTestStyles: this.compatApp.findTestSupportStyles(styles),
           };
         },
       };
@@ -1363,18 +1362,6 @@ export class CompatAppBuilder {
     prepared.set(asset.relativePath, asset);
     return asset;
   }
-}
-
-function maybeReplace(dom: JSDOM, element: Element | undefined): Node | undefined {
-  if (element) {
-    return definitelyReplace(dom, element);
-  }
-}
-
-function definitelyReplace(dom: JSDOM, element: Element): Node {
-  let placeholder = dom.window.document.createTextNode('');
-  element.replaceWith(placeholder);
-  return placeholder;
 }
 
 function defaultAddonPackageRules(): PackageRules[] {

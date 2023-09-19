@@ -1,3 +1,65 @@
+export function makeTag(
+  document: Document,
+  options: { from: HTMLElement; tag?: string; attributes?: { [name: string]: string | null } }
+): HTMLElement;
+export function makeTag(
+  document: Document,
+  options: { from?: HTMLElement; tag: string; attributes?: { [name: string]: string | null } }
+): HTMLElement;
+export function makeTag(
+  document: Document,
+  { from, tag, attributes }: { from?: HTMLElement; tag?: string; attributes?: { [name: string]: string | null } } = {}
+): HTMLElement {
+  if (!tag && from) {
+    tag = from.tagName;
+  }
+
+  if (!tag) {
+    throw new Error('Must supply one of `options.from` or `options.tag`');
+  }
+
+  let cloned = document.createElement(tag);
+  let overrides = new Map(Object.entries(attributes ?? {}));
+
+  if (from) {
+    for (let { name, value: originalValue } of from.attributes) {
+      let value = overrides.has(name) ? overrides.get(name)! : originalValue;
+      overrides.delete(name);
+
+      if (value === null) {
+        continue;
+      } else {
+        cloned.setAttribute(name, value);
+      }
+    }
+  }
+
+  for (let [name, value] of overrides) {
+    if (value !== null) {
+      cloned.setAttribute(name, value);
+    }
+  }
+
+  return cloned;
+}
+
+export function normalizeScriptTag(tag: HTMLElement): void {
+  if (tag.getAttribute('type') === 'module') {
+    // we always convert modules to scripts, dropping
+    tag.removeAttribute('type');
+  }
+}
+
+export function normalizeStyleLink(tag: HTMLElement): void {
+  let rel = tag.getAttribute('rel');
+
+  if (rel === null) {
+    tag.setAttribute('rel', 'stylesheet');
+  } else if (!rel.includes('stylesheet')) {
+    tag.setAttribute('rel', `${rel} stylesheet`);
+  }
+}
+
 export default class Placeholder {
   end: InDOMNode;
   start: StartNode;
@@ -55,32 +117,31 @@ export default class Placeholder {
   }
 
   insertScriptTag(src: string) {
-    let newTag = this.end.ownerDocument.createElement('script');
-    for (let { name, value } of [...this.target.attributes]) {
-      if (name === 'type' && value === 'module') {
-        // we always convert modules to scripts
-        continue;
-      }
-      // all other attributes are copied forward unchanged
-      newTag.setAttribute(name, value);
-    }
-    newTag.src = src;
+    let newTag = makeTag(this.end.ownerDocument, { from: this.target, attributes: { src } });
+    normalizeScriptTag(newTag);
+
     this.insert(newTag);
     this.insertNewline();
     return newTag;
   }
 
   insertStyleLink(href: string) {
-    let newTag = this.end.ownerDocument.createElement('link');
-    newTag.href = href;
-    newTag.rel = 'stylesheet';
+    let newTag: HTMLElement;
 
     if (this.isScript()) {
       // Add dynamic styles from scripts to the bottom of the head, and not to where the script was,
       // to prevent FOUC when pre-rendering (FastBoot)
+      newTag = makeTag(this.end.ownerDocument, {
+        from: this.target,
+        tag: 'link',
+        attributes: { href, type: null, src: null },
+      });
+      normalizeStyleLink(newTag);
       this.appendToHead(newTag);
     } else {
       // Keep the new style in the same place as the original one
+      newTag = makeTag(this.end.ownerDocument, { from: this.target, attributes: { href } });
+      normalizeStyleLink(newTag);
       this.insert(newTag);
     }
     this.insertNewline(newTag as InDOMNode);

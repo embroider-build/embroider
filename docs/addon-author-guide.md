@@ -56,21 +56,25 @@ Once you achieve Optimized Embroider Safe, you should enable the `embroider-opti
 
 An addon achieves the "Embroider Native" support level by publishing to NPM in the **v2 format**, as defined by [the RFC](https://github.com/emberjs/rfcs/pull/507).
 
-For full details on porting an addon to V2, see [the V2 porting guide](./porting-addons-to-v2.md)
+For full details on porting an addon to v2, see [the v2 porting guide](./porting-addons-to-v2.md).
 
-Another good way to learn about V2 addons is to look at some examples:
+A set of common patterns and best practises for authoring v2 addons can be found in our [v2 addon FAQs](./v2-faq.md).
+
+Another good way to learn about v2 addons is to look at some examples:
 
 - [ember-welcome-page](https://github.com/ember-cli/ember-welcome-page)
 - [ember-resources](https://github.com/NullVoxPopuli/ember-resources)
-- [ember-stargate](https://github.com/kaliber5/ember-stargate)
+- [ember-stargate](https://github.com/simonihmig/ember-stargate)
 - [glimmer-apollo](https://github.com/josemarluedke/glimmer-apollo)
 
 Several of these examples use a monorepo as a way to keep a clean separation between the addon and the application that holds their test suite. If you're comfortable working with monorepos this is a good solution. On the other hand, monorepos have some tradeoffs and are not always well-supported by all tools, so it's also OK to keep your test app in a subdirectory of your addon. This is closer to how V1 addons work, where `tests/dummy` serves this purpose. See [ember-welcome-page](https://github.com/ember-cli/ember-welcome-page) for an example of not using a monorepo -- instead it has a `test-app` subdirectory and uses the `addon-dev` command from `@embroider/addon-dev` to manage linkage between the addon and the test-app and to manage combining of dependencies from both into a single top-level package.json
 
-We support some tools to make V2 addon development more convenient:
+We support some tools to make v2 addon development more convenient:
 
-- [@embroider/addon-shim](https://github.com/embroider-build/embroider/blob/main/packages/addon-shim/README.md) makes your V2 addon understandable to ember-cli. All V2 addons should use this.
+- [@embroider/addon-shim](https://github.com/embroider-build/embroider/blob/main/packages/addon-shim/README.md) makes your v2 addon understandable to ember-cli. All v2 addons should use this.
 - [@embroider/addon-dev](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/README.md) is an optional `devDependency` for your addon that provides build tooling. This gives you more flexibility over how you author your addon (like taking advantage of automatic template-colocation or using TypeScript) while still producing a spec-compliant package for publication to NPM.
+
+For starting fresh with a new v2 addon, we recommend scaffolding your project with the [v2 addon blueprint](https://github.com/embroider-build/addon-blueprint).
 
 ## Replacing the {{component}} helper
 

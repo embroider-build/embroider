@@ -1,7 +1,7 @@
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { dirname, join, resolve } from 'path';
 import minimatch from 'minimatch';
 
 export default function keepAssets({
@@ -23,9 +23,10 @@ export default function keepAssets({
       });
       if (
         resolution &&
+        importer &&
         include.some((pattern) => minimatch(resolution.id, pattern))
       ) {
-        return { id: source, external: true };
+        return { id: resolve(dirname(importer), source), external: 'relative' };
       }
       return resolution;
     },

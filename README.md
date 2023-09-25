@@ -41,7 +41,9 @@ Alternatively, it is totally safe to stick with the traditional build pipeline a
 
 ## For Addon Authors
 
-The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Addon authors should see [ADDON-AUTHOR-GUIDE.md](docs/addon-author-guide.md) for advice on how to get their addons ready for Embroider.
+Addon authors should see [ADDON-AUTHOR-GUIDE.md](docs/addon-author-guide.md) for advice on how to get their existig addons ready for Embroider. 
+
+The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Common patterns and best practices for authoring these have been collected in the [v2 addon FAQs](./docs/v2-faq.md). For creating a new v2 addon from scratch, we recommend using our [v2 addon blueprint](https://github.com/embroider-build/addon-blueprint). For porting existing v1 addons, we refer to the [v2 porting guide](./docs/porting-addons-to-v2.md).
 
 ## How to try it
 

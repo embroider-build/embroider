@@ -150,6 +150,10 @@ export function fastbootSwitch(specifier: string, fromFile: string, names: Set<s
 }
 
 export function decodeFastbootSwitch(filename: string) {
+  // Performance: avoid paying regex exec cost unless needed
+  if (!filename.includes(fastbootSwitchSuffix)) {
+    return;
+  }
   let match = fastbootSwitchPattern.exec(filename);
   if (match) {
     let names = match.groups?.names?.split(',') ?? [];

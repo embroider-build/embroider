@@ -4,6 +4,19 @@ import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
 import { dirname, sep } from 'path';
 
+const realpathSyncCache = new Map<string, string>();
+
+function getCachedRealpath(path: string): string {
+  let cached = realpathSyncCache.get(path);
+  if (cached) {
+    return cached;
+  }
+
+  let root = realpathSync(path);
+  realpathSyncCache.set(path, root);
+  return root;
+}
+
 export default class PackageCache {
   constructor(public appRoot: string) {}
 
@@ -31,7 +44,7 @@ export default class PackageCache {
   private resolutionCache: Map<Package, Map<string, Package | null>> = new Map();
 
   get(packageRoot: string) {
-    let root = realpathSync(packageRoot);
+    let root = getCachedRealpath(packageRoot);
     let p = getOrCreate(this.rootCache, root, () => {
       return new Package(root, this, root === this.appRoot);
     });

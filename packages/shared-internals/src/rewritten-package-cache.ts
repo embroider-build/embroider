@@ -96,9 +96,10 @@ export class RewrittenPackageCache implements PublicAPI<PackageCache> {
         // the plain representation of our moved app doesn't know that it's an
         // app, so we instead make a plain Package with isApp set to true
         // explicitly.
-        pkg = new Package(pkg.root, this.plainCache, true);
+        found = new WrappedPackage(this, new Package(pkg.root, this.plainCache, true));
+      } else {
+        found = new WrappedPackage(this, pkg);
       }
-      found = new WrappedPackage(this, pkg);
       wrapped.set(pkg, found);
     }
     return castToPackage(found);

@@ -124,6 +124,10 @@ export function virtualPairComponent(hbsModule: string, jsModule: string | null)
 function decodeVirtualPairComponent(
   filename: string
 ): { relativeHBSModule: string; relativeJSModule: string | null; debugName: string } | null {
+  // Performance: avoid paying regex exec cost unless needed
+  if (!filename.includes(pairComponentMarker)) {
+    return null;
+  }
   let match = pairComponentPattern.exec(filename);
   if (!match) {
     return null;
@@ -186,6 +190,10 @@ const implicitModulesPattern = /(?<filename>.*)[\\/]-embroider-implicit-(?<test>
 export function decodeImplicitModules(
   filename: string
 ): { type: 'implicit-modules' | 'implicit-test-modules'; fromFile: string } | undefined {
+  // Performance: avoid paying regex exec cost unless needed
+  if (!filename.includes('-embroider-implicit-')) {
+    return;
+  }
   let m = implicitModulesPattern.exec(filename);
   if (m) {
     return {

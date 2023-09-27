@@ -154,7 +154,7 @@ While having a build step is not strictly required for v2 addons, there are a fe
 - use of TypeScript
 - co-located components are not modules-by-default
 
-The important thing to remember here though is that this build step is very different from the build integration that v1 addons allow! While v1 addons integrate with the app's build and as such all add a bit of overhead to it, the build step of v2 addons happens ahead of time, before they are published to npm, so at the time they are consumed by the app, they are fully static and do _not_ integrate with the app's build.
+The important thing to remember here though is that this build step is very different from the build integration that v1 addons allow! While v1 addons integrate as build-plugins with the app's build and as such all add a bit of overhead to it, the build step of v2 addons happens ahead of time, before they are published to npm. So at the time they are consumed by the app, they are fully static and do _not_ plug into the app's build system.
 
 ### How can I integrate with the app's build?
 
@@ -189,7 +189,6 @@ addon.publicEntrypoints('index.js', 'components/*.js'),
 ```
 
 Additionally, there is a feature supported in node.js and modern bundlers to define an `exports` key in your `package.json` with a mapping of export paths to the actual files on disk, that lets you further tweak or constrain your public exports. This is explained in more detail here:
-- https://dev.to/binjospookie/exports-in-package-json-1fl2
 - https://nodejs.org/api/packages.html#package-entry-points
 - https://webpack.js.org/guides/package-exports/
 

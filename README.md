@@ -85,6 +85,7 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
   // staticHelpers: true,
   // staticModifiers: true,
   // staticComponents: true,
+  // staticEmberSource: true,
   // splitAtRoutes: ['route.name'], // can also be a RegExp
   // packagerOptions: {
   //    webpackConfig: { }

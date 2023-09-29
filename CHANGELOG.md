@@ -1,5 +1,58 @@
 # Embroider Changelog
 
+## Release (2023-09-29)
+
+@embroider/addon-dev 4.1.1 (patch)
+@embroider/babel-loader-9 3.1.0 (minor)
+@embroider/compat 3.2.2 (patch)
+@embroider/core 3.3.0 (minor)
+@embroider/macros 1.13.2 (patch)
+@embroider/router 2.1.4 (patch)
+@embroider/shared-internals 2.5.0 (minor)
+@embroider/test-setup 3.0.2 (patch)
+@embroider/vite 0.1.3 (patch)
+@embroider/webpack 3.2.0 (minor)
+
+#### :rocket: Enhancement
+* `shared-internals`
+  * [#1612](https://github.com/embroider-build/embroider/pull/1612) performance: cache existsSync results in PackageCache.ownerOfFile ([@raycohen](https://github.com/raycohen))
+  * [#1608](https://github.com/embroider-build/embroider/pull/1608) performance: cache realpathSync access in package-cache.get ([@raycohen](https://github.com/raycohen))
+* `core`
+  * [#1611](https://github.com/embroider-build/embroider/pull/1611) performance: avoid paying decodeFastbootSwitch regex cost unless needed ([@raycohen](https://github.com/raycohen))
+* `babel-loader-9`, `webpack`
+  * [#1578](https://github.com/embroider-build/embroider/pull/1578) Update babel-loader to 9 ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `webpack`
+  * [#1597](https://github.com/embroider-build/embroider/pull/1597) Fix HTML content failing to update ([@ef4](https://github.com/ef4))
+* `shared-internals`
+  * [#1609](https://github.com/embroider-build/embroider/pull/1609) Fix WrappedPackage caching for app ([@ef4](https://github.com/ef4))
+* `addon-dev`
+  * [#1600](https://github.com/embroider-build/embroider/pull/1600) Fix relative import path of assets for non-entrypoint modules ([@simonihmig](https://github.com/simonihmig))
+* `compat`
+  * [#1582](https://github.com/embroider-build/embroider/pull/1582) ember-source compat adapter should not use an app-provided babel config if one is present ([@void-mAlex](https://github.com/void-mAlex))
+  * [#1580](https://github.com/embroider-build/embroider/pull/1580) stop ember-composable-helpers searching for babel configs ([@mansona](https://github.com/mansona))
+
+#### :memo: Documentation
+* [#1604](https://github.com/embroider-build/embroider/pull/1604) add staticEmberSource to the readme example ([@mansona](https://github.com/mansona))
+* [#1613](https://github.com/embroider-build/embroider/pull/1613) More v2 addon FAQs ([@simonihmig](https://github.com/simonihmig))
+* [#1607](https://github.com/embroider-build/embroider/pull/1607) Add v2 addon FAQs ([@simonihmig](https://github.com/simonihmig))
+* [#1577](https://github.com/embroider-build/embroider/pull/1577) Add Embroider Initiative sponsors to the readme ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `addon-dev`, `compat`, `core`, `macros`, `router`, `shared-internals`, `test-setup`, `vite`, `webpack`
+  * [#1584](https://github.com/embroider-build/embroider/pull/1584) Get strict about type only imports ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* Other
+  * [#1579](https://github.com/embroider-build/embroider/pull/1579) Lockfile update ([@ef4](https://github.com/ef4))
+
+#### Committers: 6
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Ray Cohen ([@raycohen](https://github.com/raycohen))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-08-02)
 
 @embroider/addon-dev 4.1.0 (minor)

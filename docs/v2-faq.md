@@ -20,7 +20,7 @@
 
 <!-- tocstop -->
 
-## Authoring 
+## Authoring
 
 ### How can I use template tag components?
 
@@ -59,7 +59,7 @@ For consumers of your library, they will not need to worry about the extensions,
 
 ### How can I lazy-load my addon's code?
 
-Lazy-loading code makes that code not be part of the initial load of the consuming app, but only get loaded later in time when it is actually needed. The means to do that is to not statically import that code, but to use a dynamic `import()`. 
+Lazy-loading code makes that code not be part of the initial load of the consuming app, but only get loaded later in time when it is actually needed. The means to do that is to not statically import that code, but to use a dynamic `import()`.
 
 Unlike v1 addons, v2 addons can dynamically import not only external packages but also their own code, like simple modules or even components. You need to make sure though, that these modules are not eagerly loaded elsewhere through static imports. This especially applies to "app re-exports", which basically make the consuming app (statically) import your addon code on your behalf. So when using the common rollup setup with `addon.appReexports()`, make sure the components you want to be able to load lazilly are not covered by the glob patterns supplied to that rollup plugin!
 
@@ -80,7 +80,7 @@ Given that your addon's code is only pulled into the app when you import it, you
 
 ### How can I ship other static assets with my addon?
 
-Similarily to the way we can ship CSS, we can do the same for other static assets like images by importing them. 
+Similarily to the way we can ship CSS, we can do the same for other static assets like images by importing them.
 Let's say an addon wants to ship an SVG file and refer to it in a component:
 
 ```js
@@ -93,7 +93,7 @@ import logo from '../assets/logo.svg';
 
 Contrary to the CSS example, this is now not a side-effect only import anymore, but we actually get a value back as the default export of that imported asset: its public URL in the final build output. That's why we can pass this as the value of the `src` attribute in the example above.
 
-A few caveats though! 
+A few caveats though!
 
 First, the ability to import static assets other than CSS is not enabled by default it Ember apps yet. So any Ember app that follows this pattern itself, or consumes a v2 addon doing this, will need to get this set up correctly first. To do so, the user would have to add a module rule to their webpack config, that configures [assets modules](https://webpack.js.org/guides/asset-modules/) for the given file extension(s):
 
@@ -140,7 +140,7 @@ This is done by adding some meta data to the addon's `package.json`, specifying 
   }
 }
 ```
- 
+
 If you have many files you want to expose this way, you can instead add the `addon.publicAssets()` plugin from `@embroider/addon-dev` to your Rollup config to automate the generation of this mapping data.
 
 ## Build setup
@@ -160,7 +160,7 @@ The important thing to remember here though is that this build step is very diff
 
 If you really need to add behaviour to the app's build that your addon needs to rely on, the way to go is to provide a plugin to the bundler used by the app (through `ember-auto-import` in a classic build or Embroider), which for now will most likely be [Webpack](https://webpack.js.org/).
 
-If all you need to do is to convert some file your app is supposed to import that is not JavaScript to actual JavaScript, then that's the perfect use case for [Webpack Loaders](https://webpack.js.org/concepts/loaders/), which have a much simplified API compared to a full-fledged plugin. 
+If all you need to do is to convert some file your app is supposed to import that is not JavaScript to actual JavaScript, then that's the perfect use case for [Webpack Loaders](https://webpack.js.org/concepts/loaders/), which have a much simplified API compared to a full-fledged plugin.
 
 The recommnedad setup would be to provide that plugin or loader as a separate package within your addon's monorepo like for example `@my-addon/webpack`. You can then instruct your users to add the required webpack config to their app's config similar as with the [static assets pattern](#how-can-i-ship-other-static-assets-with-my-addon):
 
@@ -169,7 +169,7 @@ module: {
   rules: [
     {
       test: /\.ya?ml$/i, // make this match what files you want to get imported through your loader
-      use: '@my-addon/webpack', 
+      use: '@my-addon/webpack',
     },
   ],
 }
@@ -179,7 +179,7 @@ module: {
 
 You can explicitly define the public exports, i.e. the modules that consumers of your addon can import. It is useful to restrict these consciously, so users can only import what you define as the public API of your addon and not for example private modules or components that are only used internally or only as yielded contextual components.
 
-To do so, you can specify more restrictive patterns as arguments to the `addon.publicEntrypoints()` plugin used in the default `rollup.config.mjs` of the [v2 addon blueprint](https://github.com/embroider-build/addon-blueprint). Entrypoints here are modules that you want users to import from directly. This allows rollup to optimize all other non-entrypoint modules, e.g. to omit them if they aren't used at all (by any entrypoint), or merge them to a single bundle file. 
+To do so, you can specify more restrictive patterns as arguments to the `addon.publicEntrypoints()` plugin used in the default `rollup.config.mjs` of the [v2 addon blueprint](https://github.com/embroider-build/addon-blueprint). Entrypoints here are modules that you want users to import from directly. This allows rollup to optimize all other non-entrypoint modules, e.g. to omit them if they aren't used at all (by any entrypoint), or merge them to a single bundle file.
 
 For example, when your addon exposes a few components at the root level of `src/components`, while having additional nested components that are only used internally, and maybe some utility functions, you might want to prevent importing the nested components, and expose the utility functions only from your main `index.js` file as re-exports. In this case, your rollup config could look like this:
 

@@ -79,9 +79,9 @@ that code, but to use a dynamic `import()`.
 Unlike v1 addons, v2 addons can dynamically import not only external packages but also their own
 code, like simple modules or even components. You need to make sure though, that these modules are
 not eagerly loaded elsewhere through static imports. This especially applies to "app re-exports",
-which basically make the consuming app (statically) import your addon code on your behalf. So when
+which basically makes the consuming app (statically) import your addon code on your behalf. So when
 using the common rollup setup with `addon.appReexports()`, make sure the components you want to be
-able to load lazilly are not covered by the glob patterns supplied to that rollup plugin!
+able to load lazily are not covered by the glob patterns supplied to that rollup plugin!
 
 
 ### How can I write code depending on the context of the app or its dependencies?
@@ -114,7 +114,7 @@ and import the CSS from there or convert to a `<template>` tag component.
 
 ### How can I ship other static assets with my addon?
 
-Similarily to the way we can ship CSS, we can do the same for other static assets like images by
+Similarly to the way we can ship CSS, we can do the same for other static assets like images by
 importing them. Let's say an addon wants to ship an SVG file and refer to it in a component:
 
 ```js
@@ -232,7 +232,7 @@ to actual JavaScript, then that's the perfect use case for [Webpack
 Loaders](https://webpack.js.org/concepts/loaders/), which have a much simplified API compared to a
 full-fledged plugin.
 
-The recommnedad setup would be to provide that plugin or loader as a separate package within your
+The recommended setup would be to provide that plugin or loader as a separate package within your
 addon's monorepo like for example `@my-addon/webpack`. You can then instruct your users to add the
 required webpack config to their app's config similar as with the [static assets
 pattern](#how-can-i-ship-other-static-assets-with-my-addon):

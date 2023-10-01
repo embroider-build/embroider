@@ -67,7 +67,7 @@ A couple caveats with older, co-located components,
 
 For consumers of your library, they will not need to worry about the extensions, because:
 - rollup compiles away the implementation details (non-js modules)
-- package.json#exports declares what is importable under what path, and maps non-extension imports
+- `package.json#exports` declares what is importable under what path, and maps non-extension imports
   to files with extensions
 
 ### How can I lazy-load my addon's code?

@@ -16,9 +16,16 @@
     "src/**/*.d.ts",
     "src/**/*.js.map"
   ],
-  "scripts": {},
+  "scripts": {
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build:js --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/hbs-loader' build"
+  },
   "dependencies": {},
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@embroider/core": "workspace:^",
     "@types/node": "^15.12.2",
     "typescript": "^5.1.6",

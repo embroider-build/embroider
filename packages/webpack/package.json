@@ -16,7 +16,13 @@
     "src/**/*.d.ts",
     "src/**/*.js.map"
   ],
-  "scripts": {},
+  "scripts": {
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build:js --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/webpack' build"
+  },
   "dependencies": {
     "@babel/core": "^7.14.5",
     "@embroider/babel-loader-9": "workspace:*",
@@ -42,6 +48,7 @@
     "thread-loader": "^3.0.4"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@embroider/core": "workspace:^",
     "@types/csso": "^3.5.1",
     "@types/debug": "^4.1.5",

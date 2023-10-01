@@ -11,11 +11,19 @@
   "files": [
     "src/index.js"
   ],
+  "scripts": {
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build:js --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/test-setup' build"
+  },
   "dependencies": {
     "lodash": "^4.17.21",
     "resolve": "^1.20.0"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@embroider/compat": "workspace:^",
     "@embroider/core": "workspace:^",
     "@embroider/webpack": "workspace:^",

@@ -69,3 +69,6 @@ tests/scenarios/output/
 # Sys files
 .DS_Store
 *.swp
+
+# Turbo CLI stdout/stderr cache
+.turbo

@@ -12,12 +12,15 @@
   "author": "Edward Faulkner",
   "main": "src/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "concurrently 'npm:build:*'",
+    "build:js": "rollup -c ./rollup.config.mjs",
+    "build:types": "build-types",
+    "start": "pnpm build:js --watch",
+    "prepack": "pnpm -w exec turbo --filter '@embroider/core' build"
   },
   "dependencies": {
     "@babel/core": "^7.14.5",
@@ -46,6 +49,7 @@
     "walk-sync": "^3.0.0"
   },
   "devDependencies": {
+    "@embroider/build": "workspace:*",
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.84.2",
@@ -53,14 +57,18 @@
     "@types/babel__core": "^7.1.14",
     "@types/babel__traverse": "^7.18.5",
     "@types/debug": "^4.1.5",
+    "@types/ember-qunit": "^6.1.1",
     "@types/fs-extra": "^9.0.12",
-    "@types/jsdom": "^16.2.11",
     "@types/js-string-escape": "^1.0.0",
+    "@types/jsdom": "^16.2.11",
     "@types/lodash": "^4.14.170",
     "@types/node": "^15.12.2",
     "@types/resolve": "^1.20.0",
     "@types/tmp": "^0.1.0",
+    "concurrently": "^8.2.0",
+    "ember-qunit": "^7.0.0",
     "fixturify": "^2.1.1",
+    "rollup": "^3.23.0",
     "tmp": "^0.1.0",
     "typescript": "^5.1.6"
   },

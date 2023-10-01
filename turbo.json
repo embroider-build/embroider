@@ -1,0 +1,21 @@
+{
+  "baseBranch": "origin/main",
+  "globalDependencies": [".prettierrc.cjs", ".prettierignore", "pnpm-lock.yaml", "pnpm-workspace.yaml", "tsconfig.json"],
+  "pipeline": {
+    "start": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
+
+    "build": {
+      "outputs": ["dist/**"],
+      "dependsOn": ["^build"]
+    },
+
+    "test": {
+      // build self and dependencies
+      "dependsOn": ["build"]
+    }
+  }
+}

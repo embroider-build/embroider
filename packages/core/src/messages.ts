@@ -37,7 +37,10 @@ export function warn(message: string, ...params: any[]) {
 
 // for use in our test suites
 let hardFailMode = 0;
-export function throwOnWarnings(hooks?: NestedHooks) {
+export function throwOnWarnings(hooks?: {
+  before: (callback: () => void) => void;
+  after: (callback: () => void) => void;
+}) {
   if (hooks) {
     // qunit mode
     hooks.before(() => {

@@ -2,6 +2,7 @@
 /src/**/*.js
 /src/**/*.d.ts
 /src/**/*.map
+/dist/
 /tests/**/*.js
 /tests/**/*.d.ts
 /tests/**/*.map

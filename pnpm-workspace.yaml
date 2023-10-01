@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - packages/*/tests
   - test-packages/*
   - types/*
   - tests/*

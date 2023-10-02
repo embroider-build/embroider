@@ -1,20 +1,12 @@
 import type { Plugin as EsBuildPlugin, ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
-import { PluginItem, transform } from '@babel/core';
-import {
-  Resolution,
-  ResolverLoader,
-  ResolverFunction,
-  virtualContent,
-  locateEmbroiderWorkingDir,
-} from '@embroider/core';
-import { readFileSync, readJSONSync } from 'fs-extra';
+import type { Resolution, ResolverFunction } from '@embroider/core';
+import { ResolverLoader } from '@embroider/core';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, resolve } from 'path';
+import { dirname } from 'path';
 
-export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
+export function esBuildResolver(): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
-  let macrosConfig: PluginItem | undefined;
 
   return {
     name: 'embroider-esbuild-resolver',
@@ -27,47 +19,18 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         let resolution = await resolverLoader.resolver.resolve(request, defaultResolve(build, kind));
         switch (resolution.type) {
           case 'found':
-            return resolution.result;
+            return {
+              ...resolution.result,
+              external: true,
+            };
           case 'not_found':
             return resolution.err;
           default:
             throw assertNever(resolution);
         }
       });
-
-      build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
-        let src = virtualContent(path, resolverLoader.resolver);
-        if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
-        }
-        return { contents: runMacros(src, path, macrosConfig) };
-      });
-
-      build.onLoad({ filter: /\.js$/ }, ({ path, namespace }) => {
-        let src: string;
-        if (namespace === 'embroider') {
-          src = virtualContent(path, resolverLoader.resolver);
-        } else {
-          src = readFileSync(path, 'utf8');
-        }
-        if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
-        }
-        return { contents: runMacros(src, path, macrosConfig) };
-      });
     },
   };
-}
-
-function runMacros(src: string, filename: string, macrosConfig: PluginItem): string {
-  return transform(src, {
-    filename,
-    plugins: [macrosConfig],
-  })!.code!;
 }
 
 function defaultResolve(

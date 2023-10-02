@@ -58,3 +58,6 @@ package.json.ember-try
 #types added
 /types/**
 
+# ide
+/.history/
+

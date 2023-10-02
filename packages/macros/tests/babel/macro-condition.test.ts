@@ -1,3 +1,5 @@
+import { describe, expect, test, beforeAll, afterAll, beforeEach } from 'vitest';
+
 import { makeRunner, makeBabelConfig, allModes } from './helpers';
 import { allBabelVersions } from '@embroider/test-support';
 import { Project } from 'scenario-tester';

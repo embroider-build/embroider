@@ -1,3 +1,5 @@
+import { describe, expect, test, beforeEach, afterEach } from 'vitest';
+
 import { allBabelVersions, runDefault } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { join } from 'path';
@@ -141,7 +143,7 @@ describe(`dependencySatisfies`, function () {
         import { dependencySatisfies } from '@embroider/macros';
 
         export default function() {
-          return { 
+          return {
             // specified in dependencies
             util: dependencySatisfies('@embroider/util', '*'),
 

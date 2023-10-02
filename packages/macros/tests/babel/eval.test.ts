@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { allBabelVersions } from '@embroider/test-support';
 import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
 import type { NodePath } from '@babel/traverse';

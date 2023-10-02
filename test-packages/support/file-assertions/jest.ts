@@ -1,4 +1,5 @@
 import 'code-equality-assertions/jest';
+import { expect } from 'vitest';
 import type { AssertionAdapter } from '../file-assertions';
 import { BoundExpectFile, ExpectFile } from '../file-assertions';
 

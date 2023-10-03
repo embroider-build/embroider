@@ -2,7 +2,7 @@ import Plugin from 'broccoli-plugin';
 import type { Node } from 'broccoli-node-api';
 import { join, basename } from 'path';
 import walkSync from 'walk-sync';
-import { remove, outputFileSync, pathExistsSync } from 'fs-extra';
+import { removeSync, outputFileSync, pathExistsSync } from 'fs-extra';
 
 const source = `import templateOnlyComponent from '@ember/component/template-only';
 export default templateOnlyComponent();`;
@@ -25,16 +25,21 @@ export default class SynthesizeTemplateOnlyComponents extends Plugin {
   }
 
   async build() {
+    let unneeded = new Set(this.emitted);
     for (let dir of this.allowedPaths) {
       let { needed, seen } = this.crawl(join(this.inputPaths[0], dir));
       for (let file of needed) {
         let fullName = join(this.outputPath, dir, file);
+        unneeded.delete(fullName);
         if (seen.has(file)) {
           this.remove(fullName);
         } else {
           this.add(fullName);
         }
       }
+    }
+    for (let fullName of unneeded) {
+      this.remove(fullName);
     }
   }
   private add(filename: string) {
@@ -51,7 +56,7 @@ export default class SynthesizeTemplateOnlyComponents extends Plugin {
 
   private remove(filename: string) {
     if (this.emitted.has(filename)) {
-      remove(filename + '.js');
+      removeSync(filename + '.js');
       this.emitted.delete(filename);
     }
   }

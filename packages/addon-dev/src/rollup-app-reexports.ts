@@ -22,14 +22,21 @@ export default function appReexports(opts: {
           !minimatch(addonFilename, '**/*.d.ts')
         ) {
           appJS[`./${appFilename}`] = `./dist/_app_/${appFilename}`;
-          this.emitFile({
-            type: 'asset',
-            fileName: `_app_/${appFilename}`,
-            source: `export { default } from "${pkg.name}/${addonFilename.slice(
-              0,
-              -extname(addonFilename).length
-            )}";\n`,
-          });
+          if (extname(appFilename) === '.hbs') {
+            this.emitFile({
+              type: 'asset',
+              fileName: `_app_/${appFilename}`,
+              source: (bundle[appFilename] as any).source,
+            });
+          } else {
+            this.emitFile({
+              type: 'asset',
+              fileName: `_app_/${appFilename}`,
+              source: `export { default } from "${
+                pkg.name
+              }/${addonFilename.slice(0, -extname(addonFilename).length)}";\n`,
+            });
+          }
         }
       }
       let originalAppJS = pkg['ember-addon']?.['app-js'];

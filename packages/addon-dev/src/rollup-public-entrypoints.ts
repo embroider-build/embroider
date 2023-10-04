@@ -79,7 +79,7 @@ function isTemplateOnly(matches: string[], filePath: string) {
 
   let correspondingFileGlob = path.join(
     path.dirname(filePath),
-    path.basename(filePath).replace(/hbs$/, '*')
+    `{${path.basename(filePath).replace(/hbs$/, '*')},route.*,controller.*}`
   );
 
   let relatedFiles = matches.filter((match) =>

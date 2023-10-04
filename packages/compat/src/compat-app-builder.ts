@@ -35,7 +35,7 @@ import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import { sync as resolveSync } from 'resolve';
 import bind from 'bind-decorator';
-import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
+import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync, realpathSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
@@ -285,7 +285,9 @@ export class CompatAppBuilder {
       appRoot: this.origAppPackage.root,
       engines: engines.map((appFiles, index) => ({
         packageName: appFiles.engine.package.name,
-        root: index === 0 ? this.root : appFiles.engine.package.root, // first engine is the app, which has been relocated to this.root
+        // first engine is the app, which has been relocated to this.root
+        // we need to use the real path here because webpack requests always use the real path i.e. follow symlinks
+        root: realpathSync(index === 0 ? this.root : appFiles.engine.package.root),
         fastbootFiles: appFiles.fastbootFiles,
         activeAddons: [...appFiles.engine.addons]
           .map(a => ({

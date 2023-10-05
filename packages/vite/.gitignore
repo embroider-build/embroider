@@ -2,6 +2,6 @@
 /src/**/*.js
 /src/**/*.d.ts
 /src/**/*.map
-/*/tests/**/*.js
-/*/tests/**/*.d.ts
-/*/tests/**/*.map
+/tests/**/*.js
+/tests/**/*.d.ts
+/tests/**/*.map

@@ -829,7 +829,7 @@ export class Resolver {
       return request.rehome(resolve(pkg.root, 'package.json'));
     } else {
       // otherwise we need to just assume that internal naming is simple
-      return request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'));
+      return request.rehome(resolve(pkg.root, '..', 'moved-package-target.js'));
     }
   }
 
@@ -954,7 +954,7 @@ export class Resolver {
         throw new Error(
           `A module tried to resolve "${request.specifier}" and didn't find it (${label}).
 
- - Maybe a dependency declaration is missing? 
+ - Maybe a dependency declaration is missing?
  - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.
  - If this dependency is available in the AMD loader (because someone manually called "define()" for it), you can configure a shim like:
 

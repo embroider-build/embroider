@@ -5,6 +5,7 @@ import globby from 'globby';
 import fs from 'fs/promises';
 import path from 'path';
 import execa from 'execa';
+
 const { module: Qmodule, test } = QUnit;
 
 let app = appScenarios.map('watch-mode', () => {
@@ -18,8 +19,17 @@ app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
     let watchProcess: ReturnType<any>;
-    let startedPromise: Promise<void>;
-    let waitFor: (stdoutContent: string) => Promise<void>;
+
+    function waitFor(stdoutContent: string) {
+      return new Promise<void>(resolve => {
+        watchProcess.stdout.on('data', (data: Buffer) => {
+          let str = data.toString();
+          if (str.includes(stdoutContent)) {
+            resolve();
+          }
+        });
+      });
+    }
 
     async function checkScripts(distPattern: RegExp, needle: string) {
       let root = app.dir;
@@ -37,27 +47,22 @@ app.forEachScenario(scenario => {
     hooks.beforeEach(async () => {
       app = await scenario.prepare();
       watchProcess = execa('ember', ['s'], { cwd: app.dir });
-
-      waitFor = (stdoutContent: string) => {
-        return new Promise<void>(resolve => {
-          watchProcess.stdout.on('data', (data: Buffer) => {
-            let str = data.toString();
-            if (str.includes(stdoutContent)) {
-              resolve();
-            }
-          });
-        });
-      };
-
-      startedPromise = waitFor('Serving on');
     });
 
     hooks.afterEach(async () => {
-      watchProcess.cancel();
+      watchProcess.kill();
+
+      // on windows the subprocess won't close if you don't end all the sockets
+      // we don't just end stdout because when you register a listener for stdout it auto registers stdin and stderr... for some reason :(
+      watchProcess.stdio.forEach((socket: any) => {
+        if (socket) {
+          socket.end();
+        }
+      });
     });
 
     test(`pnpm ember test`, async function (assert) {
-      await startedPromise;
+      await waitFor('Serving on');
       const content = 'TWO IS A GREAT NUMBER< I LKE IT A LOT< IT IS THE POWER OF ALL  OF ELECTRONICS, MATH, ETC';
 
       assert.false(await checkScripts(/js$/, content), 'file has not been created yet');

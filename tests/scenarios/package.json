@@ -80,7 +80,7 @@
     "ember-source-beta": "npm:ember-source@beta",
     "ember-source-latest": "npm:ember-source@latest",
     "ember-truth-helpers": "^3.0.0",
-    "execa": "^4.0.3",
+    "execa": "^5.1.1",
     "tslib": "^2.6.0",
     "typescript": "^5.1.6"
   },

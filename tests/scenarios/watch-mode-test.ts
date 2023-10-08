@@ -337,11 +337,6 @@ app.forEachScenario(scenario => {
       await waitFor(`file deleted ${path.join(...filePath.split('/'))}`);
     }
 
-    async function restartServer(): Promise<void> {
-      await server.shutdown();
-      server = EmberCLI.launch(['serve', '--port', '0'], { cwd: app.dir });
-    }
-
     async function checkScripts(distPattern: RegExp, needle: string) {
       let root = app.dir;
       let available = await globby('**/*', { cwd: path.join(root, 'dist') });
@@ -423,16 +418,6 @@ app.forEachScenario(scenario => {
 
         await appFile('app/components/hello-world.hbs').delete();
         await deleted('components/hello-world.hbs');
-        await waitFor(/Build Error/);
-        await waitFor(/ENOENT: no such file or directory.+rewritten-app(\\|\/)components(\\|\/)hello-world\.hbs/);
-        await assertRewrittenFile('assets/app-template.js').includesContent('"app-template/components/hello-world"');
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').includesContent(
-          'export default templateOnlyComponent();'
-        );
-
-        // this is to demonstrate that restarting the server fixes the issue
-        await restartServer();
         await waitFor(/Build successful/);
         await assertRewrittenFile('assets/app-template.js').doesNotIncludeContent(
           '"app-template/components/hello-world"'
@@ -495,26 +480,6 @@ app.forEachScenario(scenario => {
           export default class extends Component {}
         `);
         await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
-        server.clearOutput();
-
-        test = await EmberCLI.launch(['test', '--filter', 'hello-world'], { cwd: app.dir });
-        await test.waitFor(/^not ok .+ Integration | hello-world: it renders/, DEFAULT_TIMEOUT * 2);
-        await assert.rejects(test.completed);
-
-        await appFile('app/components/hello-world.js').write(`
-          // this is to demonstrate that any content changes to the JS file busts the Babel cache and fixes the issue
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
-        await changed('components/hello-world.js');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(`
-          // this is to demonstrate that any content changes to the JS file busts the Babel cache and fixes the issue
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
-        server.clearOutput();
 
         test = await EmberCLI.launch(['test', '--filter', 'hello-world'], { cwd: app.dir });
         await test.waitFor(/^ok .+ Integration | hello-world: it renders/);
@@ -539,13 +504,6 @@ app.forEachScenario(scenario => {
         await added('components/hello-world.js');
         await waitFor(/Build successful/);
         await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        // This is due to the bug in scenario 1
-        await assertRewrittenFile('components/hello-world.js').includesContent('templateOnlyComponent();');
-
-        // Restart the server to clear the unrelated bug and continue on with the test
-        await restartServer();
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
         await assertRewrittenFile('components/hello-world.js').hasContent(`
           import Component from '@glimmer/component';
           export default class extends Component {}
@@ -554,35 +512,9 @@ app.forEachScenario(scenario => {
 
         await appFile('app/components/hello-world.hbs').delete();
         await deleted('components/hello-world.hbs');
-        await waitFor(/Build Error/);
-        await waitFor(/ENOENT: no such file or directory.+rewritten-app(\\|\/)components(\\|\/)hello-world\.hbs/);
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').hasContent(`
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
-
-        // this is to demonstrate that even restarting the server does not fix the issue
-        await restartServer();
-        await waitFor(/Build Error/);
-        await waitFor(/Module not found: Error: Can't resolve '\.(\\|\/)hello-world\.hbs'/);
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').hasContent(`
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
-        server.clearOutput();
-
-        await appFile('app/components/hello-world.js').write(`
-          // this is to demonstrate that any content changes to the JS file busts the Babel cache and fixes the issue
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
-        await changed('components/hello-world.js');
         await waitFor(/Build successful/);
         await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
         await assertRewrittenFile('components/hello-world.js').hasContent(`
-          // this is to demonstrate that any content changes to the JS file busts the Babel cache and fixes the issue
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);

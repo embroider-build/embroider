@@ -311,6 +311,45 @@ class AssertFile {
   }
 }
 
+function d(strings: TemplateStringsArray, ...values: unknown[]): string {
+  let buf = '';
+  for (let string of strings) {
+    if (values.length) {
+      buf += string + values.shift();
+    } else {
+      buf += string;
+    }
+  }
+  return deindent(buf);
+}
+
+function deindent(s: string): string {
+  if (s.startsWith('\n')) {
+    s = s.slice(1);
+  }
+
+  let indentSize = s.search(/\S/);
+
+  if (indentSize > 0) {
+    let indent = s.slice(0, indentSize);
+
+    s = s
+      .split('\n')
+      .map(line => {
+        if (line.startsWith(indent)) {
+          return line.slice(indentSize);
+        } else {
+          return line;
+        }
+      })
+      .join('\n');
+  }
+
+  s = s.trimEnd();
+
+  return s;
+}
+
 app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
@@ -411,9 +450,11 @@ app.forEachScenario(scenario => {
         await waitFor(/Build successful/);
         await assertRewrittenFile('assets/app-template.js').includesContent('"app-template/components/hello-world"');
         await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').includesContent(
-          'export default templateOnlyComponent();'
-        );
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
+          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
+          import templateOnlyComponent from '@ember/component/template-only';
+          export default templateOnlyComponent();
+        `);
         server.clearOutput();
 
         await appFile('app/components/hello-world.hbs').delete();
@@ -431,7 +472,7 @@ app.forEachScenario(scenario => {
         await assertRewrittenFile('components/hello-world.js').doesNotExist();
         await assertRewrittenFile('tests/integration/hello-world-test.js').doesNotExist();
 
-        await appFile('tests/integration/hello-world-test.js').write(`
+        await appFile('tests/integration/hello-world-test.js').write(d`
           import { module, test } from 'qunit';
           import { setupRenderingTest } from 'ember-qunit';
           import { render } from '@ember/test-helpers';
@@ -453,14 +494,14 @@ app.forEachScenario(scenario => {
         await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
         server.clearOutput();
 
-        await appFile('app/components/hello-world.js').write(`
+        await appFile('app/components/hello-world.js').write(d`
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
         await added('components/hello-world.js');
         await waitFor(/Build successful/);
         await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').hasContent(`
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
@@ -475,7 +516,8 @@ app.forEachScenario(scenario => {
         await added('components/hello-world.hbs');
         await waitFor(/Build successful/);
         await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(`
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
+          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
@@ -494,17 +536,22 @@ app.forEachScenario(scenario => {
         await added('components/hello-world.hbs');
         await waitFor(/Build successful/);
         await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').includesContent('templateOnlyComponent();');
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
+          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
+          import templateOnlyComponent from '@ember/component/template-only';
+          export default templateOnlyComponent();
+        `);
         server.clearOutput();
 
-        await appFile('app/components/hello-world.js').write(`
+        await appFile('app/components/hello-world.js').write(d`
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
         await added('components/hello-world.js');
         await waitFor(/Build successful/);
         await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(`
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
+          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
@@ -514,9 +561,52 @@ app.forEachScenario(scenario => {
         await deleted('components/hello-world.hbs');
         await waitFor(/Build successful/);
         await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').hasContent(`
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
           import Component from '@glimmer/component';
           export default class extends Component {}
+        `);
+      });
+
+      test('Scenario 4: editing a co-located js file', async function () {
+        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
+        await assertRewrittenFile('components/hello-world.js').doesNotExist();
+
+        await appFile('app/components/hello-world.hbs').write('hello world!');
+        await added('components/hello-world.hbs');
+        await waitFor(/Build successful/);
+        server.clearOutput();
+
+        await appFile('app/components/hello-world.js').write(d`
+          import Component from '@glimmer/component';
+          export default class extends Component {}
+        `);
+        await added('components/hello-world.js');
+        await waitFor(/Build successful/);
+        server.clearOutput();
+
+        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
+          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
+          import Component from '@glimmer/component';
+          export default class extends Component {}
+        `);
+
+        await appFile('app/components/hello-world.js').write(d`
+          import Component from '@glimmer/component';
+          export default class extends Component {
+            // this shows that updates invalidate any caches and reflects properly
+          }
+        `);
+        await changed('components/hello-world.js');
+        await waitFor(/Build successful/);
+
+        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
+        await assertRewrittenFile('components/hello-world.js').hasContent(d`
+          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
+          import Component from '@glimmer/component';
+          export default class extends Component {
+            // this shows that updates invalidate any caches and reflects properly
+          }
         `);
       });
     });

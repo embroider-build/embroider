@@ -55,7 +55,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "volta": {
-    "node": "16.20.0",
+    "node": "20.8.0",
     "pnpm": "8.6.7"
   },
   "changelog": {

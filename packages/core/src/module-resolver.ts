@@ -565,6 +565,7 @@ export class Resolver {
 
   private *componentJSCandidates(inPackageName: string) {
     yield { prefix: '/components/', suffix: '' };
+    // yield { prefix: '/components/', suffix: '/index' };
     yield { prefix: '/components/', suffix: '/component' };
 
     let pods = this.podPrefix(inPackageName);
@@ -954,7 +955,7 @@ export class Resolver {
         throw new Error(
           `A module tried to resolve "${request.specifier}" and didn't find it (${label}).
 
- - Maybe a dependency declaration is missing? 
+ - Maybe a dependency declaration is missing?
  - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.
  - If this dependency is available in the AMD loader (because someone manually called "define()" for it), you can configure a shim like:
 

@@ -2,12 +2,13 @@ import type { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/share
 import { outputFileSync, readJsonSync, writeJSONSync } from 'fs-extra';
 import { resolve, sep } from 'path';
 import QUnit from 'qunit';
+import merge from 'lodash/merge';
 import type { PreparedApp } from 'scenario-tester';
 import { Project, Scenarios } from 'scenario-tester';
 import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import type { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 import { installAuditAssertions } from '@embroider/test-support/audit-assertions';
-import { baseAddon } from './scenarios';
+import { baseAddon, baseV2Addon } from './scenarios';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -42,7 +43,50 @@ Scenarios.fromProject(() => new Project())
 
     let v1Addon = baseAddon();
     v1Addon.name = 'a-v1-addon';
+    merge(v1Addon.files, {
+      app: {
+        components: {
+          'v1-nested-layout-component': {
+            'index.js': 'export { default } from "v1-addon/components/v1-nested-layout-component";',
+          },
+        },
+      },
+      addon: {
+        components: {
+          'v1-nested-layout-component': {
+            'index.hbs': '<div>nested layout components in v1 addons work</div>',
+          },
+        },
+      },
+    });
     app.addDependency(v1Addon);
+    const v2Addon = baseV2Addon();
+    v2Addon.pkg.name = 'v2-addon';
+    (v2Addon.pkg as any)['ember-addon']['app-js']['./components/v2-nested-layout-component/index.js'] =
+      './app/components/v2-nested-layout-component/index.js';
+
+    merge(v2Addon.files, {
+      app: {
+        components: {
+          'v2-nested-layout-component': {
+            'index.js': `export { default } from 'v2-addon/components/v2-nested-layout-component/index';`,
+          },
+        },
+      },
+      components: {
+        'v2-nested-layout-component': {
+          'index.js': `
+            import { precompileTemplate } from '@ember/template-compilation';
+            import { setComponentTemplate } from '@ember/component';
+            import templateOnly from '@ember/component/template-only';
+            export default setComponentTemplate(precompileTemplate('<div>hi</div>'), templateOnly());
+          `,
+        },
+      },
+    });
+
+    app.addDevDependency(v2Addon);
+    app.addDependency('@glimmer/component', '1.1.2');
 
     // this is just an empty fixture package, it's the presence of a dependency
     // named ember-auto-import that tells us that the app was allowed to import
@@ -382,6 +426,52 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.resolves('../../template.hbs').to('./pods/components/hello-world/template.hbs');
           pairModule.resolves('../../component.js').to('./pods/components/hello-world/component.js');
+        });
+
+        test('nested layout (in app) component resolved', async function () {
+          givenFiles({
+            'components/local-nested-layout-component/index.js': `
+              import { hbs } from 'ember-cli-htmlbars';
+              import { setComponentTemplate } from '@ember/component';
+              import templateOnly from '@ember/component/template-only';
+              const TEMPLATE = hbs('<div>{{this.message}}</div>')
+              setComponentTemplate(TEMPLATE, templateOnly());
+            `,
+            'app.js': 'import "#embroider_compat/components/local-nested-layout-component"',
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('#embroider_compat/components/local-nested-layout-component')
+            .to('./components/local-nested-layout-component/index.js');
+        });
+
+        test('nested layout (in v1 addon) component resolved', async function () {
+          givenFiles({
+            'app.js': 'import "a-v1-addon/components/v1-nested-layout-component"',
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('a-v1-addon/components/v1-nested-layout-component')
+            .to('/@embroider/ext-cjs/a-v1-addon/components/v1-nested-layout-component');
+        });
+
+        test('nested layout (in v2 addon) component resolved', async function () {
+          givenFiles({
+            'app.js': 'import "v2-addon/components/v2-nested-layout-component"',
+          });
+
+          await configure();
+
+          expectAudit
+            .module('./app.js')
+            .resolves('v2-addon/components/v2-nested-layout-component')
+            .to('./node_modules/v2-addon/components/v2-nested-layout-component/index.js');
         });
 
         test('plain helper', async function () {

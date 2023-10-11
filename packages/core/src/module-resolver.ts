@@ -565,7 +565,7 @@ export class Resolver {
 
   private *componentJSCandidates(inPackageName: string) {
     yield { prefix: '/components/', suffix: '' };
-    // yield { prefix: '/components/', suffix: '/index' };
+    yield { prefix: '/components/', suffix: '/index' };
     yield { prefix: '/components/', suffix: '/component' };
 
     let pods = this.podPrefix(inPackageName);

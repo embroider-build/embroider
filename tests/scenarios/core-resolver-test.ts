@@ -103,6 +103,7 @@ Scenarios.fromProject(() => new Project())
         renamePackages?: Record<string, string>;
         addonMeta?: Partial<AddonMeta>;
         fastbootFiles?: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
+        options?: Partial<CompatResolverOptions['options']>;
       }
 
       let configure: (opts?: ConfigureOpts) => Promise<void>;
@@ -164,6 +165,7 @@ Scenarios.fromProject(() => new Project())
               staticHelpers: false,
               staticModifiers: false,
               allowUnsafeDynamicComponents: false,
+              ...opts?.options,
             },
             activePackageRules: [
               {
@@ -440,7 +442,13 @@ Scenarios.fromProject(() => new Project())
             'app.js': 'import "#embroider_compat/components/local-nested-layout-component"',
           });
 
-          await configure();
+          await configure({
+            // options: {
+            //   staticHelpers: true,
+            //   staticComponents: true,
+            //   staticModifiers: true,
+            // },
+          });
 
           expectAudit
             .module('./app.js')
@@ -450,27 +458,39 @@ Scenarios.fromProject(() => new Project())
 
         test('nested layout (in v1 addon) component resolved', async function () {
           givenFiles({
-            'app.js': 'import "a-v1-addon/components/v1-nested-layout-component"',
+            'app.js': 'import "#embroider_compat/components/v1-nested-layout-component"',
           });
 
-          await configure();
+          await configure({
+            // options: {
+            //   staticHelpers: true,
+            //   staticComponents: true,
+            //   staticModifiers: true,
+            // },
+          });
 
           expectAudit
             .module('./app.js')
-            .resolves('a-v1-addon/components/v1-nested-layout-component')
-            .to('/@embroider/ext-cjs/a-v1-addon/components/v1-nested-layout-component');
+            .resolves('#embroider_compat/components/v1-nested-layout-component')
+            .to('/@embroider/ext-cjs/a-v1-addon/components/v1-nested-layout-component/index.js');
         });
 
         test('nested layout (in v2 addon) component resolved', async function () {
           givenFiles({
-            'app.js': 'import "v2-addon/components/v2-nested-layout-component"',
+            'app.js': 'import "#embroider_compat/components/v2-nested-layout-component"',
           });
 
-          await configure();
+          await configure({
+            // options: {
+            //   staticHelpers: true,
+            //   staticComponents: true,
+            //   staticModifiers: true,
+            // },
+          });
 
           expectAudit
             .module('./app.js')
-            .resolves('v2-addon/components/v2-nested-layout-component')
+            .resolves('#embroider_compat/components/v2-nested-layout-component')
             .to('./node_modules/v2-addon/components/v2-nested-layout-component/index.js');
         });
 

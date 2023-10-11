@@ -1,6 +1,7 @@
 import { JSDOM } from 'jsdom';
 import { readFileSync } from 'fs';
 import type { EmberAsset } from './asset';
+import { makeTag, normalizeStyleLink } from './html-placeholder';
 
 export interface EmberHTML {
   // each of the Nodes in here points at where we should insert the
@@ -25,57 +26,84 @@ export interface EmberHTML {
   implicitTestStyles?: Node;
 }
 
-class NodeRange {
-  end: Node;
-  start: Node;
-  constructor(initial: Node) {
-    this.start = initial.ownerDocument!.createTextNode('');
-    initial.parentElement!.insertBefore(this.start, initial);
-    this.end = initial;
+class Placeholder {
+  static replacing(node: Node): Placeholder {
+    let placeholder = this.immediatelyAfter(node);
+    node.parentElement!.removeChild(node);
+    return placeholder;
   }
-  clear() {
-    while (this.start.nextSibling !== this.end) {
-      this.start.parentElement!.removeChild(this.start.nextSibling!);
+
+  static immediatelyAfter(node: Node): Placeholder {
+    let document = node.ownerDocument;
+    let parent = node.parentElement;
+
+    if (!document || !parent) {
+      throw new Error('Cannot make Placeholder out of detached node');
+    }
+
+    let nextSibling = node.nextSibling;
+    let start = document.createTextNode('');
+    let end = document.createTextNode('');
+
+    parent.insertBefore(start, nextSibling);
+    parent.insertBefore(end, nextSibling);
+    return new Placeholder(start, end, node);
+  }
+
+  readonly parent: HTMLElement;
+
+  constructor(readonly start: Node, readonly end: Node, readonly reference: Node) {
+    if (start.parentElement && start.parentElement === end.parentElement) {
+      this.parent = start.parentElement;
+    } else {
+      throw new Error('Cannot make Placeholder out of detached node');
     }
   }
-  insert(node: Node) {
-    this.end.parentElement!.insertBefore(node, this.end);
-  }
-}
 
-function immediatelyAfter(node: Node) {
-  let newMarker = node.ownerDocument!.createTextNode('');
-  node.parentElement!.insertBefore(newMarker, node.nextSibling);
-  return new NodeRange(newMarker);
+  clear() {
+    let { start, end, parent } = this;
+    let target = start.nextSibling;
+
+    while (target && target !== end) {
+      parent.removeChild(target);
+      target = target.nextSibling;
+    }
+  }
+
+  insert(node: Node) {
+    this.parent.insertBefore(node, this.end);
+  }
 }
 
 export class PreparedEmberHTML {
   dom: JSDOM;
-  javascript: NodeRange;
-  styles: NodeRange;
-  implicitScripts: NodeRange;
-  implicitStyles: NodeRange;
-  testJavascript: NodeRange;
-  implicitTestScripts: NodeRange;
-  implicitTestStyles: NodeRange;
+  javascript: Placeholder;
+  styles: Placeholder;
+  implicitScripts: Placeholder;
+  implicitStyles: Placeholder;
+  testJavascript: Placeholder;
+  implicitTestScripts: Placeholder;
+  implicitTestStyles: Placeholder;
 
   constructor(private asset: EmberAsset) {
     this.dom = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
     let html = asset.prepare(this.dom);
-    this.javascript = new NodeRange(html.javascript);
-    this.styles = new NodeRange(html.styles);
-    this.implicitScripts = new NodeRange(html.implicitScripts);
-    this.implicitStyles = new NodeRange(html.implicitStyles);
-    this.testJavascript = html.testJavascript ? new NodeRange(html.testJavascript) : immediatelyAfter(html.javascript);
+    this.javascript = Placeholder.replacing(html.javascript);
+    this.styles = Placeholder.replacing(html.styles);
+    this.implicitScripts = Placeholder.replacing(html.implicitScripts);
+    this.implicitStyles = Placeholder.replacing(html.implicitStyles);
+    this.testJavascript = html.testJavascript
+      ? Placeholder.replacing(html.testJavascript)
+      : Placeholder.immediatelyAfter(this.javascript.end);
     this.implicitTestScripts = html.implicitTestScripts
-      ? new NodeRange(html.implicitTestScripts)
-      : immediatelyAfter(html.implicitScripts);
+      ? Placeholder.replacing(html.implicitTestScripts)
+      : Placeholder.immediatelyAfter(this.implicitScripts.end);
     this.implicitTestStyles = html.implicitTestStyles
-      ? new NodeRange(html.implicitTestStyles)
-      : immediatelyAfter(html.implicitStyles);
+      ? Placeholder.replacing(html.implicitTestStyles)
+      : Placeholder.immediatelyAfter(this.implicitStyles.end);
   }
 
-  private allRanges(): NodeRange[] {
+  private placeholders(): Placeholder[] {
     return [
       this.javascript,
       this.styles,
@@ -88,31 +116,37 @@ export class PreparedEmberHTML {
   }
 
   clear() {
-    for (let range of this.allRanges()) {
+    for (let range of this.placeholders()) {
       range.clear();
     }
   }
 
   // this takes the src relative to the application root, we adjust it so it's
   // root-relative via the configured rootURL
-  insertScriptTag(location: NodeRange, relativeSrc: string, opts?: { type?: string; tag?: string }) {
-    let newTag = this.dom.window.document.createElement(opts && opts.tag ? opts.tag : 'script');
-    newTag.setAttribute('src', this.asset.rootURL + relativeSrc);
-    if (opts && opts.type) {
-      newTag.setAttribute('type', opts.type);
-    }
-    location.insert(this.dom.window.document.createTextNode('\n'));
-    location.insert(newTag);
+  insertScriptTag(
+    placeholder: Placeholder,
+    relativeSrc: string,
+    { type, tag = 'script' }: { type?: string; tag?: string } = {}
+  ) {
+    let document = this.dom.window.document;
+    let from = placeholder.reference.nodeType === 1 ? (placeholder.reference as HTMLElement) : undefined;
+    let src = this.asset.rootURL + relativeSrc;
+    let attributes: Record<string, string> = type ? { src, type } : { src };
+    let newTag = makeTag(document, { from, tag, attributes });
+    placeholder.insert(this.dom.window.document.createTextNode('\n'));
+    placeholder.insert(newTag);
   }
 
   // this takes the href relative to the application root, we adjust it so it's
   // root-relative via the configured rootURL
-  insertStyleLink(location: NodeRange, relativeHref: string) {
-    let newTag = this.dom.window.document.createElement('link');
-    newTag.rel = 'stylesheet';
-    newTag.href = this.asset.rootURL + relativeHref;
-    location.insert(this.dom.window.document.createTextNode('\n'));
-    location.insert(newTag);
+  insertStyleLink(placeholder: Placeholder, relativeHref: string) {
+    let document = this.dom.window.document;
+    let from = placeholder.reference.nodeType === 1 ? (placeholder.reference as HTMLElement) : undefined;
+    let href = this.asset.rootURL + relativeHref;
+    let newTag = makeTag(document, { from, tag: 'link', attributes: { href } });
+    normalizeStyleLink(newTag);
+    placeholder.insert(this.dom.window.document.createTextNode('\n'));
+    placeholder.insert(newTag);
   }
 }
 

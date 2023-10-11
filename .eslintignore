@@ -28,8 +28,8 @@
 /tests/vite-app/
 /packages/vite/index.mjs
 /packages/vite/index.d.ts
-/packages/vite/src/**/*.js
-/packages/vite/src/**/*.d.ts
+/packages/vite/**/*.js
+/packages/vite/**/*.d.ts
 
 
 # unconventional js

@@ -815,24 +815,20 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return logTransition(`v1 self-import`, request, this.resolveWithinPackage(request, pkg));
+      return logTransition(
+        `v1 self-import`,
+        request,
+        request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'))
+      );
     }
 
     return request;
   }
 
   private resolveWithinPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
-    // if ('exports' in pkg.packageJSON) {
-    //   // this is the easy case -- a package that uses exports can safely resolve
-    //   // its own name, so it's enough to let it resolve the (self-targeting)
-    //   // specifier from its own package root.
-    //   return request.rehome(resolve(pkg.root, 'package.json'));
-    // } else {
-    // otherwise we need to just assume that internal naming is simple
     return request.rehome(resolve(pkg.root, '..', 'moved-package-target.js')).withMeta({
       resolvedWithinPackage: pkg.root,
     });
-    // }
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {

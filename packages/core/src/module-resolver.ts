@@ -822,17 +822,17 @@ export class Resolver {
   }
 
   private resolveWithinPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
-    if ('exports' in pkg.packageJSON) {
-      // this is the easy case -- a package that uses exports can safely resolve
-      // its own name, so it's enough to let it resolve the (self-targeting)
-      // specifier from its own package root.
-      return request.rehome(resolve(pkg.root, 'package.json'));
-    } else {
-      // otherwise we need to just assume that internal naming is simple
-      return request.rehome(resolve(pkg.root, '..', 'moved-package-target.js')).withMeta({
-        resolvedWithinPackage: pkg.root,
-      });
-    }
+    // if ('exports' in pkg.packageJSON) {
+    //   // this is the easy case -- a package that uses exports can safely resolve
+    //   // its own name, so it's enough to let it resolve the (self-targeting)
+    //   // specifier from its own package root.
+    //   return request.rehome(resolve(pkg.root, 'package.json'));
+    // } else {
+    // otherwise we need to just assume that internal naming is simple
+    return request.rehome(resolve(pkg.root, '..', 'moved-package-target.js')).withMeta({
+      resolvedWithinPackage: pkg.root,
+    });
+    // }
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
@@ -979,6 +979,14 @@ export class Resolver {
   }
 
   fallbackResolve<R extends ModuleRequest>(request: R): R {
+    if (request.specifier === '@embroider/macros') {
+      // the macros package is always handled directly within babel (not
+      // necessarily as a real resolvable package), so we should not mess with it.
+      // It might not get compiled away until *after* our plugin has run, which is
+      // why we need to know about it.
+      return logTransition('fallback early exit', request);
+    }
+
     let { specifier, fromFile } = request;
 
     if (compatPattern.test(specifier)) {

@@ -66,7 +66,7 @@ export class HTMLEntrypoint {
   }
 
   private handledStyles() {
-    let styleTags = [...this.dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
+    let styleTags = [...this.dom.window.document.querySelectorAll('link[rel*="stylesheet"]')] as HTMLLinkElement[];
     let [ignoredStyleTags, handledStyleTags] = partition(styleTags, styleTag => {
       return !styleTag.href || styleTag.hasAttribute('data-embroider-ignore') || isAbsoluteURL(styleTag.href);
     });

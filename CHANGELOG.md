@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2023-10-06)
+
+@embroider/compat 3.2.3 (patch)
+
+#### :bug: Bug Fix
+* `compat`
+  * [#1622](https://github.com/embroider-build/embroider/pull/1622) use realpath of engine's route when building resolver.json ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#1626](https://github.com/embroider-build/embroider/pull/1626) disable lint for scenarios since scenarios are not published ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* [#1625](https://github.com/embroider-build/embroider/pull/1625) reduceLock ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-09-29)
 
 @embroider/addon-dev 4.1.1 (patch)

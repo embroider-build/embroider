@@ -47,7 +47,7 @@ module.exports = {
       },
     },
     {
-      files: ['test-packages/**/*.[jt]s'],
+      files: ['test-packages/**/*.[jt]s', 'tests/scenarios/**/*.{js,ts}'],
       rules: {
         'import/no-extraneous-dependencies': 'off',
       },

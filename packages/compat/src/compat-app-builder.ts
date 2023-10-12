@@ -35,7 +35,7 @@ import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import { sync as resolveSync } from 'resolve';
 import bind from 'bind-decorator';
-import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync } from 'fs-extra';
+import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync, realpathSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
@@ -223,16 +223,15 @@ export class CompatAppBuilder {
         rootURL: this.rootURL(),
         prepare: (dom: JSDOM) => {
           let scripts = [...dom.window.document.querySelectorAll('script')];
-          let styles = [...dom.window.document.querySelectorAll('link[rel="stylesheet"]')] as HTMLLinkElement[];
-
+          let styles = [...dom.window.document.querySelectorAll('link[rel*="stylesheet"]')] as HTMLLinkElement[];
           return {
-            javascript: definitelyReplace(dom, this.compatApp.findAppScript(scripts, entrypoint)),
-            styles: definitelyReplace(dom, this.compatApp.findAppStyles(styles, entrypoint)),
-            implicitScripts: definitelyReplace(dom, this.compatApp.findVendorScript(scripts, entrypoint)),
-            implicitStyles: definitelyReplace(dom, this.compatApp.findVendorStyles(styles, entrypoint)),
-            testJavascript: maybeReplace(dom, this.compatApp.findTestScript(scripts)),
-            implicitTestScripts: maybeReplace(dom, this.compatApp.findTestSupportScript(scripts)),
-            implicitTestStyles: maybeReplace(dom, this.compatApp.findTestSupportStyles(styles)),
+            javascript: this.compatApp.findAppScript(scripts, entrypoint),
+            styles: this.compatApp.findAppStyles(styles, entrypoint),
+            implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
+            implicitStyles: this.compatApp.findVendorStyles(styles, entrypoint),
+            testJavascript: this.compatApp.findTestScript(scripts),
+            implicitTestScripts: this.compatApp.findTestSupportScript(scripts),
+            implicitTestStyles: this.compatApp.findTestSupportStyles(styles),
           };
         },
       };
@@ -285,7 +284,9 @@ export class CompatAppBuilder {
       appRoot: this.origAppPackage.root,
       engines: engines.map((appFiles, index) => ({
         packageName: appFiles.engine.package.name,
-        root: index === 0 ? this.root : appFiles.engine.package.root, // first engine is the app, which has been relocated to this.root
+        // first engine is the app, which has been relocated to this.root
+        // we need to use the real path here because webpack requests always use the real path i.e. follow symlinks
+        root: realpathSync(index === 0 ? this.root : appFiles.engine.package.root),
         fastbootFiles: appFiles.fastbootFiles,
         activeAddons: [...appFiles.engine.addons]
           .map(a => ({
@@ -1363,18 +1364,6 @@ export class CompatAppBuilder {
     prepared.set(asset.relativePath, asset);
     return asset;
   }
-}
-
-function maybeReplace(dom: JSDOM, element: Element | undefined): Node | undefined {
-  if (element) {
-    return definitelyReplace(dom, element);
-  }
-}
-
-function definitelyReplace(dom: JSDOM, element: Element): Node {
-  let placeholder = dom.window.document.createTextNode('');
-  element.replaceWith(placeholder);
-  return placeholder;
 }
 
 function defaultAddonPackageRules(): PackageRules[] {

@@ -12,6 +12,7 @@ import { satisfies } from 'semver';
 
 export interface ShimOptions {
   disabled?: (options: any) => boolean;
+  additionalConfig?: object;
 }
 
 function addonMeta(pkgJSON: PackageInfo): AddonMeta {
@@ -167,6 +168,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
         (this.parent as EAI2Instance).registerV2Addon(name, root);
       }
     },
+    ...(options.additionalConfig || {}),
   };
 }
 

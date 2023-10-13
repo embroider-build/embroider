@@ -73,8 +73,7 @@
   "ember-addon": {
     "version": 2,
     "type": "addon",
-    "main": "addon-main.js",
-    "app-js": {}
+    "main": "addon-main.js"
   },
   "exports": {
     ".": "./dist/index.js",

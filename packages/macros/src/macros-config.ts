@@ -70,6 +70,10 @@ function gatherAddonCacheKey(project: any): string {
   return cacheKey;
 }
 
+const babelCacheBustingPluginPath: string = require.resolve(
+  '@embroider/shared-internals/src/babel-plugin-cache-busting.js'
+);
+
 export default class MacrosConfig {
   static for(key: any, appRoot: string): MacrosConfig {
     let found = localSharedState.get(key);
@@ -370,11 +374,7 @@ export default class MacrosConfig {
 
     return [
       [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts],
-      [
-        require.resolve('@embroider/shared-internals/src/babel-plugin-cache-busting.js'),
-        { version: cacheKey },
-        `@embroider/macros cache buster: ${owningPackageRoot}`,
-      ],
+      [babelCacheBustingPluginPath, { version: cacheKey }, `@embroider/macros cache buster: ${owningPackageRoot}`],
     ];
   }
 

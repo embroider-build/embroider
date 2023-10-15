@@ -350,23 +350,29 @@ export default class MacrosConfig {
 
     let lockFileBuffer = lockFilePath ? fs.readFileSync(lockFilePath) : 'no-cache-key';
 
-    // @embroider/macros provides a macro called dependencySatisfies which checks if a given
-    // package name satisfies a given semver version range. Due to the way babel caches this can
-    // cause a problem where the macro plugin does not run (because it has been cached) but the version
-    // of the dependency being checked for changes (due to installing a different version). This will lead to
-    // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
-    // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
-    // more information in issue #906
-    let hash = crypto.createHash('sha256');
-    hash = hash.update(lockFileBuffer);
-    if (appOrAddonInstance) {
-      // ensure that the actual running addon names and versions are accounted
-      // for in the cache key; this ensures that we still invalidate the cache
-      // when linking another project (e.g. ember-source) which would normally
-      // not cause the lockfile to change;
-      hash = hash.update(gatherAddonCacheKey(appOrAddonInstance.project));
+    let lockFileString = lockFileBuffer.toString();
+    let cacheKey = MacrosConfig.lookupCacheKey(appOrAddonInstance?.project, lockFileString);
+
+    if (!cacheKey) {
+      // @embroider/macros provides a macro called dependencySatisfies which checks if a given
+      // package name satisfies a given semver version range. Due to the way babel caches this can
+      // cause a problem where the macro plugin does not run (because it has been cached) but the version
+      // of the dependency being checked for changes (due to installing a different version). This will lead to
+      // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
+      // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
+      // more information in issue #906
+      let hash = crypto.createHash('sha256');
+      hash = hash.update(lockFileBuffer);
+      if (appOrAddonInstance) {
+        // ensure that the actual running addon names and versions are accounted
+        // for in the cache key; this ensures that we still invalidate the cache
+        // when linking another project (e.g. ember-source) which would normally
+        // not cause the lockfile to change;
+        hash = hash.update(gatherAddonCacheKey(appOrAddonInstance.project));
+      }
+      cacheKey = hash.digest('hex');
+      MacrosConfig.saveCacheKey(cacheKey, appOrAddonInstance?.project, lockFileString);
     }
-    let cacheKey = hash.digest('hex');
 
     return [
       [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts],
@@ -376,6 +382,23 @@ export default class MacrosConfig {
         `@embroider/macros cache buster: ${owningPackageRoot}`,
       ],
     ];
+  }
+
+  private static cacheKeyForProjectMaps: Map<any, Map<string, string>> = new Map();
+  private static saveCacheKey(cacheKey: string, project: any, lockFile: string): void {
+    let cacheKeyForLockFile = this.cacheKeyForProjectMaps.get(project);
+    if (!cacheKeyForLockFile) {
+      cacheKeyForLockFile = new Map();
+      this.cacheKeyForProjectMaps.set(project, cacheKeyForLockFile);
+    }
+    cacheKeyForLockFile.set(lockFile, cacheKey);
+  }
+
+  private static lookupCacheKey(project: any, lockFile: string): string | undefined {
+    let cacheKeyForLockFile = this.cacheKeyForProjectMaps.get(project);
+    if (cacheKeyForLockFile) {
+      return cacheKeyForLockFile.get(lockFile);
+    }
   }
 
   // provides the ast plugins that implement the macro system, in reverse order

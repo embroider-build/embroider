@@ -21,8 +21,7 @@
   },
   "jest": {
     "projects": [
-      "<rootDir>/packages/*",
-      "<rootDir>/test-packages/"
+      "<rootDir>/packages/*"
     ],
     "testEnvironment": "node",
     "testMatch": [

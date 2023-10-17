@@ -754,7 +754,11 @@ export class Resolver {
       // was moved. RewrittenPackageCache.resolve already took care of finding
       // the right target, and we redirect the request so it will look inside
       // that target.
-      return logTransition('request targets a moved package', request, this.resolveWithinPackage(request, targetPkg));
+      return logTransition(
+        'request targets a moved package',
+        request,
+        this.resolveWithinMovedPackage(request, targetPkg)
+      );
     } else if (originalRequestingPkg !== requestingPkg) {
       // in this case, the requesting package is moved but its destination is
       // not, so we need to rehome the request back to the original location.
@@ -825,7 +829,7 @@ export class Resolver {
     return request;
   }
 
-  private resolveWithinPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
+  private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
     return request.rehome(resolve(pkg.root, '..', 'moved-package-target.js')).withMeta({
       resolvedWithinPackage: pkg.root,
     });
@@ -1056,14 +1060,11 @@ export class Resolver {
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
-    //
-    // v2 packages can fall back to the set of known active addons only to find
-    // themselves (which is needed due to app tree merging)
-    if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
+    if (pkg.meta['auto-upgraded'] && this.options.activeAddons[packageName]) {
       return logTransition(
         `activeAddons`,
         request,
-        this.resolveWithinPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
+        this.resolveWithinMovedPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
       );
     }
 

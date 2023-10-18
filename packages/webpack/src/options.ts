@@ -41,8 +41,8 @@ export interface Options {
   //     filename: `mychunk.[chunkhash].js`,
   //     chunkFilename: `mychunk.[chunkhash].js`,
   //   },
-  //   publicOutputPath: "https://cdn/",
   // },
+  // publicAssetURL: "https://cdn/",
   //
   // The above example will result in CDN URLs like "https://cdn/mychunk.123.js".
   //

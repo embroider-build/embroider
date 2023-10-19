@@ -11,6 +11,8 @@ import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-inter
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import resolveModule from 'resolve';
+import reversePackageExports from '@embroider/reverse-exports';
+
 import {
   virtualExternalESModule,
   virtualExternalCJSModule,
@@ -70,7 +72,7 @@ export interface Options {
 
 interface EngineConfig {
   packageName: string;
-  activeAddons: { name: string; root: string }[];
+  activeAddons: { name: string; root: string; canResolveFromFile: string }[];
   fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
   root: string;
 }
@@ -79,29 +81,29 @@ type MergeEntry =
   | {
       type: 'app-only';
       'app-js': {
-        localPath: string;
-        packageRoot: string;
+        specifier: string;
+        fromFile: string;
         fromPackageName: string;
       };
     }
   | {
       type: 'fastboot-only';
       'fastboot-js': {
-        localPath: string;
-        packageRoot: string;
+        specifier: string;
+        fromFile: string;
         fromPackageName: string;
       };
     }
   | {
       type: 'both';
       'app-js': {
-        localPath: string;
-        packageRoot: string;
+        specifier: string;
+        fromFile: string;
         fromPackageName: string;
       };
       'fastboot-js': {
-        localPath: string;
-        packageRoot: string;
+        specifier: string;
+        fromFile: string;
         fromPackageName: string;
       };
     };
@@ -408,7 +410,7 @@ export class Resolver {
         return logTransition(
           'matched addon entry',
           request,
-          request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'))
+          request.alias(entry[section].specifier).rehome(entry[section].fromFile)
         );
       }
     }
@@ -637,8 +639,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'app-only',
                   'app-js': {
-                    localPath: inAddonName,
-                    packageRoot: addon.root,
+                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },
                 });
@@ -651,8 +653,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'both',
                   'app-js': {
-                    localPath: inAddonName,
-                    packageRoot: addon.root,
+                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },
                   'fastboot-js': prevEntry['fastboot-js'],
@@ -681,8 +683,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'fastboot-only',
                   'fastboot-js': {
-                    localPath: inAddonName,
-                    packageRoot: addon.root,
+                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },
                 });
@@ -695,8 +697,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'both',
                   'fastboot-js': {
-                    localPath: inAddonName,
-                    packageRoot: addon.root,
+                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },
                   'app-js': prevEntry['app-js'],
@@ -1163,18 +1165,11 @@ export class Resolver {
       case undefined:
         return undefined;
       case 'app-only':
-        return request
-          .alias(matched.entry['app-js'].localPath)
-          .rehome(resolve(matched.entry['app-js'].packageRoot, 'package.json'));
+        return request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile);
       case 'fastboot-only':
-        return request
-          .alias(matched.entry['fastboot-js'].localPath)
-          .rehome(resolve(matched.entry['fastboot-js'].packageRoot, 'package.json'));
+        return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
-        let foundAppJS = this.nodeResolve(
-          matched.entry['app-js'].localPath,
-          resolve(matched.entry['app-js'].packageRoot, 'package.json')
-        );
+        let foundAppJS = this.nodeResolve(matched.entry['app-js'].specifier, matched.entry['app-js'].fromFile);
         if (foundAppJS.type !== 'real') {
           throw new Error(
             `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`

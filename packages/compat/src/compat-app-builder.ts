@@ -289,9 +289,10 @@ export class CompatAppBuilder {
         root: realpathSync(index === 0 ? this.root : appFiles.engine.package.root),
         fastbootFiles: appFiles.fastbootFiles,
         activeAddons: [...appFiles.engine.addons]
-          .map(a => ({
-            name: a.name,
-            root: a.root,
+          .map(([addon, canResolveFromFile]) => ({
+            name: addon.name,
+            root: addon.root,
+            canResolveFromFile,
           }))
           // the traditional order is the order in which addons will run, such
           // that the last one wins. Our resolver's order is the order to
@@ -396,7 +397,7 @@ export class CompatAppBuilder {
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
     let result: Array<string> = [];
-    for (let addon of sortBy(Array.from(engine.addons), this.scriptPriority.bind(this))) {
+    for (let addon of sortBy(Array.from(engine.addons.keys()), this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         let styles = [];
@@ -640,12 +641,12 @@ export class CompatAppBuilder {
       if (!child.isEngine()) {
         this.findActiveAddons(child, engine, true);
       }
-      engine.addons.add(child);
+      engine.addons.set(child, resolvePath(pkg.root, 'package.json'));
     }
     // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
     if (!isChild) {
-      engine.addons = new Set(
-        [...engine.addons].sort((a, b) => {
+      engine.addons = new Map(
+        [...engine.addons].sort(([a], [b]) => {
           return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
         })
       );
@@ -656,7 +657,7 @@ export class CompatAppBuilder {
     let queue: Engine[] = [
       {
         package: this.appPackageWithMovedDeps,
-        addons: new Set(),
+        addons: new Map(),
         parent: undefined,
         sourcePath: appJSPath,
         modulePrefix: this.modulePrefix(),
@@ -671,12 +672,12 @@ export class CompatAppBuilder {
         break;
       }
       this.findActiveAddons(current.package, current);
-      for (let addon of current.addons) {
+      for (let addon of current.addons.keys()) {
         if (addon.isEngine() && !seenEngines.has(addon)) {
           seenEngines.add(addon);
           queue.push({
             package: addon,
-            addons: new Set(),
+            addons: new Map(),
             parent: current,
             sourcePath: addon.root,
             modulePrefix: addon.name,

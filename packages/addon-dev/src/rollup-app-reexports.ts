@@ -8,7 +8,7 @@ export default function appReexports(opts: {
   to: string;
   include: string[];
   mapFilename?: (filename: string) => string;
-  defaultExport?: string;
+  exports?: (filename: string) => string[] | string | undefined;
 }): Plugin {
   return {
     name: 'app-reexports',
@@ -17,6 +17,12 @@ export default function appReexports(opts: {
       let appJS: Record<string, string> = {};
       for (let addonFilename of Object.keys(bundle)) {
         let appFilename = opts.mapFilename?.(addonFilename) ?? addonFilename;
+        let appExports = opts.exports?.(addonFilename) || ['default'];
+
+        let computedExports =
+          typeof appExports === 'string'
+            ? appExports
+            : `{ ${appExports.join(', ')} }`;
 
         if (
           opts.include.some((glob) => minimatch(addonFilename, glob)) &&
@@ -26,21 +32,20 @@ export default function appReexports(opts: {
           this.emitFile({
             type: 'asset',
             fileName: `_app_/${appFilename}`,
-            source: `export ${opts.defaultExport} from "${
+            source: `export ${computedExports} from "${
               pkg.name
             }/${addonFilename.slice(0, -extname(addonFilename).length)}";\n`,
           });
         }
       }
       let originalAppJS = pkg['ember-addon']?.['app-js'];
-      let newAppJs = Object.assign({}, originalAppJS || {}, appJS);
-      let hasChanges =
-        JSON.stringify(originalAppJS) !== JSON.stringify(newAppJs);
+
+      let hasChanges = JSON.stringify(originalAppJS) !== JSON.stringify(appJS);
 
       // Don't cause a file i/o event unless something actually changed
       if (hasChanges) {
         pkg['ember-addon'] = Object.assign({}, pkg['ember-addon'], {
-          'app-js': newAppJs,
+          'app-js': appJS,
         });
         writeJsonSync('package.json', pkg, { spaces: 2 });
       }

@@ -1,4 +1,3 @@
-import { readJsonSync, writeJsonSync } from 'fs-extra';
 import { default as hbs } from './rollup-hbs-plugin';
 import { default as gjs } from './rollup-gjs-plugin';
 import { default as publicEntrypoints } from './rollup-public-entrypoints';
@@ -17,10 +16,6 @@ export class Addon {
   constructor(params: { srcDir?: string; destDir?: string } = {}) {
     this.#srcDir = params.srcDir ?? 'src';
     this.#destDir = params.destDir ?? 'dist';
-
-    let pkg = readJsonSync('package.json');
-    delete pkg['ember-addon']['app-js'];
-    writeJsonSync('package.json', pkg, { spaces: 2 });
   }
 
   // Given a list of globs describing modules in your srcDir, this generates
@@ -30,7 +25,7 @@ export class Addon {
     patterns: string[],
     opts: {
       mapFilename?: (fileName: string) => string;
-      defaultExport?: string;
+      exports?: (filename: string) => string[] | string | undefined;
     } = {}
   ): Plugin {
     return appReexports({
@@ -38,7 +33,7 @@ export class Addon {
       to: this.#destDir,
       include: patterns,
       mapFilename: opts.mapFilename,
-      defaultExport: opts.defaultExport || '{ default }',
+      exports: opts.exports,
     });
   }
 

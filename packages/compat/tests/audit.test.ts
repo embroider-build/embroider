@@ -318,7 +318,7 @@ describe('audit', function () {
     });
     let result = await audit();
     expect(result.findings).toEqual([]);
-    expect(Object.keys(result.modules).length).toBe(3);
+    expect(Object.keys(result.modules).length).toBe(2);
   });
 
   test('finds missing component in standalone hbs', async function () {

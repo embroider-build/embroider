@@ -44,6 +44,10 @@ ${summarizePeerDepViolations(violations)}`
     return new Funnel(interior, { destDir: index.packages[pkg.root] });
   });
 
+  let fakeTargets = Object.values(index.packages).map(dir => {
+    return writeFile(join(dir, '..', 'moved-package-target.js'), '');
+  });
+
   return broccoliMergeTrees([
     ...exteriorTrees,
     new Funnel(compatApp.synthesizeStylesPackage(interiorTrees), {
@@ -53,6 +57,7 @@ ${summarizePeerDepViolations(violations)}`
       destDir: '@embroider/synthesized-vendor',
     }),
     writeFile('index.json', JSON.stringify(index, null, 2)),
+    ...fakeTargets,
   ]);
 }
 
@@ -62,7 +67,7 @@ function buildAddonIndex(compatApp: CompatApp, appPackage: Package, packages: Se
     extraResolutions: {},
   };
   for (let oldPkg of packages) {
-    let newRoot = `${oldPkg.name}.${hashed(oldPkg.root)}`;
+    let newRoot = `${oldPkg.name}.${hashed(oldPkg.root)}/node_modules/${oldPkg.name}`;
     content.packages[oldPkg.root] = newRoot;
     let nonResolvableDeps = oldPkg.nonResolvableDeps;
     if (nonResolvableDeps) {

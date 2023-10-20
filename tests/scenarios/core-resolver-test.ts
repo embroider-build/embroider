@@ -760,14 +760,15 @@ Scenarios.fromProject(() => new Project())
         test('app can resolve file in rewritten addon', async function () {
           let index: RewrittenPackageIndex = {
             packages: {
-              [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
+              [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234/node_modules/my-addon',
             },
             extraResolutions: {},
           };
           givenFiles({
             'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify(index),
-            'node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js': ``,
-            'node_modules/.embroider/rewritten-packages/my-addon.1234/package.json': addonPackageJSON(),
+            'node_modules/.embroider/rewritten-packages/my-addon.1234/node_modules/my-addon/hello-world.js': ``,
+            'node_modules/.embroider/rewritten-packages/my-addon.1234/node_modules/my-addon/package.json':
+              addonPackageJSON(),
             'app.js': `import "my-addon/hello-world"`,
           });
 
@@ -776,28 +777,29 @@ Scenarios.fromProject(() => new Project())
           expectAudit
             .module('./app.js')
             .resolves('my-addon/hello-world')
-            .to('./node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js');
+            .to('./node_modules/.embroider/rewritten-packages/my-addon.1234/node_modules/my-addon/hello-world.js');
         });
 
         test('moved addon resolves dependencies from its original location', async function () {
           let index: RewrittenPackageIndex = {
             packages: {
-              [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234',
+              [resolve(app.dir, 'node_modules/my-addon')]: 'my-addon.1234/node_modules/my-addon',
             },
             extraResolutions: {},
           };
           givenFiles({
             'node_modules/my-addon/node_modules/inner-dep/index.js': '',
             'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify(index),
-            'node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js': `import "inner-dep"`,
-            'node_modules/.embroider/rewritten-packages/my-addon.1234/package.json': addonPackageJSON(),
+            'node_modules/.embroider/rewritten-packages/my-addon.1234/node_modules/my-addon/hello-world.js': `import "inner-dep"`,
+            'node_modules/.embroider/rewritten-packages/my-addon.1234/node_modules/my-addon/package.json':
+              addonPackageJSON(),
             'app.js': `import "my-addon/hello-world"`,
           });
 
           await configure({});
 
           expectAudit
-            .module('./node_modules/.embroider/rewritten-packages/my-addon.1234/hello-world.js')
+            .module('./node_modules/.embroider/rewritten-packages/my-addon.1234/node_modules/my-addon/hello-world.js')
             .resolves('inner-dep')
             .to('./node_modules/my-addon/node_modules/inner-dep/index.js');
         });

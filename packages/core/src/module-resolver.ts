@@ -754,7 +754,11 @@ export class Resolver {
       // was moved. RewrittenPackageCache.resolve already took care of finding
       // the right target, and we redirect the request so it will look inside
       // that target.
-      return logTransition('request targets a moved package', request, this.resolveWithinPackage(request, targetPkg));
+      return logTransition(
+        'request targets a moved package',
+        request,
+        this.resolveWithinMovedPackage(request, targetPkg)
+      );
     } else if (originalRequestingPkg !== requestingPkg) {
       // in this case, the requesting package is moved but its destination is
       // not, so we need to rehome the request back to the original location.
@@ -815,22 +819,20 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
-      return logTransition(`v1 self-import`, request, this.resolveWithinPackage(request, pkg));
+      return logTransition(
+        `v1 self-import`,
+        request,
+        request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'))
+      );
     }
 
     return request;
   }
 
-  private resolveWithinPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
-    if ('exports' in pkg.packageJSON) {
-      // this is the easy case -- a package that uses exports can safely resolve
-      // its own name, so it's enough to let it resolve the (self-targeting)
-      // specifier from its own package root.
-      return request.rehome(resolve(pkg.root, 'package.json'));
-    } else {
-      // otherwise we need to just assume that internal naming is simple
-      return request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'));
-    }
+  private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
+    return request.rehome(resolve(pkg.root, '..', 'moved-package-target.js')).withMeta({
+      resolvedWithinPackage: pkg.root,
+    });
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
@@ -954,7 +956,7 @@ export class Resolver {
         throw new Error(
           `A module tried to resolve "${request.specifier}" and didn't find it (${label}).
 
- - Maybe a dependency declaration is missing? 
+ - Maybe a dependency declaration is missing?
  - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.
  - If this dependency is available in the AMD loader (because someone manually called "define()" for it), you can configure a shim like:
 
@@ -977,6 +979,14 @@ export class Resolver {
   }
 
   fallbackResolve<R extends ModuleRequest>(request: R): R {
+    if (request.specifier === '@embroider/macros') {
+      // the macros package is always handled directly within babel (not
+      // necessarily as a real resolvable package), so we should not mess with it.
+      // It might not get compiled away until *after* our plugin has run, which is
+      // why we need to know about it.
+      return logTransition('fallback early exit', request);
+    }
+
     let { specifier, fromFile } = request;
 
     if (compatPattern.test(specifier)) {
@@ -994,6 +1004,13 @@ export class Resolver {
       // not a classic runtime thing. It's better to let it be a build error
       // here.
       return request;
+    }
+
+    if (fromFile.endsWith('moved-package-target.js')) {
+      if (!request.meta?.resolvedWithinPackage) {
+        throw new Error(`bug: embroider resolver's meta is not propagating`);
+      }
+      fromFile = resolve(request.meta?.resolvedWithinPackage as string, 'package.json');
     }
 
     let pkg = this.packageCache.ownerOfFile(fromFile);
@@ -1043,14 +1060,11 @@ export class Resolver {
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
-    //
-    // v2 packages can fall back to the set of known active addons only to find
-    // themselves (which is needed due to app tree merging)
-    if ((pkg.meta['auto-upgraded'] || packageName === pkg.name) && this.options.activeAddons[packageName]) {
+    if (pkg.meta['auto-upgraded'] && this.options.activeAddons[packageName]) {
       return logTransition(
         `activeAddons`,
         request,
-        this.resolveWithinPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
+        this.resolveWithinMovedPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
       );
     }
 

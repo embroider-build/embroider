@@ -95,17 +95,24 @@ appScenarios
           addon.publicEntrypoints([
             'components/**/*.js',
             'initializers/**/*.js',
+            'utils/**/*.js',
           ]),
 
           addon.appReexports([
             'components/demo/index.js',
             'components/demo/out.js',
             'components/demo/namespace-me.js',
+            'initializers/**/*.js',
+            'utils/**/*.js',
           ], {
             mapFilename: (name) => reexportMappings[name] || name,
-          }),
-          addon.appReexports(['initializers/**/*.js'], {
-            defaultExport: '{ default, initialize }',
+            exports: (name) => {
+              if (name.startsWith('initializers/')) {
+                return ['default', 'initialize'];
+              } else if (name.startsWith('utils/')) {
+                return '*';
+              }
+            }
           }),
 
           addon.dependencies(),
@@ -184,6 +191,13 @@ appScenarios
               name: 'demo',
               initialize,
             };
+          `,
+        },
+        utils: {
+          'demo-util.js': `
+            export function demoUtil() {
+              return 42;
+            }
           `,
         },
       },
@@ -270,6 +284,7 @@ appScenarios
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
             './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
             './initializers/demo.js': './dist/_app_/initializers/demo.js',
+            './utils/demo-util.js': './dist/_app_/utils/demo-util.js',
           });
         });
 
@@ -281,6 +296,7 @@ appScenarios
             './dist/_app_/components/demo/namespace/namespace-me.js':
               'export { default } from "v2-addon/components/demo/namespace-me";\n',
             './dist/_app_/initializers/demo.js': 'export { default, initialize } from "v2-addon/initializers/demo";\n',
+            './dist/_app_/utils/demo-util.js': 'export * from "v2-addon/utils/demo-util";\n',
           };
 
           assert.strictEqual(

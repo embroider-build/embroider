@@ -1,7 +1,8 @@
 import type { NodePath } from '@babel/traverse';
 
 export default function error(path: NodePath, message: string) {
-  return path.buildCodeFrameError(message, MacroError);
+  // this typecast is to workaround an issue in @types/babel__traverse https://github.com/DefinitelyTyped/DefinitelyTyped/discussions/67183
+  return path.buildCodeFrameError(message, MacroError as unknown as ErrorConstructor);
 }
 
 class MacroError extends Error {

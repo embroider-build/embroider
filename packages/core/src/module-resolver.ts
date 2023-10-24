@@ -10,7 +10,6 @@ import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
-import resolveModule from 'resolve';
 import reversePackageExports from '@embroider/reverse-exports';
 
 import {
@@ -282,9 +281,8 @@ export class Resolver {
         };
       }
       try {
-        let filename = resolveModule.sync(request.specifier, {
-          basedir: dirname(request.fromFile),
-          extensions: this.options.resolvableExtensions,
+        let filename = require.resolve(request.specifier, {
+          paths: [dirname(request.fromFile)],
         });
         return { type: 'found', result: { type: 'real' as 'real', filename } };
       } catch (err) {

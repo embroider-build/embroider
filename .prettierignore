@@ -37,6 +37,8 @@
 /packages/vite/index.mjs
 /packages/vite/**/*.js
 /packages/vite/**/*.d.ts
+/packages/reverse-exports/**/*.js
+/packages/reverse-exports/**/*.d.ts
 
 # unconventional js
 /blueprints/*/files/

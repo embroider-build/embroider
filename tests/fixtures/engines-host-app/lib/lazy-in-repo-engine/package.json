@@ -10,8 +10,5 @@
   },
   "devDependencies": {
     "ember-engines": "*"
-  },
-  "volta": {
-    "extends": "../../package.json"
   }
 }

@@ -58,8 +58,5 @@
   },
   "ember-addon": {
     "configPath": "tests/dummy/config"
-  },
-  "volta": {
-    "extends": "../../package.json"
   }
 }

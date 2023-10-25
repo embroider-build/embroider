@@ -53,10 +53,6 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "volta": {
-    "node": "16.20.0",
-    "pnpm": "8.9.2"
-  },
   "changelog": {
     "__comment__": "Our release infrastructure relies on these exact labels. Be careful changing them.",
     "labels": {

@@ -83,8 +83,5 @@
     "execa": "^5.1.1",
     "tslib": "^2.6.0",
     "typescript": "^5.1.6"
-  },
-  "volta": {
-    "extends": "../../package.json"
   }
 }

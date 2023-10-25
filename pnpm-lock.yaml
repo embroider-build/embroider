@@ -1797,10 +1797,10 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@babel/core@7.23.0)
       '@glimmer/interfaces':
-        specifier: ^0.84.2
+        specifier: 0.84.2
         version: 0.84.2
       '@glimmer/reference':
-        specifier: ^0.84.2
+        specifier: 0.84.2
         version: 0.84.2
       '@glimmer/tracking':
         specifier: ^1.1.2

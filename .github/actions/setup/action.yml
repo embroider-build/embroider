@@ -8,6 +8,9 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: remove pinned node version
+      run: echo "auto-install-peers=false" > .npmrc
+      shell: bash
     - uses: pnpm/action-setup@v2
       name: Install pnpm
       with:

@@ -31,7 +31,7 @@ Scenarios.fromProject(() => new Project())
     app.pkg = {
       name: 'my-app',
       keywords: ['ember-addon'],
-      'ember-addon': appMeta,
+      'ember-addon': appMeta as any,
     };
     app.mergeFiles({
       'index.html': '<script src="./templates/application.hbs" type="module"></script>',

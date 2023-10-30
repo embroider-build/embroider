@@ -566,6 +566,8 @@ importers:
         specifier: ^5.1.6
         version: 5.2.2
 
+  packages/reverse-exports: {}
+
   packages/router:
     dependencies:
       '@ember/test-waiters':

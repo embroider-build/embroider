@@ -65,8 +65,5 @@
   },
   "ember-addon": {
     "main": "src/ember-addon-main.js"
-  },
-  "volta": {
-    "extends": "../../package.json"
   }
 }

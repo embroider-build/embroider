@@ -102,8 +102,5 @@
   "ember-addon": {
     "configPath": "tests/dummy/config",
     "main": "addon-main.js"
-  },
-  "volta": {
-    "extends": "../../package.json"
   }
 }

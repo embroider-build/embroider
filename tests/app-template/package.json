@@ -72,9 +72,5 @@
   },
   "ember": {
     "edition": "octane"
-  },
-  "volta": {
-    "node": "16.20.0",
-    "pnpm": "8.9.2"
   }
 }

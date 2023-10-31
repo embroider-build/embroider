@@ -34,8 +34,5 @@
     "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
     "@types/node": "^10.5.2"
-  },
-  "volta": {
-    "extends": "../../package.json"
   }
 }

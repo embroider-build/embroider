@@ -1797,11 +1797,11 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@babel/core@7.23.0)
       '@glimmer/interfaces':
-        specifier: 0.84.2
-        version: 0.84.2
+        specifier: ^0.84.2
+        version: 0.84.3
       '@glimmer/reference':
-        specifier: 0.84.2
-        version: 0.84.2
+        specifier: ^0.84.2
+        version: 0.84.3
       '@glimmer/tracking':
         specifier: ^1.1.2
         version: 1.1.2
@@ -1879,7 +1879,7 @@ importers:
         version: 11.0.1(ember-source@5.3.0)
       ember-source:
         specifier: ~5.3.0
-        version: 5.3.0(@babel/core@7.23.0)(@glint/template@1.2.1)(webpack@5.88.2)
+        version: 5.3.0(@babel/core@7.23.0)(@glimmer/component@1.1.2)(@glint/template@1.2.1)(webpack@5.88.2)
       eslint-plugin-n:
         specifier: ^16.1.0
         version: 16.2.0(eslint@8.42.0)
@@ -7238,7 +7238,7 @@ packages:
       ember-auto-import: 2.6.3(@glint/template@1.2.1)(webpack@5.88.2)
       ember-cli-babel: 7.26.11
       ember-cli-htmlbars: 6.3.0
-      ember-source: 5.3.0(@babel/core@7.23.0)(@glint/template@1.2.1)(webpack@5.88.2)
+      ember-source: 5.3.0(@babel/core@7.23.0)(@glimmer/component@1.1.2)(@glint/template@1.2.1)(webpack@5.88.2)
     transitivePeerDependencies:
       - '@glint/template'
       - supports-color
@@ -13941,7 +13941,7 @@ packages:
       ember-source: ^3.28.0 || >= 4.0.0
     dependencies:
       ember-cli-babel: 7.26.11
-      ember-source: 5.3.0(@babel/core@7.23.0)(@glint/template@1.2.1)(webpack@5.88.2)
+      ember-source: 5.3.0(@babel/core@7.23.0)(@glimmer/component@1.1.2)(@glint/template@1.2.1)(webpack@5.88.2)
       git-repo-info: 2.1.1
     transitivePeerDependencies:
       - supports-color
@@ -15998,7 +15998,7 @@ packages:
       '@embroider/addon-shim': 1.8.6
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
-      ember-source: 5.3.0(@babel/core@7.23.0)(@glint/template@1.2.1)(webpack@5.88.2)
+      ember-source: 5.3.0(@babel/core@7.23.0)(@glimmer/component@1.1.2)(@glint/template@1.2.1)(webpack@5.88.2)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -16191,7 +16191,7 @@ packages:
       '@embroider/addon-shim': 1.8.6
       '@embroider/macros': 1.13.1(@glint/template@1.2.1)
       ember-cli-test-loader: 3.1.0
-      ember-source: 5.3.0(@babel/core@7.23.0)(@glint/template@1.2.1)(webpack@5.88.2)
+      ember-source: 5.3.0(@babel/core@7.23.0)(@glimmer/component@1.1.2)(@glint/template@1.2.1)(webpack@5.88.2)
       qunit: 2.19.4
     transitivePeerDependencies:
       - '@glint/template'
@@ -16281,7 +16281,7 @@ packages:
         optional: true
     dependencies:
       ember-cli-babel: 7.26.11
-      ember-source: 5.3.0(@babel/core@7.23.0)(@glint/template@1.2.1)(webpack@5.88.2)
+      ember-source: 5.3.0(@babel/core@7.23.0)(@glimmer/component@1.1.2)(@glint/template@1.2.1)(webpack@5.88.2)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -16633,6 +16633,8 @@ packages:
   /ember-source@5.3.0(@babel/core@7.22.6):
     resolution: {integrity: sha512-MnsPEYo2gArYzlY0uu5bBH60oNYcgcayYQEd27nJumuaceN1sMLMu1jGQmjiQzZ4b6U5edEUNQbCIZ/9TXbASw==}
     engines: {node: '>= 16.*'}
+    peerDependencies:
+      '@glimmer/component': ^1.1.2
     dependencies:
       '@babel/helper-module-imports': 7.22.15
       '@babel/plugin-transform-block-scoping': 7.23.0(@babel/core@7.22.6)
@@ -16687,9 +16689,11 @@ packages:
       - webpack
     dev: true
 
-  /ember-source@5.3.0(@babel/core@7.23.0)(@glint/template@1.2.1)(webpack@5.88.2):
+  /ember-source@5.3.0(@babel/core@7.23.0)(@glimmer/component@1.1.2)(@glint/template@1.2.1)(webpack@5.88.2):
     resolution: {integrity: sha512-MnsPEYo2gArYzlY0uu5bBH60oNYcgcayYQEd27nJumuaceN1sMLMu1jGQmjiQzZ4b6U5edEUNQbCIZ/9TXbASw==}
     engines: {node: '>= 16.*'}
+    peerDependencies:
+      '@glimmer/component': ^1.1.2
     dependencies:
       '@babel/helper-module-imports': 7.22.15
       '@babel/plugin-transform-block-scoping': 7.23.0(@babel/core@7.23.0)

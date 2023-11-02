@@ -64,13 +64,9 @@ describe('reverse exports', function () {
     expect(reversePackageExports(packageJson, './directory/some/file.js')).toBe('my-addon/prefix/some/file.js');
     expect(reversePackageExports(packageJson, './other-directory/file.js')).toBe('addon/prefix/deep/file.js');
 
-    expect(reversePackageExports(packageJson, './yet-another/deep/file.js')).toBe(
-      'addon/other-prefix/deep/file'
-    );
+    expect(reversePackageExports(packageJson, './yet-another/deep/file.js')).toBe('addon/other-prefix/deep/file');
 
-    expect(reversePackageExports(packageJson, './grod/very/deep/file.js')).toBe(
-      'addon/glob/very/deep/file'
-    );
+    expect(reversePackageExports(packageJson, './grod/very/deep/file.js')).toBe('addon/glob/very/deep/file');
   });
 
   it('alternative exports', function () {
@@ -83,5 +79,71 @@ describe('reverse exports', function () {
 
     expect(reversePackageExports(packageJson, './good-things/apple.js')).toBe('my-addon/things/apple.js');
     expect(reversePackageExports(packageJson, './bad-things/apple.js')).toBe('my-addon/things/apple.js');
+  });
+
+  it('conditional exports - simple abbreviated', function () {
+    const packageJson = {
+      name: 'my-addon',
+      exports: {
+        import: './index-module.js',
+        require: './index-require.cjs',
+        default: './index.js',
+      },
+    };
+
+    expect(reversePackageExports(packageJson, './index-module.js')).toBe('my-addon');
+    expect(reversePackageExports(packageJson, './index-require.cjs')).toBe('my-addon');
+    expect(reversePackageExports(packageJson, './index.js')).toBe('my-addon');
+  });
+
+  it('conditional exports - simple non-abbreviated', function () {
+    const packageJson = {
+      name: 'my-addon',
+      exports: {
+        '.': {
+          import: './index-module.js',
+          require: './index-require.cjs',
+          default: './index.js',
+        },
+      },
+    };
+
+    expect(reversePackageExports(packageJson, './index-module.js')).toBe('my-addon');
+    expect(reversePackageExports(packageJson, './index-require.cjs')).toBe('my-addon');
+    expect(reversePackageExports(packageJson, './index.js')).toBe('my-addon');
+  });
+
+  it('conditional subpath exports', function () {
+    const packageJson = {
+      name: 'my-addon',
+      exports: {
+        '.': './index.js',
+        './feature.js': {
+          node: './feature-node.js',
+          default: './feature.js',
+        },
+      },
+    };
+
+    expect(reversePackageExports(packageJson, './index.js')).toBe('my-addon');
+    expect(reversePackageExports(packageJson, './feature-node.cjs')).toBe('my-addon/feature.js');
+    expect(reversePackageExports(packageJson, './feature.js')).toBe('my-addon/feature.js');
+  });
+
+  it('nested conditional exports', function () {
+    const packageJson = {
+      name: 'my-addon',
+      exports: {
+        node: {
+          import: './feature-node.mjs',
+          require: './feature-node.cjs',
+        },
+        default: './feature.mjs',
+      },
+    };
+
+    expect(reversePackageExports(packageJson, './feature-node.mjs')).toBe('my-addon');
+    expect(reversePackageExports(packageJson, './feature-node.cjs')).toBe('my-addon');
+    expect(reversePackageExports(packageJson, './feature.mjs')).toBe('my-addon');
   });
 });

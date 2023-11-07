@@ -32,7 +32,11 @@ export function convertLegacyAddons(compatApp: CompatApp) {
 👉 See https://github.com/embroider-build/embroider/blob/main/docs/peer-dependency-resolution-issues.md for an explanation of the problem and suggestions for fixing it.
   👆 👆 👆
 
-${summarizePeerDepViolations(violations)}`
+${summarizePeerDepViolations(violations)}
+
+  👇 👇 👇
+👉 See https://github.com/embroider-build/embroider/blob/main/docs/peer-dependency-resolution-issues.md for an explanation of the problem and suggestions for fixing it.
+  👆 👆 👆`
       );
     }
   }

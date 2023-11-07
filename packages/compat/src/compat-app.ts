@@ -705,11 +705,15 @@ export default class CompatApp {
 
   findAppScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
     let appJS = scripts.find(
-      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.app.js
+      // script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.app.js
+      script => this.withoutRootURL(script.src) === '/app.js'
     );
     return throwIfMissing(
       appJS,
-      this.legacyEmberAppInstance.options.outputPaths.app.js,
+
+      // this.legacyEmberAppInstance.options.outputPaths.app.js,
+      '/app.js',
+
       scripts.map(s => s.src),
       entrypoint,
       'app javascript'

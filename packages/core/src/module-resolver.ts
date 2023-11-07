@@ -170,6 +170,7 @@ export class Resolver {
       return logTransition('early exit', request);
     }
 
+    request = this.handleEmbroiderVirtualModules(request);
     request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
@@ -350,6 +351,13 @@ export class Resolver {
       }
     }
 
+    return request;
+  }
+
+  private handleEmbroiderVirtualModules<R extends ModuleRequest>(request: R): R {
+    if (request.specifier.startsWith('#embroider-virtual_')) {
+      return logTransition('#embroider_ virtual import', request, request.virtualize(request.specifier));
+    }
     return request;
   }
 

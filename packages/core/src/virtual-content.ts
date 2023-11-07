@@ -5,6 +5,7 @@ import { compile } from './js-handlebars';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
+const embroiderVirtualPrefix = '#embroider-virtual_';
 
 // Given a filename that was passed to your ModuleRequest's `virtualize()`,
 // this produces the corresponding contents. It's a static, stateless function
@@ -14,6 +15,10 @@ export function virtualContent(filename: string, resolver: Resolver): string {
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
     return renderCJSExternalShim(cjsExtern);
+  }
+  let embroiderVirtual = decodeEmbroiderVirtual(filename);
+  if (embroiderVirtual) {
+    return renderEmbroiderVirtual(embroiderVirtual);
   }
 
   let extern = decodeVirtualExternalESModule(filename);
@@ -64,6 +69,42 @@ function renderESExternalShim({ moduleName, exports }: { moduleName: string; exp
   });
 }
 
+function renderEmbroiderVirtual({ moduleName }: { moduleName: string }): string {
+  if (moduleName === 'appfiles.js') {
+    // TODO render app files
+    return `export default {
+      'app-template/adapters/posts': 'app-template/adapters/post.js',
+      'app-template/config/environment': 'app-template/config/environment.js',
+      'app-template/models/post': 'app-template/models/post.js',
+      'app-template/router': 'app-template/router.js',
+      'app-template/serializers/application': 'app-template/serializers/application.js',
+      'app-template/component-managers/glimmer': 'app-template/component-managers/glimmer.js',
+      'app-template/services/-ensure-registered': 'app-template/services/-ensure-registered.js',
+      'app-template/initializers/load-bootstrap-config': 'app-template/initializers/load-bootstrap-config.js',
+      'app-template/initializers/app-version': 'app-template/initializers/app-version.js',
+      'app-template/data-adapter': 'app-template/data-adapter.js',
+      'app-template/initializers/ember-data': 'app-template/initializers/ember-data.js',
+      'app-template/services/store': 'app-template/services/store.js',
+      'app-template/transforms/boolean': 'app-template/transforms/boolean.js',
+      'app-template/transforms/date': 'app-template/transforms/date.js',
+      'app-template/transforms/number': 'app-template/transforms/number.js',
+      'app-template/transforms/string': 'app-template/transforms/string.js',
+      'app-template/services/page-title-list': 'app-template/services/page-title-list.js',
+      'app-template/services/page-title': 'app-template/services/page-title.js',
+      'app-template/initializers/container-debug-adapter': 'app-template/initializers/container-debug-adapter.js',
+      'app-template/templates/ember-data-example': 'app-template/templates/ember-data-example.hbs',
+      'app-template/routes/ember-data-example': 'app-template/routes/ember-data-example.js',
+      'app-template/templates/application': 'app-template/templates/application.hbs',
+      'app-template/templates/components-example': 'app-template/templates/components-example.hbs',
+      'app-template/templates/helpers-example': 'app-template/templates/helpers-example.hbs',
+      'app-template/templates/macros-example': 'app-template/templates/macros-example.hbs',
+      'app-template/templates/static-component-rules-example': 'app-template/templates/static-component-rules-example.hbs'
+    };`;
+  }
+
+  throw new Error(`Unknown Embroider virtual module name: ${moduleName}`);
+}
+
 const pairedComponentShim = compile(`
 import { setComponentTemplate } from "@ember/component";
 import template from "{{{js-string-escape relativeHBSModule}}}";
@@ -104,6 +145,12 @@ function decodeVirtualExternalESModule(filename: string): { moduleName: string; 
 function decodeVirtualExternalCJSModule(filename: string) {
   if (filename.startsWith(externalCJSPrefix)) {
     return { moduleName: filename.slice(externalCJSPrefix.length) };
+  }
+}
+
+function decodeEmbroiderVirtual(filename: string) {
+  if (filename.startsWith(embroiderVirtualPrefix)) {
+    return { moduleName: filename.slice(embroiderVirtualPrefix.length) };
   }
 }
 

@@ -27,9 +27,16 @@ export function convertLegacyAddons(compatApp: CompatApp) {
     } else {
       throw new Error(
         `Some V1 ember addons are resolving as incorrect peer dependencies. This makes it impossible for us to safely convert them to v2 format.
-See https://github.com/embroider-build/embroider/blob/main/docs/peer-dependency-resolution-issues.md for an explanation of the problem and suggestions for fixing it.
 
-${summarizePeerDepViolations(violations)}`
+  👇 👇 👇
+👉 See https://github.com/embroider-build/embroider/blob/main/docs/peer-dependency-resolution-issues.md for an explanation of the problem and suggestions for fixing it.
+  👆 👆 👆
+
+${summarizePeerDepViolations(violations)}
+
+  👇 👇 👇
+👉 See https://github.com/embroider-build/embroider/blob/main/docs/peer-dependency-resolution-issues.md for an explanation of the problem and suggestions for fixing it.
+  👆 👆 👆`
       );
     }
   }

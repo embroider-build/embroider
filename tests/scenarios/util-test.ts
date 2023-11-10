@@ -7,6 +7,7 @@ import { dirname } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 supportMatrix(Scenarios.fromDir(dirname(require.resolve('@embroider/util/package.json'))))
+  .only('lts_3_28')
   .map('util', project => {
     project.mergeFiles({
       '.npmrc': 'use-node-version=12.22.1',

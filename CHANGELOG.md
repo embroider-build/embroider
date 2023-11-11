@@ -1,5 +1,65 @@
 # Embroider Changelog
 
+## Release (2023-11-11)
+
+@embroider/addon-dev 4.1.2 (patch)
+@embroider/addon-shim 1.8.7 (patch)
+@embroider/babel-loader-9 3.1.1 (patch)
+@embroider/compat 3.3.0 (minor)
+@embroider/core 3.4.0 (minor)
+@embroider/hbs-loader 3.0.3 (patch)
+@embroider/macros 1.13.3 (patch)
+@embroider/router 2.1.5 (patch)
+@embroider/shared-internals 2.5.1 (patch)
+@embroider/test-setup 3.0.3 (patch)
+@embroider/util 1.12.1 (patch)
+@embroider/vite 0.2.0 (minor)
+@embroider/webpack 3.2.1 (patch)
+
+#### :rocket: Enhancement
+* `compat`, `core`
+  * [#1605](https://github.com/embroider-build/embroider/pull/1605) Ensure custom HTML attributes are passed-through ([@chancancode](https://github.com/chancancode))
+* `vite`
+  * [#1623](https://github.com/embroider-build/embroider/pull/1623) Implement the optimizeDeps() helper ([@lolmaus](https://github.com/lolmaus))
+
+#### :bug: Bug Fix
+* `util`
+  * [#1655](https://github.com/embroider-build/embroider/pull/1655) fix node version for @embroider/util ([@mansona](https://github.com/mansona))
+* `macros`
+  * [#1644](https://github.com/embroider-build/embroider/pull/1644) Perf: Only require.resolve the babel plugin cache busting file once ([@raycohen](https://github.com/raycohen))
+* `compat`
+  * [#1632](https://github.com/embroider-build/embroider/pull/1632) Fix co-located components regressions (#1619) ([@chancancode](https://github.com/chancancode))
+* `addon-dev`, `vite`
+  * [#1630](https://github.com/embroider-build/embroider/pull/1630) Bump minimum content-tag version. ([@simonihmig](https://github.com/simonihmig))
+
+#### :memo: Documentation
+* `compat`
+  * [#1603](https://github.com/embroider-build/embroider/pull/1603) Add some action items to the peer errors when node_modules is messed up ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `webpack`
+  * [#1646](https://github.com/embroider-build/embroider/pull/1646) docs: fix typo of publicAssetURL ([@camerondubas](https://github.com/camerondubas))
+
+#### :house: Internal
+* Other
+  * [#1654](https://github.com/embroider-build/embroider/pull/1654) don't run CI for all branches starting with v ([@mansona](https://github.com/mansona))
+  * [#1636](https://github.com/embroider-build/embroider/pull/1636) Increase CI timeout ([@chancancode](https://github.com/chancancode))
+  * [#1629](https://github.com/embroider-build/embroider/pull/1629) Randomize port and improve watch mode test ([@chancancode](https://github.com/chancancode))
+  * [#1624](https://github.com/embroider-build/embroider/pull/1624) Add app-level watch-mode tests ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `addon-dev`, `addon-shim`, `babel-loader-9`, `compat`, `core`, `hbs-loader`, `macros`, `router`, `shared-internals`, `test-setup`, `util`, `webpack`
+  * [#1594](https://github.com/embroider-build/embroider/pull/1594) remove volta from CI ([@mansona](https://github.com/mansona))
+* `macros`
+  * [#1649](https://github.com/embroider-build/embroider/pull/1649) update pnpm ([@mansona](https://github.com/mansona))
+* `compat`, `core`
+  * [#1627](https://github.com/embroider-build/embroider/pull/1627) Resolver refactor ([@mansona](https://github.com/mansona))
+
+#### Committers: 7
+- Andrey Mikhaylov (lolmaus) ([@lolmaus](https://github.com/lolmaus))
+- Cameron Dubas ([@camerondubas](https://github.com/camerondubas))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Godfrey Chan ([@chancancode](https://github.com/chancancode))
+- Ray Cohen ([@raycohen](https://github.com/raycohen))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2023-10-06)
 
 @embroider/compat 3.2.3 (patch)

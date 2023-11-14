@@ -327,24 +327,33 @@ function orderAddons(depA: Package, depB: Package): number {
 }
 
 const renderCJSExternalShim = compile(`
-{{#if (eq moduleName "require")}}
-const m = window.requirejs;
-{{else}}
-const m = window.require("{{{js-string-escape moduleName}}}");
-{{/if}}
-{{!-
-  There are plenty of hand-written AMD defines floating around
-  that lack this, and they will break when other build systems
-  encounter them.
+module.exports = new Proxy({}, {
+  get(target, prop) {
+    {{#if (eq moduleName "require")}}
+      const m = window.requirejs;
+    {{else}}
+      const m = window.require("{{{js-string-escape moduleName}}}");
+    {{/if}}
 
-  As far as I can tell, Ember's loader was already treating this
-  case as a module, so in theory we aren't breaking anything by
-  marking it as such when other packagers come looking.
+    {{!-
+      There are plenty of hand-written AMD defines floating around
+      that lack this, and they will break when other build systems
+      encounter them.
 
-  todo: get review on this part.
--}}
-if (m.default && !m.__esModule) {
-  m.__esModule = true;
-}
-module.exports = m;
+      As far as I can tell, Ember's loader was already treating this
+      case as a module, so in theory we aren't breaking anything by
+      marking it as such when other packagers come looking.
+
+      todo: get review on this part.
+    -}}
+    if (m.default && !m.__esModule) {
+      m.__esModule = true;
+    }
+    if (prop === '__esModule') {
+      return Boolean(m.default);
+    }
+
+    return m[prop];
+  }
+});
 `) as (params: { moduleName: string }) => string;

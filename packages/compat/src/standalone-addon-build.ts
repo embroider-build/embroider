@@ -52,7 +52,12 @@ ${summarizePeerDepViolations(violations)}
   });
 
   let fakeTargets = Object.values(index.packages).map(dir => {
-    return writeFile(join(dir, '..', 'moved-package-target.js'), '');
+    let segments = dir.split('/');
+    while (segments[segments.length - 1] && segments[segments.length - 1] !== 'node_modules') {
+      segments.pop();
+    }
+    segments.push('moved-package-target.js');
+    return writeFile(join(...segments), '');
   });
 
   return broccoliMergeTrees([

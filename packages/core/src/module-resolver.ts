@@ -830,7 +830,11 @@ export class Resolver {
   }
 
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
-    return request.rehome(resolve(pkg.root, '..', 'moved-package-target.js')).withMeta({
+    let levels = ['..'];
+    if (pkg.name.startsWith('@')) {
+      levels.push('..');
+    }
+    return request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js')).withMeta({
       resolvedWithinPackage: pkg.root,
     });
   }

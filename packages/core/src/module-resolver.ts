@@ -1130,7 +1130,7 @@ export class Resolver {
     if (filename.match(/\.(hbs|js|hbs\.js)$/)) {
       yield filename;
     } else {
-      for (let ext of ['.hbs', '.js', '.hbs.js']) {
+      for (let ext of ['.js', '.hbs.js', '.hbs']) {
         yield `${filename}${ext}`;
       }
     }

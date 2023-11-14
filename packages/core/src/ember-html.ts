@@ -62,11 +62,8 @@ class Placeholder {
 
   clear() {
     let { start, end, parent } = this;
-    let target = start.nextSibling;
-
-    while (target && target !== end) {
-      parent.removeChild(target);
-      target = target.nextSibling;
+    while (start.nextSibling && start.nextSibling !== end) {
+      parent.removeChild(start.nextSibling);
     }
   }
 

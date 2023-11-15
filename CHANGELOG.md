@@ -1,5 +1,26 @@
 # Embroider Changelog
 
+## Release (2023-11-15)
+
+@embroider/compat 3.3.1 (patch)
+@embroider/core 3.4.1 (patch)
+
+#### :bug: Bug Fix
+* `core`
+  * [#1664](https://github.com/embroider-build/embroider/pull/1664) reorder extension precedence when searching app-js and fastboot-js trees ([@ef4](https://github.com/ef4))
+  * [#1661](https://github.com/embroider-build/embroider/pull/1661) Fix html clearing on rebuild ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* Other
+  * [#1666](https://github.com/embroider-build/embroider/pull/1666) unpin json-stable-stringify ([@mansona](https://github.com/mansona))
+  * [#1662](https://github.com/embroider-build/embroider/pull/1662) Workaround ember-cli-fastboot misuse of json-stable-stringify ([@ef4](https://github.com/ef4))
+* `compat`, `core`
+  * [#1663](https://github.com/embroider-build/embroider/pull/1663) adjust moved-package-target for namespaced packages ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2023-11-11)
 
 @embroider/addon-dev 4.1.2 (patch)

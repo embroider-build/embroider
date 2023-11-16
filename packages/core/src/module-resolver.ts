@@ -242,6 +242,13 @@ export class Resolver {
       // no additional fallback is available.
       return resolution;
     }
+
+    if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
+      throw new Error(
+        'Bug Discovered! New request is not === original request but has the same fromFile and specifier. This will likely create a loop.'
+      );
+    }
+
     if (nextRequest.isVirtual) {
       // virtual requests are terminal, there is no more beforeResolve or
       // fallbackResolve around them. The defaultResolve is expected to know how

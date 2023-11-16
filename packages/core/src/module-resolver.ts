@@ -242,6 +242,13 @@ export class Resolver {
       // no additional fallback is available.
       return resolution;
     }
+
+    if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
+      throw new Error(
+        'Bug Discovered! New request is not === original request but has the same fromFile and specifier. This will likely create a loop.'
+      );
+    }
+
     if (nextRequest.isVirtual) {
       // virtual requests are terminal, there is no more beforeResolve or
       // fallbackResolve around them. The defaultResolve is expected to know how
@@ -834,7 +841,13 @@ export class Resolver {
     if (pkg.name.startsWith('@')) {
       levels.push('..');
     }
-    return request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js')).withMeta({
+    let newRequest = request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js'));
+
+    if (newRequest === request) {
+      return request;
+    }
+
+    return newRequest.withMeta({
       resolvedWithinPackage: pkg.root,
     });
   }
@@ -1065,11 +1078,14 @@ export class Resolver {
 
     // auto-upgraded packages can fall back to the set of known active addons
     if (pkg.meta['auto-upgraded'] && this.options.activeAddons[packageName]) {
-      return logTransition(
-        `activeAddons`,
+      const rehomed = this.resolveWithinMovedPackage(
         request,
-        this.resolveWithinMovedPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
+        this.packageCache.get(this.options.activeAddons[packageName])
       );
+
+      if (rehomed !== request) {
+        return logTransition(`activeAddons`, request, rehomed);
+      }
     }
 
     let logicalLocation = this.reverseSearchAppTree(pkg, fromFile);

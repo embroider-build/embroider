@@ -329,6 +329,12 @@ function orderAddons(depA: Package, depB: Package): number {
 const renderCJSExternalShim = compile(`
 module.exports = new Proxy({}, {
   get(target, prop) {
+
+    {{!- our proxy always presents as ES module so that we can intercept "get('default')" -}}
+    if (prop === '__esModule') {
+      return true;
+    }
+
     {{#if (eq moduleName "require")}}
       const m = window.requirejs;
     {{else}}
@@ -337,20 +343,14 @@ module.exports = new Proxy({}, {
 
     {{!-
       There are plenty of hand-written AMD defines floating around
-      that lack this, and they will break when other build systems
-      encounter them.
+      that lack an __esModule declaration.
 
-      As far as I can tell, Ember's loader was already treating this
+      As far as I can tell, Ember's loader was already treating the Boolean(m.default)===true
       case as a module, so in theory we aren't breaking anything by
-      marking it as such when other packagers come looking.
-
-      todo: get review on this part.
+      treating it as such when other packagers come looking.
     -}}
-    if (m.default && !m.__esModule) {
-      m.__esModule = true;
-    }
-    if (prop === '__esModule') {
-      return Boolean(m.default);
+    if (prop === 'default' && !m.__esModule && !m.default) {
+      return m;
     }
 
     return m[prop];

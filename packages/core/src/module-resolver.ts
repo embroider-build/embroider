@@ -834,7 +834,13 @@ export class Resolver {
     if (pkg.name.startsWith('@')) {
       levels.push('..');
     }
-    return request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js')).withMeta({
+    let newRequest = request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js'));
+
+    if (newRequest === request) {
+      return request;
+    }
+
+    return newRequest.withMeta({
       resolvedWithinPackage: pkg.root,
     });
   }
@@ -1065,11 +1071,14 @@ export class Resolver {
 
     // auto-upgraded packages can fall back to the set of known active addons
     if (pkg.meta['auto-upgraded'] && this.options.activeAddons[packageName]) {
-      return logTransition(
-        `activeAddons`,
+      const rehomed = this.resolveWithinMovedPackage(
         request,
-        this.resolveWithinMovedPackage(request, this.packageCache.get(this.options.activeAddons[packageName]))
+        this.packageCache.get(this.options.activeAddons[packageName])
       );
+
+      if (rehomed !== request) {
+        return logTransition(`activeAddons`, request, rehomed);
+      }
     }
 
     let logicalLocation = this.reverseSearchAppTree(pkg, fromFile);

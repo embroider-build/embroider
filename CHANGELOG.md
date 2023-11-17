@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2023-11-16)
+
+@embroider/core 3.4.2 (patch)
+
+#### :bug: Bug Fix
+* `core`
+  * [#1670](https://github.com/embroider-build/embroider/pull/1670) Fix looping for unchanged files ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2023-11-15)
 
 @embroider/compat 3.3.1 (patch)

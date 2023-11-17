@@ -10,29 +10,16 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.3.0",
-      "newVersion": "3.3.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "packages/compat/package.json"
+      "oldVersion": "3.3.1"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.4.0",
-      "newVersion": "3.4.1",
+      "oldVersion": "3.4.1",
+      "newVersion": "3.4.2",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "packages/core/package.json"
@@ -62,5 +49,5 @@
       "oldVersion": "3.2.1"
     }
   },
-  "description": "## Release (2023-11-15)\n\n@embroider/compat 3.3.1 (patch)\n@embroider/core 3.4.1 (patch)\n\n#### :bug: Bug Fix\n* `core`\n  * [#1664](https://github.com/embroider-build/embroider/pull/1664) reorder extension precedence when searching app-js and fastboot-js trees ([@ef4](https://github.com/ef4))\n  * [#1661](https://github.com/embroider-build/embroider/pull/1661) Fix html clearing on rebuild ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* Other\n  * [#1666](https://github.com/embroider-build/embroider/pull/1666) unpin json-stable-stringify ([@mansona](https://github.com/mansona))\n  * [#1662](https://github.com/embroider-build/embroider/pull/1662) Workaround ember-cli-fastboot misuse of json-stable-stringify ([@ef4](https://github.com/ef4))\n* `compat`, `core`\n  * [#1663](https://github.com/embroider-build/embroider/pull/1663) adjust moved-package-target for namespaced packages ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2023-11-16)\n\n@embroider/core 3.4.2 (patch)\n\n#### :bug: Bug Fix\n* `core`\n  * [#1670](https://github.com/embroider-build/embroider/pull/1670) Fix looping for unchanged files ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

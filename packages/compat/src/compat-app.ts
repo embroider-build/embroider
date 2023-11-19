@@ -241,7 +241,6 @@ export default class CompatApp {
         disableDebugTooling: false,
         disablePresetEnv: false,
         disableEmberModulesAPIPolyfill: false,
-        disableDecoratorTransforms: false,
       },
     });
 

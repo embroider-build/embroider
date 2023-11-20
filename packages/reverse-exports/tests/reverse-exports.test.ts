@@ -140,6 +140,24 @@ describe('reverse exports', function () {
       'You tried to reverse exports for the file `./foo.bar` in package `my-addon` but it does not match any of the exports rules defined in package.json. This means it should not be possible to access directly.'
     );
   });
+
+  it('breaks TODO rename this test to something better', function () {
+    const packageJson = {
+      name: 'my-v2-addon',
+      exports: {
+        '.': './dist/index.js',
+        './*': {
+          types: './dist/*.d.ts',
+          default: './dist/*.js',
+        },
+        './addon-main.js': './addon-main.js',
+      },
+    };
+
+    expect(reversePackageExports(packageJson, './dist/_app_/components/welcome-page.js')).toBe(
+      'my-v2-addon/_app_/components/welcome-page'
+    );
+  });
 });
 
 describe('_findKeyRecursively', function () {

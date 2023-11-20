@@ -566,6 +566,19 @@ importers:
         specifier: ^5.1.6
         version: 5.2.2
 
+  packages/reverse-exports:
+    dependencies:
+      minimatch:
+        specifier: ^3.0.4
+        version: 3.1.2
+      resolve.exports:
+        specifier: ^2.0.2
+        version: 2.0.2
+    devDependencies:
+      '@types/minimatch':
+        specifier: ^3.0.4
+        version: 3.0.5
+
   packages/router:
     dependencies:
       '@ember/test-waiters':
@@ -19629,7 +19642,6 @@ packages:
   /resolve.exports@2.0.2:
     resolution: {integrity: sha512-X2UW6Nw3n/aMgDVy+0rSqgHlv39WZAlZrXCdnbyEiKm17DSqHX4MmQMaST3FbeWR5FTuRcUwYAziZajji0Y7mg==}
     engines: {node: '>=10'}
-    dev: true
 
   /resolve@1.22.8:
     resolution: {integrity: sha512-oKWePCxqpd6FlLvGV1VU0x7bkPmmCNolxzjMf4NczoDnQcIWrAF+cPtZn5i6n+RfD2d9i0tzpKnG6Yk168yIyw==}

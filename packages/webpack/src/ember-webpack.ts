@@ -109,6 +109,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private publicAssetURL: string | undefined;
   private extraThreadLoaderOptions: object | false | undefined;
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
+  private extraPostcssLoaderOptions: object | undefined;
   private extraCssLoaderOptions: object | undefined;
   private extraStyleLoaderOptions: object | undefined;
   private _bundleSummary: BundleSummary | undefined;
@@ -132,6 +133,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     this.publicAssetURL = options?.publicAssetURL;
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
+    this.extraPostcssLoaderOptions = options?.postcssLoaderOptions;
     this.extraCssLoaderOptions = options?.cssLoaderOptions;
     this.extraStyleLoaderOptions = options?.styleLoaderOptions;
     [this.beginBarrier, this.incrementBarrier] = createBarrier();
@@ -576,6 +578,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     loaders: RuleSetUseItem[];
     plugins: WebpackPluginInstance[];
   } {
+    let postcssLoader = this.extraPostcssLoaderOptions
+      ? [{
+          loader: 'postcss-loader',
+          options: {
+            postcssOptions: this.extraPostcssLoaderOptions
+          },
+        }]
+      : [];
     let cssLoader = {
       loader: 'css-loader',
       options: {
@@ -593,13 +603,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         loaders: [
           { loader: 'style-loader', options: { injectType: 'styleTag', ...this.extraStyleLoaderOptions } },
           cssLoader,
+          ...postcssLoader,
         ],
         plugins: [],
       };
     } else {
       // in any other build, we separate the CSS into its own bundles
       return {
-        loaders: [MiniCssExtractPlugin.loader, cssLoader],
+        loaders: [MiniCssExtractPlugin.loader, cssLoader, ...postcssLoader],
         plugins: [
           new MiniCssExtractPlugin({
             filename: `assets/chunk.[chunkhash].css`,

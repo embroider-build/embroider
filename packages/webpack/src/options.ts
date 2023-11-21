@@ -60,6 +60,11 @@ export interface Options {
   babelLoaderOptions?: BabelLoaderOptions;
 
   /**
+   * Options for [`postcss-loader`](https://webpack.js.org/loaders/postcss-loader)
+   */
+  postcssLoaderOptions?: object;
+
+  /**
    * Options for [`css-loader`](https://webpack.js.org/loaders/css-loader)
    */
   cssLoaderOptions?: object;

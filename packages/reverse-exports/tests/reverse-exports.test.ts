@@ -1,4 +1,4 @@
-import reversePackageExports, { _findPathRecursively } from '../src';
+import reversePackageExports, { _findPathRecursively, _prepareStringForRegex } from '../src';
 
 describe('reverse exports', function () {
   it('exports is missing', function () {
@@ -141,7 +141,7 @@ describe('reverse exports', function () {
     );
   });
 
-  it('breaks TODO rename this test to something better', function () {
+  it('conditional exports: using a single asterisk as glob for nested path', function () {
     const packageJson = {
       name: 'my-v2-addon',
       exports: {
@@ -276,5 +276,18 @@ describe('_findKeyRecursively', function () {
     };
 
     expect(_findPathRecursively(exports, str => str === './missing-path.js')).toBe(undefined);
+  });
+});
+
+describe('_prepareStringForRegex', function () {
+  [
+    { input: './foo', expected: '^\\.\\/foo$' },
+    { input: './foo.js', expected: '^\\.\\/foo\\.js$' },
+    { input: './foo/*.js', expected: '^\\.\\/foo\\/.*\\.js$' },
+    { input: './foo/', expected: '^\\.\\/foo\\/.*$' },
+  ].forEach(({ input, expected }) => {
+    it(input, function () {
+      expect(_prepareStringForRegex(input)).toStrictEqual(expected);
+    });
   });
 });

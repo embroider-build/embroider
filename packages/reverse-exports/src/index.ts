@@ -1,5 +1,4 @@
 import { posix } from 'path';
-import minimatch from 'minimatch';
 import { exports as resolveExports } from 'resolve.exports';
 
 type Exports = string | string[] | { [key: string]: Exports };
@@ -82,12 +81,9 @@ export default function reversePackageExports(
   }
 
   const maybeKeyValuePair = _findPathRecursively(exportsObj, candidate => {
-    // miminatch does not treat directories as full of content without glob
-    if (candidate.endsWith('/')) {
-      candidate += '**';
-    }
+    const regex = new RegExp(_prepareStringForRegex(candidate));
 
-    return minimatch(relativePath, candidate);
+    return regex.test(relativePath);
   });
 
   if (!maybeKeyValuePair) {
@@ -113,4 +109,17 @@ export default function reversePackageExports(
   const [resolvedPath] = maybeResolvedPaths;
 
   return resolvedPath.replace(/^./, name);
+}
+
+export function _prepareStringForRegex(input: string): string {
+  let result = input
+    .split('*')
+    .map(substr => substr.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&'))
+    .join('.*');
+
+  if (result.endsWith('/')) {
+    result += '.*';
+  }
+
+  return `^${result}$`;
 }

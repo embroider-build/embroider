@@ -9,11 +9,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "@types/minimatch": "^3.0.4"
-  },
   "dependencies": {
-    "minimatch": "^3.0.4",
     "resolve.exports": "^2.0.2"
   }
 }

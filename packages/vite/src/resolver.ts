@@ -1,17 +1,91 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin } from 'vite';
+import { join, resolve } from 'path';
 import type { Resolution, ResolverFunction } from '@embroider/core';
-import { virtualContent, ResolverLoader } from '@embroider/core';
+import { virtualContent, ResolverLoader, getAppMeta } from '@embroider/core';
+import { readFileSync, existsSync } from 'fs';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 
+const cwd = process.cwd();
+const root = join(cwd, 'app');
+const publicDir = join(cwd, 'public');
+const tests = join(cwd, 'tests');
+const embroiderDir = join(cwd, 'node_modules', '.embroider');
+const rewrittenApp = join(embroiderDir, 'rewritten-app');
+
+const appIndex = resolve(root, "index.html").replace(/\\/g, '/');
+const testsIndex = resolve(tests, "index.html").replace(/\\/g, '/');
+const rewrittenAppIndex = resolve(rewrittenApp, 'index.html');
+const rewrittenTestIndex = resolve(rewrittenApp, 'tests', 'index.html');
+
 export function resolver(): Plugin {
   let resolverLoader = new ResolverLoader(process.cwd());
-
+  const engine = resolverLoader.resolver.options.engines[0];
+  engine.root = root;
+  engine.activeAddons.forEach((addon) => {
+    addon.canResolveFromFile = addon.canResolveFromFile.replace(rewrittenApp, cwd);
+  });
+  const appMeta = getAppMeta(cwd);
+  const pkg = resolverLoader.resolver.packageCache.get(cwd);
+  pkg.packageJSON['ember-addon'] = pkg.packageJSON['ember-addon'] || {};
+  pkg.packageJSON['keywords'] = pkg.packageJSON['keywords'] || [];
+  pkg.packageJSON['ember-addon'].version = 2;
+  pkg.packageJSON['ember-addon'].type = 'app';
+  pkg.packageJSON['keywords'].push('ember-addon', 'ember-engine');
+  pkg.meta!['auto-upgraded'] = true;
+  (pkg as any).plainPkg.root = root;
+  const json = pkg.packageJSON;
+  Object.defineProperty(Object.getPrototypeOf((pkg as any).plainPkg), 'internalPackageJSON', {
+    get() {
+      if (this.isApp || this.root === root) {
+        return json;
+      }
+      return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    }
+  })
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (req.originalUrl === '/') {
+            req.originalUrl = '/app/index.html';
+            (req as any).url = '/app/index.html';
+          }
+          if (req.originalUrl.includes('?')) {
+            next();
+            return;
+          }
+          if (req.originalUrl && req.originalUrl.length > 1) {
+            let pkg = resolverLoader.resolver.packageCache.ownerOfFile(req.originalUrl);
+            let p = join(publicDir, req.originalUrl);
+            if (pkg && pkg.isV2App() && existsSync(p)) {
+              req.originalUrl = '/' + p;
+              (req as any).url = '/' + p;
+              next();
+              return
+            }
+            p = join('node_modules', req.originalUrl);
+            pkg = resolverLoader.resolver.packageCache.ownerOfFile(p);
+            if (pkg && pkg.meta && (pkg.meta as any)['public-assets']) {
+              const asset = Object.entries((pkg.meta as any)['public-assets']).find(([_key, a]) => a === req.originalUrl)?.[0];
+              const local = asset ? join(cwd, p) : null;
+              if (local && existsSync(local)) {
+                req.originalUrl = '/' + p;
+                (req as any).url = '/' + p;
+                return next();
+              }
+            }
+            return next();
+          }
+          return next();
+        })
+      },
     async resolveId(source, importer, options) {
+      if (source.startsWith('/assets/')) {
+        return resolve(root, '.' + source);
+      }
       let request = RollupModuleRequest.from(source, importer, options.custom);
       if (!request) {
         // fallthrough to other rollup plugins
@@ -28,10 +102,43 @@ export function resolver(): Plugin {
       }
     },
     load(id) {
-      if (id.startsWith(virtualPrefix)) {
-        return virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
+          if (id.startsWith(root + '/assets/')) {
+            if (id.endsWith(appMeta.name + '.js')) {
+              let code = '';
+              engine.activeAddons.forEach((_addon) => {
+
+              });
+              code += `
+              const appModules = import.meta.glob([
+                '../init/**/*.{js,ts}',
+                '../initializers/**/*.{js,ts}',
+                '../instance-initializers/**/*.{js,ts}'
+                '../transforms/**/*.{js,ts}'
+                '../services/**/*.{js,ts}'
+                ], { eager: true });
+              Object.entries(appModules).forEach(([name, imp]) => define(name.replace('/${root}/', '${appMeta.name}/').split('.').slice(0, -1).join('/'), [], () => imp));
+
+              require('${appMeta.name}/app').default.create({"name":"${appMeta.name}","version":"${pkg.version}+cf3ef785"});
+              `
+            }
+            return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
+          }
+
+            if (id.startsWith(virtualPrefix)) {
+                return virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
       }
     },
+    transformIndexHtml: {
+      order: 'pre',
+      handler(_html, ctx) {
+        if (ctx.filename === appIndex) {
+          return readFileSync(rewrittenAppIndex).toString();
+        }
+        if (ctx.filename === testsIndex) {
+          return readFileSync(rewrittenTestIndex).toString();
+        }
+      }
+    }
   };
 }
 
@@ -59,6 +166,17 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
         },
       },
     });
+        if (!result) {
+          result = await context.resolve(request.specifier, request.fromFile.replace(root, rewrittenApp), {
+            skipSelf: true,
+            custom: {
+              embroider: {
+                enableCustomResolver: false,
+                meta: request.meta,
+              },
+            },
+          });
+        }
     if (result) {
       return { type: 'found', result };
     } else {

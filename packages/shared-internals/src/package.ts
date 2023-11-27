@@ -53,6 +53,7 @@ export default class Package {
   }
 
   isEmberPackage(): boolean {
+    if (this.isApp) return true;
     let keywords = this.packageJSON.keywords;
     return Boolean(keywords && (keywords as string[]).includes('ember-addon'));
   }

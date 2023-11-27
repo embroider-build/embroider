@@ -10,10 +10,11 @@ import {
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
-const root = "node_modules/.embroider/rewritten-app";
+const root = "app";
+const rewrittenApp = "node_modules/.embroider/rewritten-app";
 
 export default defineConfig({
-  root,
+  root: '.',
   plugins: [
     hbs(),
     templateTag(),
@@ -27,13 +28,12 @@ export default defineConfig({
       // javascript but the javascript still also needs babel, but we don't want
       // to rename them because vite isn't great about knowing how to hot-reload
       // them if we resolve them to made-up names.
-      extensions: [".gjs", ".js", ".hbs"],
+      extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
-  optimizeDeps: optimizeDeps(),
+  optimizeDeps: { exclude: addons(__dirname) },
   server: {
     watch: {
-      ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
     },
   },
   build: {

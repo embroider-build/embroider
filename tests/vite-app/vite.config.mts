@@ -14,7 +14,7 @@ const root = "app";
 const rewrittenApp = "node_modules/.embroider/rewritten-app";
 
 export default defineConfig({
-  root: '.',
+  root,
   plugins: [
     hbs(),
     templateTag(),
@@ -31,9 +31,11 @@ export default defineConfig({
       extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
+  //publicDir: resolve(rewrittenApp),
   optimizeDeps: { exclude: addons(__dirname) },
   server: {
     watch: {
+      ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
     },
   },
   build: {

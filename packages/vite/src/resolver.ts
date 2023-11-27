@@ -1,58 +1,97 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin } from 'vite';
 import { join, resolve } from 'path';
-import type { Resolution, ResolverFunction, ResolverOptions } from '@embroider/core';
-import { Resolver, locateEmbroiderWorkingDir, virtualContent } from '@embroider/core';
-import { readJSONSync } from 'fs-extra';
-import { existsSync, promises, readFileSync } from 'fs';
+import type { Resolution, ResolverFunction } from '@embroider/core';
+import { virtualContent, ResolverLoader, getAppMeta } from '@embroider/core';
+import { readFileSync, existsSync } from 'fs';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 
+const cwd = process.cwd();
+const root = join(cwd, 'app');
+const publicDir = join(cwd, 'public');
+const tests = join(cwd, 'tests');
+const embroiderDir = join(cwd, 'node_modules', '.embroider');
+const rewrittenApp = join(embroiderDir, 'rewritten-app');
+
+const appIndex = resolve(root, "index.html").replace(/\\/g, '/');
+const testsIndex = resolve(tests, "index.html").replace(/\\/g, '/');
+const rewrittenAppIndex = resolve(rewrittenApp, 'index.html');
+const rewrittenTestIndex = resolve(rewrittenApp, 'tests', 'index.html');
+
 export function resolver(): Plugin {
-  const cwd = process.cwd();
-  const root = join(cwd, 'app');
-  const tests = join(cwd, 'tests');
-  const embroiderDir = locateEmbroiderWorkingDir(cwd);
-  const rewrittenApp = join(embroiderDir, 'rewritten-app');
-
-  const appIndex = resolve(root, "index.html").replace(/\\/g, '/');
-  const testsIndex = resolve(tests, "index.html").replace(/\\/g, '/');
-  const rewrittenAppIndex = resolve(rewrittenApp, 'index.html');
-  const rewrittenTestIndex = resolve(rewrittenApp, 'tests', 'index.html');
-
-  let resolverOptions: ResolverOptions = readJSONSync(join(embroiderDir, 'resolver.json'));
-  let resolver = new Resolver(resolverOptions);
+  let resolverLoader = new ResolverLoader(process.cwd());
+  const engine = resolverLoader.resolver.options.engines[0];
+  engine.root = root;
+  engine.activeAddons.forEach((addon) => {
+    addon.canResolveFromFile = addon.canResolveFromFile.replace(rewrittenApp, cwd);
+  });
+  const appMeta = getAppMeta(cwd);
+  const pkg = resolverLoader.resolver.packageCache.get(cwd);
+  pkg.packageJSON['ember-addon'] = pkg.packageJSON['ember-addon'] || {};
+  pkg.packageJSON['keywords'] = pkg.packageJSON['keywords'] || [];
+  pkg.packageJSON['ember-addon'].version = 2;
+  pkg.packageJSON['ember-addon'].type = 'app';
+  pkg.packageJSON['keywords'].push('ember-addon', 'ember-engine');
+  pkg.meta!['auto-upgraded'] = true;
+  (pkg as any).plainPkg.root = root;
+  const json = pkg.packageJSON;
+  Object.defineProperty(Object.getPrototypeOf((pkg as any).plainPkg), 'internalPackageJSON', {
+    get() {
+      if (this.isApp || this.root === root) {
+        return json;
+      }
+      return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    }
+  })
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
-    async resolveId(source: string, importer, options) {
-      // if (source.startsWith(virtualPrefix)) {
-      //   return source;
-      // }
-      if (false) {
-        const rewrittenImporter = importer.replace(root, rewrittenApp);
-        if (source.startsWith('/') && !source.startsWith(cwd)) {
-          source = rewrittenApp + source;
-        }
-        const r = await this.resolve(source, rewrittenImporter, { ...options });
-        if (r && !r.id.includes('/assets/')) {
-          r.id = r.id.replace(rewrittenApp, root);
-        }
-        if (r && r.id) {
-          const rewritten = r.id.replace(rewrittenApp, root);
-          if (existsSync(rewritten)) {
-            r.id = rewritten;
+      configureServer(server) {
+        server.middlewares.use((req, _res, next) => {
+          if (req.originalUrl === '/') {
+            req.originalUrl = '/app/index.html';
+            (req as any).url = '/app/index.html';
           }
-        }
-        return r;
+          if (req.originalUrl.includes('?')) {
+            next();
+            return;
+          }
+          if (req.originalUrl && req.originalUrl.length > 1) {
+            let pkg = resolverLoader.resolver.packageCache.ownerOfFile(req.originalUrl);
+            let p = join(publicDir, req.originalUrl);
+            if (pkg && pkg.isV2App() && existsSync(p)) {
+              req.originalUrl = '/' + p;
+              (req as any).url = '/' + p;
+              next();
+              return
+            }
+            p = join('node_modules', req.originalUrl);
+            pkg = resolverLoader.resolver.packageCache.ownerOfFile(p);
+            if (pkg && pkg.meta && (pkg.meta as any)['public-assets']) {
+              const asset = Object.entries((pkg.meta as any)['public-assets']).find(([_key, a]) => a === req.originalUrl)?.[0];
+              const local = asset ? join(cwd, p) : null;
+              if (local && existsSync(local)) {
+                req.originalUrl = '/' + p;
+                (req as any).url = '/' + p;
+                return next();
+              }
+            }
+            return next();
+          }
+          return next();
+        })
+      },
+    async resolveId(source, importer, options) {
+      if (source.startsWith('/assets/')) {
+        return resolve(root, '.' + source);
       }
-
       let request = RollupModuleRequest.from(source, importer, options.custom);
       if (!request) {
         // fallthrough to other rollup plugins
         return null;
       }
-      let resolution = await resolver.resolve(request, defaultResolve(this));
+      let resolution = await resolverLoader.resolver.resolve(request, defaultResolve(this));
       switch (resolution.type) {
         case 'found':
           return resolution.result;
@@ -62,24 +101,32 @@ export function resolver(): Plugin {
           throw assertNever(resolution);
       }
     },
-    async load(id: string) {
-      if (id.startsWith(virtualPrefix)) {
-        const vId = id.split(virtualPrefix)[1].replace(root, rewrittenApp);
-        return virtualContent(vId, resolver);
-      }
+    load(id) {
+          if (id.startsWith(root + '/assets/')) {
+            if (id.endsWith(appMeta.name + '.js')) {
+              let code = '';
+              engine.activeAddons.forEach((_addon) => {
 
-      if (id.startsWith(root)) {
-        try {
-          return (await promises.readFile(id.split('?')[0])).toString();
-        } catch (e) {
-        }
-        try {
-          const rewId = id.replace(root, rewrittenApp);
-          return (await promises.readFile(rewId.split('?')[0])).toString();
-        } catch (e) {
-        }
+              });
+              code += `
+              const appModules = import.meta.glob([
+                '../init/**/*.{js,ts}',
+                '../initializers/**/*.{js,ts}',
+                '../instance-initializers/**/*.{js,ts}'
+                '../transforms/**/*.{js,ts}'
+                '../services/**/*.{js,ts}'
+                ], { eager: true });
+              Object.entries(appModules).forEach(([name, imp]) => define(name.replace('/${root}/', '${appMeta.name}/').split('.').slice(0, -1).join('/'), [], () => imp));
+
+              require('${appMeta.name}/app').default.create({"name":"${appMeta.name}","version":"${pkg.version}+cf3ef785"});
+              `
+            }
+            return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
+          }
+
+            if (id.startsWith(virtualPrefix)) {
+                return virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
       }
-      return null;
     },
     transformIndexHtml: {
       order: 'pre',
@@ -107,10 +154,22 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
       skipSelf: true,
       custom: {
         embroider: {
+          enableCustomResolver: false,
           meta: request.meta,
         },
       },
     });
+        if (!result) {
+          result = await context.resolve(request.specifier, request.fromFile.replace(root, rewrittenApp), {
+            skipSelf: true,
+            custom: {
+              embroider: {
+                enableCustomResolver: false,
+                meta: request.meta,
+              },
+            },
+          });
+        }
     if (result) {
       return { type: 'found', result };
     } else {

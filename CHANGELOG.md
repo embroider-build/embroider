@@ -1,5 +1,32 @@
 # Embroider Changelog
 
+## Release (2023-11-28)
+
+@embroider/compat 3.4.0 (minor)
+@embroider/reverse-exports 0.1.0 (minor)
+@embroider/router 2.1.6 (patch)
+
+#### :rocket: Enhancement
+* `reverse-exports`
+  * [#1652](https://github.com/embroider-build/embroider/pull/1652) create new @embroider/reverse-exports package ([@lolmaus](https://github.com/lolmaus))
+* `compat`
+  * [#1673](https://github.com/embroider-build/embroider/pull/1673) allow apps to disable the decorator transforms ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `router`
+  * [#1684](https://github.com/embroider-build/embroider/pull/1684) Workaround typescript regression in router package ([@ef4](https://github.com/ef4))
+* `reverse-exports`
+  * [#1676](https://github.com/embroider-build/embroider/pull/1676) fix single asterisk replacement in reverse-exports ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#1683](https://github.com/embroider-build/embroider/pull/1683) update the releasing CI job ([@mansona](https://github.com/mansona))
+* [#1681](https://github.com/embroider-build/embroider/pull/1681) skip watch-mode tests in windows ([@mansona](https://github.com/mansona))
+
+#### Committers: 3
+- Andrey Mikhaylov (lolmaus) ([@lolmaus](https://github.com/lolmaus))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2023-11-16)
 
 @embroider/core 3.4.2 (patch)

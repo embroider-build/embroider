@@ -35,7 +35,7 @@ export function hbs(): Plugin {
 
       switch (meta.type) {
         case 'template':
-          let input = readFileSync(id, 'utf8');
+          let input = readFileSync(id.replace(/\.hbs\?.*/, '.hbs'), 'utf8');
           let code = hbsToJS(input);
           return {
             code,
@@ -111,7 +111,7 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
   };
 }
 
-const hbsFilter = createFilter('**/*.hbs');
+const hbsFilter = createFilter('**/*.hbs?(\\?)*');
 
 function maybeRewriteHBS(resolution: ResolvedId) {
   if (!hbsFilter(resolution.id)) {

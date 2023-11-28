@@ -11,10 +11,13 @@ import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
 import { dirname, resolve } from 'path';
+import { hbsToJS } from '@embroider/core';
+import { Preprocessor } from 'content-tag';
 
 export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let macrosConfig: PluginItem | undefined;
+  let preprocessor = new Preprocessor();
 
   return {
     name: 'embroider-esbuild-resolver',
@@ -43,6 +46,34 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           ) as PluginItem;
         }
         return { contents: runMacros(src, path, macrosConfig) };
+      });
+
+      build.onLoad({ filter: /\.gjs$/ }, async ({ path: filename }) => {
+        const code = readFileSync(filename, 'utf8');
+
+        const result = transform(preprocessor.process(code, filename), { configFile: 'babel.config.js', filename });
+
+        if (!result || !result.code) {
+          throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
+        }
+
+        const contents = result.code;
+
+        return { contents };
+      });
+
+      build.onLoad({ filter: /\.hbs$/ }, async ({ path: filename }) => {
+        const code = readFileSync(filename, 'utf8');
+
+        const result = transform(hbsToJS(code), { configFile: 'babel.config.js', filename });
+
+        if (!result || !result.code) {
+          throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
+        }
+
+        const contents = result.code;
+
+        return { contents };
       });
 
       build.onLoad({ filter: /\.js$/ }, ({ path, namespace }) => {

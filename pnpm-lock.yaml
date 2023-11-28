@@ -356,6 +356,9 @@ importers:
       '@embroider/macros':
         specifier: workspace:*
         version: link:../macros
+      '@embroider/reverse-exports':
+        specifier: workspace:*
+        version: link:../reverse-exports
       '@embroider/shared-internals':
         specifier: workspace:*
         version: link:../shared-internals

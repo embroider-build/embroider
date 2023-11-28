@@ -105,10 +105,12 @@ Scenarios.fromProject(() => new Project())
                   {
                     name: 'my-addon',
                     root: resolve(app.dir, 'node_modules', 'my-addon'),
+                    canResolveFromFile: resolve(app.dir, 'package.json'),
                   },
                   {
                     name: 'a-v1-addon',
                     root: resolve(app.dir, 'node_modules', 'a-v1-addon'),
+                    canResolveFromFile: resolve(app.dir, 'package.json'),
                   },
                 ],
               },

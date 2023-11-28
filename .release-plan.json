@@ -10,19 +10,19 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.3.1"
-    },
-    "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.1",
-      "newVersion": "3.4.2",
+      "impact": "minor",
+      "oldVersion": "3.3.1",
+      "newVersion": "3.4.0",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
-      "pkgJSONPath": "packages/core/package.json"
+      "pkgJSONPath": "packages/compat/package.json"
+    },
+    "@embroider/core": {
+      "oldVersion": "3.4.2"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
@@ -30,8 +30,33 @@
     "@embroider/macros": {
       "oldVersion": "1.13.3"
     },
+    "@embroider/reverse-exports": {
+      "impact": "minor",
+      "oldVersion": "0.0.0",
+      "newVersion": "0.1.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "packages/reverse-exports/package.json"
+    },
     "@embroider/router": {
-      "oldVersion": "2.1.5"
+      "impact": "patch",
+      "oldVersion": "2.1.5",
+      "newVersion": "2.1.6",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "packages/router/package.json"
     },
     "@embroider/shared-internals": {
       "oldVersion": "2.5.1"
@@ -49,5 +74,5 @@
       "oldVersion": "3.2.1"
     }
   },
-  "description": "## Release (2023-11-16)\n\n@embroider/core 3.4.2 (patch)\n\n#### :bug: Bug Fix\n* `core`\n  * [#1670](https://github.com/embroider-build/embroider/pull/1670) Fix looping for unchanged files ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2023-11-28)\n\n@embroider/compat 3.4.0 (minor)\n@embroider/reverse-exports 0.1.0 (minor)\n@embroider/router 2.1.6 (patch)\n\n#### :rocket: Enhancement\n* `reverse-exports`\n  * [#1652](https://github.com/embroider-build/embroider/pull/1652) create new @embroider/reverse-exports package ([@lolmaus](https://github.com/lolmaus))\n* `compat`\n  * [#1673](https://github.com/embroider-build/embroider/pull/1673) allow apps to disable the decorator transforms ([@ef4](https://github.com/ef4))\n\n#### :bug: Bug Fix\n* `router`\n  * [#1684](https://github.com/embroider-build/embroider/pull/1684) Workaround typescript regression in router package ([@ef4](https://github.com/ef4))\n* `reverse-exports`\n  * [#1676](https://github.com/embroider-build/embroider/pull/1676) fix single asterisk replacement in reverse-exports ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* [#1683](https://github.com/embroider-build/embroider/pull/1683) update the releasing CI job ([@mansona](https://github.com/mansona))\n* [#1681](https://github.com/embroider-build/embroider/pull/1681) skip watch-mode tests in windows ([@mansona](https://github.com/mansona))\n\n#### Committers: 3\n- Andrey Mikhaylov (lolmaus) ([@lolmaus](https://github.com/lolmaus))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

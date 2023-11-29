@@ -4,8 +4,7 @@ import {
   hbs,
   scripts,
   templateTag,
-  addons,
-  optimizeDeps,
+  addons
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -14,7 +13,7 @@ const root = "app";
 const rewrittenApp = "node_modules/.embroider/rewritten-app";
 
 export default defineConfig({
-  root,
+  root: rewrittenApp,
   plugins: [
     hbs(),
     templateTag(),
@@ -31,18 +30,19 @@ export default defineConfig({
       extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
-  //publicDir: resolve(rewrittenApp),
+  publicDir: null,
   optimizeDeps: { exclude: addons(__dirname) },
   server: {
     watch: {
+      cwd: resolve('.'),
       ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
     },
   },
   build: {
     rollupOptions: {
       input: {
-        main: resolve(root, "index.html"),
-        tests: resolve(root, "tests/index.html"),
+        main: resolve(rewrittenApp, "index.html"),
+        tests: resolve(rewrittenApp, "tests/index.html"),
       },
     },
   },

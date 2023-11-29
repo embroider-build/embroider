@@ -82,5 +82,8 @@
   },
   "ember": {
     "edition": "octane"
+  },
+  "dependencies": {
+    "@esbuild/linux-x64": "^0.19.8"
   }
 }

@@ -26,10 +26,10 @@ export function resolver(): Plugin {
     name: 'embroider-resolver',
     enforce: 'pre',
     async resolveId(source: string, importer, options) {
-      if (source.startsWith(virtualPrefix)) {
-        return source;
-      }
-      if (importer && importer.startsWith(root)) {
+      // if (source.startsWith(virtualPrefix)) {
+      //   return source;
+      // }
+      if (false) {
         const rewrittenImporter = importer.replace(root, rewrittenApp);
         if (source.startsWith('/') && !source.startsWith(cwd)) {
           source = rewrittenApp + source;

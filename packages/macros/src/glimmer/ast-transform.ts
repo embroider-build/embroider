@@ -97,7 +97,9 @@ export function makeFirstTransform(opts: FirstTransformParams) {
             );
           }
           if (node.path.original === 'macroDependencySatisfies') {
-            return literal(dependencySatisfies(node, opts.packageRoot, moduleName, packageCache), env.syntax.builders);
+            return env.syntax.builders.sexpr('macroCondition', [
+              literal(dependencySatisfies(node, opts.packageRoot, moduleName, packageCache), env.syntax.builders),
+            ]);
           }
         },
         MustacheStatement(node: any) {

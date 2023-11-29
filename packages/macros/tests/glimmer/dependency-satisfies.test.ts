@@ -30,11 +30,8 @@ describe('dependency satisfies', () => {
     });
 
     test('in branch', () => {
-      let result = transform(
-        `{{#if (macroDependencySatisfies 'qunit' '^2.8.0')}}<div></div>{{else}}<span></span>{{/if}}`,
-        { filename }
-      );
-      expect(result).toEqual('<div></div>');
+      let result = transform(`{{#if (macroDependencySatisfies 'qunit' '^2.8.0')}}red{{else}}blue{{/if}}`, { filename });
+      expect(result).toEqual('red');
     });
 
     test('emits false for out-of-range package', () => {

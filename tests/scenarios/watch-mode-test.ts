@@ -422,6 +422,19 @@ app.forEachScenario(scenario => {
       // TODO: find a better way to test this; this seems to linger around
       // assert.false(await checkScripts(/js$/, originalContent), 'the original file does not exists');
       assert.true(await checkScripts(/js$/, updatedContent), 'the updated file now exists');
+
+      await appFile('app/helpers/face.js').write(`import { helper } from '@ember/component/helper';
+
+      export default helper(function face(positional) {
+        return positional[0] + " face";
+      });`);
+
+      await added('helpers/face.js');
+      await waitFor(/Build successful/);
+
+      await appFile('app/helpers/face.js').delete();
+      await deleted('helpers/face.js');
+      await waitFor(/Build successful/);
     });
 
     Qmodule('[GH#1619] co-located components regressions', function (hooks) {

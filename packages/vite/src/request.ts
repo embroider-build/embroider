@@ -12,6 +12,9 @@ export class RollupModuleRequest implements ModuleRequest {
     if (!(custom?.embroider?.enableCustomResolver ?? true)) {
       return;
     }
+    if (custom?.depScan) {
+      return;
+    }
 
     if (source && importer && source[0] !== '\0') {
       let nonVirtual: string;

@@ -97,8 +97,6 @@ export function makeFirstTransform(opts: FirstTransformParams) {
             );
           }
           if (node.path.original === 'macroDependencySatisfies') {
-            console.log('parent', JSON.stringify(walker.parent, null, 2));
-            console.log('node', JSON.stringify(node, null, 2));
             const staticValue = literal(
               dependencySatisfies(node, opts.packageRoot, moduleName, packageCache),
               env.syntax.builders

@@ -1,0 +1,16 @@
+{
+  "name": "@embroider/broccoli-side-watch",
+  "version": "0.0.1",
+  "description": "Watch changes in other folders to rebuild Ember app",
+  "main": "index.js",
+  "keywords": [
+    "ember"
+  ],
+  "author": "Balint Erdi",
+  "license": "MIT",
+  "dependencies": {
+    "broccoli-merge-trees": "^4.2.0",
+    "broccoli-plugin": "^4.0.7",
+    "broccoli-source": "^3.0.1"
+  }
+}

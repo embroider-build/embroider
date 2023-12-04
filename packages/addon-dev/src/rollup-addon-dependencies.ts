@@ -11,8 +11,8 @@ const compilationModules = new Set(
   templateCompilationModules.map((m) => m.module)
 );
 
-function resolvableDependencies() {
-  let deps = new Set();
+function resolvableDependencies(): Set<string> {
+  let deps = new Set<string>();
   let pkg = readJsonSync('package.json');
   if (pkg.dependencies) {
     for (let name of Object.keys(pkg.dependencies)) {
@@ -28,10 +28,15 @@ function resolvableDependencies() {
 }
 
 export default function emberExternals(): Plugin {
-  let deps = resolvableDependencies();
+  let deps: Set<string>;
 
   return {
     name: 'ember-externals',
+
+    buildStart() {
+      this.addWatchFile('package.json');
+      deps = resolvableDependencies();
+    },
 
     async resolveId(source) {
       let pkgName = packageName(source);

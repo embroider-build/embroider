@@ -15,6 +15,8 @@ export default function publicEntrypoints(args: {
   return {
     name: 'addon-modules',
     async buildStart() {
+      this.addWatchFile(args.srcDir);
+
       let matches = walkSync(args.srcDir, {
         globs: [...args.include, '**/*.hbs', '**/*.ts', '**/*.gts', '**/*.gjs'],
       });

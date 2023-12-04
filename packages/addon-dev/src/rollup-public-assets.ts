@@ -11,6 +11,13 @@ export default function publicAssets(
 
   return {
     name: 'public-assets-bundler',
+
+    // Prior to https://github.com/rollup/rollup/pull/5270, we cannot call this
+    // from within `generateBundle`
+    buildStart() {
+      this.addWatchFile(path);
+    },
+
     generateBundle() {
       let pkg = readJsonSync('package.json');
       const filenames = walkSync(path, {

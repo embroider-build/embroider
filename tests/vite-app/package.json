@@ -11,7 +11,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "ember build --environment=production",
+    "build": "vite build",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",
     "lint:css": "stylelint \"**/*.css\"",
     "lint:css:fix": "concurrently \"npm:lint:css -- --fix\"",
@@ -55,7 +55,7 @@
     "ember-load-initializers": "^2.1.2",
     "ember-modifier": "^4.1.0",
     "ember-page-title": "^7.0.0",
-    "ember-qunit": "^7.0.0",
+    "ember-qunit": "^8.0.2",
     "ember-resolver": "^10.1.0",
     "ember-source": "~5.1.0",
     "ember-template-lint": "^5.10.3",
@@ -83,6 +83,7 @@
   "ember": {
     "edition": "octane"
   },
+  "main": "package.json",
   "dependencies": {
     "@esbuild/linux-x64": "^0.19.8"
   }

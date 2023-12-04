@@ -57,16 +57,21 @@ export function resolver(options?: Options): Plugin {
     configureServer(server) {
       environment = 'development';
       server.middlewares.use((req, _res, next) => {
-        if (req.originalUrl === '/tests' || req.originalUrl === '/tests/index.html') {
+        if (req.originalUrl.match(/\/tests($|\?)/) || req.originalUrl.startsWith('/tests/index.html')) {
           environment = 'test';
+          if (!req.originalUrl.startsWith('/tests/index.html')) {
+            req.originalUrl = req.originalUrl.replace('/tests', '/tests/index.html');
+          }
+          (req as any).url = req.originalUrl;
+          return next();
         }
         if (req.originalUrl === '/') {
           req.originalUrl = '/app/index.html';
           (req as any).url = '/app/index.html';
+          return next();
         }
         if (req.originalUrl.includes('?')) {
-          next();
-          return;
+          return next();
         }
         if (req.originalUrl && req.originalUrl.length > 1) {
           let pkg = resolverLoader.resolver.packageCache.ownerOfFile(req.originalUrl);
@@ -74,8 +79,7 @@ export function resolver(options?: Options): Plugin {
           if (pkg && pkg.isV2App() && existsSync(p)) {
             req.originalUrl = '/' + p;
             (req as any).url = '/' + p;
-            next();
-            return
+            return next();
           }
           p = join('node_modules', req.originalUrl);
           pkg = resolverLoader.resolver.packageCache.ownerOfFile(p);
@@ -97,6 +101,11 @@ export function resolver(options?: Options): Plugin {
       if (source.startsWith('/assets/')) {
         return resolve(root, '.' + source);
       }
+      if (importer?.includes('/app/assets/') && !source.match(/-embroider-implicit-.*modules.js$/)) {
+        if (source.startsWith('./')) {
+          return resolve(root, 'assets', source);
+        }
+      }
       let request = RollupModuleRequest.from(source, importer, options.custom);
       if (!request) {
         // fallthrough to other rollup plugins
@@ -113,6 +122,7 @@ export function resolver(options?: Options): Plugin {
       }
     },
     load(id) {
+      id = id.split('?')[0];
       if (id === join(cwd, 'config', 'environment.js').replace(/\\/g, '/')) {
         const code = readFileSync(id).toString();
         return code.replace('module.exports = ', 'export default ');
@@ -126,6 +136,14 @@ export function resolver(options?: Options): Plugin {
             pkg,
             entryFolders: options?.entryFolders
           })
+        }
+        if (id.endsWith('/test.js')) {
+          return `
+            // fix for qunit
+            import * as EmberTesting from 'ember-testing';
+            define('ember-testing', () => EmberTesting);
+            await import('./test-entries')
+          `
         }
         return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
       }

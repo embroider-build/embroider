@@ -6,9 +6,15 @@ type Options = {
   root: string;
   engine: EngineConfig;
   pkg: Package;
-  environment: string,
+  environment: string;
   entryFolders?: string[];
 };
+
+
+type OptionsTest = {
+  pkg: Package;
+  entryFolders?: string[];
+}
 
 export function generateEntries({ root, engine, pkg, environment, entryFolders }: Options) {
   const folders = [
@@ -76,7 +82,41 @@ export function generateEntries({ root, engine, pkg, environment, entryFolders }
                 )
               );
               define('${pkg.name}/app', () => App);
-              require('${pkg.name}/app').default.create({"name":"${pkg.name}","version":"${pkg.version}+cf3ef785"});
+              if (!runningTests) {
+                require('${pkg.name}/app').default.create({"name":"${pkg.name}","version":"${pkg.version}+cf3ef785"});
+              }
+              `;
+  return code;
+}
+
+
+export function generateTestEntries({ pkg, entryFolders }: OptionsTest) {
+  const folders = [
+    'helpers',
+    'integration',
+    'unit',
+  ].concat(entryFolders || []);
+  const globPattern = `'../../tests/{${folders.join(',')}}/**/*.{js,ts,gjs,gts,hbs}'`;
+
+  let code = `
+              import './vite-app.js';
+              import './-embroider-implicit-test-modules.js';
+              import * as helperIndex from '${pkg.name}/tests/helpers/index';
+              import * as testHelper from '${pkg.name}/tests/test-helper';
+              define('${pkg.name}/tests/helpers/index', () => helperIndex);
+              define('${pkg.name}/tests/test-helper', () => testHelper);
+
+              require('${pkg.name}/tests/test-helper');
+              EmberENV.TESTS_FILE_LOADED = true;
+              `;
+  code += `
+              const appModules = import.meta.glob([${globPattern}], { eager: true });
+              Object.entries(appModules).forEach(
+                ([name, imp]) => define(
+                  name.replace('../../',
+                  '${pkg.name}/').split('.')[0], () => imp
+                )
+              );
               `;
   return code;
 }

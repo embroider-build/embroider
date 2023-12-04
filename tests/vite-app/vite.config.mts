@@ -33,13 +33,14 @@ export default defineConfig({
   optimizeDeps: optimizeDeps(),
   server: {
     watch: {
+      ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
     },
   },
   build: {
     rollupOptions: {
       input: {
         main: resolve(root, "index.html"),
-        tests: resolve(root, "tests/index.html"),
+        tests: resolve('.', "tests/index.html"),
       },
     },
   },

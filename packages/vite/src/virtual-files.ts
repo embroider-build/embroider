@@ -101,13 +101,10 @@ export function generateTestEntries({ pkg, entryFolders }: OptionsTest) {
   let code = `
               import './vite-app.js';
               import './-embroider-implicit-test-modules.js';
-              import * as helperIndex from '${pkg.name}/tests/helpers/index';
-              import * as testHelper from '${pkg.name}/tests/test-helper';
+              import * as helperIndex from '../../tests/helpers/index';
+              import * as testHelper from '../../tests/test-helper';
               define('${pkg.name}/tests/helpers/index', () => helperIndex);
               define('${pkg.name}/tests/test-helper', () => testHelper);
-
-              require('${pkg.name}/tests/test-helper');
-              EmberENV.TESTS_FILE_LOADED = true;
               `;
   code += `
               const appModules = import.meta.glob([${globPattern}], { eager: true });
@@ -117,6 +114,8 @@ export function generateTestEntries({ pkg, entryFolders }: OptionsTest) {
                   '${pkg.name}/').split('.')[0], () => imp
                 )
               );
+              require('${pkg.name}/tests/test-helper');
+              EmberENV.TESTS_FILE_LOADED = true;
               `;
   return code;
 }

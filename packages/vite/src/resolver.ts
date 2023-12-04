@@ -6,7 +6,7 @@ import { virtualContent, ResolverLoader, getAppMeta } from '@embroider/core';
 import { readFileSync, existsSync } from 'fs';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
-import { generateEntries } from './virtual-files';
+import {generateEntries, generateTestEntries} from './virtual-files';
 
 const cwd = process.cwd();
 const root = join(cwd, 'app');
@@ -123,6 +123,9 @@ export function resolver(options?: Options): Plugin {
     },
     load(id) {
       id = id.split('?')[0];
+      if (id.endsWith('/testem.js')) {
+        return '';
+      }
       if (id === join(cwd, 'config', 'environment.js').replace(/\\/g, '/')) {
         const code = readFileSync(id).toString();
         return code.replace('module.exports = ', 'export default ');
@@ -140,10 +143,21 @@ export function resolver(options?: Options): Plugin {
         if (id.endsWith('/test.js')) {
           return `
             // fix for qunit
+            import './test-setup.js';
+            import './test-entries.js'
+          `
+        }
+        if (id.endsWith('/test-setup.js')) {
+          return `
             import * as EmberTesting from 'ember-testing';
             define('ember-testing', () => EmberTesting);
-            await import('./test-entries')
           `
+        }
+        if (id.endsWith('/test-entries.js')) {
+          return generateTestEntries({
+            pkg,
+            entryFolders: options?.entryFolders
+          })
         }
         return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
       }

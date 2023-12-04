@@ -7,13 +7,13 @@ import Fancy from 'vite-app/components/fancy';
 module('Integration | Component | Fany', (hooks) => {
   setupRenderingTest(hooks);
 
-  test('should set as primary', async function(assert) {
+  test('should have Yay for gjs!', async function(assert) {
     await render(<template>
-  <Fany @type="primary2"></Fany>
+  <Fancy @type="primary2"></Fancy>
 </template>);
     await rerender()
 
-    assert.dom('button').hasClass('cds--btn--primary');
+    assert.dom().hasText('Yay for gjs!');
   });
 });
 

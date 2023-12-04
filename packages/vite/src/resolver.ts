@@ -6,6 +6,7 @@ import { virtualContent, ResolverLoader, getAppMeta } from '@embroider/core';
 import { readFileSync, existsSync } from 'fs';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
+import { generateEntries } from './virtual-files';
 
 const cwd = process.cwd();
 const root = join(cwd, 'app');
@@ -14,12 +15,18 @@ const tests = join(cwd, 'tests');
 const embroiderDir = join(cwd, 'node_modules', '.embroider');
 const rewrittenApp = join(embroiderDir, 'rewritten-app');
 
-const appIndex = resolve(root, "index.html").replace(/\\/g, '/');
-const testsIndex = resolve(tests, "index.html").replace(/\\/g, '/');
+const appIndex = resolve(root, 'index.html').replace(/\\/g, '/');
+const testsIndex = resolve(tests, 'index.html').replace(/\\/g, '/');
 const rewrittenAppIndex = resolve(rewrittenApp, 'index.html');
 const rewrittenTestIndex = resolve(rewrittenApp, 'tests', 'index.html');
 
-export function resolver(): Plugin {
+let environment = 'production';
+
+type Options = {
+  entryFolders: string[]
+}
+
+export function resolver(options?: Options): Plugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   const engine = resolverLoader.resolver.options.engines[0];
   engine.root = root;
@@ -47,41 +54,45 @@ export function resolver(): Plugin {
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
-      configureServer(server) {
-        server.middlewares.use((req, _res, next) => {
-          if (req.originalUrl === '/') {
-            req.originalUrl = '/app/index.html';
-            (req as any).url = '/app/index.html';
-          }
-          if (req.originalUrl.includes('?')) {
+    configureServer(server) {
+      environment = 'development';
+      server.middlewares.use((req, _res, next) => {
+        if (req.originalUrl === '/tests' || req.originalUrl === '/tests/index.html') {
+          environment = 'test';
+        }
+        if (req.originalUrl === '/') {
+          req.originalUrl = '/app/index.html';
+          (req as any).url = '/app/index.html';
+        }
+        if (req.originalUrl.includes('?')) {
+          next();
+          return;
+        }
+        if (req.originalUrl && req.originalUrl.length > 1) {
+          let pkg = resolverLoader.resolver.packageCache.ownerOfFile(req.originalUrl);
+          let p = join(publicDir, req.originalUrl);
+          if (pkg && pkg.isV2App() && existsSync(p)) {
+            req.originalUrl = '/' + p;
+            (req as any).url = '/' + p;
             next();
-            return;
+            return
           }
-          if (req.originalUrl && req.originalUrl.length > 1) {
-            let pkg = resolverLoader.resolver.packageCache.ownerOfFile(req.originalUrl);
-            let p = join(publicDir, req.originalUrl);
-            if (pkg && pkg.isV2App() && existsSync(p)) {
+          p = join('node_modules', req.originalUrl);
+          pkg = resolverLoader.resolver.packageCache.ownerOfFile(p);
+          if (pkg && pkg.meta && (pkg.meta as any)['public-assets']) {
+            const asset = Object.entries((pkg.meta as any)['public-assets']).find(([_key, a]) => a === req.originalUrl)?.[0];
+            const local = asset ? join(cwd, p) : null;
+            if (local && existsSync(local)) {
               req.originalUrl = '/' + p;
               (req as any).url = '/' + p;
-              next();
-              return
+              return next();
             }
-            p = join('node_modules', req.originalUrl);
-            pkg = resolverLoader.resolver.packageCache.ownerOfFile(p);
-            if (pkg && pkg.meta && (pkg.meta as any)['public-assets']) {
-              const asset = Object.entries((pkg.meta as any)['public-assets']).find(([_key, a]) => a === req.originalUrl)?.[0];
-              const local = asset ? join(cwd, p) : null;
-              if (local && existsSync(local)) {
-                req.originalUrl = '/' + p;
-                (req as any).url = '/' + p;
-                return next();
-              }
-            }
-            return next();
           }
           return next();
-        })
-      },
+        }
+        return next();
+      })
+    },
     async resolveId(source, importer, options) {
       if (source.startsWith('/assets/')) {
         return resolve(root, '.' + source);
@@ -102,30 +113,25 @@ export function resolver(): Plugin {
       }
     },
     load(id) {
-          if (id.startsWith(root + '/assets/')) {
-            if (id.endsWith(appMeta.name + '.js')) {
-              let code = '';
-              engine.activeAddons.forEach((_addon) => {
+      if (id === join(cwd, 'config', 'environment.js').replace(/\\/g, '/')) {
+        const code = readFileSync(id).toString();
+        return code.replace('module.exports = ', 'export default ');
+      }
+      if (id.startsWith(root + '/assets/')) {
+        if (id.endsWith(appMeta.name + '.js')) {
+          return generateEntries({
+            environment,
+            root,
+            engine,
+            pkg,
+            entryFolders: options?.entryFolders
+          })
+        }
+        return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
+      }
 
-              });
-              code += `
-              const appModules = import.meta.glob([
-                '../init/**/*.{js,ts}',
-                '../initializers/**/*.{js,ts}',
-                '../instance-initializers/**/*.{js,ts}'
-                '../transforms/**/*.{js,ts}'
-                '../services/**/*.{js,ts}'
-                ], { eager: true });
-              Object.entries(appModules).forEach(([name, imp]) => define(name.replace('/${root}/', '${appMeta.name}/').split('.').slice(0, -1).join('/'), [], () => imp));
-
-              require('${appMeta.name}/app').default.create({"name":"${appMeta.name}","version":"${pkg.version}+cf3ef785"});
-              `
-            }
-            return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
-          }
-
-            if (id.startsWith(virtualPrefix)) {
-                return virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
+      if (id.startsWith(virtualPrefix)) {
+        return virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
       }
     },
     transformIndexHtml: {
@@ -159,17 +165,17 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
         },
       },
     });
-        if (!result) {
-          result = await context.resolve(request.specifier, request.fromFile.replace(root, rewrittenApp), {
-            skipSelf: true,
-            custom: {
-              embroider: {
-                enableCustomResolver: false,
-                meta: request.meta,
-              },
-            },
-          });
-        }
+    if (!result) {
+      result = await context.resolve(request.specifier, request.fromFile.replace(root, rewrittenApp), {
+        skipSelf: true,
+        custom: {
+          embroider: {
+            enableCustomResolver: false,
+            meta: request.meta,
+          },
+        },
+      });
+    }
     if (result) {
       return { type: 'found', result };
     } else {

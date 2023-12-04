@@ -4,7 +4,6 @@ import {
   hbs,
   scripts,
   templateTag,
-  addons,
   optimizeDeps,
 } from "@embroider/vite";
 import { resolve } from "path";
@@ -31,7 +30,7 @@ export default defineConfig({
       extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
-  optimizeDeps: { exclude: addons(__dirname) },
+  optimizeDeps: optimizeDeps(),
   server: {
     watch: {
     },

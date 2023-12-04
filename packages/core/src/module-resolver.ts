@@ -88,7 +88,7 @@ export interface Options {
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
 }
 
-interface EngineConfig {
+export interface EngineConfig {
   packageName: string;
   activeAddons: { name: string; root: string; canResolveFromFile: string }[];
   fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };

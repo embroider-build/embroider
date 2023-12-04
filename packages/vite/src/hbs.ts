@@ -16,11 +16,16 @@ export function hbs(): Plugin {
     name: 'rollup-hbs-plugin',
     enforce: 'pre',
     async resolveId(source: string, importer: string | undefined) {
+      // prevent resolve loop during vite build
+      if (source.match(/\.(gjs|gts)$/)) {
+        return null;
+      }
       let resolution = await this.resolve(source, importer, {
         skipSelf: true,
       });
 
       if (!resolution) {
+        if (source.endsWith('.hbs')) return null;
         return maybeSynthesizeComponentJS(this, source, importer);
       } else {
         return maybeRewriteHBS(resolution);

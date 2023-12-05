@@ -404,7 +404,14 @@ appScenarios
 
 function emberBootstrap() {
   // https://github.com/kaliber5/ember-bootstrap/pull/1750
-  let modifiers = Project.fromDir(dirname(require.resolve('@ember/render-modifiers')), { linkDeps: true });
+  let modifiers = Project.fromDir(
+    dirname(
+      require.resolve('@ember/render-modifiers', {
+        paths: [dirname(require.resolve('ember-bootstrap'))],
+      })
+    ),
+    { linkDeps: true }
+  );
   modifiers.removeDependency('ember-source');
   let eb = Project.fromDir(dirname(require.resolve('ember-bootstrap')), { linkDeps: true });
   eb.addDependency(modifiers);

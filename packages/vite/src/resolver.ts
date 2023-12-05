@@ -1,8 +1,8 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin } from 'vite';
 import { join, resolve } from 'node:path';
-import type { Resolution, ResolverFunction } from '@embroider/core';
-import { AddonMeta, getAppMeta, ResolverLoader, virtualContent } from '@embroider/core';
+import type { Resolution, ResolverFunction, AddonMeta } from '@embroider/core';
+import { getAppMeta, ResolverLoader, virtualContent } from '@embroider/core';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
@@ -24,14 +24,14 @@ const rewrittenTestIndex = resolve(rewrittenApp, 'tests', 'index.html');
 let environment = 'production';
 
 type Options = {
-  entryFolders: string[]
-}
+  entryFolders: string[];
+};
 
 export function resolver(options?: Options): Plugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   const engine = resolverLoader.resolver.options.engines[0];
   engine.root = root;
-  engine.activeAddons.forEach((addon) => {
+  engine.activeAddons.forEach(addon => {
     addon.canResolveFromFile = addon.canResolveFromFile.replace(rewrittenApp, cwd);
   });
   const appMeta = getAppMeta(cwd);
@@ -50,23 +50,23 @@ export function resolver(options?: Options): Plugin {
         return json;
       }
       return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
-    }
-  })
+    },
+  });
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
     configureServer(server) {
       const files = readdirSync('.');
-      files.forEach((f) => {
+      files.forEach(f => {
         if (lockFiles.includes(f)) {
           server.watcher.add('./' + f);
         }
       });
       server.watcher.add('./app/index.html');
-      server.watcher.on('change', async (path) => {
+      server.watcher.on('change', async path => {
         await buildIfFileChanged(path);
         server.restart(true);
-      })
+      });
       environment = 'development';
       server.middlewares.use((req, _res, next) => {
         if (req.originalUrl?.match(/\/tests($|\?)/) || req.originalUrl?.startsWith('/tests/index.html')) {
@@ -96,7 +96,9 @@ export function resolver(options?: Options): Plugin {
           p = join('node_modules', req.originalUrl);
           pkg = resolverLoader.resolver.packageCache.ownerOfFile(p);
           if (pkg && pkg.meta && (pkg.meta as AddonMeta)['public-assets']) {
-            const asset = Object.entries((pkg.meta as any)['public-assets']).find(([_key, a]) => a === req.originalUrl)?.[0];
+            const asset = Object.entries((pkg.meta as any)['public-assets']).find(
+              ([_key, a]) => a === req.originalUrl
+            )?.[0];
             const local = asset ? join(cwd, p) : null;
             if (local && existsSync(local)) {
               req.originalUrl = '/' + p;
@@ -107,7 +109,7 @@ export function resolver(options?: Options): Plugin {
           return next();
         }
         return next();
-      })
+      });
     },
     async resolveId(source, importer, options) {
       if (source.startsWith('/assets/')) {
@@ -149,34 +151,34 @@ export function resolver(options?: Options): Plugin {
             root,
             engine,
             pkg,
-            entryFolders: options?.entryFolders
-          })
+            entryFolders: options?.entryFolders,
+          });
         }
         if (id.endsWith('/test.js')) {
           return `
             // fix for qunit
             import './test-setup.js';
             import './test-entries.js'
-          `
+          `;
         }
         if (id.endsWith('/test-setup.js')) {
           return `
             import * as EmberTesting from 'ember-testing';
             define('ember-testing', () => EmberTesting);
-          `
+          `;
         }
         if (id.endsWith('/test-entries.js')) {
           return generateTestEntries({
             pkg,
-            entryFolders: options?.entryFolders
-          })
+            entryFolders: options?.entryFolders,
+          });
         }
         return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
       }
 
       if (id.startsWith(virtualPrefix)) {
         if (id.slice(virtualPrefix.length) === 'define') {
-          return generateDefineContent()
+          return generateDefineContent();
         }
         return virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
       }
@@ -190,8 +192,8 @@ export function resolver(options?: Options): Plugin {
         if (ctx.filename === testsIndex) {
           return readFileSync(rewrittenTestIndex).toString();
         }
-      }
-    }
+      },
+    },
   };
 }
 

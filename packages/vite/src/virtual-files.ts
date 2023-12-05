@@ -1,6 +1,6 @@
 import { relative } from 'path';
-import { Package } from '@embroider/core';
-import { EngineConfig } from '@embroider/core/src/module-resolver';
+import type { Package } from '@embroider/core';
+import type { EngineConfig } from '@embroider/core/src/module-resolver';
 import { virtualPrefix } from './request';
 
 type Options = {
@@ -11,11 +11,10 @@ type Options = {
   entryFolders?: string[];
 };
 
-
 type OptionsTest = {
   pkg: Package;
   entryFolders?: string[];
-}
+};
 
 export function generateEntries({ root, engine, pkg, environment, entryFolders }: Options) {
   const folders = [
@@ -63,10 +62,10 @@ export function generateEntries({ root, engine, pkg, environment, entryFolders }
     define('${pkg.name}/config/environment', () => AppEnv);
   `;
   const addonPatterns: string[] = [];
-  engine.activeAddons.forEach((addon) => {
+  engine.activeAddons.forEach(addon => {
     addonPatterns.push(
       `'${relative(root + '/assets', addon.root)}/**/_app_/{${folders.join(',')}}/**/*.{js,ts,gjs,gts,hbs}'`
-    )
+    );
   });
   code += `
     const appModules = import.meta.glob([${globPattern}], { eager: true });
@@ -91,13 +90,8 @@ export function generateEntries({ root, engine, pkg, environment, entryFolders }
   return code;
 }
 
-
 export function generateTestEntries({ pkg, entryFolders }: OptionsTest) {
-  const folders = [
-    'helpers',
-    'integration',
-    'unit',
-  ].concat(entryFolders || []);
+  const folders = ['helpers', 'integration', 'unit'].concat(entryFolders || []);
   const globPattern = `'../../tests/{${folders.join(',')}}/**/*.{js,ts,gjs,gts,hbs}'`;
 
   let code = `
@@ -124,9 +118,8 @@ export function generateTestEntries({ pkg, entryFolders }: OptionsTest) {
   return code;
 }
 
-
 export function generateDefineContent() {
   return `
   export default window.define;
-  `
+  `;
 }

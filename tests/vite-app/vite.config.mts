@@ -5,7 +5,7 @@ import {
   scripts,
   templateTag,
   optimizeDeps,
-  build
+  build,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -13,7 +13,7 @@ import { babel } from "@rollup/plugin-babel";
 const root = "app";
 
 export default defineConfig({
-  root: '.',
+  root: ".",
   plugins: [
     hbs(),
     templateTag(),
@@ -41,8 +41,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(root, "index.html"),
-        tests: resolve('.', "tests/index.html"),
-      }
+        tests: resolve(".", "tests/index.html"),
+      },
     },
   },
 });

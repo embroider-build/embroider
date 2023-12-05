@@ -10,8 +10,8 @@ import { dirname, posix, resolve } from 'path';
 import type { MinifyOptions } from 'terser';
 
 const defaults = [
-    '/node_modules/.embroider/rewritten-app/assets/vendor.js',
-  '/node_modules/.embroider/rewritten-app/assets/test-support.js'
+  '/node_modules/.embroider/rewritten-app/assets/vendor.js',
+  '/node_modules/.embroider/rewritten-app/assets/test-support.js',
 ];
 
 export function scripts(params?: { include?: string[]; exclude?: string[] }): Plugin {
@@ -91,7 +91,10 @@ class ScriptOptimizer {
       }
     }
     let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
-    let finalFilename = (await this.getFingerprintedFilename(script, outCode!))?.replace('node_modules/.embroider/rewritten-app/', '');
+    let finalFilename = (await this.getFingerprintedFilename(script, outCode!))?.replace(
+      'node_modules/.embroider/rewritten-app/',
+      ''
+    );
     let emit: EmittedFile[] = [];
     emit.push({
       type: 'asset',

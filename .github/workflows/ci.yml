@@ -10,12 +10,12 @@ on:
 
   push:
     branches:
-      - main
+      - stable
       - 'v[0-9]+*' # prior release branches (e.g. `v0.30.x` branch)
     tags:
       - 'v*'
   pull_request:
-    branches: [main]
+    branches: [stable]
 
 concurrency:
   group: ci-${{ github.head_ref || github.ref }}

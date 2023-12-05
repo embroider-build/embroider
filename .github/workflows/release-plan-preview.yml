@@ -2,8 +2,7 @@ name: Release Plan Review
 on:
   push:
     branches:
-      - main
-      - master
+      - stable
   pull_request:
     types:
       - labeled
@@ -23,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: 'main'
+          ref: 'stable'
       # This will only cause the `check-plan` job to have a "command" of `release`
       # when the .release-plan.json file was changed on the last commit.
       - id: check-release
@@ -68,7 +67,7 @@ jobs:
           commit-message: "Prepare Release using 'release-plan'"
           author: "github-actions[bot] <github-actions-bot@users.noreply.github.com>"
           labels: "internal"
-          branch: release-preview
+          branch: release-preview-stable
           title: Prepare Release
           body: |
             This PR is a preview of the release that [release-plan](https://github.com/embroider-build/release-plan) has prepared. To release you should just merge this PR 👍

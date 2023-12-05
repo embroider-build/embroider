@@ -9,9 +9,7 @@ on:
   push:
     branches:
       - main
-
-env:
-  VOLTA_FEATURE_PNPM: 1
+      - master
 
 concurrency:
   group: publish-stable-${{ github.head_ref || github.ref }}
@@ -25,7 +23,7 @@ jobs:
       command: ${{ steps.check-release.outputs.command }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: 'main'
@@ -42,18 +40,18 @@ jobs:
     if: needs.check-plan.outputs.command == 'release'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
           use_pinned_node: "true"
-      - name: Install Node
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           # This creates an .npmrc that reads the NODE_AUTH_TOKEN environment variable
           registry-url: 'https://registry.npmjs.org'
 
       - name: npm publish
-        run: node ./test-packages/release/src/cli.js publish
+        run: pnpm release-plan publish
+
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

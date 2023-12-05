@@ -1,6 +1,6 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin } from 'vite';
-import { join, resolve } from 'node:path';
+import { join, resolve } from 'path';
 import type { Resolution, ResolverFunction, AddonMeta } from '@embroider/core';
 import { getAppMeta, ResolverLoader, virtualContent } from '@embroider/core';
 import { existsSync, readdirSync, readFileSync } from 'fs';

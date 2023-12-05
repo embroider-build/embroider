@@ -1,11 +1,11 @@
 import type { Plugin } from 'vite';
-import { join, dirname } from 'node:path';
-import { createHash } from 'node:crypto';
-import { fork } from 'node:child_process';
+import { join, dirname } from 'path';
+import { createHash } from 'crypto';
+import { fork } from 'child_process';
 import type { AddonMeta } from '@embroider/core';
 import { ResolverLoader } from '@embroider/core';
-import { existsSync, readdirSync, readFileSync } from 'fs';
-import { copyFileSync, mkdirpSync, rmdirSync, rmSync, writeFileSync } from 'fs-extra';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync, rmdirSync, copyFileSync } from 'fs';
+import { mkdirpSync } from 'fs-extra';
 
 const cwd = process.cwd();
 const embroiderDir = join(cwd, 'node_modules', '.embroider');

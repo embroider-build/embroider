@@ -963,7 +963,13 @@ export class Resolver {
   private locateActiveAddon(packageName: string): { root: string; canResolveFromFile: string } | undefined {
     if (packageName === this.options.modulePrefix) {
       // the app itself is something that addon's can classically resolve if they know it's name.
-      return { root: this.options.appRoot, canResolveFromFile: resolve(this.options.appRoot, 'package.json') };
+      return {
+        root: this.options.appRoot,
+        canResolveFromFile: resolve(
+          this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root,
+          'package.json'
+        ),
+      };
     }
     for (let engine of this.options.engines) {
       for (let addon of engine.activeAddons) {

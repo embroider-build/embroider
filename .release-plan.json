@@ -9,31 +9,22 @@
     "@embroider/babel-loader-9": {
       "oldVersion": "3.1.1"
     },
-    "@embroider/compat": {
+    "@embroider/broccoli-side-watch": {
       "impact": "minor",
-      "oldVersion": "3.3.1",
-      "newVersion": "3.4.0",
+      "oldVersion": "0.0.1",
+      "newVersion": "0.1.0",
       "constraints": [
         {
           "impact": "minor",
           "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
-      "pkgJSONPath": "packages/compat/package.json"
+      "pkgJSONPath": "packages/broccoli-side-watch/package.json"
     },
-    "@embroider/core": {
-      "oldVersion": "3.4.2"
-    },
-    "@embroider/hbs-loader": {
-      "oldVersion": "3.0.3"
-    },
-    "@embroider/macros": {
-      "oldVersion": "1.13.3"
-    },
-    "@embroider/reverse-exports": {
+    "@embroider/compat": {
       "impact": "minor",
-      "oldVersion": "0.0.0",
-      "newVersion": "0.1.0",
+      "oldVersion": "3.4.0",
+      "newVersion": "3.5.0",
       "constraints": [
         {
           "impact": "minor",
@@ -41,25 +32,67 @@
         },
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Appears in changelog section :house: Internal"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
-      "pkgJSONPath": "packages/reverse-exports/package.json"
+      "pkgJSONPath": "packages/compat/package.json"
     },
-    "@embroider/router": {
+    "@embroider/core": {
+      "impact": "minor",
+      "oldVersion": "3.4.2",
+      "newVersion": "3.5.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "packages/core/package.json"
+    },
+    "@embroider/hbs-loader": {
+      "oldVersion": "3.0.3"
+    },
+    "@embroider/macros": {
       "impact": "patch",
-      "oldVersion": "2.1.5",
-      "newVersion": "2.1.6",
+      "oldVersion": "1.13.3",
+      "newVersion": "1.13.4",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
         }
       ],
-      "pkgJSONPath": "packages/router/package.json"
+      "pkgJSONPath": "packages/macros/package.json"
+    },
+    "@embroider/reverse-exports": {
+      "oldVersion": "0.1.0"
+    },
+    "@embroider/router": {
+      "oldVersion": "2.1.6"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.5.1"
+      "impact": "patch",
+      "oldVersion": "2.5.1",
+      "newVersion": "2.5.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "3.0.3"
@@ -68,11 +101,33 @@
       "oldVersion": "1.12.1"
     },
     "@embroider/vite": {
-      "oldVersion": "0.2.0"
+      "impact": "minor",
+      "oldVersion": "0.2.0",
+      "newVersion": "0.3.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "packages/vite/package.json"
     },
     "@embroider/webpack": {
-      "oldVersion": "3.2.1"
+      "impact": "patch",
+      "oldVersion": "3.2.1",
+      "newVersion": "3.2.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "packages/webpack/package.json"
     }
   },
-  "description": "## Release (2023-11-28)\n\n@embroider/compat 3.4.0 (minor)\n@embroider/reverse-exports 0.1.0 (minor)\n@embroider/router 2.1.6 (patch)\n\n#### :rocket: Enhancement\n* `reverse-exports`\n  * [#1652](https://github.com/embroider-build/embroider/pull/1652) create new @embroider/reverse-exports package ([@lolmaus](https://github.com/lolmaus))\n* `compat`\n  * [#1673](https://github.com/embroider-build/embroider/pull/1673) allow apps to disable the decorator transforms ([@ef4](https://github.com/ef4))\n\n#### :bug: Bug Fix\n* `router`\n  * [#1684](https://github.com/embroider-build/embroider/pull/1684) Workaround typescript regression in router package ([@ef4](https://github.com/ef4))\n* `reverse-exports`\n  * [#1676](https://github.com/embroider-build/embroider/pull/1676) fix single asterisk replacement in reverse-exports ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* [#1683](https://github.com/embroider-build/embroider/pull/1683) update the releasing CI job ([@mansona](https://github.com/mansona))\n* [#1681](https://github.com/embroider-build/embroider/pull/1681) skip watch-mode tests in windows ([@mansona](https://github.com/mansona))\n\n#### Committers: 3\n- Andrey Mikhaylov (lolmaus) ([@lolmaus](https://github.com/lolmaus))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2023-12-05)\n\n@embroider/broccoli-side-watch 0.1.0 (minor)\n@embroider/compat 3.5.0 (minor)\n@embroider/core 3.5.0 (minor)\n@embroider/macros 1.13.4 (patch)\n@embroider/shared-internals 2.5.2 (patch)\n@embroider/vite 0.3.0 (minor)\n@embroider/webpack 3.2.2 (patch)\n\n#### :rocket: Enhancement\n* `broccoli-side-watch`\n  * [#1693](https://github.com/embroider-build/embroider/pull/1693) Add broccoli-side-watch package ([@balinterdi](https://github.com/balinterdi))\n* `compat`, `core`, `vite`\n  * [#1650](https://github.com/embroider-build/embroider/pull/1650) Add Esbuild resolver ([@mansona](https://github.com/mansona))\n* `compat`, `core`\n  * [#1648](https://github.com/embroider-build/embroider/pull/1648) use package paths instead of relative paths for app tree resolving ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* `compat`, `shared-internals`\n  * [#1691](https://github.com/embroider-build/embroider/pull/1691) Move fix for @ember-data/debug into virtualPeerDeps ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Balint Erdi ([@balinterdi](https://github.com/balinterdi))\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

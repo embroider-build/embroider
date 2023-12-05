@@ -1,5 +1,31 @@
 # Embroider Changelog
 
+## Release (2023-12-05)
+
+@embroider/broccoli-side-watch 0.1.0 (minor)
+@embroider/compat 3.5.0 (minor)
+@embroider/core 3.5.0 (minor)
+@embroider/macros 1.13.4 (patch)
+@embroider/shared-internals 2.5.2 (patch)
+@embroider/vite 0.3.0 (minor)
+@embroider/webpack 3.2.2 (patch)
+
+#### :rocket: Enhancement
+* `broccoli-side-watch`
+  * [#1693](https://github.com/embroider-build/embroider/pull/1693) Add broccoli-side-watch package ([@balinterdi](https://github.com/balinterdi))
+* `compat`, `core`, `vite`
+  * [#1650](https://github.com/embroider-build/embroider/pull/1650) Add Esbuild resolver ([@mansona](https://github.com/mansona))
+* `compat`, `core`
+  * [#1648](https://github.com/embroider-build/embroider/pull/1648) use package paths instead of relative paths for app tree resolving ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `compat`, `shared-internals`
+  * [#1691](https://github.com/embroider-build/embroider/pull/1691) Move fix for @ember-data/debug into virtualPeerDeps ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Balint Erdi ([@balinterdi](https://github.com/balinterdi))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2023-11-28)
 
 @embroider/compat 3.4.0 (minor)

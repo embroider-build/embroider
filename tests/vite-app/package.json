@@ -20,9 +20,7 @@
     "lint:hbs:fix": "ember-template-lint . --fix",
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
-    "start:prebuild": "ember build",
     "start:dev": "vite",
-    "start": "concurrently \"npm:start:*\" --names \"start:\"",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
     "test:ember": "ember test"
   },
@@ -83,10 +81,7 @@
   "ember": {
     "edition": "octane"
   },
-  "main": "package.json",
-  "dependencies": {
-    "@esbuild/linux-x64": "^0.19.8"
-  }
+  "main": "package.json"
 }
 
 

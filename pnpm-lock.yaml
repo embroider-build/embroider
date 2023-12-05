@@ -1954,10 +1954,6 @@ importers:
         version: link:../../packages/addon-shim
 
   tests/vite-app:
-    dependencies:
-      '@esbuild/linux-x64':
-        specifier: ^0.19.8
-        version: 0.19.8
     devDependencies:
       '@babel/core':
         specifier: ^7.22.6
@@ -5093,13 +5089,6 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
-
-  /@esbuild/linux-x64@0.19.8:
-    resolution: {integrity: sha512-lytMAVOM3b1gPypL2TRmZ5rnXl7+6IIk8uB3eLsV1JwcizuolblXRrc5ShPrO9ls/b+RTp+E6gbsuLWHWi2zGg==}
-    engines: {node: '>=12'}
-    cpu: [x64]
-    os: [linux]
-    dev: false
 
   /@esbuild/netbsd-x64@0.17.19:
     resolution: {integrity: sha512-CwFq42rXCR8TYIjIfpXCbRX0rp1jo6cPIUPSaWwzbVI4aOfX96OXY8M6KNmtPcg7QjYeDmN+DD0Wp3LaBOLf4Q==}

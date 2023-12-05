@@ -1,15 +1,13 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin } from 'vite';
-import { join, resolve, dirname } from 'node:path';
-import { createHash } from 'node:crypto';
-import { fork } from 'node:child_process';
+import { join, resolve } from 'node:path';
 import type { Resolution, ResolverFunction } from '@embroider/core';
 import { AddonMeta, getAppMeta, ResolverLoader, virtualContent } from '@embroider/core';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 import { generateDefineContent, generateEntries, generateTestEntries } from './virtual-files';
-import { copyFileSync, mkdirpSync, rmdirSync, rmSync, writeFileSync } from 'fs-extra';
+import { buildIfFileChanged, lockFiles } from './build';
 
 const cwd = process.cwd();
 const root = join(cwd, 'app');
@@ -17,7 +15,6 @@ const publicDir = join(cwd, 'public');
 const tests = join(cwd, 'tests');
 const embroiderDir = join(cwd, 'node_modules', '.embroider');
 const rewrittenApp = join(embroiderDir, 'rewritten-app');
-const cacheKeyPath = join(embroiderDir, 'cache-key.json');
 
 const appIndex = resolve(root, 'index.html').replace(/\\/g, '/');
 const testsIndex = resolve(tests, 'index.html').replace(/\\/g, '/');
@@ -28,53 +25,6 @@ let environment = 'production';
 
 type Options = {
   entryFolders: string[]
-}
-
-const lockFiles = ['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock', 'package.json'];
-
-function getCacheKey(file: string) {
-  if (existsSync(cacheKeyPath)) {
-    return JSON.parse(readFileSync(cacheKeyPath).toString())[file];
-  }
-  return null;
-}
-
-function updateCacheKey(file: string, key: string|null) {
-    let json: Record<string, string|null> = {};
-    if (existsSync(cacheKeyPath)) {
-        json = JSON.parse(readFileSync(cacheKeyPath).toString());
-    }
-    json[file] = key;
-    writeFileSync(cacheKeyPath, JSON.stringify(json));
-}
-
-function computeCacheKeyForFile(file: string) {
-  if (existsSync(file)) {
-    const fileBuffer = readFileSync(file);
-    const hashSum = createHash('sha256');
-    hashSum.update(fileBuffer);
-
-    return hashSum.digest('hex');
-  }
-  return null;
-}
-
-function emberBuild(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = fork('./node_modules/ember-cli/bin/ember', ['build']);
-    child.on('exit', (code) => code === 0 ? resolve() : reject());
-  });
-}
-
-async function buildIfFileChanged(path: string|null|undefined): Promise<void> {
-  if (path && (lockFiles.includes(path) || path === 'app/index.html')) {
-    const key = computeCacheKeyForFile(path);
-    if (key !== getCacheKey(path)) {
-      console.log(path + ' change requires rebuild, rebuilding...');
-      await emberBuild();
-      updateCacheKey(path, key);
-    }
-  }
 }
 
 export function resolver(options?: Options): Plugin {
@@ -105,34 +55,6 @@ export function resolver(options?: Options): Plugin {
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
-    writeBundle(options) {
-      engine.activeAddons.forEach((addon) => {
-        const pkg = resolverLoader.resolver.packageCache.ownerOfFile(addon.root);
-        if (!pkg) return;
-        const assets = (pkg.meta as AddonMeta)['public-assets'] || {};
-        Object.entries(assets).forEach(([path, dest]) => {
-          mkdirpSync(dirname(join(options.dir!, dest)))
-          copyFileSync(join(pkg.root, path), join(options.dir!, dest));
-        });
-      });
-      copyFileSync(join(options.dir!, 'app', 'index.html'), join(options.dir!, 'index.html'));
-      rmSync(join(options.dir!, 'app', 'index.html'));
-      rmdirSync(join(options.dir!, 'app'));
-    },
-    async buildStart() {
-      if (!existsSync(embroiderDir)) {
-        await emberBuild();
-        const files = readdirSync('.');
-        const f = lockFiles.find(l => files.includes(l))!;
-        updateCacheKey(f, computeCacheKeyForFile(f));
-      }
-      if (!existsSync(cacheKeyPath)) {
-        const files = readdirSync('.');
-        const f = lockFiles.find(l => files.includes(l));
-        await buildIfFileChanged(f);
-      }
-      await buildIfFileChanged('app/index.html');
-    },
     configureServer(server) {
       const files = readdirSync('.');
       files.forEach((f) => {
@@ -173,7 +95,7 @@ export function resolver(options?: Options): Plugin {
           }
           p = join('node_modules', req.originalUrl);
           pkg = resolverLoader.resolver.packageCache.ownerOfFile(p);
-          if (pkg && pkg.meta && (pkg.meta as any)['public-assets']) {
+          if (pkg && pkg.meta && (pkg.meta as AddonMeta)['public-assets']) {
             const asset = Object.entries((pkg.meta as any)['public-assets']).find(([_key, a]) => a === req.originalUrl)?.[0];
             const local = asset ? join(cwd, p) : null;
             if (local && existsSync(local)) {

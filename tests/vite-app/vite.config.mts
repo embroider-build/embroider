@@ -5,12 +5,12 @@ import {
   scripts,
   templateTag,
   optimizeDeps,
+  build
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
 const root = "app";
-const rewrittenApp = "node_modules/.embroider/rewritten-app";
 
 export default defineConfig({
   root: '.',
@@ -19,6 +19,7 @@ export default defineConfig({
     templateTag(),
     scripts(),
     resolver(),
+    build(),
 
     babel({
       babelHelpers: "runtime",

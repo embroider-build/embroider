@@ -785,6 +785,9 @@ importers:
       '@embroider/core':
         specifier: workspace:*
         version: link:../core
+      '@embroider/shared-internals':
+        specifier: workspace:*
+        version: link:../shared-internals
       '@embroider/test-setup':
         specifier: workspace:*
         version: link:../test-setup
@@ -899,6 +902,9 @@ importers:
       qunit-dom:
         specifier: ^2.0.0
         version: 2.0.0
+      semver:
+        specifier: ^7.5.4
+        version: 7.5.4
       typescript:
         specifier: ^5.1.6
         version: 5.3.2

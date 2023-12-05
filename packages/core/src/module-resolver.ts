@@ -59,9 +59,6 @@ export interface Options {
   renameModules: {
     [fromName: string]: string;
   };
-  activeAddons: {
-    [packageName: string]: string;
-  };
   resolvableExtensions: string[];
   appRoot: string;
   engines: EngineConfig[];
@@ -919,14 +916,13 @@ export class Resolver {
     if (emberVirtualPeerDeps.has(packageName) && !pkg.hasDependency(packageName)) {
       // addons (whether auto-upgraded or not) may use the app's
       // emberVirtualPeerDeps, like "@glimmer/component" etc.
-      if (!this.options.activeAddons[packageName]) {
-        throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
+      let addon = this.locateActiveAddon(packageName);
+      if (!addon) {
+        throw new Error(
+          `${pkg.name} is trying to import the emberVirtualPeerDep "${packageName}", but it seems to be missing`
+        );
       }
-      let newHome = resolve(
-        this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root,
-        'package.json'
-      );
-      return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
+      return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(addon.canResolveFromFile));
     }
 
     // if this file is part of an addon's app-js, it's really the logical
@@ -962,6 +958,20 @@ export class Resolver {
       }
     }
     return request;
+  }
+
+  private locateActiveAddon(packageName: string): { root: string; canResolveFromFile: string } | undefined {
+    if (packageName === this.options.modulePrefix) {
+      // the app itself is something that addon's can classically resolve if they know it's name.
+      return { root: this.options.appRoot, canResolveFromFile: resolve(this.options.appRoot, 'package.json') };
+    }
+    for (let engine of this.options.engines) {
+      for (let addon of engine.activeAddons) {
+        if (addon.name === packageName) {
+          return addon;
+        }
+      }
+    }
   }
 
   private external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
@@ -1083,14 +1093,13 @@ export class Resolver {
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
-    if (pkg.meta['auto-upgraded'] && this.options.activeAddons[packageName]) {
-      const rehomed = this.resolveWithinMovedPackage(
-        request,
-        this.packageCache.get(this.options.activeAddons[packageName])
-      );
-
-      if (rehomed !== request) {
-        return logTransition(`activeAddons`, request, rehomed);
+    if (pkg.meta['auto-upgraded']) {
+      let addon = this.locateActiveAddon(packageName);
+      if (addon) {
+        const rehomed = request.rehome(addon?.canResolveFromFile);
+        if (rehomed !== request) {
+          return logTransition(`activeAddons`, request, rehomed);
+        }
       }
     }
 

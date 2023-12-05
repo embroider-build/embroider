@@ -1,26 +1,27 @@
 # Release Process
 
-1. You need a github token as `GITHUB_AUTH` environment variable.
+Releases in this repo are mostly automated using [release-plan](https://github.com/embroider-build/release-plan/). Once you label all your PRs correctly (see below) you will have an automatically generated PR that updates your CHANGELOG.md file and a `.release-plan.json` that is used prepare the release once the PR is merged.
 
-2. Run `pnpm embroider-release explain-plan`. If there are unlabeled PRs that need to be released it will complain and show you a list of them. Each PR needs to be labeled with one of: 
-    - breaking
-    - enhancement
-    - bug
-    - documentation
-    - internal
+## Preparation
 
-3. Once all the PRs are labeled, it will instead show you the release plan, explaining which packages are getting released, at which versions, and why.
+Since the majority of the actual release process is automated, the remaining tasks before releasing are: 
 
-4. If you disagree with the plan, you can modify the list of changes before using it to `explain-plan` or `prepare` a release:
+-  correctly labeling **all** pull requests that have been merged since the last release
+-  updating pull request titles so they make sense to our users
 
-    - `pnpm embroider-release gather-changes > /tmp/changelog`
-    - edit `/tmp/changelog`
-    - `pnpm embroider-release explain-plan --from-stdin < /tmp/changelog`
+Some great information on why this is important can be found at [keepachangelog.com](https://keepachangelog.com/en/1.1.0/), but the overall
+guiding principle here is that changelogs are for humans, not machines.
 
-    For example, this can be necessary if a PR that's labeled `breaking` touches multiple packages and only one of those packages is actually a breaking change. In that case you can take the other package names out of the description of the PR.
+When reviewing merged PR's the labels to be used are:
 
-5. Once you're happy with the plan, run `pnpm embroider-release prepare`. This will edit CHANGELOG.md, bump the version numbers in package.json files, and create a file named `.release-plan.json`. Make a PR with these changes.
+* breaking - Used when the PR is considered a breaking change.
+* enhancement - Used when the PR adds a new feature or enhancement.
+* bug - Used when the PR fixes a bug included in a previous release.
+* documentation - Used when the PR adds or updates documentation.
+* internal - Internal changes or things that don't fit in any other category.
 
-6. Once the PR is merged, in a clean local repo at the merge commit, run `pnpm embroider-release publish`.
+**Note:** `release-plan` requires that **all** PRs are labeled. If a PR doesn't fit in a category it's fine to label it as `internal`
 
-    
+## Release
+
+Once the prep work is completed, the actual release is straight forward: you just need to merge the open [Plan Release](https://github.com/embroider-build/embroider/pulls?q=is%3Apr+is%3Aopen+%22Prepare+Release%22+in%3Atitle) PR

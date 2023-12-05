@@ -41,7 +41,7 @@ export default defineConfig({
       input: {
         main: resolve(root, "index.html"),
         tests: resolve('.', "tests/index.html"),
-      },
+      }
     },
   },
 });

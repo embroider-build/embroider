@@ -9,7 +9,10 @@ import { dirname, posix, resolve } from 'path';
 // add any non-type-only imports here.
 import type { MinifyOptions } from 'terser';
 
-const defaults = ['/assets/vendor.js', '/assets/test-support.js'];
+const defaults = [
+    '/node_modules/.embroider/rewritten-app/assets/vendor.js',
+  '/node_modules/.embroider/rewritten-app/assets/test-support.js'
+];
 
 export function scripts(params?: { include?: string[]; exclude?: string[] }): Plugin {
   let optimizer: ScriptOptimizer;
@@ -88,18 +91,18 @@ class ScriptOptimizer {
       }
     }
     let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
-    let finalFilename = await this.getFingerprintedFilename(script, outCode!);
+    let finalFilename = (await this.getFingerprintedFilename(script, outCode!))?.replace('node_modules/.embroider/rewritten-app/', '');
     let emit: EmittedFile[] = [];
     emit.push({
       type: 'asset',
       fileName: finalFilename.slice(1),
       source: outCode!,
     });
-    this.emitted.set(script, finalFilename);
+    this.emitted.set(script.replace('/node_modules/.embroider/rewritten-app', ''), finalFilename);
     if (appRelativeSourceMapURL && outMap) {
       emit.push({
         type: 'asset',
-        fileName: appRelativeSourceMapURL,
+        fileName: appRelativeSourceMapURL.replace('node_modules/.embroider/rewritten-app/', ''),
         source: JSON.stringify(outMap, null, 2),
       });
     }

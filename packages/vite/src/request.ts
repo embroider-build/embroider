@@ -12,6 +12,9 @@ export class RollupModuleRequest implements ModuleRequest {
     if (!(custom?.embroider?.enableCustomResolver ?? true)) {
       return;
     }
+    if (custom?.depScan) {
+      return;
+    }
 
     if (source && importer && source[0] !== '\0') {
       let nonVirtual: string;
@@ -32,6 +35,10 @@ export class RollupModuleRequest implements ModuleRequest {
     readonly fromFile: string,
     readonly meta: Record<string, any> | undefined
   ) {}
+
+  get debugType() {
+    return 'rollup';
+  }
 
   get isVirtual(): boolean {
     return this.specifier.startsWith(virtualPrefix);

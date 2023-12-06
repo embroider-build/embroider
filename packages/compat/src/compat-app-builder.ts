@@ -1000,6 +1000,10 @@ export class CompatAppBuilder {
     this.addResolverConfig(resolverConfig);
     let babelConfig = this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
+    writeFileSync(
+      join(this.root, 'macros-config.json'),
+      JSON.stringify(this.compatApp.macrosConfig.babelPluginConfig()[0], null, 2)
+    );
   }
 
   private combinePackageJSON(meta: AppMeta): object {

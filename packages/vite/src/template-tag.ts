@@ -3,7 +3,7 @@ import type { Plugin } from 'vite';
 import { readFileSync } from 'fs';
 import { Preprocessor } from 'content-tag';
 
-const gjsFilter = createFilter('**/*.gjs');
+const gjsFilter = createFilter('**/*.gjs?(\\?)*');
 
 export function templateTag(): Plugin {
   let preprocessor = new Preprocessor();
@@ -44,7 +44,7 @@ export function templateTag(): Plugin {
       if (!gjsFilter(id)) {
         return null;
       }
-      return preprocessor.process(readFileSync(id, 'utf8'), id);
+      return preprocessor.process(readFileSync(id.replace(/\.gjs\?.*/, '.gjs'), 'utf8'), id);
     },
   };
 }

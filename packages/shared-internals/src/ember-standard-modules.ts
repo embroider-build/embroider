@@ -51,6 +51,9 @@ emberVirtualPackages.add('@glimmer/validator');
 emberVirtualPackages.add('@glimmer/reference');
 emberVirtualPackages.add('@glimmer/manager');
 
+// ember-data pre 4.12 failed to declare this as a peer dependency of @ember-data/debug
+emberVirtualPeerDeps.add('@ember-data/store');
+
 // These are the known names that people use to import template precomiplation
 // macros from.
 export const templateCompilationModules = Object.freeze([

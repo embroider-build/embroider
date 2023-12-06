@@ -28,26 +28,45 @@ import { readFileSync } from 'fs';
 import type UserOptions from './options';
 
 const debug = makeDebug('embroider:resolver');
+
+// Using a formatter makes this work lazy so nothing happens when we aren't
+// logging. It is unfortunate that formatters are a globally mutable config and
+// you can only use single character names, but oh well.
+makeDebug.formatters.p = (s: string) => {
+  let cwd = process.cwd();
+  if (s.startsWith(cwd)) {
+    return s.slice(cwd.length + 1);
+  }
+  return s;
+};
+
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
   if (after.isVirtual) {
-    debug(`virtualized %s in %s because %s`, before.specifier, before.fromFile, reason);
+    debug(`[%s:virtualized] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else if (before.specifier !== after.specifier) {
     if (before.fromFile !== after.fromFile) {
       debug(
-        `aliased and rehomed: %s to %s, from %s to %s because %s`,
+        `[%s:aliased and rehomed] %s to %s\n  because %s\n  from    %p\n  to      %p`,
+        before.debugType,
         before.specifier,
         after.specifier,
+        reason,
         before.fromFile,
-        after.fromFile,
-        reason
+        after.fromFile
       );
     } else {
-      debug(`aliased: %s to %s in %s because`, before.specifier, after.specifier, before.fromFile, reason);
+      debug(`[%s:aliased] %s to %s\n  because %s`, before.debugType, before.specifier, after.specifier, reason);
     }
   } else if (before.fromFile !== after.fromFile) {
-    debug(`rehomed: %s from %s to %s because`, before.specifier, before.fromFile, after.fromFile, reason);
+    debug(
+      `[%s:rehomed] because %s\n  from    %p\n  to      %p`,
+      before.debugType,
+      reason,
+      before.fromFile,
+      after.fromFile
+    );
   } else {
-    debug(`unchanged: %s in %s because %s`, before.specifier, before.fromFile, reason);
+    debug(`[%s:unchanged] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   }
   return after;
 }
@@ -117,6 +136,7 @@ export interface ModuleRequest {
   readonly fromFile: string;
   readonly isVirtual: boolean;
   readonly meta: Record<string, unknown> | undefined;
+  readonly debugType: string;
   alias(newSpecifier: string): this;
   rehome(newFromFile: string): this;
   virtualize(virtualFilename: string): this;
@@ -130,6 +150,11 @@ class NodeModuleRequest implements ModuleRequest {
     readonly isVirtual: boolean,
     readonly meta: Record<string, any> | undefined
   ) {}
+
+  get debugType() {
+    return 'node';
+  }
+
   alias(specifier: string): this {
     return new NodeModuleRequest(specifier, this.fromFile, false, this.meta) as this;
   }

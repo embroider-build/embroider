@@ -25,6 +25,10 @@ export class EsBuildModuleRequest implements ModuleRequest {
     readonly isVirtual: boolean
   ) {}
 
+  get debugType() {
+    return 'esbuild';
+  }
+
   alias(newSpecifier: string) {
     return new EsBuildModuleRequest(newSpecifier, this.fromFile, this.meta, this.isVirtual) as this;
   }

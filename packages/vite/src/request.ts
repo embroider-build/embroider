@@ -36,6 +36,10 @@ export class RollupModuleRequest implements ModuleRequest {
     readonly meta: Record<string, any> | undefined
   ) {}
 
+  get debugType() {
+    return 'rollup';
+  }
+
   get isVirtual(): boolean {
     return this.specifier.startsWith(virtualPrefix);
   }

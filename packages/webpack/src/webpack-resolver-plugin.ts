@@ -157,6 +157,10 @@ class WebpackModuleRequest implements ModuleRequest {
     this.meta = state.contextInfo._embroiderMeta ? { ...state.contextInfo._embroiderMeta } : undefined;
   }
 
+  get debugType() {
+    return 'webpack';
+  }
+
   alias(newSpecifier: string) {
     this.state.request = newSpecifier;
     return new WebpackModuleRequest(this.babelLoaderPrefix, this.appRoot, this.state) as this;

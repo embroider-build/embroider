@@ -72,7 +72,7 @@ type CreateModeTests = (transform: Transform, hooks: ModeTestHooks) => void;
 function disabledTest(_name: string, _impl: jest.ProvidesCallback | undefined) {}
 disabledTest.only = disabledTest;
 disabledTest.skip = disabledTest;
-disabledTest.todo = disabledTest;
+disabledTest.todo = (_name: string): void => {};
 disabledTest.concurrent = disabledTest;
 disabledTest.each = test.each;
 disabledTest.failing = disabledTest;

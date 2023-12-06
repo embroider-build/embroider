@@ -2,7 +2,6 @@ import type { Plugin } from 'vite';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 import { fork } from 'child_process';
-import type { AddonMeta } from '@embroider/core';
 import { ResolverLoader } from '@embroider/core';
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync, rmdirSync, copyFileSync } from 'fs';
 import { mkdirpSync } from 'fs-extra';
@@ -68,7 +67,8 @@ export function build(): Plugin {
       engine.activeAddons.forEach(addon => {
         const pkg = resolverLoader.resolver.packageCache.ownerOfFile(addon.root);
         if (!pkg) return;
-        const assets = (pkg.meta as AddonMeta)['public-assets'] || {};
+        if (!pkg?.isV2Addon()) return;
+        const assets = pkg.meta['public-assets'] || {};
         Object.entries(assets).forEach(([path, dest]) => {
           mkdirpSync(dirname(join(options.dir!, dest)));
           copyFileSync(join(pkg.root, path), join(options.dir!, dest));

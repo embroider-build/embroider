@@ -6,7 +6,6 @@ describe('optimizeDeps', function () {
 
     expect(actual).toMatchInlineSnapshot(
       {
-        exclude: ['@embroider/macros'],
         esbuildOptions: {
           plugins: [expect.any(Object)],
         },
@@ -20,6 +19,10 @@ describe('optimizeDeps', function () {
         },
         "exclude": [
           "@embroider/macros",
+        ],
+        "extensions": [
+          ".hbs",
+          ".gjs",
         ],
       }
     `

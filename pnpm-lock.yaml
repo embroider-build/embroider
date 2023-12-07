@@ -348,8 +348,8 @@ importers:
         specifier: ^0.8.19
         version: 0.8.23(@glint/template@1.2.1)
       scenario-tester:
-        specifier: ^2.1.2
-        version: 2.1.2
+        specifier: ^3.0.0
+        version: 3.0.0
       typescript:
         specifier: ^5.1.6
         version: 5.2.2
@@ -575,8 +575,8 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0(@types/jest@29.5.11)(qunit@2.20.0)
       scenario-tester:
-        specifier: ^2.1.2
-        version: 2.1.2
+        specifier: ^3.0.0
+        version: 3.0.0
       typescript:
         specifier: ^5.1.6
         version: 5.2.2
@@ -1577,8 +1577,8 @@ importers:
         specifier: ^3.23.0
         version: 3.29.4
       scenario-tester:
-        specifier: ^2.1.2
-        version: 2.1.2
+        specifier: ^3.0.0
+        version: 3.0.0
       semver:
         specifier: ^7.3.8
         version: 7.5.4
@@ -8155,7 +8155,6 @@ packages:
     resolution: {integrity: sha512-nEnwB++1u5lVDM2UI4c1+5R+FYaKfaAzS4OococimjVm3nQw3TuzH5UNsocrcTBbhnerblyHj4A49qXbIiZdpA==}
     dependencies:
       '@types/node': 15.14.9
-    dev: true
 
   /@types/glob@7.2.0:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
@@ -8311,6 +8310,12 @@ packages:
 
   /@types/rimraf@2.0.5:
     resolution: {integrity: sha512-YyP+VfeaqAyFmXoTh3HChxOQMyjByRMsHU7kc5KOJkSlXudhMhQIALbYV7rHh/l8d2lX3VUQzprrcAgWdRuU8g==}
+    dependencies:
+      '@types/glob': 8.1.0
+      '@types/node': 15.14.9
+
+  /@types/rimraf@3.0.2:
+    resolution: {integrity: sha512-F3OznnSLAUxFrCEu/L5PY8+ny8DtcFRjx7fZZ9bycvXRi3KPTRS9HOitGZwvPg0juRhXFWIeKX58cnX5YqLohQ==}
     dependencies:
       '@types/glob': 8.1.0
       '@types/node': 15.14.9
@@ -17171,16 +17176,16 @@ packages:
       tmp: 0.0.33
       type-fest: 0.11.0
 
-  /fixturify-project@5.2.0:
-    resolution: {integrity: sha512-7H20FpTbA8P586gS/5SuVmKYLBdOs1oPTF7R2If5lhlcmI+ht48p9atbBtD6kOIuRUPrx6W2yLxUCToBl8W22w==}
+  /fixturify-project@6.0.0:
+    resolution: {integrity: sha512-cT+rudgGhYKJ4h5DIrDj4T2HfZMzF17c+PtQ3gYGXr67hsPkptjAvm6HhmHa7TuzJ2/yHYTGBlVXh5HB3LhVhQ==}
     engines: {node: '>= 14.*'}
     dependencies:
       bin-links: 3.0.3
       deepmerge: 4.3.1
-      fixturify: 2.1.1
+      fixturify: 3.0.0
       resolve-package-path: 4.0.3
       tmp: 0.0.33
-      type-fest: 2.19.0
+      type-fest: 4.8.3
       walk-sync: 3.0.0
 
   /fixturify@0.3.4:
@@ -17210,6 +17215,17 @@ packages:
       fs-extra: 8.1.0
       matcher-collection: 2.0.1
       walk-sync: 2.2.0
+
+  /fixturify@3.0.0:
+    resolution: {integrity: sha512-PFOf/DT9/t2NCiVyiQ5cBMJtGZfWh3aeOV8XVqQQOPBlTv8r6l0k75/hm36JOaiJlrWFk/8aYFyOKAvOkrkjrw==}
+    engines: {node: 14.* || >= 16.*}
+    dependencies:
+      '@types/fs-extra': 9.0.13
+      '@types/minimatch': 3.0.5
+      '@types/rimraf': 3.0.2
+      fs-extra: 10.1.0
+      matcher-collection: 2.0.1
+      walk-sync: 3.0.0
 
   /flat-cache@2.0.1:
     resolution: {integrity: sha512-LoQe6yDuUMDzQAEH8sgmh4Md6oZnc/7PjtwjNFSzveXqSHt6ka9fPBuso7IGf9Rz4uqnSnWiFH2B/zj24a5ReA==}
@@ -22276,11 +22292,11 @@ packages:
     dependencies:
       xmlchars: 2.2.0
 
-  /scenario-tester@2.1.2:
-    resolution: {integrity: sha512-fuwZoavM2v3CyfghIc3gCi36vFDSzIAW1mdgxjUXVQIsoR0aTG657CMnwYAagIN8Aqn1Qt9oJMuqIpggOvybQg==}
+  /scenario-tester@3.0.0:
+    resolution: {integrity: sha512-QGLeio6RHAkF3MVz0/FEJICnGyvjmrn64iR02nN8/wOho6E/UmA1DSpDL9bZHmxb9YFSOj7o8fyJ/DlCNf5A4Q==}
     hasBin: true
     dependencies:
-      fixturify-project: 5.2.0
+      fixturify-project: 6.0.0
       fs-extra: 9.1.0
       glob: 7.2.3
       tmp: 0.2.1
@@ -23728,9 +23744,9 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /type-fest@2.19.0:
-    resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
-    engines: {node: '>=12.20'}
+  /type-fest@4.8.3:
+    resolution: {integrity: sha512-//BaTm14Q/gHBn09xlnKNqfI8t6bmdzx2DXYfPBNofN0WUybCEUDcbCWcTa0oF09lzLjZgPphXAsvRiMK0V6Bw==}
+    engines: {node: '>=16'}
 
   /type-is@1.6.18:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}

@@ -875,7 +875,7 @@ export class Resolver {
       return logTransition(
         `v1 self-import`,
         request,
-        request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'))
+        request.alias(request.specifier.replace(pkg.name, './')).rehome(resolve(pkg.root, 'package.json'))
       );
     }
 

@@ -46,11 +46,17 @@ export function resolver(_options?: Options): Plugin {
     enforce: 'pre',
     async resolveId(source, importer, options) {
       if (source.startsWith('/assets/')) {
-        return resolve(cwd, '.' + source);
+        return resolve(root, '.' + source);
       }
-      if (importer?.includes(`/${pkg.name}/assets/`) && !source.match(/-embroider-implicit-.*modules.js$/)) {
-        if (source.startsWith('./')) {
-          return resolve(cwd, 'assets', source);
+      if (importer?.includes(`${root}/assets/`) && !source.match(/-embroider-implicit-.*modules.js$/)) {
+        if (source.startsWith('../tests')) {
+          source = resolve(root, source);
+        }
+        if (source.startsWith('.')) {
+          source = resolve(root, 'assets', source);
+        }
+        if (source.includes('/app/assets/')) {
+          return source;
         }
       }
       let request = RollupModuleRequest.from(source, importer, options.custom);
@@ -93,7 +99,7 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
         },
       },
     });
-    if (!result) {
+    if (!result && !request.specifier.includes('config/environment')) {
       result = await context.resolve(request.specifier, request.fromFile.replace('/app/package.json', '/package.json'), {
         skipSelf: true,
         custom: {
@@ -104,8 +110,8 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
         },
       });
     }
-    if (!result) {
-      result = await context.resolve(request.specifier, request.fromFile.replace(cwd, rewrittenApp), {
+    if (!result && request.specifier.includes('config/environment')) {
+      result = await context.resolve(request.specifier, request.fromFile.replace(root, rewrittenApp), {
         skipSelf: true,
         custom: {
           embroider: {

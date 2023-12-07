@@ -1,1 +1,1 @@
-<template>Yay2 for gjs!</template>
+<template>Yay7 for gjs!</template>

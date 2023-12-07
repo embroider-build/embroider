@@ -17,7 +17,7 @@ type Options = {
   rewrittenPackageCache: RewrittenPackageCache;
 };
 
-const InMemoryAssets: Record<string, string> = {};
+let InMemoryAssets: Record<string, string> = {};
 
 let environment = 'production';
 
@@ -121,7 +121,7 @@ async function generateAppEntries({ rewrittenPackageCache, root }: Options) {
   const appFile = internalAssets.find(a => (a as any).relativePath === `assets/${pkg.name}.js`)!;
   InMemoryAssets[`assets/${pkg.name}.js`] = (appFile as InMemoryAsset).source.toString();
   InMemoryAssets[`assets/${pkg.name}.js`] += `
-    import buildAppEnv from '../config/environment.js';
+    import buildAppEnv from '../../config/environment.js';
     function merge(source, target) {
       for (const [key, val] of Object.entries(source)) {
         if (val !== null && typeof val === \`object\`) {
@@ -190,6 +190,7 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
     enforce: 'pre',
     configureServer(server) {
       const watcher = server.watcher;
+      // this is required because we do not open the /tests url directly and via the middleware
       watcher.on('add', (filename) => {
         if (entries.find(e => filename.startsWith(join(root, e)))) {
           delete InMemoryAssets[`assets/${appMeta.name}.js`];
@@ -214,6 +215,9 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
         }
         if (testsIndex === filename) {
           delete InMemoryAssets['tests/index.html'];
+          server.ws.send({
+            type: 'full-reload'
+          });
         }
       });
       environment = 'development';
@@ -225,6 +229,17 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
           environment = 'test';
           req.originalUrl = '/tests/index.html';
           (req as any).url = '/tests/index.html';
+          if (InMemoryAssets['index.html']) {
+            server.moduleGraph.invalidateAll();
+            InMemoryAssets = {};
+          }
+          return next();
+        }
+        if (req.originalUrl === '/' || req.originalUrl === '/index.html') {
+          if (InMemoryAssets['tests/index.html']) {
+            server.moduleGraph.invalidateAll();
+            InMemoryAssets = {};
+          }
           return next();
         }
         if (req.originalUrl?.includes('?')) {
@@ -261,7 +276,7 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
         const code = readFileSync(id).toString();
         return code.replace('module.exports = ', 'export default ');
       }
-      if (id.startsWith(cwd + '/assets/')) {
+      if (id.startsWith(root + '/assets/')) {
         if (id.endsWith(appMeta.name + '.js')) {
           return generateAppEntries({
             root,
@@ -281,13 +296,13 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
             define('ember-testing', () => EmberTesting);
           `;
         }
-        if (id.endsWith('/test-entries.js')) {
+        if (id.endsWith('/assets/test-entries.js')) {
           return generateTestEntries({
             root: tests,
             rewrittenPackageCache: resolverLoader.resolver.packageCache,
           });
         }
-        return readFileSync(rewrittenApp + id.replace(cwd + '/assets/', '/assets/').split('?')[0]).toString();
+        return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
       }
     }
   }

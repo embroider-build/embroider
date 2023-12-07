@@ -117,8 +117,10 @@ export class CompatAppBuilder {
       }
     }
 
-    for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
-      assets.push(asset);
+    if (treePaths.htmlTree) {
+      for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
+        assets.push(asset);
+      }
     }
 
     return assets;

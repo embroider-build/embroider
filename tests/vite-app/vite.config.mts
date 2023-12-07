@@ -42,7 +42,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(root, "index.html"),
+        main: resolve('.', "index.html"),
         tests: resolve(".", "tests/index.html"),
       },
     },

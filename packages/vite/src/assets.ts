@@ -305,6 +305,16 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
         }
         return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
       }
-    }
+    },
+    async writeBundle(options) {
+      const { compatAppBuilder } = getCompatAppBuilder({
+        rewrittenPackageCache: resolverLoader.resolver.packageCache,
+        root: options.dir || join(cwd, 'dist')
+      });
+      const assets = compatAppBuilder['gatherAssets']({
+        publicTree: 'public',
+      } as any)
+      await compatAppBuilder['updateAssets'](assets, [], {});
+    },
   }
 }

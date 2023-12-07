@@ -1,9 +1,7 @@
-import { join, dirname } from 'path';
+import { join } from 'path';
 import { createHash } from 'crypto';
 import { fork } from 'child_process';
-import { ResolverLoader } from '@embroider/core';
-import { existsSync, readdirSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
-import { mkdirpSync } from 'fs-extra';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { Plugin } from 'vite';
 
 const cwd = process.cwd();
@@ -60,8 +58,6 @@ export async function buildIfFileChanged(path: string | null | undefined): Promi
 }
 
 export function build(): Plugin {
-  let resolverLoader = new ResolverLoader(process.cwd());
-  const engine = resolverLoader.resolver.options.engines[0];
   return {
     name: 'embroider-builder',
     enforce: 'pre',
@@ -77,18 +73,6 @@ export function build(): Plugin {
         if (needRestart) {
           server.restart(true);
         }
-      });
-    },
-    writeBundle(options) {
-      engine.activeAddons.forEach(addon => {
-        const pkg = resolverLoader.resolver.packageCache.ownerOfFile(addon.root);
-        if (!pkg) return;
-        if (!pkg?.isV2Addon()) return;
-        const assets = pkg.meta['public-assets'] || {};
-        Object.entries(assets).forEach(([path, dest]) => {
-          mkdirpSync(dirname(join(options.dir!, dest)));
-          copyFileSync(join(pkg.root, path), join(options.dir!, dest));
-        });
       });
     },
     async buildStart() {

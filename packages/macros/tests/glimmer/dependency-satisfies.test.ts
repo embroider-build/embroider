@@ -6,11 +6,11 @@ describe('dependency satisfies', () => {
   let project: Project;
   let filename: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     project = new Project('app');
     project.addDependency('qunit', '2.9.1');
     project.addDependency('foo', '1.1.0-beta.1');
-    project.writeSync();
+    await project.write();
     filename = join(project.baseDir, 'sample.js');
   });
 

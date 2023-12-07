@@ -348,8 +348,8 @@ importers:
         specifier: ^0.8.19
         version: 0.8.23(@glint/template@1.2.1)
       scenario-tester:
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.0.1
+        version: 3.0.1
       typescript:
         specifier: ^5.1.6
         version: 5.2.2
@@ -575,8 +575,8 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0(@types/jest@29.5.11)(qunit@2.20.0)
       scenario-tester:
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.0.1
+        version: 3.0.1
       typescript:
         specifier: ^5.1.6
         version: 5.2.2
@@ -1577,8 +1577,8 @@ importers:
         specifier: ^3.23.0
         version: 3.29.4
       scenario-tester:
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.0.1
+        version: 3.0.1
       semver:
         specifier: ^7.3.8
         version: 7.5.4
@@ -22292,8 +22292,8 @@ packages:
     dependencies:
       xmlchars: 2.2.0
 
-  /scenario-tester@3.0.0:
-    resolution: {integrity: sha512-QGLeio6RHAkF3MVz0/FEJICnGyvjmrn64iR02nN8/wOho6E/UmA1DSpDL9bZHmxb9YFSOj7o8fyJ/DlCNf5A4Q==}
+  /scenario-tester@3.0.1:
+    resolution: {integrity: sha512-uF08VtuLdVp/B9vevM17qjWrIUggqREVjVaIro7vRXo4bYcQUoh6CSIRSkT/5uKz6WVBSU5Y1et6vimQXmGpdQ==}
     hasBin: true
     dependencies:
       fixturify-project: 6.0.0
@@ -23928,7 +23928,7 @@ packages:
     resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
     hasBin: true
     peerDependencies:
-      browserslist: '>= 4.21.0'
+      browserslist: ^4.14.0
     dependencies:
       browserslist: 4.22.2
       escalade: 3.1.1

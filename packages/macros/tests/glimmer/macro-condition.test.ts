@@ -63,10 +63,10 @@ describe(`macroCondition`, function () {
       expect(code).toMatch(/\{\{my-assertion undefined\}\}/);
     });
 
-    test('macroCondition composes with other macros, true case', function () {
+    test('macroCondition composes with other macros, true case', async function () {
       project = new Project('app');
       project.addDependency('ember-source', '3.1.2');
-      project.writeSync();
+      await project.write();
       let code = transform(
         `{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '3.x')) 'red' 'blue') }}`,
         { filename: join(project.baseDir, 'sample.js') }
@@ -74,10 +74,10 @@ describe(`macroCondition`, function () {
       expect(code).toMatch(/\{\{my-assertion ["']red["']\}\}/);
     });
 
-    test('macroCondition composes with other macros, false case', function () {
+    test('macroCondition composes with other macros, false case', async function () {
       project = new Project('app');
       project.addDependency('ember-source', '3.1.2');
-      project.writeSync();
+      await project.write();
       let code = transform(
         `{{my-assertion (if (macroCondition (macroDependencySatisfies 'ember-source' '10.x')) 'red' 'blue') }}`,
         { filename: join(project.baseDir, 'sample.js') }

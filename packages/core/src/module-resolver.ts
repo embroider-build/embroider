@@ -5,7 +5,7 @@ import {
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve } from 'path';
+import { dirname, resolve, posix } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -939,7 +939,15 @@ export class Resolver {
         return logTransition(
           'beforeResolve: relative import in app-js',
           request,
-          request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
+          request
+            .alias('./' + posix.join(dirname(logicalLocation.inAppName), request.specifier))
+            // it's important that we're rehoming this to the root of the engine
+            // (which we know really exists), and not to a subdir like
+            // logicalLocation.inAppName (which might not physically exist),
+            // because some environments (including node's require.resolve) will
+            // refuse to do resolution from a notional path that doesn't
+            // physically exist.
+            .rehome(resolve(logicalLocation.owningEngine.root, 'package.json'))
         );
       }
 
@@ -1161,7 +1169,12 @@ export class Resolver {
       return logTransition(
         'fallbackResolve: retry from logical home of app-js file',
         request,
-        request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
+        // it might look more precise to rehome into logicalLocation.inAppName
+        // rather than package.json. But that logical location may not actually
+        // exist, and some systems (including node's require.resolve) will be
+        // mad about trying to resolve from notional paths that don't really
+        // exist.
+        request.rehome(resolve(logicalLocation.owningEngine.root, 'package.json'))
       );
     }
 

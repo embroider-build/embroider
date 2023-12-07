@@ -224,18 +224,19 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
       server.middlewares.use((req, _res, next) => {
         // this is necessary so that /tests will load tests/index
         // otherwise this would only happen when /tests/ or /tests/index.html is opened
-        // but then the tests will fail because the ember app will try to route to tests/ which does not exist
         if (req.originalUrl?.match(/\/tests($|\?)/) || req.originalUrl?.startsWith('/tests/index.html')) {
           environment = 'test';
           req.originalUrl = '/tests/index.html';
           (req as any).url = '/tests/index.html';
           if (InMemoryAssets['index.html']) {
+            // need to invalidate modules when switching between app and tests
             server.moduleGraph.invalidateAll();
             InMemoryAssets = {};
           }
           return next();
         }
         if (req.originalUrl === '/' || req.originalUrl === '/index.html') {
+          // need to invalidate modules when switching between app and tests
           if (InMemoryAssets['tests/index.html']) {
             server.moduleGraph.invalidateAll();
             InMemoryAssets = {};

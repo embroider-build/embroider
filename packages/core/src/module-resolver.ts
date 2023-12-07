@@ -969,7 +969,7 @@ export class Resolver {
         this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root,
         'package.json'
       );
-      return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
+      return logTransition(`emberVirtualPeerDeps`, request, request.rehome(newHome));
     }
 
     // if this file is part of an addon's app-js, it's really the logical

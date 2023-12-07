@@ -14,7 +14,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
     if (source && importer && source[0] !== '\0') {
       let fromFile = cleanUrl(importer);
-      return new EsBuildModuleRequest(source, fromFile, pluginData?.embroider?.meta, false);
+      return new EsBuildModuleRequest(source, fromFile, pluginData?.embroider?.meta, false, false);
     }
   }
 
@@ -22,23 +22,31 @@ export class EsBuildModuleRequest implements ModuleRequest {
     readonly specifier: string,
     readonly fromFile: string,
     readonly meta: Record<string, any> | undefined,
-    readonly isVirtual: boolean
+    readonly isVirtual: boolean,
+    readonly isNotFound: boolean
   ) {}
 
+  get debugType() {
+    return 'esbuild';
+  }
+
   alias(newSpecifier: string) {
-    return new EsBuildModuleRequest(newSpecifier, this.fromFile, this.meta, this.isVirtual) as this;
+    return new EsBuildModuleRequest(newSpecifier, this.fromFile, this.meta, this.isVirtual, this.isNotFound) as this;
   }
   rehome(newFromFile: string) {
     if (this.fromFile === newFromFile) {
       return this;
     } else {
-      return new EsBuildModuleRequest(this.specifier, newFromFile, this.meta, this.isVirtual) as this;
+      return new EsBuildModuleRequest(this.specifier, newFromFile, this.meta, this.isVirtual, this.isNotFound) as this;
     }
   }
   virtualize(filename: string) {
-    return new EsBuildModuleRequest(filename, this.fromFile, this.meta, true) as this;
+    return new EsBuildModuleRequest(filename, this.fromFile, this.meta, true, this.isNotFound) as this;
   }
   withMeta(meta: Record<string, any> | undefined): this {
-    return new EsBuildModuleRequest(this.specifier, this.fromFile, meta, this.isVirtual) as this;
+    return new EsBuildModuleRequest(this.specifier, this.fromFile, meta, this.isVirtual, this.isNotFound) as this;
+  }
+  notFound(): this {
+    return new EsBuildModuleRequest(this.specifier, this.fromFile, this.meta, this.isVirtual, true) as this;
   }
 }

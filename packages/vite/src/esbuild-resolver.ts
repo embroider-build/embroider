@@ -112,6 +112,15 @@ function defaultResolve(
         result: { path: request.specifier, namespace: 'embroider' },
       };
     }
+    if (request.isNotFound) {
+      // todo: make sure this looks correct to users
+      return {
+        type: 'not_found',
+        err: {
+          errors: [{ text: `module not found ${request.specifier}` }],
+        },
+      };
+    }
     let result = await context.resolve(request.specifier, {
       importer: request.fromFile,
       resolveDir: dirname(request.fromFile),

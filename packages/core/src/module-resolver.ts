@@ -58,12 +58,15 @@ function logTransition<R extends ModuleRequest>(reason: string, before: R, after
     }
   } else if (before.fromFile !== after.fromFile) {
     debug(
-      `[%s:rehomed] because %s\n  from    %p\n  to      %p`,
+      `[%s:rehomed] %s, because %s\n  from    %p\n  to      %p`,
       before.debugType,
+      before.specifier,
       reason,
       before.fromFile,
       after.fromFile
     );
+  } else if (after.isNotFound) {
+    debug(`[%s:not-found] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else {
     debug(`[%s:unchanged] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   }
@@ -136,10 +139,12 @@ export interface ModuleRequest {
   readonly isVirtual: boolean;
   readonly meta: Record<string, unknown> | undefined;
   readonly debugType: string;
+  readonly isNotFound: boolean;
   alias(newSpecifier: string): this;
   rehome(newFromFile: string): this;
   virtualize(virtualFilename: string): this;
   withMeta(meta: Record<string, any> | undefined): this;
+  notFound(): this;
 }
 
 class NodeModuleRequest implements ModuleRequest {
@@ -147,7 +152,8 @@ class NodeModuleRequest implements ModuleRequest {
     readonly specifier: string,
     readonly fromFile: string,
     readonly isVirtual: boolean,
-    readonly meta: Record<string, any> | undefined
+    readonly meta: Record<string, any> | undefined,
+    readonly isNotFound: boolean
   ) {}
 
   get debugType() {
@@ -155,20 +161,23 @@ class NodeModuleRequest implements ModuleRequest {
   }
 
   alias(specifier: string): this {
-    return new NodeModuleRequest(specifier, this.fromFile, false, this.meta) as this;
+    return new NodeModuleRequest(specifier, this.fromFile, false, this.meta, this.isNotFound) as this;
   }
   rehome(fromFile: string): this {
     if (this.fromFile === fromFile) {
       return this;
     } else {
-      return new NodeModuleRequest(this.specifier, fromFile, false, this.meta) as this;
+      return new NodeModuleRequest(this.specifier, fromFile, false, this.meta, this.isNotFound) as this;
     }
   }
   virtualize(filename: string): this {
-    return new NodeModuleRequest(filename, this.fromFile, true, this.meta) as this;
+    return new NodeModuleRequest(filename, this.fromFile, true, this.meta, this.isNotFound) as this;
   }
   withMeta(meta: Record<string, any> | undefined): this {
-    return new NodeModuleRequest(this.specifier, this.fromFile, this.isVirtual, meta) as this;
+    return new NodeModuleRequest(this.specifier, this.fromFile, this.isVirtual, meta, this.isNotFound) as this;
+  }
+  notFound(): this {
+    return new NodeModuleRequest(this.specifier, this.fromFile, this.isVirtual, this.meta, true) as this;
   }
 }
 
@@ -279,10 +288,10 @@ export class Resolver {
       );
     }
 
-    if (nextRequest.isVirtual) {
-      // virtual requests are terminal, there is no more beforeResolve or
-      // fallbackResolve around them. The defaultResolve is expected to know how
-      // to implement them.
+    if (nextRequest.isVirtual || nextRequest.isNotFound) {
+      // virtual and NotFound requests are terminal, there is no more
+      // beforeResolve or fallbackResolve around them. The defaultResolve is
+      // expected to know how to implement them.
       return yield defaultResolve(nextRequest);
     }
     return yield* this.internalResolve(nextRequest, defaultResolve);
@@ -298,7 +307,7 @@ export class Resolver {
     | { type: 'virtual'; filename: string; content: string }
     | { type: 'real'; filename: string }
     | { type: 'not_found'; err: Error } {
-    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile, false, undefined), request => {
+    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile, false, undefined, false), request => {
       if (request.isVirtual) {
         return {
           type: 'found',
@@ -307,6 +316,14 @@ export class Resolver {
             content: virtualContent(request.specifier, this),
             filename: request.specifier,
           },
+        };
+      }
+      if (request.isNotFound) {
+        let err = new Error(`module not found ${request.specifier}`);
+        (err as any).code = 'MODULE_NOT_FOUND';
+        return {
+          type: 'not_found',
+          err,
         };
       }
       try {
@@ -753,7 +770,7 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual) {
+    if (request.isVirtual || request.isNotFound) {
       return request;
     }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -772,10 +789,6 @@ export class Resolver {
       try {
         targetPkg = this.packageCache.resolve(packageName, requestingPkg);
       } catch (err) {
-        // this is not the place to report resolution failures. If the thing
-        // doesn't resolve, we're just not interested in redirecting it for
-        // backward-compat, that's all. The rest of the system will take care of
-        // reporting a failure to resolve (or handling it a different way)
         if (err.code !== 'MODULE_NOT_FOUND') {
           throw err;
         }
@@ -796,20 +809,27 @@ export class Resolver {
         this.resolveWithinMovedPackage(request, targetPkg)
       );
     } else if (originalRequestingPkg !== requestingPkg) {
-      // in this case, the requesting package is moved but its destination is
-      // not, so we need to rehome the request back to the original location.
-      return logTransition(
-        'outbound request from moved package',
-        request,
-        request.withMeta({ wasMovedTo: request.fromFile }).rehome(resolve(originalRequestingPkg.root, 'package.json'))
-      );
+      if (targetPkg) {
+        // in this case, the requesting package is moved but its destination is
+        // not, so we need to rehome the request back to the original location.
+        return logTransition(
+          'outbound request from moved package',
+          request,
+          request.withMeta({ wasMovedTo: request.fromFile }).rehome(resolve(originalRequestingPkg.root, 'package.json'))
+        );
+      } else {
+        // requesting package was moved and we failed to find its target. We
+        // can't let that accidentally succeed in the defaultResolve because we
+        // could escape the moved package system.
+        return logTransition('missing outbound request from moved package', request, request.notFound());
+      }
     }
 
     return request;
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual) {
+    if (request.isVirtual || request.isNotFound) {
       return request;
     }
     let packageName = getPackageName(request.specifier);
@@ -882,7 +902,7 @@ export class Resolver {
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual) {
+    if (request.isVirtual || request.isNotFound) {
       return request;
     }
     let { specifier, fromFile } = request;

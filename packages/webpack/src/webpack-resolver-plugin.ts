@@ -92,6 +92,13 @@ function getAdaptedResolve(
 ): ResolverFunction<WebpackModuleRequest, Resolution<Module, null | Error>> {
   return function (request: WebpackModuleRequest): Promise<Resolution<Module, null | Error>> {
     return new Promise(resolve => {
+      if (request.isNotFound) {
+        // TODO: we can make sure this looks correct in webpack output when a
+        // user encounters it
+        let err = new Error(`module not found ${request.specifier}`);
+        (err as any).code = 'MODULE_NOT_FOUND';
+        resolve({ type: 'not_found', err });
+      }
       defaultResolve(request.toWebpackResolveData(), (err, value) => {
         if (err) {
           // unfortunately webpack doesn't let us distinguish between Not Found
@@ -150,17 +157,19 @@ class WebpackModuleRequest implements ModuleRequest {
       fromFile,
       state.contextInfo._embroiderMeta,
       false,
+      false,
       state
     );
   }
 
-  constructor(
+  private constructor(
     private babelLoaderPrefix: string,
     private appRoot: string,
     readonly specifier: string,
     readonly fromFile: string,
     readonly meta: Record<string, any> | undefined,
     readonly isVirtual: boolean,
+    readonly isNotFound: boolean,
     private originalState: ExtendedResolveData
   ) {}
 
@@ -209,6 +218,7 @@ class WebpackModuleRequest implements ModuleRequest {
       this.fromFile,
       this.meta,
       this.isVirtual,
+      this.isNotFound,
       this.originalState
     ) as this;
   }
@@ -223,6 +233,7 @@ class WebpackModuleRequest implements ModuleRequest {
       newFromFile,
       this.meta,
       this.isVirtual,
+      this.isNotFound,
       this.originalState
     ) as this;
   }
@@ -237,6 +248,7 @@ class WebpackModuleRequest implements ModuleRequest {
       this.fromFile,
       this.meta,
       true,
+      this.isNotFound,
       this.originalState
     ) as this;
   }
@@ -248,6 +260,19 @@ class WebpackModuleRequest implements ModuleRequest {
       this.fromFile,
       meta,
       this.isVirtual,
+      this.isNotFound,
+      this.originalState
+    ) as this;
+  }
+  notFound(): this {
+    return new WebpackModuleRequest(
+      this.babelLoaderPrefix,
+      this.appRoot,
+      this.specifier,
+      this.fromFile,
+      this.meta,
+      this.isVirtual,
+      true,
       this.originalState
     ) as this;
   }

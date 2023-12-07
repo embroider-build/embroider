@@ -917,6 +917,12 @@ importers:
       '@babel/core':
         specifier: ^7.22.9
         version: 7.23.3(supports-color@8.1.1)
+      '@embroider/compat':
+        specifier: workspace:^
+        version: link:../compat
+      '@embroider/core':
+        specifier: workspace:^
+        version: link:../core
       '@embroider/macros':
         specifier: workspace:*
         version: link:../macros
@@ -935,6 +941,9 @@ importers:
       esbuild:
         specifier: ^0.17.19
         version: 0.17.19
+      fast-glob:
+        specifier: ^3.3.2
+        version: 3.3.2
       fs-extra:
         specifier: ^10.0.0
         version: 10.1.0
@@ -948,9 +957,6 @@ importers:
         specifier: ^5.7.0
         version: 5.24.0
     devDependencies:
-      '@embroider/core':
-        specifier: workspace:^
-        version: link:../core
       '@types/babel__core':
         specifier: ^7.20.1
         version: 7.20.5

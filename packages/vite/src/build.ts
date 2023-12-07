@@ -1,10 +1,10 @@
-import type { Plugin } from 'vite';
 import { join, dirname } from 'path';
 import { createHash } from 'crypto';
 import { fork } from 'child_process';
 import { ResolverLoader } from '@embroider/core';
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync, rmdirSync, copyFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
 import { mkdirpSync } from 'fs-extra';
+import { Plugin } from 'vite';
 
 const cwd = process.cwd();
 const embroiderDir = join(cwd, 'node_modules', '.embroider');
@@ -46,15 +46,17 @@ export function emberBuild(): Promise<void> {
   });
 }
 
-export async function buildIfFileChanged(path: string | null | undefined): Promise<void> {
-  if (path && (lockFiles.includes(path) || path === 'app/index.html')) {
+export async function buildIfFileChanged(path: string | null | undefined): Promise<boolean> {
+  if (path && (lockFiles.includes(path))) {
     const key = computeCacheKeyForFile(path);
     if (key !== getCacheKey(path)) {
       console.log(path + ' change requires rebuild, rebuilding...');
       await emberBuild();
       updateCacheKey(path, key);
+      return true;
     }
   }
+  return false;
 }
 
 export function build(): Plugin {
@@ -63,6 +65,20 @@ export function build(): Plugin {
   return {
     name: 'embroider-builder',
     enforce: 'pre',
+    configureServer(server) {
+      const files = readdirSync('.');
+      files.forEach(f => {
+        if (lockFiles.includes(f)) {
+          server.watcher.add('./' + f);
+        }
+      });
+      server.watcher.on('change', async path => {
+        const needRestart = await buildIfFileChanged(path);
+        if (needRestart) {
+          server.restart(true);
+        }
+      });
+    },
     writeBundle(options) {
       engine.activeAddons.forEach(addon => {
         const pkg = resolverLoader.resolver.packageCache.ownerOfFile(addon.root);
@@ -74,9 +90,6 @@ export function build(): Plugin {
           copyFileSync(join(pkg.root, path), join(options.dir!, dest));
         });
       });
-      copyFileSync(join(options.dir!, 'app', 'index.html'), join(options.dir!, 'index.html'));
-      rmSync(join(options.dir!, 'app', 'index.html'));
-      rmdirSync(join(options.dir!, 'app'));
     },
     async buildStart() {
       if (!existsSync(embroiderDir)) {

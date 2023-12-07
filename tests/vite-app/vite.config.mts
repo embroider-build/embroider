@@ -6,6 +6,7 @@ import {
   templateTag,
   optimizeDeps,
   build,
+  assets,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -20,6 +21,7 @@ export default defineConfig({
     scripts(),
     resolver(),
     build(),
+    assets(),
 
     babel({
       babelHelpers: "runtime",
@@ -31,7 +33,7 @@ export default defineConfig({
       extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
-  optimizeDeps: optimizeDeps(),
+  optimizeDeps: optimizeDeps('.'),
   server: {
     watch: {
       ignored: ["!**/node_modules/.embroider/rewritten-app/**"],

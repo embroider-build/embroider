@@ -200,7 +200,7 @@ export default class CompatApp {
 
   private get indexTree() {
     let indexFilePath = this.legacyEmberAppInstance.options.outputPaths.app.html;
-    let index = buildFunnel(this.legacyEmberAppInstance.trees.app, {
+    let index = buildFunnel(this.legacyEmberAppInstance.trees.indexHtml || this.legacyEmberAppInstance.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,
@@ -835,7 +835,7 @@ export default class CompatApp {
     }
   }
 
-  private async instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
+  private instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
     let origAppPkg = this.appPackage();
     let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
     let workingDir = locateEmbroiderWorkingDir(this.root);
@@ -861,7 +861,7 @@ export default class CompatApp {
         if (!this.active) {
           let { outputPath } = await prevStage.ready();
           let packageCache = RewrittenPackageCache.shared('embroider', this.root);
-          this.active = await this.instantiate(outputPath, packageCache, inTrees.configTree);
+          this.active = this.instantiate(outputPath, packageCache, inTrees.configTree);
           resolve({ outputPath });
         }
         await this.active.build(treePaths);

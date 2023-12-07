@@ -27,3 +27,7 @@ declare module 'ember-cli/lib/models/package-info-cache' {
     constructor(ui: any);
   }
 }
+
+declare module 'ember-cli/lib/utilities/ember-app-utils' {
+  export function configReplacePatterns(options: { env: string, autoRun: boolean, addons: any[] }): {match: RegExp, replacement: (config: any, match?: string, type?: string) => string}[]
+}

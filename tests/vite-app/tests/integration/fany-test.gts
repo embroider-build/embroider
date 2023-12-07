@@ -13,8 +13,10 @@ module('Integration | Component | Fany', (hooks) => {
 </template>);
     await rerender()
 
-    assert.dom().hasText('Yay for gjs!');
+    assert.dom().hasText('Yay2 for gjs!');
   });
 });
+
+
 
 

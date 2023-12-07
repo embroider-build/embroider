@@ -11,8 +11,11 @@
   },
   "dependencies": {
     "@babel/core": "^7.22.9",
+    "@embroider/core": "workspace:^",
+    "@embroider/compat": "workspace:^",
     "@embroider/macros": "workspace:*",
     "@rollup/pluginutils": "^4.1.1",
+    "fast-glob": "^3.3.2",
     "assert-never": "^1.2.1",
     "content-tag": "^1.1.2",
     "debug": "^4.3.2",
@@ -23,7 +26,6 @@
     "terser": "^5.7.0"
   },
   "devDependencies": {
-    "@embroider/core": "workspace:^",
     "@types/babel__core": "^7.20.1",
     "@types/debug": "^4.1.5",
     "@types/jsdom": "^16.2.11",

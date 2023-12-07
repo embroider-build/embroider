@@ -57,6 +57,7 @@ import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import SourceMapConcat from 'fast-sourcemap-concat';
 import escapeRegExp from 'escape-string-regexp';
+import { configReplacePatterns } from 'ember-cli/lib/utilities/ember-app-utils';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
@@ -992,6 +993,8 @@ export class CompatAppBuilder {
 
     let resolverConfig = this.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
+    this.addEnvironment();
+    this.addLegacyAppInfo();
     let babelConfig = this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
@@ -1087,6 +1090,47 @@ export class CompatAppBuilder {
 
   private addResolverConfig(config: CompatResolverOptions) {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config, { spaces: 2 });
+  }
+
+  private addEnvironment() {
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'environment.json'), this.configTree.readConfig(), { spaces: 2 });
+  }
+
+  private addLegacyAppInfo() {
+    const config = this.configTree.readConfig() as any;
+    const options = {...this.compatApp.legacyEmberAppInstance.options, addons: this.compatApp.legacyEmberAppInstance.project.addons};
+    const patterns = configReplacePatterns(options);
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'legacy-app-info.json'), {
+          options: {
+            outputPaths: this.compatApp.legacyEmberAppInstance.options.outputPaths,
+            autoRun: this.compatApp.legacyEmberAppInstance.options.autoRun,
+            storeConfigInMeta: this.compatApp.legacyEmberAppInstance.options.storeConfigInMeta,
+            minifyCSS: this.compatApp.legacyEmberAppInstance.options.minifyCSS
+          },
+          project: {
+            root: this.compatApp.legacyEmberAppInstance.project.root,
+            pkg: this.compatApp.legacyEmberAppInstance.project.pkg
+          },
+          configReplacePatterns: [
+            '{{rootURL}}',
+            '{{content-for "head"}}',
+            '{{content-for "head-footer"}}',
+            '{{content-for "body"}}',
+            '{{content-for "body-footer"}}',
+            '{{content-for "test-head"}}',
+            '{{content-for "test-head-footer"}}',
+            '{{content-for "test-body"}}',
+            '{{content-for "test-body-footer"}}',
+          ].map((str) => {
+            const pattern = patterns.find(p => p.match.test(str))!;
+            return {
+              match: pattern?.match.source,
+              exact: str,
+              replacement: str.replace(pattern.match, pattern.replacement.bind(this, config))
+            }
+          })
+        },
+    { spaces: 2 });
   }
 
   private shouldSplitRoute(routeName: string) {

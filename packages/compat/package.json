@@ -91,7 +91,8 @@
     "typescript": "^5.1.6"
   },
   "peerDependencies": {
-    "@embroider/core": "workspace:^"
+    "@embroider/core": "workspace:^",
+    "ember-cli": "*"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

@@ -33,7 +33,7 @@ export default defineConfig({
       extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
-  optimizeDeps: optimizeDeps('.'),
+  optimizeDeps: optimizeDeps("."),
   server: {
     watch: {
       ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
@@ -42,7 +42,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve('.', "index.html"),
+        main: resolve(".", "index.html"),
         tests: resolve(".", "tests/index.html"),
       },
     },

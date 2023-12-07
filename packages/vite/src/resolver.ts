@@ -18,12 +18,12 @@ type Options = {
 
 export function resolver(_options?: Options): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
-  resolverLoader.resolver.options.engines.forEach((engine) => {
+  resolverLoader.resolver.options.engines.forEach(engine => {
     engine.root = engine.root.replace(rewrittenApp, root);
     engine.activeAddons.forEach(addon => {
       addon.canResolveFromFile = addon.canResolveFromFile.replace(rewrittenApp, cwd);
     });
-  })
+  });
   const pkg = resolverLoader.resolver.packageCache.get(cwd);
   pkg.packageJSON['ember-addon'] = pkg.packageJSON['ember-addon'] || {};
   pkg.packageJSON['keywords'] = pkg.packageJSON['keywords'] || [];
@@ -100,15 +100,19 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
       },
     });
     if (!result && !request.specifier.includes('config/environment')) {
-      result = await context.resolve(request.specifier, request.fromFile.replace('/app/package.json', '/package.json'), {
-        skipSelf: true,
-        custom: {
-          embroider: {
-            enableCustomResolver: false,
-            meta: request.meta,
+      result = await context.resolve(
+        request.specifier,
+        request.fromFile.replace('/app/package.json', '/package.json'),
+        {
+          skipSelf: true,
+          custom: {
+            embroider: {
+              enableCustomResolver: false,
+              meta: request.meta,
+            },
           },
-        },
-      });
+        }
+      );
     }
     if (!result && request.specifier.includes('config/environment')) {
       result = await context.resolve(request.specifier, request.fromFile.replace(root, rewrittenApp), {

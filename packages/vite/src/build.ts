@@ -2,7 +2,7 @@ import { join } from 'path';
 import { createHash } from 'crypto';
 import { fork } from 'child_process';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
-import { Plugin } from 'vite';
+import type { Plugin } from 'vite';
 
 const cwd = process.cwd();
 const embroiderDir = join(cwd, 'node_modules', '.embroider');
@@ -45,7 +45,7 @@ export function emberBuild(): Promise<void> {
 }
 
 export async function buildIfFileChanged(path: string | null | undefined): Promise<boolean> {
-  if (path && (lockFiles.includes(path))) {
+  if (path && lockFiles.includes(path)) {
     const key = computeCacheKeyForFile(path);
     if (key !== getCacheKey(path)) {
       console.log(path + ' change requires rebuild, rebuilding...');

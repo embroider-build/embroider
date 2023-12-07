@@ -1,16 +1,13 @@
-import {
-  Asset, EmberAsset, Engine,
-  extensionsPattern, getAppMeta,
-  locateEmbroiderWorkingDir, ResolverLoader,
-  RewrittenPackageCache
-} from '@embroider/core';
+import type { Asset, EmberAsset, Engine, RewrittenPackageCache } from '@embroider/core';
+import { extensionsPattern, getAppMeta, locateEmbroiderWorkingDir, ResolverLoader } from '@embroider/core';
 import { join, dirname } from 'path';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { AppFiles } from '@embroider/core/src/app-files';
 import glob from 'fast-glob';
 import CompatApp from '@embroider/compat/src/compat-app';
-import { InMemoryAsset } from '@embroider/core/src/asset';
-import { Plugin } from 'vite';
+import type { InMemoryAsset } from '@embroider/core/src/asset';
+import type { Plugin } from 'vite';
+import { readJSONSync } from 'fs-extra';
 
 type Options = {
   root: string;
@@ -24,9 +21,9 @@ let environment = 'production';
 function getCompatAppBuilder({ rewrittenPackageCache, root }: Options) {
   const workingDir = locateEmbroiderWorkingDir(dirname(root));
   const rewrittenApp = join(workingDir, 'rewritten-app');
-  const options = require(join(workingDir, 'resolver.json'));
-  const env = require(join(workingDir, 'environment.json'));
-  const legacyApp = require(join(workingDir, 'legacy-app-info.json'));
+  const options = readJSONSync(join(workingDir, 'resolver.json'));
+  const env = readJSONSync(join(workingDir, 'environment.json'));
+  const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
   legacyApp.project.configPath = () => join(root, 'config', 'environment.js');
   legacyApp.tests = true;
   const compatApp = new CompatApp(legacyApp, options);
@@ -39,26 +36,23 @@ function getCompatAppBuilder({ rewrittenPackageCache, root }: Options) {
   const engines = compatAppBuilder['partitionEngines'](root);
   const extensions = compatAppBuilder['resolvableExtensions']().concat(['.ts', '.gts']);
 
-  const appFiles = engines.map(
-    (engine: Engine) => {
-      const isTest = engine.sourcePath.endsWith('/tests');
-      let files = glob.sync(`**/*{${extensions.join(',')}}`, {
-            cwd: engine.sourcePath
-          }
-        );
-      if (isTest) {
-        files = files.map(f => `tests/${f}`);
-      }
-      files.push('config/environment.js');
-      return new AppFiles(
-        engine,
-        new Set(files),
-        new Set(),
-        extensionsPattern(extensions),
-        compatAppBuilder['podModulePrefix']()
-      )
+  const appFiles = engines.map((engine: Engine) => {
+    const isTest = engine.sourcePath.endsWith('/tests');
+    let files = glob.sync(`**/*{${extensions.join(',')}}`, {
+      cwd: engine.sourcePath,
+    });
+    if (isTest) {
+      files = files.map(f => `tests/${f}`);
     }
-  );
+    files.push('config/environment.js');
+    return new AppFiles(
+      engine,
+      new Set(files),
+      new Set(),
+      extensionsPattern(extensions),
+      compatAppBuilder['podModulePrefix']()
+    );
+  });
   const assets: Asset[] = [];
   for (let asset of compatAppBuilder['emberEntrypoints']('.')) {
     if (asset.relativePath === 'index.html') {
@@ -75,7 +69,7 @@ function getCompatAppBuilder({ rewrittenPackageCache, root }: Options) {
 function generateEmberHtml({ root }: Options) {
   const cwd = dirname(root);
   const workingDir = locateEmbroiderWorkingDir(cwd);
-  const legacyApp = require(join(workingDir, 'legacy-app-info.json'));
+  const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
   let html = readFileSync(join(cwd, 'index.html')).toString();
   let testhtml = readFileSync(join(cwd, 'tests', 'index.html')).toString();
   legacyApp.configReplacePatterns.forEach((pattern: any) => {
@@ -162,17 +156,15 @@ function findPublicAsset(relativePath: string, packageCache: RewrittenPackageCac
   p = join('node_modules', relativePath);
   pkg = packageCache.ownerOfFile(p);
   if (pkg && pkg.meta && pkg.isV2Addon() && pkg.meta['public-assets']) {
-    const asset = Object.entries(pkg.meta['public-assets']).find(
-      ([_key, a]) => a === relativePath
-    )?.[0];
+    const asset = Object.entries(pkg.meta['public-assets']).find(([_key, a]) => a === relativePath)?.[0];
     const local = asset ? join(cwd, p) : null;
     if (local && existsSync(local)) {
-      return '/' + p
+      return '/' + p;
     }
   }
 }
 
-export function assets(options?: { entryDirectories?: string[]  }): Plugin {
+export function assets(options?: { entryDirectories?: string[] }): Plugin {
   const cwd = process.cwd();
   const root = join(cwd, 'app');
   const embroiderWorkingDir = locateEmbroiderWorkingDir(cwd);
@@ -191,7 +183,7 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
     configureServer(server) {
       const watcher = server.watcher;
       // this is required because we do not open the /tests url directly and via the middleware
-      watcher.on('add', (filename) => {
+      watcher.on('add', filename => {
         if (entries.find(e => filename.startsWith(join(root, e)))) {
           delete InMemoryAssets[`assets/${appMeta.name}.js`];
           const module = server.moduleGraph.getModuleById(join(root, `assets/${appMeta.name}.js`))!;
@@ -201,7 +193,7 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
           delete InMemoryAssets[`assets/test.js`];
         }
       });
-      watcher.on('unlink', (filename) => {
+      watcher.on('unlink', filename => {
         if (entries.find(e => filename.startsWith(join(root, e)))) {
           delete InMemoryAssets[`assets/${appMeta.name}.js`];
         }
@@ -209,14 +201,14 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
           delete InMemoryAssets[`assets/test.js`];
         }
       });
-      watcher.on('change', (filename) => {
+      watcher.on('change', filename => {
         if (appIndex === filename) {
           delete InMemoryAssets['index.html'];
         }
         if (testsIndex === filename) {
           delete InMemoryAssets['tests/index.html'];
           server.ws.send({
-            type: 'full-reload'
+            type: 'full-reload',
           });
         }
       });
@@ -309,12 +301,12 @@ export function assets(options?: { entryDirectories?: string[]  }): Plugin {
     async writeBundle(options) {
       const { compatAppBuilder } = getCompatAppBuilder({
         rewrittenPackageCache: resolverLoader.resolver.packageCache,
-        root: options.dir || join(cwd, 'dist')
+        root: options.dir || join(cwd, 'dist'),
       });
       const assets = compatAppBuilder['gatherAssets']({
         publicTree: 'public',
-      } as any)
+      } as any);
       await compatAppBuilder['updateAssets'](assets, [], {});
     },
-  }
+  };
 }

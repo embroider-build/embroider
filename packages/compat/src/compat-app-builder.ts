@@ -1095,44 +1095,54 @@ export class CompatAppBuilder {
   }
 
   private addEnvironment() {
-    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'environment.json'), this.configTree.readConfig(), { spaces: 2 });
+    outputJSONSync(
+      join(locateEmbroiderWorkingDir(this.compatApp.root), 'environment.json'),
+      this.configTree.readConfig(),
+      { spaces: 2 }
+    );
   }
 
   private addLegacyAppInfo() {
     const config = this.configTree.readConfig() as any;
-    const options = {...this.compatApp.legacyEmberAppInstance.options, addons: this.compatApp.legacyEmberAppInstance.project.addons};
+    const options = {
+      ...this.compatApp.legacyEmberAppInstance.options,
+      addons: this.compatApp.legacyEmberAppInstance.project.addons,
+    };
     const patterns = configReplacePatterns(options);
-    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'legacy-app-info.json'), {
-          options: {
-            outputPaths: this.compatApp.legacyEmberAppInstance.options.outputPaths,
-            autoRun: this.compatApp.legacyEmberAppInstance.options.autoRun,
-            storeConfigInMeta: this.compatApp.legacyEmberAppInstance.options.storeConfigInMeta,
-            minifyCSS: this.compatApp.legacyEmberAppInstance.options.minifyCSS
-          },
-          project: {
-            root: this.compatApp.legacyEmberAppInstance.project.root,
-            pkg: this.compatApp.legacyEmberAppInstance.project.pkg
-          },
-          configReplacePatterns: [
-            '{{rootURL}}',
-            '{{content-for "head"}}',
-            '{{content-for "head-footer"}}',
-            '{{content-for "body"}}',
-            '{{content-for "body-footer"}}',
-            '{{content-for "test-head"}}',
-            '{{content-for "test-head-footer"}}',
-            '{{content-for "test-body"}}',
-            '{{content-for "test-body-footer"}}',
-          ].map((str) => {
-            const pattern = patterns.find(p => p.match.test(str))!;
-            return {
-              match: pattern?.match.source,
-              exact: str,
-              replacement: str.replace(pattern.match, pattern.replacement.bind(this, config))
-            }
-          })
+    outputJSONSync(
+      join(locateEmbroiderWorkingDir(this.compatApp.root), 'legacy-app-info.json'),
+      {
+        options: {
+          outputPaths: this.compatApp.legacyEmberAppInstance.options.outputPaths,
+          autoRun: this.compatApp.legacyEmberAppInstance.options.autoRun,
+          storeConfigInMeta: this.compatApp.legacyEmberAppInstance.options.storeConfigInMeta,
+          minifyCSS: this.compatApp.legacyEmberAppInstance.options.minifyCSS,
         },
-    { spaces: 2 });
+        project: {
+          root: this.compatApp.legacyEmberAppInstance.project.root,
+          pkg: this.compatApp.legacyEmberAppInstance.project.pkg,
+        },
+        configReplacePatterns: [
+          '{{rootURL}}',
+          '{{content-for "head"}}',
+          '{{content-for "head-footer"}}',
+          '{{content-for "body"}}',
+          '{{content-for "body-footer"}}',
+          '{{content-for "test-head"}}',
+          '{{content-for "test-head-footer"}}',
+          '{{content-for "test-body"}}',
+          '{{content-for "test-body-footer"}}',
+        ].map(str => {
+          const pattern = patterns.find(p => p.match.test(str))!;
+          return {
+            match: pattern?.match.source,
+            exact: str,
+            replacement: str.replace(pattern.match, pattern.replacement.bind(this, config)),
+          };
+        }),
+      },
+      { spaces: 2 }
+    );
   }
 
   private shouldSplitRoute(routeName: string) {

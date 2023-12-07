@@ -6,8 +6,8 @@ const { compatBuild } = require('@embroider/compat');
 module.exports = function (defaults) {
   const app = new EmberApp(defaults, {
     trees: {
-      indexHtml: '.'
-    }
+      indexHtml: '.',
+    },
   });
 
   return compatBuild(app, undefined, {

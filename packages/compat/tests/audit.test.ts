@@ -42,7 +42,6 @@ describe('audit', function () {
       activePackageRules: [],
       renamePackages: {},
       renameModules: {},
-      activeAddons: {},
       engines: [
         {
           packageName: 'audit-this-app',

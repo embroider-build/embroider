@@ -31,17 +31,17 @@ export class EsBuildModuleRequest implements ModuleRequest {
   }
 
   alias(newSpecifier: string) {
-    return new EsBuildModuleRequest(newSpecifier, this.fromFile, this.meta, this.isVirtual, this.isNotFound) as this;
+    return new EsBuildModuleRequest(newSpecifier, this.fromFile, this.meta, this.isVirtual, false) as this;
   }
   rehome(newFromFile: string) {
     if (this.fromFile === newFromFile) {
       return this;
     } else {
-      return new EsBuildModuleRequest(this.specifier, newFromFile, this.meta, this.isVirtual, this.isNotFound) as this;
+      return new EsBuildModuleRequest(this.specifier, newFromFile, this.meta, this.isVirtual, false) as this;
     }
   }
   virtualize(filename: string) {
-    return new EsBuildModuleRequest(filename, this.fromFile, this.meta, true, this.isNotFound) as this;
+    return new EsBuildModuleRequest(filename, this.fromFile, this.meta, true, false) as this;
   }
   withMeta(meta: Record<string, any> | undefined): this {
     return new EsBuildModuleRequest(this.specifier, this.fromFile, meta, this.isVirtual, this.isNotFound) as this;

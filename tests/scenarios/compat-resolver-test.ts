@@ -71,7 +71,6 @@ Scenarios.fromProject(() => new Project())
 
           let resolverOptions: CompatResolverOptions = {
             amdCompatibility: 'cjs',
-            activeAddons: {},
             renameModules: {},
             renamePackages: {},
             resolvableExtensions: ['.js', '.hbs'],

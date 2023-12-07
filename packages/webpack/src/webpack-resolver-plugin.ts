@@ -218,7 +218,7 @@ class WebpackModuleRequest implements ModuleRequest {
       this.fromFile,
       this.meta,
       this.isVirtual,
-      this.isNotFound,
+      false,
       this.originalState
     ) as this;
   }
@@ -233,7 +233,7 @@ class WebpackModuleRequest implements ModuleRequest {
       newFromFile,
       this.meta,
       this.isVirtual,
-      this.isNotFound,
+      false,
       this.originalState
     ) as this;
   }
@@ -248,7 +248,7 @@ class WebpackModuleRequest implements ModuleRequest {
       this.fromFile,
       this.meta,
       true,
-      this.isNotFound,
+      false,
       this.originalState
     ) as this;
   }

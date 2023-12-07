@@ -46,17 +46,17 @@ export class RollupModuleRequest implements ModuleRequest {
   }
 
   alias(newSpecifier: string) {
-    return new RollupModuleRequest(newSpecifier, this.fromFile, this.meta, this.isNotFound) as this;
+    return new RollupModuleRequest(newSpecifier, this.fromFile, this.meta, false) as this;
   }
   rehome(newFromFile: string) {
     if (this.fromFile === newFromFile) {
       return this;
     } else {
-      return new RollupModuleRequest(this.specifier, newFromFile, this.meta, this.isNotFound) as this;
+      return new RollupModuleRequest(this.specifier, newFromFile, this.meta, false) as this;
     }
   }
   virtualize(filename: string) {
-    return new RollupModuleRequest(virtualPrefix + filename, this.fromFile, this.meta, this.isNotFound) as this;
+    return new RollupModuleRequest(virtualPrefix + filename, this.fromFile, this.meta, false) as this;
   }
   withMeta(meta: Record<string, any> | undefined): this {
     return new RollupModuleRequest(this.specifier, this.fromFile, meta, this.isNotFound) as this;

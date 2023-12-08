@@ -8,6 +8,10 @@ export interface OptimizeDeps {
 
 export function optimizeDeps(root: string): OptimizeDeps {
   return {
-    exclude: ['@embroider/macros', ...addons(root)]
+    exclude: ['@embroider/macros', ...addons(root)],
+    extensions: ['.hbs', '.gjs'],
+    esbuildOptions: {
+      plugins: [esBuildResolver()],
+    },
   };
 }

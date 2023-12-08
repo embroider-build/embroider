@@ -16,7 +16,6 @@ import {
   virtualExternalESModule,
   virtualExternalCJSModule,
   virtualPairComponent,
-  virtualContent,
   fastbootSwitch,
   decodeFastbootSwitch,
   decodeImplicitModules,
@@ -25,6 +24,7 @@ import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import type UserOptions from './options';
+import { nodeResolve } from './node-resolve';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -142,40 +142,6 @@ export interface ModuleRequest {
   virtualize(virtualFilename: string): this;
   withMeta(meta: Record<string, any> | undefined): this;
   notFound(): this;
-}
-
-class NodeModuleRequest implements ModuleRequest {
-  constructor(
-    readonly specifier: string,
-    readonly fromFile: string,
-    readonly isVirtual: boolean,
-    readonly meta: Record<string, any> | undefined,
-    readonly isNotFound: boolean
-  ) {}
-
-  get debugType() {
-    return 'node';
-  }
-
-  alias(specifier: string): this {
-    return new NodeModuleRequest(specifier, this.fromFile, false, this.meta, false) as this;
-  }
-  rehome(fromFile: string): this {
-    if (this.fromFile === fromFile) {
-      return this;
-    } else {
-      return new NodeModuleRequest(this.specifier, fromFile, false, this.meta, false) as this;
-    }
-  }
-  virtualize(filename: string): this {
-    return new NodeModuleRequest(filename, this.fromFile, true, this.meta, false) as this;
-  }
-  withMeta(meta: Record<string, any> | undefined): this {
-    return new NodeModuleRequest(this.specifier, this.fromFile, this.isVirtual, meta, this.isNotFound) as this;
-  }
-  notFound(): this {
-    return new NodeModuleRequest(this.specifier, this.fromFile, this.isVirtual, this.meta, true) as this;
-  }
 }
 
 // This is generic because different build systems have different ways of
@@ -304,45 +270,7 @@ export class Resolver {
     | { type: 'virtual'; filename: string; content: string }
     | { type: 'real'; filename: string }
     | { type: 'not_found'; err: Error } {
-    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile, false, undefined, false), request => {
-      if (request.isVirtual) {
-        return {
-          type: 'found',
-          result: {
-            type: 'virtual' as 'virtual',
-            content: virtualContent(request.specifier, this),
-            filename: request.specifier,
-          },
-        };
-      }
-      if (request.isNotFound) {
-        let err = new Error(`module not found ${request.specifier}`);
-        (err as any).code = 'MODULE_NOT_FOUND';
-        return {
-          type: 'not_found',
-          err,
-        };
-      }
-      try {
-        let filename = require.resolve(request.specifier, {
-          paths: [dirname(request.fromFile)],
-        });
-        return { type: 'found', result: { type: 'real' as 'real', filename } };
-      } catch (err) {
-        if (err.code !== 'MODULE_NOT_FOUND') {
-          throw err;
-        }
-        return { type: 'not_found', err };
-      }
-    });
-    switch (resolution.type) {
-      case 'not_found':
-        return resolution;
-      case 'found':
-        return resolution.result;
-      default:
-        throw assertNever(resolution);
-    }
+    return nodeResolve(this, specifier, fromFile);
   }
 
   get packageCache() {
@@ -638,9 +566,9 @@ export class Resolver {
   private parseGlobalPath(path: string, inEngine: EngineConfig) {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      return { packageName: parts[0], memberName: parts[1], from: resolve(inEngine.root, 'pacakge.json') };
+      return { packageName: parts[0], memberName: parts[1], from: resolve(inEngine.root, 'package.json') };
     } else {
-      return { packageName: inEngine.packageName, memberName: path, from: resolve(inEngine.root, 'pacakge.json') };
+      return { packageName: inEngine.packageName, memberName: path, from: resolve(inEngine.root, 'package.json') };
     }
   }
 
@@ -812,7 +740,11 @@ export class Resolver {
         return logTransition(
           'outbound request from moved package',
           request,
-          request.withMeta({ wasMovedTo: request.fromFile }).rehome(resolve(originalRequestingPkg.root, 'package.json'))
+          request
+            // setting meta here because if this fails, we want the fallback
+            // logic to revert our rehome and continue from the *moved* package.
+            .withMeta({ originalFromFile: request.fromFile })
+            .rehome(resolve(originalRequestingPkg.root, 'package.json'))
         );
       } else {
         // requesting package was moved and we failed to find its target. We
@@ -872,10 +804,15 @@ export class Resolver {
       // packages get this help, v2 packages are natively supposed to make their
       // own modules resolvable, and we want to push them all to do that
       // correctly.
+
+      // "my-package/foo" -> "./foo"
+      // "my-package" -> "./" (this can't be just "." because node's require.resolve doesn't reliable support that)
+      let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
+
       return logTransition(
         `v1 self-import`,
         request,
-        request.alias(request.specifier.replace(pkg.name, './')).rehome(resolve(pkg.root, 'package.json'))
+        request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
       );
     }
 
@@ -887,15 +824,16 @@ export class Resolver {
     if (pkg.name.startsWith('@')) {
       levels.push('..');
     }
+    let originalFromFile = request.fromFile;
     let newRequest = request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js'));
 
     if (newRequest === request) {
       return request;
     }
 
-    return newRequest.withMeta({
-      resolvedWithinPackage: pkg.root,
-    });
+    // setting meta because if this fails, we want the fallback to pick up back
+    // in the original requesting package.
+    return newRequest.withMeta({ originalFromFile });
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
@@ -1077,9 +1015,7 @@ export class Resolver {
       return logTransition('fallback early exit', request);
     }
 
-    let { specifier, fromFile } = request;
-
-    if (compatPattern.test(specifier)) {
+    if (compatPattern.test(request.specifier)) {
       // Some kinds of compat requests get rewritten into other things
       // deterministically. For example, "#embroider_compat/helpers/whatever"
       // means only "the-current-engine/helpers/whatever", and if that doesn't
@@ -1096,28 +1032,21 @@ export class Resolver {
       return request;
     }
 
-    if (fromFile.endsWith('moved-package-target.js')) {
-      if (!request.meta?.resolvedWithinPackage) {
-        throw new Error(`bug: embroider resolver's meta is not propagating`);
-      }
-      fromFile = resolve(request.meta?.resolvedWithinPackage as string, 'package.json');
-    }
-
-    let pkg = this.packageCache.ownerOfFile(fromFile);
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!pkg) {
       return logTransition('no identifiable owningPackage', request);
     }
 
-    // if we rehomed this request to its un-rewritten location in order to try
-    // to do the defaultResolve from there, now we refer back to the rewritten
-    // location because that's what we want to use when asking things like
-    // isV2Ember()
+    // meta.originalFromFile gets set when we want to try to rehome a request
+    // but then come back to the original location here in the fallback when the
+    // rehomed request fails
     let movedPkg = this.packageCache.maybeMoved(pkg);
     if (movedPkg !== pkg) {
-      if (!request.meta?.wasMovedTo) {
+      let originalFromFile = request.meta?.originalFromFile;
+      if (typeof originalFromFile !== 'string') {
         throw new Error(`bug: embroider resolver's meta is not propagating`);
       }
-      fromFile = request.meta.wasMovedTo as string;
+      request = request.rehome(originalFromFile);
       pkg = movedPkg;
     }
 
@@ -1125,7 +1054,7 @@ export class Resolver {
       return logTransition('fallbackResolve: not in an ember package', request);
     }
 
-    let packageName = getPackageName(specifier);
+    let packageName = getPackageName(request.specifier);
     if (!packageName) {
       // this is a relative import
 
@@ -1136,7 +1065,7 @@ export class Resolver {
         let appJSMatch = this.searchAppTree(
           request,
           withinEngine,
-          explicitRelative(pkg.root, resolve(dirname(fromFile), specifier))
+          explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier))
         );
         if (appJSMatch) {
           return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
@@ -1160,7 +1089,7 @@ export class Resolver {
       }
     }
 
-    let logicalLocation = this.reverseSearchAppTree(pkg, fromFile);
+    let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
     if (logicalLocation) {
       // the requesting file is in an addon's appTree. We didn't succeed in
       // resolving this (non-relative) request from inside the actual addon, so
@@ -1180,7 +1109,7 @@ export class Resolver {
 
     let targetingEngine = this.engineConfig(packageName);
     if (targetingEngine) {
-      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
+      let appJSMatch = this.searchAppTree(request, targetingEngine, request.specifier.replace(packageName, '.'));
       if (appJSMatch) {
         return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
       }
@@ -1191,13 +1120,13 @@ export class Resolver {
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for
       // externals.
-      return this.external('v1 catch-all fallback', request, specifier);
+      return this.external('v1 catch-all fallback', request, request.specifier);
     } else {
       // native v2 packages don't automatically externalize *everything* the way
       // auto-upgraded packages do, but they still externalize known and approved
       // ember virtual packages (like @ember/component)
       if (emberVirtualPackages.has(packageName)) {
-        return this.external('emberVirtualPackages', request, specifier);
+        return this.external('emberVirtualPackages', request, request.specifier);
       }
     }
 

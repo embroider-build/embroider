@@ -1,12 +1,11 @@
 // TODO: I copied this from @embroider/addon-dev, it needs to be its own package
 // (or be in shared-internals or core)
-import { createFilter } from '@rollup/pluginutils';
-import type { PluginContext, ResolvedId } from 'rollup';
-import type { Plugin } from 'vite';
-import { readFileSync } from 'fs';
-import { hbsToJS } from '@embroider/core';
+import {createFilter} from '@rollup/pluginutils';
+import type {PluginContext, ResolvedId} from 'rollup';
+import type {Plugin} from 'vite';
+import {hbsToJS} from '@embroider/core';
 import assertNever from 'assert-never';
-import { parse as pathParse } from 'path/posix';
+import {parse as pathParse} from 'path/posix';
 import makeDebug from 'debug';
 
 const debug = makeDebug('embroider:hbs-plugin');
@@ -32,7 +31,7 @@ export function hbs(): Plugin {
       }
     },
 
-    load(id: string) {
+    transform(source: string, id: string) {
       const meta = getMeta(this, id);
       if (!meta) {
         return;
@@ -40,8 +39,7 @@ export function hbs(): Plugin {
 
       switch (meta.type) {
         case 'template':
-          let input = readFileSync(id.replace(/\.hbs\?.*/, '.hbs'), 'utf8');
-          let code = hbsToJS(input);
+          let code = hbsToJS(source);
           return {
             code,
           };

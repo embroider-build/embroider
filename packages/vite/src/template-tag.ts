@@ -1,6 +1,5 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
-import { readFileSync } from 'fs';
 import { Preprocessor } from 'content-tag';
 
 const gjsFilter = createFilter('**/*.{gjs,gts}?(\\?)*');
@@ -20,7 +19,7 @@ export function templateTag(): Plugin {
 
     async resolveId(id: string, importer: string | undefined) {
       // prevent resolve loop during vite build
-      if (id.endsWith('.hbs')) return null;
+      if (id.split('/').slice(-1)[0].split('.')[1]) return null;
       let resolution;
       try {
         resolution = await this.resolve(id, importer, {
@@ -53,13 +52,11 @@ export function templateTag(): Plugin {
       }
     },
 
-    load(id: string) {
+    transform(code: string, id: string) {
       if (!gjsFilter(id)) {
         return null;
       }
-      id = id.replace(/\.gjs\?.*/, '.gjs');
-      id = id.replace(/\.gts\?.*/, '.gts');
-      return preprocessor.process(readFileSync(id, 'utf8'), id);
+      return preprocessor.process(code, id);
     },
   };
 }

@@ -311,6 +311,7 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
       }
     },
     async writeBundle(options) {
+      return
       const { compatAppBuilder } = getCompatAppBuilder({
         rewrittenPackageCache: resolverLoader.resolver.packageCache,
         root,

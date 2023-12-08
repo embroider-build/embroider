@@ -11,8 +11,6 @@ import {
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
-const root = "app";
-
 export default defineConfig({
   root: ".",
   plugins: [

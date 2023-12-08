@@ -22,8 +22,9 @@
     "lint:js:fix": "eslint . --fix",
     "start:prebuild": "ember b",
     "start:dev": "vite",
+    "start:test": "vite --open /tests",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
-    "test:ember": "ember test"
+    "test:ember": "node ./node_modules/@embroider/vite/src/bin/run-tests.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.22.6",
@@ -74,7 +75,10 @@
     "stylelint-prettier": "^3.0.0",
     "tracked-built-ins": "^3.1.1",
     "typescript": "^5.1.6",
-    "vite": "^4.3.9"
+    "vite": "^4.3.9",
+    "http_server": "^1.0.12",
+    "js-reporters": "^2.1.0",
+    "puppeteer-chromium-resolver": "^21.0.0"
   },
   "engines": {
     "node": "16.* || >= 18"
@@ -84,5 +88,3 @@
   },
   "main": "package.json"
 }
-
-

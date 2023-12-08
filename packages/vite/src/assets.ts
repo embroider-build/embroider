@@ -74,12 +74,17 @@ function generateEmberHtml({root}: Options) {
   const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
   let html = readFileSync(join(cwd, 'index.html')).toString();
   let testhtml = readFileSync(join(cwd, 'tests', 'index.html')).toString();
-  legacyApp.configReplacePatterns.forEach((pattern: any) => {
+  const env = environment === 'production' ? 'prodcution' : 'development';
+  legacyApp.configReplacePatterns[env].forEach((pattern: any) => {
     html = html.replace(new RegExp(pattern.exact, 'g'), pattern.replacement);
+  });
+  legacyApp.configReplacePatterns.test.forEach((pattern: any) => {
     testhtml = testhtml.replace(new RegExp(pattern.exact, 'g'), pattern.replacement);
   });
-  legacyApp.configReplacePatterns.forEach((pattern: any) => {
+  legacyApp.configReplacePatterns[env].forEach((pattern: any) => {
     html = html.replace(new RegExp(pattern.match, 'g'), pattern.replacement);
+  });
+  legacyApp.configReplacePatterns.test.forEach((pattern: any) => {
     testhtml = testhtml.replace(new RegExp(pattern.match, 'g'), pattern.replacement);
   });
   writeFileSync(join(workingDir, 'ember-index.html'), html);

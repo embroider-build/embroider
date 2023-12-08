@@ -1103,12 +1103,36 @@ export class CompatAppBuilder {
   }
 
   private addLegacyAppInfo() {
-    const config = this.configTree.readConfig() as any;
+    const project = this.compatApp.legacyEmberAppInstance.project as any;
+    const prod = project.config('production')
+    const dev = project.config('development');
+    const test = project.config('test');
     const options = {
       ...this.compatApp.legacyEmberAppInstance.options,
       addons: this.compatApp.legacyEmberAppInstance.project.addons,
     };
     const patterns = configReplacePatterns(options);
+    function replacemnts(env: any) {
+
+      return [
+        '{{rootURL}}',
+        '{{content-for "head"}}',
+        '{{content-for "head-footer"}}',
+        '{{content-for "body"}}',
+        '{{content-for "body-footer"}}',
+        '{{content-for "test-head"}}',
+        '{{content-for "test-head-footer"}}',
+        '{{content-for "test-body"}}',
+        '{{content-for "test-body-footer"}}',
+      ].map(str => {
+        const pattern = patterns.find(p => p.match.test(str))!;
+        return {
+          match: pattern?.match.source,
+          exact: str,
+          replacement: str.replace(pattern.match, pattern.replacement.bind(null, env)),
+        };
+      });
+    }
     outputJSONSync(
       join(locateEmbroiderWorkingDir(this.compatApp.root), 'legacy-app-info.json'),
       {
@@ -1122,24 +1146,11 @@ export class CompatAppBuilder {
           root: this.compatApp.legacyEmberAppInstance.project.root,
           pkg: this.compatApp.legacyEmberAppInstance.project.pkg,
         },
-        configReplacePatterns: [
-          '{{rootURL}}',
-          '{{content-for "head"}}',
-          '{{content-for "head-footer"}}',
-          '{{content-for "body"}}',
-          '{{content-for "body-footer"}}',
-          '{{content-for "test-head"}}',
-          '{{content-for "test-head-footer"}}',
-          '{{content-for "test-body"}}',
-          '{{content-for "test-body-footer"}}',
-        ].map(str => {
-          const pattern = patterns.find(p => p.match.test(str))!;
-          return {
-            match: pattern?.match.source,
-            exact: str,
-            replacement: str.replace(pattern.match, pattern.replacement.bind(this, config)),
-          };
-        }),
+        configReplacePatterns: {
+          production: replacemnts(prod),
+          development: replacemnts(dev),
+          test: replacemnts(test),
+        }
       },
       { spaces: 2 }
     );

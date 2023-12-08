@@ -72,6 +72,9 @@ Scenarios.fromProject(() => new Project())
               name,
               keywords: ['ember-addon'],
               'ember-addon': meta,
+              dependencies: {
+                'ember-auto-import': '^2.0.0',
+              },
             };
           })(),
           null,
@@ -789,6 +792,7 @@ Scenarios.fromProject(() => new Project())
             extraResolutions: {},
           };
           givenFiles({
+            'node_modules/my-addon/node_modules/inner-dep/package.json': '{ "name": "inner-dep" }',
             'node_modules/my-addon/node_modules/inner-dep/index.js': '',
             'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify(index),
             'node_modules/.embroider/rewritten-packages/my-addon.1234/node_modules/my-addon/hello-world.js': `import "inner-dep"`,
@@ -808,16 +812,17 @@ Scenarios.fromProject(() => new Project())
         test('implicit modules in moved dependencies', async function () {
           let index: RewrittenPackageIndex = {
             packages: {
-              [resolve(app.dir, 'node_modules/a-v1-addon')]: 'a-v1-addon.1234',
+              [resolve(app.dir, 'node_modules/a-v1-addon')]: 'a-v1-addon.1234/node_modules/a-v1-addon',
             },
             extraResolutions: {},
           };
           givenFiles({
             'node_modules/.embroider/rewritten-packages/index.json': JSON.stringify(index),
-            'node_modules/.embroider/rewritten-packages/a-v1-addon.1234/_app_/components/i-am-implicit.js': ``,
-            'node_modules/.embroider/rewritten-packages/a-v1-addon.1234/package.json': addonPackageJSON('a-v1-addon', {
-              'implicit-modules': ['./_app_/components/i-am-implicit.js'],
-            }),
+            'node_modules/.embroider/rewritten-packages/a-v1-addon.1234/node_modules/a-v1-addon/_app_/components/i-am-implicit.js': ``,
+            'node_modules/.embroider/rewritten-packages/a-v1-addon.1234/node_modules/a-v1-addon/package.json':
+              addonPackageJSON('a-v1-addon', {
+                'implicit-modules': ['./_app_/components/i-am-implicit.js'],
+              }),
             'app.js': `import "./-embroider-implicit-modules.js"`,
           });
 
@@ -827,7 +832,10 @@ Scenarios.fromProject(() => new Project())
             .module('./app.js')
             .resolves('./-embroider-implicit-modules.js')
             .toModule()
-            .resolves('a-v1-addon/-embroider-implicit-modules.js');
+            .resolves('a-v1-addon/_app_/components/i-am-implicit.js')
+            .to(
+              './node_modules/.embroider/rewritten-packages/a-v1-addon.1234/node_modules/a-v1-addon/_app_/components/i-am-implicit.js'
+            );
         });
       });
     });

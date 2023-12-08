@@ -2,7 +2,7 @@ import type { Plugin } from 'vite';
 import type { EmittedFile } from 'rollup';
 import { JSDOM } from 'jsdom';
 import { readFileSync, readJSONSync } from 'fs-extra';
-import { dirname, posix, resolve } from 'path';
+import { dirname, posix, resolve } from 'path/posix';
 
 // This is a type-only import, so it gets compiled away. At runtime, we load
 // terser lazily so it's only loaded for production builds that use it. Don't

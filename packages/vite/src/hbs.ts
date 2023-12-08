@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 import { readFileSync } from 'fs';
 import { hbsToJS } from '@embroider/core';
 import assertNever from 'assert-never';
-import { parse as pathParse } from 'path';
+import { parse as pathParse } from 'path/posix';
 import makeDebug from 'debug';
 
 const debug = makeDebug('embroider:hbs-plugin');

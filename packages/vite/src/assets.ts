@@ -1,6 +1,6 @@
 import type { Asset, EmberAsset, Engine, RewrittenPackageCache } from '@embroider/core';
-import { extensionsPattern, getAppMeta, locateEmbroiderWorkingDir, ResolverLoader } from '@embroider/core';
-import { join, dirname } from 'path';
+import {extensionsPattern, getAppMeta, locateEmbroiderWorkingDir, Resolver, ResolverLoader} from '@embroider/core';
+import { join, dirname } from 'path/posix';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { AppFiles } from '@embroider/core/src/app-files';
 import glob from 'fast-glob';
@@ -11,6 +11,7 @@ import { readJSONSync } from 'fs-extra';
 
 type Options = {
   root: string;
+  compatAppDir?: string;
   rewrittenPackageCache: RewrittenPackageCache;
 };
 
@@ -18,7 +19,7 @@ let InMemoryAssets: Record<string, string> = {};
 
 let environment = 'production';
 
-function getCompatAppBuilder({ rewrittenPackageCache, root }: Options) {
+function getCompatAppBuilder({ rewrittenPackageCache, root, compatAppDir }: Options) {
   const workingDir = locateEmbroiderWorkingDir(dirname(root));
   const rewrittenApp = join(workingDir, 'rewritten-app');
   const options = readJSONSync(join(workingDir, 'resolver.json'));
@@ -28,8 +29,9 @@ function getCompatAppBuilder({ rewrittenPackageCache, root }: Options) {
   legacyApp.tests = true;
   const compatApp = new CompatApp(legacyApp, options);
   compatApp['config']['lastConfig'] = env;
+  console.log('rew', rewrittenApp)
 
-  const compatAppBuilder = compatApp['instantiate'](rewrittenApp, rewrittenPackageCache, compatApp['config']);
+  const compatAppBuilder = compatApp['instantiate'](compatAppDir || rewrittenApp, rewrittenPackageCache, compatApp['config']);
 
   compatAppBuilder['assetIsValid'] = () => false;
 
@@ -143,7 +145,8 @@ async function generateTestEntries({ rewrittenPackageCache, root }: Options) {
   return InMemoryAssets[`assets/test.js`];
 }
 
-function findPublicAsset(relativePath: string, packageCache: RewrittenPackageCache) {
+function findPublicAsset(relativePath: string, resolver: Resolver, embroiderWorkingDir: string) {
+  const packageCache = resolver.packageCache;
   const cwd = process.cwd();
   const publicDir = join(cwd, 'public');
   // check public path
@@ -152,16 +155,25 @@ function findPublicAsset(relativePath: string, packageCache: RewrittenPackageCac
   if (pkg && pkg.isV2App() && existsSync(p)) {
     return '/' + p;
   }
-  // check node_modules
-  p = join('node_modules', relativePath);
-  pkg = packageCache.ownerOfFile(p);
-  if (pkg && pkg.meta && pkg.isV2Addon() && pkg.meta['public-assets']) {
-    const asset = Object.entries(pkg.meta['public-assets']).find(([_key, a]) => a === relativePath)?.[0];
-    const local = asset ? join(cwd, p) : null;
-    if (local && existsSync(local)) {
-      return '/' + p;
+
+  for (const engine of resolver.options.engines) {
+    for (const addon of engine.activeAddons) {
+      pkg = packageCache.ownerOfFile(addon.root);
+      if (pkg && pkg.meta && pkg.isV2Addon() && pkg.meta['public-assets']) {
+        const asset = Object.entries(pkg.meta['public-assets']).find(([_key, a]) => a === relativePath)?.[0];
+        let local = asset ? join(addon.root, asset) : null;
+        if (!local?.includes(embroiderWorkingDir) && asset) {
+          // remap to local path without symlinks so vite can find it
+          const localNodeModulePath = local?.split('/node_modules/').slice(-1)[0]!;
+          local = join('node_modules', localNodeModulePath);
+        }
+        if (local && existsSync(local)) {
+          return '/' + local;
+        }
+      }
     }
   }
+
 }
 
 export function assets(options?: { entryDirectories?: string[] }): Plugin {
@@ -239,7 +251,7 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
           return next();
         }
         if (req.originalUrl && req.originalUrl.length > 1) {
-          const newUrl = findPublicAsset(req.originalUrl, resolverLoader.resolver.packageCache);
+          const newUrl = findPublicAsset(req.originalUrl, resolverLoader.resolver, embroiderWorkingDir);
           if (newUrl) {
             req.originalUrl = newUrl;
             (req as any).url = newUrl;
@@ -301,7 +313,8 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
     async writeBundle(options) {
       const { compatAppBuilder } = getCompatAppBuilder({
         rewrittenPackageCache: resolverLoader.resolver.packageCache,
-        root: options.dir || join(cwd, 'dist'),
+        root,
+        compatAppDir: options.dir || join(cwd, 'dist'),
       });
       const assets = compatAppBuilder['gatherAssets']({
         publicTree: 'public',

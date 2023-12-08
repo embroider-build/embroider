@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { join } from 'path/posix';
 import { createHash } from 'crypto';
 import { fork } from 'child_process';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';

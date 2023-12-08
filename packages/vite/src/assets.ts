@@ -118,8 +118,7 @@ async function generateAppEntries({rewrittenPackageCache, root}: Options) {
   InMemoryAssets[`assets/${pkg.name}.js`] = (appFile as InMemoryAsset).source.toString();
   InMemoryAssets[`assets/${pkg.name}.js`] += `
     import buildAppEnv from '../../config/environment.js';
-    if (!runningTests) {
-      function merge(source, target) {
+    function merge(source, target) {
         for (const [key, val] of Object.entries(source)) {
           if (val !== null && typeof val === \`object\`) {
             target[key] ??=new val.__proto__.constructor();
@@ -130,8 +129,7 @@ async function generateAppEntries({rewrittenPackageCache, root}: Options) {
         }
         return target; // we're replacing in-situ, so this is more for chaining than anything else
       }
-      merge(buildAppEnv('${environment}'), require('${pkg.name}/config/environment').default);
-    }
+      merge(buildAppEnv(runningTests ? 'test' : '${environment}'), require('${pkg.name}/config/environment').default);
     `;
   return InMemoryAssets[`assets/${pkg.name}.js`];
 }

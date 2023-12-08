@@ -1,9 +1,8 @@
 /* eslint-disable no-console */
 import { autoRegister } from 'js-reporters';
+import qunit from 'qunit';
 
 export async function setupQunit() {
-    const qunit = await import('qunit');
-
     const runner = autoRegister();
     const tap = qunit.reporters.tap;
     tap.init(runner, { log: console.info });

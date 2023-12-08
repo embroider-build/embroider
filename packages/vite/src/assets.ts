@@ -6,8 +6,8 @@ import { AppFiles } from '@embroider/core/src/app-files';
 import glob from 'fast-glob';
 import CompatApp from '@embroider/compat/src/compat-app';
 import type { InMemoryAsset } from '@embroider/core/src/asset';
-import type { Plugin } from 'vite';
-import { readJSONSync } from 'fs-extra';
+import type { Plugin, ViteDevServer} from 'vite';
+import {readJSONSync} from 'fs-extra';
 
 type Options = {
   root: string;
@@ -19,7 +19,7 @@ let InMemoryAssets: Record<string, string> = {};
 
 let environment = 'production';
 
-function getCompatAppBuilder({ rewrittenPackageCache, root, compatAppDir }: Options) {
+function getCompatAppBuilder({rewrittenPackageCache, root, compatAppDir}: Options) {
   const workingDir = locateEmbroiderWorkingDir(dirname(root));
   const rewrittenApp = join(workingDir, 'rewritten-app');
   const options = readJSONSync(join(workingDir, 'resolver.json'));
@@ -48,11 +48,11 @@ function getCompatAppBuilder({ rewrittenPackageCache, root, compatAppDir }: Opti
     }
     files.push('config/environment.js');
     return new AppFiles(
-      engine,
-      new Set(files),
-      new Set(),
-      extensionsPattern(extensions),
-      compatAppBuilder['podModulePrefix']()
+        engine,
+        new Set(files),
+        new Set(),
+        extensionsPattern(extensions),
+        compatAppBuilder['podModulePrefix']()
     );
   });
   const assets: Asset[] = [];
@@ -65,10 +65,10 @@ function getCompatAppBuilder({ rewrittenPackageCache, root, compatAppDir }: Opti
     }
     assets.push(asset);
   }
-  return { compatAppBuilder, assets, appFiles };
+  return {compatAppBuilder, assets, appFiles};
 }
 
-function generateEmberHtml({ root }: Options) {
+function generateEmberHtml({root}: Options) {
   const cwd = dirname(root);
   const workingDir = locateEmbroiderWorkingDir(cwd);
   const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
@@ -86,13 +86,13 @@ function generateEmberHtml({ root }: Options) {
   writeFileSync(join(workingDir, 'ember-test-index.html'), testhtml);
 }
 
-async function generateHtml({ rewrittenPackageCache, root }: Options, appOrTest: 'app' | 'test') {
+async function generateHtml({rewrittenPackageCache, root}: Options, appOrTest: 'app' | 'test') {
   const file = appOrTest === 'app' ? 'index.html' : 'tests/index.html';
   if (InMemoryAssets[file]) {
     return InMemoryAssets[file];
   }
-  generateEmberHtml({ rewrittenPackageCache, root });
-  const { compatAppBuilder, assets, appFiles } = getCompatAppBuilder({ rewrittenPackageCache, root });
+  generateEmberHtml({rewrittenPackageCache, root});
+  const {compatAppBuilder, assets, appFiles} = getCompatAppBuilder({rewrittenPackageCache, root});
 
   const emberENV = compatAppBuilder['configTree'].readConfig().EmberENV;
 
@@ -103,12 +103,12 @@ async function generateHtml({ rewrittenPackageCache, root }: Options, appOrTest:
   return InMemoryAssets[file];
 }
 
-async function generateAppEntries({ rewrittenPackageCache, root }: Options) {
+async function generateAppEntries({rewrittenPackageCache, root}: Options) {
   const pkg = rewrittenPackageCache.get(root);
   if (InMemoryAssets[`assets/${pkg.name}.js`]) {
     return InMemoryAssets[`assets/${pkg.name}.js`];
   }
-  const { compatAppBuilder, assets, appFiles } = getCompatAppBuilder({ rewrittenPackageCache, root });
+  const {compatAppBuilder, assets, appFiles} = getCompatAppBuilder({rewrittenPackageCache, root});
 
   const emberENV = compatAppBuilder['configTree'].readConfig().EmberENV;
   // TODO: improve code to only rebuild app asset
@@ -118,30 +118,34 @@ async function generateAppEntries({ rewrittenPackageCache, root }: Options) {
   InMemoryAssets[`assets/${pkg.name}.js`] = (appFile as InMemoryAsset).source.toString();
   InMemoryAssets[`assets/${pkg.name}.js`] += `
     import buildAppEnv from '../../config/environment.js';
-    function merge(source, target) {
-      for (const [key, val] of Object.entries(source)) {
-        if (val !== null && typeof val === \`object\`) {
-          target[key] ??=new val.__proto__.constructor();
-          merge(val, target[key]);
-        } else {
-          target[key] = val;
+    if (!runningTests) {
+      function merge(source, target) {
+        for (const [key, val] of Object.entries(source)) {
+          if (val !== null && typeof val === \`object\`) {
+            target[key] ??=new val.__proto__.constructor();
+            merge(val, target[key]);
+          } else {
+            target[key] = val;
+          }
         }
+        return target; // we're replacing in-situ, so this is more for chaining than anything else
       }
-      return target; // we're replacing in-situ, so this is more for chaining than anything else
+      merge(buildAppEnv('${environment}'), require('${pkg.name}/config/environment').default);
     }
-    merge(buildAppEnv('${environment}'), require('${pkg.name}/config/environment').default)
     `;
   return InMemoryAssets[`assets/${pkg.name}.js`];
 }
 
-async function generateTestEntries({ rewrittenPackageCache, root }: Options) {
-  const { compatAppBuilder, assets, appFiles } = getCompatAppBuilder({ rewrittenPackageCache, root });
+async function generateTestEntries({rewrittenPackageCache, root}: Options) {
+  //const pkg = rewrittenPackageCache.get(root);
+  const {compatAppBuilder, assets, appFiles} = getCompatAppBuilder({rewrittenPackageCache, root});
 
   const emberENV = compatAppBuilder['configTree'].readConfig().EmberENV;
   const internalAssets = await compatAppBuilder['updateAssets'](assets, appFiles, emberENV);
 
   const appFile = internalAssets.find(a => (a as any).relativePath === `assets/test.js`)!;
   InMemoryAssets[`assets/test.js`] = (appFile as InMemoryAsset).source.toString();
+
   return InMemoryAssets[`assets/test.js`];
 }
 
@@ -188,11 +192,13 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
   const testsIndex = join(tests, 'index.html').replace(/\\/g, '/');
 
   const entries = ['routes', 'templates', 'controllers'].concat(options?.entryDirectories || []);
+  let viteDevServer: ViteDevServer;
 
   return {
     name: 'assets',
     enforce: 'pre',
     configureServer(server) {
+      viteDevServer = server;
       const watcher = server.watcher;
       // this is required because we do not open the /tests url directly and via the middleware
       watcher.on('add', filename => {
@@ -224,12 +230,10 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
           });
         }
       });
-      environment = 'development';
       server.middlewares.use((req, _res, next) => {
         // this is necessary so that /tests will load tests/index
         // otherwise this would only happen when /tests/ or /tests/index.html is opened
         if (req.originalUrl?.match(/\/tests($|\?)/) || req.originalUrl?.startsWith('/tests/index.html')) {
-          environment = 'test';
           req.originalUrl = '/tests/index.html';
           (req as any).url = '/tests/index.html';
           if (InMemoryAssets['index.html']) {
@@ -265,9 +269,18 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
       order: 'pre',
       async handler(_html, ctx) {
         if (ctx.filename === appIndex) {
+          if (viteDevServer) environment = 'development';
           return await generateHtml({ rewrittenPackageCache: resolverLoader.resolver.packageCache, root }, 'app');
         }
         if (ctx.filename === testsIndex) {
+          if (viteDevServer && environment !== 'test') {
+            delete InMemoryAssets[`assets/${appMeta.name}.js`];
+            const module = viteDevServer.moduleGraph.getModuleById(join(root, `assets/${appMeta.name}.js`))!;
+            if (module) {
+              viteDevServer.moduleGraph.invalidateModule(module);
+            }
+            environment = 'test';
+          }
           return await generateHtml({ rewrittenPackageCache: resolverLoader.resolver.packageCache, root }, 'test');
         }
       },
@@ -292,7 +305,7 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
           return `
             // fix for qunit
             import '/assets/test-setup.js';
-            import '/assets/test-entries.js'
+            import '/assets/test-entries.js';
           `;
         }
         if (id.endsWith('/assets/test-setup.js')) {

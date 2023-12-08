@@ -19,7 +19,8 @@ export function templateTag(): Plugin {
 
     async resolveId(id: string, importer: string | undefined) {
       // prevent resolve loop during vite build
-      if (id.split('/').slice(-1)[0].split('.')[1]) return null;
+      if (id.endsWith('.gts')) return null;
+      if (id.endsWith('.gjs')) return null;
       let resolution;
       try {
         resolution = await this.resolve(id, importer, {

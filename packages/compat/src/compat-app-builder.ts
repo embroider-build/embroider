@@ -263,11 +263,6 @@ export class CompatAppBuilder {
     let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
     let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
 
-    let activeAddons: CompatResolverOptions['activeAddons'] = {};
-    for (let addon of this.allActiveAddons) {
-      activeAddons[addon.name] = addon.root;
-    }
-
     let options: CompatResolverOptions['options'] = {
       staticHelpers: this.options.staticHelpers,
       staticModifiers: this.options.staticModifiers,
@@ -277,7 +272,6 @@ export class CompatAppBuilder {
 
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
-      activeAddons,
       renameModules,
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),

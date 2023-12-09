@@ -532,22 +532,25 @@ export class Resolver {
   }
 
   private *componentTemplateCandidates(inPackageName: string) {
-    yield { prefix: '/templates/components/', suffix: '' };
-    yield { prefix: '/components/', suffix: '/template' };
+    yield { prefix: '/templates/components/', suffix: '.hbs' };
+    yield { prefix: '/components/', suffix: '/template.hbs' };
 
     let pods = this.podPrefix(inPackageName);
     if (pods) {
-      yield { prefix: `${pods}/components/`, suffix: '/template' };
+      yield { prefix: `${pods}/components/`, suffix: '/template.hbs' };
     }
   }
 
   private *componentJSCandidates(inPackageName: string) {
-    yield { prefix: '/components/', suffix: '' };
-    yield { prefix: '/components/', suffix: '/component' };
+    yield { prefix: '/components/', suffix: '.js' };
+    yield { prefix: '/components/', suffix: '.ts' };
+    yield { prefix: '/components/', suffix: '/component.js' };
+    yield { prefix: '/components/', suffix: '/component.ts' };
 
     let pods = this.podPrefix(inPackageName);
     if (pods) {
-      yield { prefix: `${pods}/components/`, suffix: '/component' };
+      yield { prefix: `${pods}/components/`, suffix: '/component.js' };
+      yield { prefix: `${pods}/components/`, suffix: '/component.ts' };
     }
   }
 
@@ -1152,7 +1155,7 @@ export class Resolver {
     if (filename.match(/\.(hbs|js|hbs\.js)$/)) {
       yield filename;
     } else {
-      for (let ext of ['.js', '.hbs.js', '.hbs']) {
+      for (let ext of ['.js', '.hbs.js', '.hbs', '.ts']) {
         yield `${filename}${ext}`;
       }
     }

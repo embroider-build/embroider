@@ -20,7 +20,7 @@ export default function publicAssets(
       });
       const publicAssets: Record<string, string> = filenames.reduce(
         (acc: Record<string, string>, v): Record<string, string> => {
-          acc[`./${path}/${v}`] = ['/', pkg.name, '/', path, '/', v].join('');
+          acc[`./${path}/${v}`] = ['/', pkg.name, '/', v].join('');
           return acc;
         },
         {}

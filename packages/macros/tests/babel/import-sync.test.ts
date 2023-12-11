@@ -12,7 +12,7 @@ describe('importSync', function () {
       importSync('foo');
       `);
       expect(code).toMatch(/import \* as _importSync\d from "foo"/);
-      expect(code).toMatch(/_importSync\d;/);
+      expect(code).toMatch(/esc\(_importSync\d\);/);
       expect(code).not.toMatch(/window/);
     });
     test('importSync leaves existing binding for require alone', () => {

@@ -1017,15 +1017,34 @@ export class CompatAppBuilder {
   prepareHtml(htmlPath: string, env: string) {
     const workingDir = locateEmbroiderWorkingDir(this.root);
     const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
+    const configPath = require.resolve(join(this.root, 'config', 'environment.js'));
+    delete require.cache[require.resolve(configPath)]
+    const buildAppEnv = require(configPath);
     let html = readFileSync(join(this.root, htmlPath)).toString();
     legacyApp.configReplacePatterns[env].forEach((pattern: any) => {
       html = html.replace(new RegExp(pattern.match, 'g'), pattern.replacement);
     });
 
-    const emberENV = legacyApp.environments[env];
+    function merge(source: any, target: any) {
+      for (const [key, val] of Object.entries(source)) {
+        if (val !== null && typeof val === `object`) {
+          target[key] ??=new (val as any).__proto__.constructor();
+          merge(val, target[key]);
+        } else {
+          target[key] = val;
+        }
+      }
+      return target; // we're replacing in-situ, so this is more for chaining than anything else
+    }
 
-    html.replace(
-      new RegExp(`<meta\\s+name=["']${legacyApp.project.pkg.name}/config/environment["']\\s+content=["'](.*)["']>`),
+    const emberENV = legacyApp.environments[env];
+    const newestEnv = buildAppEnv(env);
+    merge(newestEnv, emberENV);
+    emberENV.APP = newestEnv.APP;
+
+
+    html = html.replace(
+      new RegExp(`<meta\\s+name=["']${legacyApp.project.pkg.name}/config/environment["']\\s+content=["'](.*)["']\\s+/>`),
       (match, content) => {
         return match.replace(content, encodeURIComponent(JSON.stringify(emberENV)));
       }

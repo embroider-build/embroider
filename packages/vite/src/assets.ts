@@ -96,6 +96,7 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
     name: 'assets',
     enforce: 'pre',
     configureServer(server) {
+      environment = 'development';
       const watcher = server.watcher;
       // this is required because we do not open the /tests url directly and via the middleware
       watcher.on('add', filename => {
@@ -127,8 +128,11 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
           });
         }
         if (filename === config) {
-          const module = server.moduleGraph.getModuleById(config)!;
-          server.moduleGraph.invalidateModule(module);
+          delete InMemoryAssets['index.html'];
+          delete InMemoryAssets['tests/index.html'];
+          server.ws.send({
+            type: 'full-reload',
+          });
         }
       });
       server.middlewares.use((req, _res, next) => {

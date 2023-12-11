@@ -533,6 +533,7 @@ export class Resolver {
 
   private *componentTemplateCandidates(inPackageName: string) {
     yield { prefix: '/templates/components/', suffix: '.hbs' };
+    yield { prefix: '/templates/components/', suffix: '/index.hbs' };
     yield { prefix: '/components/', suffix: '/template.hbs' };
 
     let pods = this.podPrefix(inPackageName);
@@ -543,7 +544,9 @@ export class Resolver {
 
   private *componentJSCandidates(inPackageName: string) {
     yield { prefix: '/components/', suffix: '.js' };
+    yield { prefix: '/components/', suffix: '/index.js' };
     yield { prefix: '/components/', suffix: '.ts' };
+    yield { prefix: '/components/', suffix: '/index.ts' };
     yield { prefix: '/components/', suffix: '/component.js' };
     yield { prefix: '/components/', suffix: '/component.ts' };
 

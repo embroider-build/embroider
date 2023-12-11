@@ -1,25 +1,34 @@
 import type { Node as BroccoliNode } from 'broccoli-node-api';
-import type { Stage, Package } from '@embroider/core';
-import { PackageCache, WaitForTrees, RewrittenPackageCache, locateEmbroiderWorkingDir } from '@embroider/core';
+import type {
+  AddonInstance,
+  AddonMeta,
+  EmberAppInstance,
+  OutputFileToInputFileMap,
+  Package,
+  PackageInfo,
+  Stage
+} from '@embroider/core';
+import { locateEmbroiderWorkingDir, PackageCache, RewrittenPackageCache, WaitForTrees } from '@embroider/core';
 import type Options from './options';
 import { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
-import { join, dirname, isAbsolute, sep } from 'path';
+import { dirname, isAbsolute, join, sep } from 'path';
 import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import { V1Config, WriteV1Config } from './v1-config';
-import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
-import type {
-  AddonMeta,
-  EmberAppInstance,
-  OutputFileToInputFileMap,
-  PackageInfo,
-  AddonInstance,
-} from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
+import { ReadV1AppBoot, WriteV1AppBoot } from './v1-appboot';
+import {
+  copySync,
+  ensureDirSync,
+  existsSync,
+  pathExistsSync,
+  readdirSync,
+  readJSONSync,
+  writeJSONSync
+} from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import type { TransformOptions } from '@babel/core';
@@ -799,6 +808,20 @@ export default class CompatApp {
       // macros in a classic build.
       active: true,
     });
+  }
+
+  static getCachedBuilderInstance(root: string) {
+    const workingDir = locateEmbroiderWorkingDir(root);
+    const options = readJSONSync(join(workingDir, 'resolver.json'));
+    const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
+    legacyApp.project.configPath = () => '';
+    const compatApp = new CompatApp(legacyApp, options);
+    compatApp.config['lastConfig'] = legacyApp.environments.development;
+    return compatApp.instantiate(
+        root,
+        RewrittenPackageCache.shared('embroider', root),
+        compatApp.config
+    );
   }
 
   private inTrees(prevStageTree: BroccoliNode) {

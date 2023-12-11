@@ -83,7 +83,7 @@ export class PreparedEmberHTML {
   implicitTestStyles: Placeholder;
 
   constructor(private asset: EmberAsset) {
-    this.dom = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
+    this.dom = new JSDOM(asset.source || readFileSync(asset.sourcePath, 'utf8'));
     let html = asset.prepare(this.dom);
     this.javascript = Placeholder.replacing(html.javascript);
     this.styles = Placeholder.replacing(html.styles);

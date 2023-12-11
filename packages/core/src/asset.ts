@@ -35,6 +35,7 @@ export interface EmberAsset extends BaseAsset {
 
   // absolute path to where we will find the html file
   sourcePath: string;
+  source?: string;
 
   // these describe the file at sourcePath so we can avoid rebuilding when it
   // hasn't changed

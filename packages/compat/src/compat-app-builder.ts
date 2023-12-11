@@ -18,7 +18,7 @@ import {
   cacheBustingPluginVersion,
   cacheBustingPluginPath,
   Resolver,
-  locateEmbroiderWorkingDir,
+  locateEmbroiderWorkingDir, RewrittenPackageCache,
 } from '@embroider/core';
 import walkSync from 'walk-sync';
 import { resolve as resolvePath, posix } from 'path';
@@ -61,6 +61,8 @@ import { configReplacePatterns } from 'ember-cli/lib/utilities/ember-app-utils';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
+import glob from 'fast-glob';
+import { readFileSync } from 'fs';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -328,8 +330,8 @@ export class CompatAppBuilder {
   private impliedAssets(
     type: keyof ImplicitAssetPaths,
     engine: AppFiles,
-    emberENV?: EmberENV
   ): (OnDiskAsset | InMemoryAsset)[] {
+    const appName = engine.engine.package.name;
     let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
       (sourcePath: string): OnDiskAsset => {
         let stats = statSync(sourcePath);
@@ -353,7 +355,24 @@ export class CompatAppBuilder {
       result.unshift({
         kind: 'in-memory',
         relativePath: '_ember_env_.js',
-        source: `window.EmberENV={ ...(window.EmberENV || {}), ...${JSON.stringify(emberENV, null, 2)} };`,
+        source: `
+        (function() {
+          function merge(e, t) {
+              for (var r in t)
+                  e[r] = t[r]
+              return e
+          }
+          try {
+            var metaName = '${appName}' + '/config/environment';
+            var rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
+            var config = JSON.parse(decodeURIComponent(rawConfig));
+            window.EmberENV = merge(window.EmberENV || {}, config.EmberENV);
+          } catch (e) {
+            window.EmberENV = {};
+            console.error('Could not read config from meta tag with name "${appName}"');
+          }
+        })();
+        `,
       });
 
       result.push({
@@ -369,7 +388,9 @@ export class CompatAppBuilder {
         kind: 'in-memory',
         relativePath: '_testing_suffix_.js',
         source: `
-        var runningTests=true;
+        import * as EmberTesting from 'ember-testing';
+        define('ember-testing', () => EmberTesting);
+        runningTests=true;
         if (typeof Testem !== 'undefined' && (typeof QUnit !== 'undefined' || typeof Mocha !== 'undefined')) {
           Testem.hookIntoTestFramework();
         }`,
@@ -495,8 +516,7 @@ export class CompatAppBuilder {
   private insertEmberApp(
     asset: ParsedEmberAsset,
     appFiles: AppFiles[],
-    prepared: Map<string, InternalAsset>,
-    emberENV: EmberENV
+    prepared: Map<string, InternalAsset>
   ) {
     let html = asset.html;
 
@@ -527,7 +547,7 @@ export class CompatAppBuilder {
     html.insertStyleLink(html.styles, `assets/${this.origAppPackage.name}.css`);
 
     const parentEngine = appFiles.find(e => !e.engine.parent)!;
-    let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
+    let vendorJS = this.implicitScriptsAsset(prepared, parentEngine);
     if (vendorJS) {
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
@@ -557,7 +577,7 @@ export class CompatAppBuilder {
 
     let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared, parentEngine);
     if (implicitTestScriptsAsset) {
-      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath);
+      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath, { type: 'module' });
     }
 
     let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);
@@ -568,12 +588,11 @@ export class CompatAppBuilder {
 
   private implicitScriptsAsset(
     prepared: Map<string, InternalAsset>,
-    application: AppFiles,
-    emberENV: EmberENV
+    application: AppFiles
   ): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.js');
     if (!asset) {
-      let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
+      let implicitScripts = this.impliedAssets('implicit-scripts', application);
       if (implicitScripts.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
@@ -768,7 +787,7 @@ export class CompatAppBuilder {
     );
   }
 
-  private prepareAsset(asset: Asset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
+  private prepareAsset(asset: Asset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -779,7 +798,7 @@ export class CompatAppBuilder {
       } else {
         parsed = new ParsedEmberAsset(asset);
       }
-      this.insertEmberApp(parsed, appFiles, prepared, emberENV);
+      this.insertEmberApp(parsed, appFiles, prepared);
       prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
     } else {
       prepared.set(asset.relativePath, asset);
@@ -788,12 +807,11 @@ export class CompatAppBuilder {
 
   private prepareAssets(
     requestedAssets: Asset[],
-    appFiles: AppFiles[],
-    emberENV: EmberENV
+    appFiles: AppFiles[]
   ): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
-      this.prepareAsset(asset, appFiles, prepared, emberENV);
+      this.prepareAsset(asset, appFiles, prepared);
     }
     return prepared;
   }
@@ -821,38 +839,38 @@ export class CompatAppBuilder {
     }
   }
 
-  private updateOnDiskAsset(asset: OnDiskAsset) {
-    let destination = join(this.root, asset.relativePath);
+  private updateOnDiskAsset(dst: string, asset: OnDiskAsset) {
+    let destination = join(dst, asset.relativePath);
     ensureDirSync(dirname(destination));
     copySync(asset.sourcePath, destination, { dereference: true });
   }
 
-  private updateInMemoryAsset(asset: InMemoryAsset) {
-    let destination = join(this.root, asset.relativePath);
+  private updateInMemoryAsset(dst: string, asset: InMemoryAsset) {
+    let destination = join(dst, asset.relativePath);
     ensureDirSync(dirname(destination));
     writeFileSync(destination, asset.source, 'utf8');
   }
 
-  private updateBuiltEmberAsset(asset: BuiltEmberAsset) {
-    let destination = join(this.root, asset.relativePath);
+  private updateBuiltEmberAsset(dst: string, asset: BuiltEmberAsset) {
+    let destination = join(dst, asset.relativePath);
     ensureDirSync(dirname(destination));
     writeFileSync(destination, asset.source, 'utf8');
   }
 
-  private async updateConcatenatedAsset(asset: ConcatenatedAsset) {
+  private async updateConcatenatedAsset(dst: string, asset: ConcatenatedAsset) {
     let concat = new SourceMapConcat({
-      outputFile: join(this.root, asset.relativePath),
+      outputFile: join(dst, asset.relativePath),
       mapCommentType: asset.relativePath.endsWith('.js') ? 'line' : 'block',
-      baseDir: this.root,
+      baseDir: dst,
     });
     if (process.env.EMBROIDER_CONCAT_STATS) {
       let MeasureConcat = (await import('@embroider/core/src/measure-concat')).default;
-      concat = new MeasureConcat(asset.relativePath, concat, this.root);
+      concat = new MeasureConcat(asset.relativePath, concat, dst);
     }
     for (let source of asset.sources) {
       switch (source.kind) {
         case 'on-disk':
-          concat.addFile(explicitRelative(this.root, source.sourcePath));
+          concat.addFile(explicitRelative(dst, source.sourcePath));
           break;
         case 'in-memory':
           if (typeof source.source !== 'string') {
@@ -867,25 +885,25 @@ export class CompatAppBuilder {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[], emberENV: EmberENV) {
-    let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
+  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[], noWrite?: boolean, dst: string = this.root) {
+    let assets = this.prepareAssets(requestedAssets, appFiles);
     for (let asset of assets.values()) {
-      if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
+      if (noWrite || this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
         continue;
       }
       debug('rebuilding %s', asset.relativePath);
       switch (asset.kind) {
         case 'on-disk':
-          this.updateOnDiskAsset(asset);
+          this.updateOnDiskAsset(dst, asset);
           break;
         case 'in-memory':
-          this.updateInMemoryAsset(asset);
+          this.updateInMemoryAsset(dst, asset);
           break;
         case 'built-ember':
-          this.updateBuiltEmberAsset(asset);
+          this.updateBuiltEmberAsset(dst, asset);
           break;
         case 'concatenated-asset':
-          await this.updateConcatenatedAsset(asset);
+          await this.updateConcatenatedAsset(dst, asset);
           break;
         default:
           assertNever(asset);
@@ -953,10 +971,9 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
-    let emberENV = this.configTree.readConfig().EmberENV;
     let assets = this.gatherAssets(inputPaths);
 
-    let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
+    let finalAssets = await this.updateAssets(assets, appFiles);
 
     let assetPaths = assets.map(asset => asset.relativePath);
 
@@ -995,7 +1012,6 @@ export class CompatAppBuilder {
 
     let resolverConfig = this.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
-    this.addEnvironment();
     this.addLegacyAppInfo();
     let babelConfig = this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
@@ -1003,6 +1019,92 @@ export class CompatAppBuilder {
       join(this.root, 'macros-config.json'),
       JSON.stringify(this.compatApp.macrosConfig.babelPluginConfig()[0], null, 2)
     );
+  }
+
+  prepareHtml(htmlPath: string, env: string) {
+    const workingDir = locateEmbroiderWorkingDir(this.root);
+    const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
+    let html = readFileSync(join(this.root, htmlPath)).toString();
+    legacyApp.configReplacePatterns[env].forEach((pattern: any) => {
+      html = html.replace(new RegExp(pattern.match, 'g'), pattern.replacement);
+    });
+
+    const emberENV = legacyApp.environments[env];
+
+    html.replace(new RegExp(`<meta\\s+name=["']${legacyApp.project.pkg.name}/config/environment["']\\s+content=["'](.*)["']>`), (match, content) => {
+      return match.replace(content, encodeURIComponent(JSON.stringify(emberENV)));
+    });
+    return html;
+  }
+
+  async rebuildHtml(root: string, environment: 'production' | 'development', appOrTestHtml: 'app' | 'test') {
+    const file = appOrTestHtml === 'app' ? 'index.html' : 'tests/index.html';
+    const env = appOrTestHtml === 'test' ? 'test' : (environment === 'production' ? 'production' : 'development');
+    const html = this.prepareHtml(file, env);
+
+
+    const assets: Asset[] = [];
+    for (let asset of this.emberEntrypoints('.')) {
+      if (asset.relativePath === file) {
+        (asset as EmberAsset).source = html;
+        assets.push(asset);
+      }
+    }
+
+    const engines = this.partitionEngines(root);
+    const appFiles = engines.map((engine: Engine) => {
+      return new AppFiles(
+          engine,
+          new Set(),
+          new Set(),
+          extensionsPattern(this.resolvableExtensions()),
+          this.podModulePrefix()
+      );
+    });
+
+    const internalAssets = await this.updateAssets(assets, appFiles, true);
+    const indexFile = internalAssets.find(a => (a as any).relativePath === file)!;
+    return (indexFile as BuiltEmberAsset).source;
+  }
+
+  async rebuildEntryFile(root: string) {
+    const engines = this.partitionEngines(root);
+    const rewrittenPackageCache = RewrittenPackageCache.shared('embroider', this.root);
+    const pkg = rewrittenPackageCache.get(this.root);
+    const relativePath = root.endsWith('/tests') ? 'assets/test.js' : `assets/${pkg.name}.js`;
+
+    const appFiles = engines.map((engine: Engine) => {
+      const isTest = engine.sourcePath.endsWith('/tests');
+      let files = glob.sync(`**/*{${this.resolvableExtensions().join(',')}}`, {
+        cwd: engine.sourcePath,
+      }) as string[];
+      if (isTest) {
+        files = files.map(f => `tests/${f}`);
+      }
+      files.push('config/environment.js');
+      return new AppFiles(
+          engine,
+          new Set(files),
+          new Set(),
+          extensionsPattern(this.resolvableExtensions()),
+          this.podModulePrefix()
+      );
+    });
+    const assets: Asset[] = [];
+    for (let asset of this.emberEntrypoints('.')) {
+      (asset as EmberAsset).source = this.prepareHtml(asset.relativePath, 'development');
+      assets.push(asset);
+    }
+    const internalAssets = await this.updateAssets(assets, appFiles, true);
+    const indexFile = internalAssets.find(a => (a as any).relativePath === relativePath)!;
+    return (indexFile as BuiltEmberAsset).source;
+  }
+
+  async copyPublicAssetsToDir(dir: string) {
+    const assets = this.gatherAssets({
+      publicTree: 'public'
+    } as any);
+    await this.updateAssets(assets, [], false, dir);
   }
 
   private combinePackageJSON(meta: AppMeta): object {
@@ -1094,41 +1196,40 @@ export class CompatAppBuilder {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config, { spaces: 2 });
   }
 
-  private addEnvironment() {
-    outputJSONSync(
-      join(locateEmbroiderWorkingDir(this.compatApp.root), 'environment.json'),
-      this.configTree.readConfig(),
-      { spaces: 2 }
-    );
-  }
-
   private addLegacyAppInfo() {
     const project = this.compatApp.legacyEmberAppInstance.project as any;
-    const prod = project.config('production')
-    const dev = project.config('development');
+    const production = project.config('production')
+    const development = project.config('development');
     const test = project.config('test');
     const options = {
       ...this.compatApp.legacyEmberAppInstance.options,
       addons: this.compatApp.legacyEmberAppInstance.project.addons,
     };
     const patterns = configReplacePatterns(options);
-    function replacemnts(env: any) {
-
+    function replacements(env: any) {
+      const contentFor = [
+          'head',
+          'head-footer',
+          'body',
+          'body-footer',
+          'test-head',
+          'test-head-footer',
+          'test-body',
+          'test-body-footer',
+      ]
+      const match: Record<string, string> = {
+        '{{rootURL}}': /{{\s?rootURL\s?}}/g.source
+      };
+      contentFor.forEach(c => {
+        match[`{{content-for "${c}"}}`] = /{{content-for ['"]xxx["']}}/g.source.replace('xxx', c);
+      })
       return [
         '{{rootURL}}',
-        '{{content-for "head"}}',
-        '{{content-for "head-footer"}}',
-        '{{content-for "body"}}',
-        '{{content-for "body-footer"}}',
-        '{{content-for "test-head"}}',
-        '{{content-for "test-head-footer"}}',
-        '{{content-for "test-body"}}',
-        '{{content-for "test-body-footer"}}',
+          ...contentFor.map(c => `{{content-for "${c}"}}`)
       ].map(str => {
         const pattern = patterns.find(p => p.match.test(str))!;
         return {
-          match: pattern?.match.source,
-          exact: str,
+          match: match[str],
           replacement: str.replace(pattern.match, pattern.replacement.bind(null, env)),
         };
       });
@@ -1146,10 +1247,16 @@ export class CompatAppBuilder {
           root: this.compatApp.legacyEmberAppInstance.project.root,
           pkg: this.compatApp.legacyEmberAppInstance.project.pkg,
         },
+        tests: true,
+        environments: {
+          production,
+          development,
+          test
+        },
         configReplacePatterns: {
-          production: replacemnts(prod),
-          development: replacemnts(dev),
-          test: replacemnts(test),
+          production: replacements(production),
+          development: replacements(development),
+          test: replacements(test),
         }
       },
       { spaces: 2 }
@@ -1622,8 +1729,6 @@ interface TreeNames {
   publicTree: BroccoliNode | undefined;
   configTree: BroccoliNode;
 }
-
-type EmberENV = unknown;
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 

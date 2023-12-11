@@ -52,7 +52,6 @@
     "@ember/test-helpers": "^2.9.1",
     "@embroider/compat": "workspace:*",
     "@embroider/core": "workspace:*",
-    "@embroider/shared-internals": "workspace:*",
     "@embroider/test-setup": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@embroider/webpack": "workspace:*",

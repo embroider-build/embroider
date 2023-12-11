@@ -25,14 +25,13 @@
     "ts-node": "^10.9.1"
   },
   "scripts": {
-    "test": "node ./node_modules/qunit/bin/qunit.js --require ts-node/register *-test.ts",
+    "test": "qunit --require ts-node/register *-test.ts",
     "test:list": "scenario-tester list --require ts-node/register --files=*-test.ts",
     "test:output": "scenario-tester output --require ts-node/register --files=*-test.ts"
   },
   "private": true,
   "license": "MIT",
   "devDependencies": {
-    "qunit": "^2.20.0",
     "@babel/core": "^7.17.5",
     "@babel/plugin-proposal-decorators": "^7.17.2",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",

@@ -60,9 +60,6 @@ export default class PackageCache {
 
   get(packageRoot: string) {
     let root = getCachedRealpath(packageRoot);
-    if (!getCachedExists([root, 'package.json'].join(sep))) {
-      throw new Error('bad package for ' + packageRoot);
-    }
     let p = getOrCreate(this.rootCache, root, () => {
       return new Package(root, this, root === this.appRoot);
     });

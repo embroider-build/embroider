@@ -4,13 +4,13 @@ import { dirname } from 'path';
 async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
 }
 
 async function lts_4_4(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.4' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.4' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
 }
 
 async function release(project: Project) {

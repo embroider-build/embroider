@@ -43,7 +43,13 @@ export default class Package {
   }
 
   get meta(): AddonMeta | AppMeta | undefined {
-    let m = this.packageJSON['ember-addon'];
+    let m = this.packageJSON['ember-addon'] || {};
+    if (this.isApp) {
+      const meta = m as AppMeta;
+      meta['type'] = 'app';
+      meta['version'] = 2;
+      meta['auto-upgraded'] = true;
+    }
     if (this.isV2App()) {
       return m as unknown as AppMeta;
     }
@@ -53,6 +59,7 @@ export default class Package {
   }
 
   isEmberPackage(): boolean {
+    if (this.isApp) return true;
     let keywords = this.packageJSON.keywords;
     return Boolean(keywords && (keywords as string[]).includes('ember-addon'));
   }
@@ -71,14 +78,17 @@ export default class Package {
   }
 
   isV2Ember(): this is V2Package {
+    if (this.isApp) return true;
     return this.isEmberPackage() && get(this.packageJSON, 'ember-addon.version') === 2;
   }
 
   isV2App(): this is V2AppPackage {
+    if (this.isApp) return true;
     return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'app';
   }
 
   isV2Addon(): this is V2AddonPackage {
+    if (this.isApp) return false;
     return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'addon';
   }
 

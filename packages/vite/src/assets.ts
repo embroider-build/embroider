@@ -30,7 +30,7 @@ async function generateHtml(root: string, appOrTest: 'app' | 'test') {
 }
 
 async function generateAppEntries({ rewrittenPackageCache, root }: Options) {
-  const pkg = rewrittenPackageCache.get(root);
+  const pkg = rewrittenPackageCache.get(process.cwd());
   if (!InMemoryAssets[`assets/${pkg.name}.js`]) {
     InMemoryAssets[`assets/${pkg.name}.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(
       root

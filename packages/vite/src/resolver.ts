@@ -3,7 +3,6 @@ import type { Plugin } from 'vite';
 import { join, resolve } from 'path/posix';
 import type { Resolution, ResolverFunction } from '@embroider/core';
 import { ResolverLoader, virtualContent } from '@embroider/core';
-import { readFileSync } from 'fs';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 
@@ -19,27 +18,10 @@ type Options = {
 export function resolver(_options?: Options): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
   resolverLoader.resolver.options.engines.forEach(engine => {
-    engine.root = engine.root.replace(rewrittenApp, root);
+    engine.root = engine.root.replace(rewrittenApp, cwd);
     engine.activeAddons.forEach(addon => {
       addon.canResolveFromFile = addon.canResolveFromFile.replace(rewrittenApp, cwd);
     });
-  });
-  const pkg = resolverLoader.resolver.packageCache.get(cwd);
-  pkg.packageJSON['ember-addon'] = pkg.packageJSON['ember-addon'] || {};
-  pkg.packageJSON['keywords'] = pkg.packageJSON['keywords'] || [];
-  pkg.packageJSON['ember-addon'].version = 2;
-  pkg.packageJSON['ember-addon'].type = 'app';
-  pkg.packageJSON['keywords'].push('ember-addon', 'ember-engine');
-  pkg.meta!['auto-upgraded'] = true;
-  (pkg as any).plainPkg.root = root;
-  const json = pkg.packageJSON;
-  Object.defineProperty(Object.getPrototypeOf((pkg as any).plainPkg), 'internalPackageJSON', {
-    get() {
-      if (this.isApp || this.root === root) {
-        return json;
-      }
-      return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
-    },
   });
   return {
     name: 'embroider-resolver',
@@ -90,32 +72,9 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
         result: { id: request.specifier, resolvedBy: request.fromFile },
       };
     }
-    let result = await context.resolve(request.specifier, request.fromFile, {
-      skipSelf: true,
-      custom: {
-        embroider: {
-          enableCustomResolver: false,
-          meta: request.meta,
-        },
-      },
-    });
-    if (!result && !request.specifier.includes('config/environment')) {
-      result = await context.resolve(
-        request.specifier,
-        request.fromFile.replace('/app/package.json', '/package.json'),
-        {
-          skipSelf: true,
-          custom: {
-            embroider: {
-              enableCustomResolver: false,
-              meta: request.meta,
-            },
-          },
-        }
-      );
-    }
-    if (!result && request.specifier.includes('config/environment')) {
-      result = await context.resolve(request.specifier, request.fromFile.replace(root, rewrittenApp), {
+    let result = null;
+    if (request.specifier.includes('config/environment')) {
+      result = await context.resolve(request.specifier, join(rewrittenApp, 'package.json'), {
         skipSelf: true,
         custom: {
           embroider: {
@@ -124,6 +83,32 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
           },
         },
       });
+    }
+    if (!result) {
+      result = await context.resolve(request.specifier, request.fromFile, {
+        skipSelf: true,
+        custom: {
+          embroider: {
+            enableCustomResolver: false,
+            meta: request.meta,
+          },
+        },
+      });
+    }
+    if (!result) {
+      result = await context.resolve(
+          request.specifier,
+          request.fromFile.replace('/package.json', '/app/package.json'),
+          {
+            skipSelf: true,
+            custom: {
+              embroider: {
+                enableCustomResolver: false,
+                meta: request.meta,
+              },
+            },
+          }
+      );
     }
     if (result) {
       return { type: 'found', result };

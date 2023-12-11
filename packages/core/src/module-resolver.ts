@@ -536,9 +536,13 @@ export class Resolver {
     yield { prefix: '/templates/components/', suffix: '/index.hbs' };
     yield { prefix: '/components/', suffix: '/template.hbs' };
 
+    yield { prefix: '/app/templates/components/', suffix: '.hbs' };
+    yield { prefix: '/app/templates/components/', suffix: '/index.hbs' };
+    yield { prefix: '/app/components/', suffix: '/template.hbs' };
+
     let pods = this.podPrefix(inPackageName);
     if (pods) {
-      yield { prefix: `${pods}/components/`, suffix: '/template.hbs' };
+      yield { prefix: `/app${pods}/components/`, suffix: '/template.hbs' };
     }
   }
 
@@ -550,10 +554,19 @@ export class Resolver {
     yield { prefix: '/components/', suffix: '/component.js' };
     yield { prefix: '/components/', suffix: '/component.ts' };
 
+    yield { prefix: '/app/components/', suffix: '.js' };
+    yield { prefix: '/app/components/', suffix: '/index.js' };
+    yield { prefix: '/app/components/', suffix: '.ts' };
+    yield { prefix: '/app/components/', suffix: '/index.ts' };
+    yield { prefix: '/app/components/', suffix: '/component.js' };
+    yield { prefix: '/app/components/', suffix: '/component.ts' };
+
     let pods = this.podPrefix(inPackageName);
     if (pods) {
       yield { prefix: `${pods}/components/`, suffix: '/component.js' };
       yield { prefix: `${pods}/components/`, suffix: '/component.ts' };
+      yield { prefix: `${pods}/components/`, suffix: '/app/component.js' };
+      yield { prefix: `${pods}/components/`, suffix: '/app/component.ts' };
     }
   }
 

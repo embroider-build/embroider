@@ -19,9 +19,15 @@ export function hbs(): Plugin {
       if (source.match(/\.(gjs|gts)$/)) {
         return null;
       }
-      let resolution = await this.resolve(source, importer, {
-        skipSelf: true,
-      });
+      let resolution;
+
+      try {
+        resolution = await this.resolve(source, importer, {
+          skipSelf: true,
+        });
+      } catch (e) {
+        return null;
+      }
 
       if (!resolution) {
         if (source.endsWith('.hbs')) return null;

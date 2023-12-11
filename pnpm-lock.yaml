@@ -788,9 +788,6 @@ importers:
       '@embroider/core':
         specifier: workspace:*
         version: link:../core
-      '@embroider/shared-internals':
-        specifier: workspace:*
-        version: link:../shared-internals
       '@embroider/test-setup':
         specifier: workspace:*
         version: link:../test-setup

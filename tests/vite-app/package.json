@@ -20,7 +20,6 @@
     "lint:hbs:fix": "ember-template-lint . --fix",
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
-    "start:prebuild": "ember b",
     "start:dev": "vite",
     "start:test": "vite --open /tests",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",

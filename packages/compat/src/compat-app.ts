@@ -6,7 +6,7 @@ import type {
   OutputFileToInputFileMap,
   Package,
   PackageInfo,
-  Stage
+  Stage,
 } from '@embroider/core';
 import { locateEmbroiderWorkingDir, PackageCache, RewrittenPackageCache, WaitForTrees } from '@embroider/core';
 import type Options from './options';
@@ -27,7 +27,7 @@ import {
   pathExistsSync,
   readdirSync,
   readJSONSync,
-  writeJSONSync
+  writeJSONSync,
 } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
@@ -817,11 +817,7 @@ export default class CompatApp {
     legacyApp.project.configPath = () => '';
     const compatApp = new CompatApp(legacyApp, options);
     compatApp.config['lastConfig'] = legacyApp.environments.development;
-    return compatApp.instantiate(
-        root,
-        RewrittenPackageCache.shared('embroider', root),
-        compatApp.config
-    );
+    return compatApp.instantiate(root, RewrittenPackageCache.shared('embroider', root), compatApp.config);
   }
 
   private inTrees(prevStageTree: BroccoliNode) {

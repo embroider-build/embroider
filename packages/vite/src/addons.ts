@@ -13,7 +13,10 @@ export function addons(root: string): string[] {
   for (let from of Object.keys(options.renamePackages)) {
     names.add(from);
   }
-  for (let name of options.engines.map(e => e.activeAddons).flat().map(a => a.name)) {
+  for (let name of options.engines
+    .map(e => e.activeAddons)
+    .flat()
+    .map(a => a.name)) {
     names.add(name);
   }
   return [...names];

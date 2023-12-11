@@ -1,5 +1,5 @@
-import type { RewrittenPackageCache } from '@embroider/core';
-import { getAppMeta, locateEmbroiderWorkingDir, Resolver, ResolverLoader } from '@embroider/core';
+import type { RewrittenPackageCache, Resolver } from '@embroider/core';
+import { getAppMeta, locateEmbroiderWorkingDir, ResolverLoader } from '@embroider/core';
 import { join } from 'path/posix';
 import { existsSync, readFileSync } from 'fs';
 import CompatApp from '@embroider/compat/src/compat-app';
@@ -19,23 +19,31 @@ let environment: 'production' | 'development' = 'production';
 async function generateHtml(root: string, appOrTest: 'app' | 'test') {
   const file = appOrTest === 'app' ? 'index.html' : 'tests/index.html';
   if (!InMemoryAssets[file]) {
-    InMemoryAssets[file] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildHtml(root, environment, appOrTest);
+    InMemoryAssets[file] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildHtml(
+      root,
+      environment,
+      appOrTest
+    );
   }
 
   return InMemoryAssets[file];
 }
 
-async function generateAppEntries({rewrittenPackageCache, root}: Options) {
+async function generateAppEntries({ rewrittenPackageCache, root }: Options) {
   const pkg = rewrittenPackageCache.get(root);
   if (!InMemoryAssets[`assets/${pkg.name}.js`]) {
-    InMemoryAssets[`assets/${pkg.name}.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(root);
+    InMemoryAssets[`assets/${pkg.name}.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(
+      root
+    );
   }
   return InMemoryAssets[`assets/${pkg.name}.js`];
 }
 
 async function generateTestEntries(testFolder: string) {
   if (!InMemoryAssets[`assets/test.js`]) {
-    InMemoryAssets[`assets/test.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(testFolder);
+    InMemoryAssets[`assets/test.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(
+      testFolder
+    );
   }
   return InMemoryAssets[`assets/test.js`];
 }
@@ -68,7 +76,6 @@ function findPublicAsset(relativePath: string, resolver: Resolver, embroiderWork
       }
     }
   }
-
 }
 
 export function assets(options?: { entryDirectories?: string[] }): Plugin {

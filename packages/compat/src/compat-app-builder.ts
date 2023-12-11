@@ -18,7 +18,8 @@ import {
   cacheBustingPluginVersion,
   cacheBustingPluginPath,
   Resolver,
-  locateEmbroiderWorkingDir, RewrittenPackageCache,
+  locateEmbroiderWorkingDir,
+  RewrittenPackageCache,
 } from '@embroider/core';
 import walkSync from 'walk-sync';
 import { resolve as resolvePath, posix } from 'path';
@@ -327,10 +328,7 @@ export class CompatAppBuilder {
     return extensionsPattern(this.resolvableExtensions());
   }
 
-  private impliedAssets(
-    type: keyof ImplicitAssetPaths,
-    engine: AppFiles,
-  ): (OnDiskAsset | InMemoryAsset)[] {
+  private impliedAssets(type: keyof ImplicitAssetPaths, engine: AppFiles): (OnDiskAsset | InMemoryAsset)[] {
     const appName = engine.engine.package.name;
     let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
       (sourcePath: string): OnDiskAsset => {
@@ -513,11 +511,7 @@ export class CompatAppBuilder {
     return portable;
   }
 
-  private insertEmberApp(
-    asset: ParsedEmberAsset,
-    appFiles: AppFiles[],
-    prepared: Map<string, InternalAsset>
-  ) {
+  private insertEmberApp(asset: ParsedEmberAsset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>) {
     let html = asset.html;
 
     if (this.fastbootConfig) {
@@ -586,10 +580,7 @@ export class CompatAppBuilder {
     }
   }
 
-  private implicitScriptsAsset(
-    prepared: Map<string, InternalAsset>,
-    application: AppFiles
-  ): InternalAsset | undefined {
+  private implicitScriptsAsset(prepared: Map<string, InternalAsset>, application: AppFiles): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.js');
     if (!asset) {
       let implicitScripts = this.impliedAssets('implicit-scripts', application);
@@ -805,10 +796,7 @@ export class CompatAppBuilder {
     }
   }
 
-  private prepareAssets(
-    requestedAssets: Asset[],
-    appFiles: AppFiles[]
-  ): Map<string, InternalAsset> {
+  private prepareAssets(requestedAssets: Asset[], appFiles: AppFiles[]): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
       this.prepareAsset(asset, appFiles, prepared);
@@ -885,7 +873,12 @@ export class CompatAppBuilder {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[], noWrite?: boolean, dst: string = this.root) {
+  private async updateAssets(
+    requestedAssets: Asset[],
+    appFiles: AppFiles[],
+    noWrite?: boolean,
+    dst: string = this.root
+  ) {
     let assets = this.prepareAssets(requestedAssets, appFiles);
     for (let asset of assets.values()) {
       if (noWrite || this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
@@ -1031,17 +1024,19 @@ export class CompatAppBuilder {
 
     const emberENV = legacyApp.environments[env];
 
-    html.replace(new RegExp(`<meta\\s+name=["']${legacyApp.project.pkg.name}/config/environment["']\\s+content=["'](.*)["']>`), (match, content) => {
-      return match.replace(content, encodeURIComponent(JSON.stringify(emberENV)));
-    });
+    html.replace(
+      new RegExp(`<meta\\s+name=["']${legacyApp.project.pkg.name}/config/environment["']\\s+content=["'](.*)["']>`),
+      (match, content) => {
+        return match.replace(content, encodeURIComponent(JSON.stringify(emberENV)));
+      }
+    );
     return html;
   }
 
   async rebuildHtml(root: string, environment: 'production' | 'development', appOrTestHtml: 'app' | 'test') {
     const file = appOrTestHtml === 'app' ? 'index.html' : 'tests/index.html';
-    const env = appOrTestHtml === 'test' ? 'test' : (environment === 'production' ? 'production' : 'development');
+    const env = appOrTestHtml === 'test' ? 'test' : environment === 'production' ? 'production' : 'development';
     const html = this.prepareHtml(file, env);
-
 
     const assets: Asset[] = [];
     for (let asset of this.emberEntrypoints('.')) {
@@ -1054,11 +1049,11 @@ export class CompatAppBuilder {
     const engines = this.partitionEngines(root);
     const appFiles = engines.map((engine: Engine) => {
       return new AppFiles(
-          engine,
-          new Set(),
-          new Set(),
-          extensionsPattern(this.resolvableExtensions()),
-          this.podModulePrefix()
+        engine,
+        new Set(),
+        new Set(),
+        extensionsPattern(this.resolvableExtensions()),
+        this.podModulePrefix()
       );
     });
 
@@ -1083,11 +1078,11 @@ export class CompatAppBuilder {
       }
       files.push('config/environment.js');
       return new AppFiles(
-          engine,
-          new Set(files),
-          new Set(),
-          extensionsPattern(this.resolvableExtensions()),
-          this.podModulePrefix()
+        engine,
+        new Set(files),
+        new Set(),
+        extensionsPattern(this.resolvableExtensions()),
+        this.podModulePrefix()
       );
     });
     const assets: Asset[] = [];
@@ -1102,7 +1097,7 @@ export class CompatAppBuilder {
 
   async copyPublicAssetsToDir(dir: string) {
     const assets = this.gatherAssets({
-      publicTree: 'public'
+      publicTree: 'public',
     } as any);
     await this.updateAssets(assets, [], false, dir);
   }
@@ -1198,7 +1193,7 @@ export class CompatAppBuilder {
 
   private addLegacyAppInfo() {
     const project = this.compatApp.legacyEmberAppInstance.project as any;
-    const production = project.config('production')
+    const production = project.config('production');
     const development = project.config('development');
     const test = project.config('test');
     const options = {
@@ -1208,25 +1203,22 @@ export class CompatAppBuilder {
     const patterns = configReplacePatterns(options);
     function replacements(env: any) {
       const contentFor = [
-          'head',
-          'head-footer',
-          'body',
-          'body-footer',
-          'test-head',
-          'test-head-footer',
-          'test-body',
-          'test-body-footer',
-      ]
+        'head',
+        'head-footer',
+        'body',
+        'body-footer',
+        'test-head',
+        'test-head-footer',
+        'test-body',
+        'test-body-footer',
+      ];
       const match: Record<string, string> = {
-        '{{rootURL}}': /{{\s?rootURL\s?}}/g.source
+        '{{rootURL}}': /{{\s?rootURL\s?}}/g.source,
       };
       contentFor.forEach(c => {
         match[`{{content-for "${c}"}}`] = /{{content-for ['"]xxx["']}}/g.source.replace('xxx', c);
-      })
-      return [
-        '{{rootURL}}',
-          ...contentFor.map(c => `{{content-for "${c}"}}`)
-      ].map(str => {
+      });
+      return ['{{rootURL}}', ...contentFor.map(c => `{{content-for "${c}"}}`)].map(str => {
         const pattern = patterns.find(p => p.match.test(str))!;
         return {
           match: match[str],
@@ -1251,13 +1243,13 @@ export class CompatAppBuilder {
         environments: {
           production,
           development,
-          test
+          test,
         },
         configReplacePatterns: {
           production: replacements(production),
           development: replacements(development),
           test: replacements(test),
-        }
+        },
       },
       { spaces: 2 }
     );

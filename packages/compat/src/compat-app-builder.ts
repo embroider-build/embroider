@@ -1019,6 +1019,7 @@ export class CompatAppBuilder {
     const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
     const configPath = require.resolve(join(this.root, 'config', 'environment.js'));
     delete require.cache[require.resolve(configPath)];
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const buildAppEnv = require(configPath);
     let html = readFileSync(join(this.root, htmlPath)).toString();
     legacyApp.configReplacePatterns[env].forEach((pattern: any) => {

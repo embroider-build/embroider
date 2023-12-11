@@ -6,6 +6,7 @@ import { Project } from 'scenario-tester';
 import { readFileSync } from 'fs';
 import { Script, createContext } from 'vm';
 import { explicitRelative } from '@embroider/shared-internals';
+import It = jest.It;
 
 export { runDefault, Project };
 
@@ -69,10 +70,10 @@ interface ModeTestHooks {
 }
 type CreateModeTests = (transform: Transform, hooks: ModeTestHooks) => void;
 
-function disabledTest(_name: string, _impl: jest.ProvidesCallback | undefined) {}
+const disabledTest = function (_name: string, _impl: jest.ProvidesCallback | undefined) {} as It;
 disabledTest.only = disabledTest;
 disabledTest.skip = disabledTest;
-disabledTest.todo = (_name: string): void => {};
+disabledTest.todo = ((_name: string): void => {}) as It;
 disabledTest.concurrent = disabledTest;
 disabledTest.each = test.each;
 disabledTest.failing = disabledTest;

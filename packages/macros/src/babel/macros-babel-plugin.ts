@@ -125,7 +125,11 @@ export default function main(context: typeof Babel): unknown {
           if (specifier?.type !== 'StringLiteral') {
             throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
           }
-          path.replaceWith(state.importUtil.import(path, specifier.value, '*'));
+          path.replaceWith(
+            t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
+              state.importUtil.import(path, specifier.value, '*'),
+            ])
+          );
           state.calledIdentifiers.add(callee.node);
           return;
         }

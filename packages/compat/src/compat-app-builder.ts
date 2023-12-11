@@ -1018,7 +1018,7 @@ export class CompatAppBuilder {
     const workingDir = locateEmbroiderWorkingDir(this.root);
     const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
     const configPath = require.resolve(join(this.root, 'config', 'environment.js'));
-    delete require.cache[require.resolve(configPath)]
+    delete require.cache[require.resolve(configPath)];
     const buildAppEnv = require(configPath);
     let html = readFileSync(join(this.root, htmlPath)).toString();
     legacyApp.configReplacePatterns[env].forEach((pattern: any) => {
@@ -1028,7 +1028,7 @@ export class CompatAppBuilder {
     function merge(source: any, target: any) {
       for (const [key, val] of Object.entries(source)) {
         if (val !== null && typeof val === `object`) {
-          target[key] ??=new (val as any).__proto__.constructor();
+          target[key] ??= new (val as any).__proto__.constructor();
           merge(val, target[key]);
         } else {
           target[key] = val;
@@ -1042,9 +1042,10 @@ export class CompatAppBuilder {
     merge(newestEnv, emberENV);
     emberENV.APP = newestEnv.APP;
 
-
     html = html.replace(
-      new RegExp(`<meta\\s+name=["']${legacyApp.project.pkg.name}/config/environment["']\\s+content=["'](.*)["']\\s+/>`),
+      new RegExp(
+        `<meta\\s+name=["']${legacyApp.project.pkg.name}/config/environment["']\\s+content=["'](.*)["']\\s+/>`
+      ),
       (match, content) => {
         return match.replace(content, encodeURIComponent(JSON.stringify(emberENV)));
       }

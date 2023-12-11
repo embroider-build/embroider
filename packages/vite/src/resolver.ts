@@ -97,17 +97,17 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
     }
     if (!result) {
       result = await context.resolve(
-          request.specifier,
-          request.fromFile.replace('/package.json', '/app/package.json'),
-          {
-            skipSelf: true,
-            custom: {
-              embroider: {
-                enableCustomResolver: false,
-                meta: request.meta,
-              },
+        request.specifier,
+        request.fromFile.replace('/package.json', '/app/package.json'),
+        {
+          skipSelf: true,
+          custom: {
+            embroider: {
+              enableCustomResolver: false,
+              meta: request.meta,
             },
-          }
+          },
+        }
       );
     }
     if (result) {

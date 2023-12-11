@@ -1409,9 +1409,17 @@ let d = w.define;
 
 {{#if fastbootOnlyAmdModules}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+    let fastbootModules = {};
+
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
-      d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+      fastbootModules["{{js-string-escape amdModule.runtime}}"] = import("{{js-string-escape amdModule.buildtime}}");
     {{/each}}
+
+    const resolvedValues = await Promise.all(Object.values(fastbootModules));
+
+    Object.keys(fastbootModules).forEach((k, i) => {
+      d(k, function(){ return resolvedValues[i];});
+    })
   }
 {{/if}}
 

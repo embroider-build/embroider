@@ -9,6 +9,9 @@ const { module: Qmodule, test } = QUnit;
 supportMatrix(Scenarios.fromDir(dirname(require.resolve('@embroider/util/package.json'))))
   .only('lts_3_28')
   .map('util', project => {
+    // the oldest ember-data we're able to test does not work on the old node
+    // we're trying to verify here
+    project.removeDependency('ember-data');
     project.mergeFiles({
       '.npmrc': 'use-node-version=12.22.1',
       'test.js': `

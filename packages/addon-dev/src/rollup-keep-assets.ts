@@ -14,6 +14,12 @@ export default function keepAssets({
   return {
     name: 'copy-assets',
 
+    // Prior to https://github.com/rollup/rollup/pull/5270, we cannot call this
+    // from within `generateBundle`
+    buildStart() {
+      this.addWatchFile(from);
+    },
+
     // imports of assets should be left alone in the source code. This can cover
     // the case of .css as defined in the embroider v2 addon spec.
     async resolveId(source, importer, options) {

@@ -6,8 +6,13 @@ import { pathExistsSync, removeSync } from 'fs-extra';
 import { Funnel } from 'broccoli-funnel';
 import { transform } from '@babel/core';
 import { stripBadReexportsPlugin } from '../compat-utils';
+import semver from 'semver';
 
 export default class extends V1Addon {
+  static shouldApplyAdapter(addonInstance: any) {
+    return semver.lt(addonInstance.pkg.version, '5.0.0');
+  }
+
   get v2Tree(): Node {
     // workaround for https://github.com/DockYard/ember-composable-helpers/issues/308
     // and https://github.com/DockYard/ember-composable-helpers/pull/302

@@ -60,6 +60,7 @@ import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
+import { type AmdModule } from '@embroider/core/src/module-resolver';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -270,6 +271,39 @@ export class CompatAppBuilder {
       allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
     };
 
+    let [appFiles] = engines;
+
+    // ToDo: DRY? ❓
+    let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
+
+    if (!this.options.staticComponents) {
+      requiredAppFiles.push(appFiles.components);
+    }
+    if (!this.options.staticHelpers) {
+      requiredAppFiles.push(appFiles.helpers);
+    }
+    if (!this.options.staticModifiers) {
+      requiredAppFiles.push(appFiles.modifiers);
+    }
+
+    for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
+      this.splitRoute(
+        routeName,
+        routeFiles,
+        (_: string, filename: string) => {
+          requiredAppFiles.push([filename]);
+        },
+        () => {} // We are not interested in collecting lazy routes at this opint
+      );
+    }
+
+    // ❓ Should this be DRYed?
+    let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
+      appFiles.isFastbootOnly.get(file)
+    );
+    let amdModules = nonFastboot.map(file => this.importPaths(appFiles, file));
+    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(appFiles, file));
+
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
       renameModules,
@@ -301,6 +335,8 @@ export class CompatAppBuilder {
       podModulePrefix: this.podModulePrefix(),
       activePackageRules: this.activeRules(),
       options,
+      amdModules,
+      fastbootOnlyAmdModules,
     };
 
     return config;
@@ -1210,6 +1246,7 @@ export class CompatAppBuilder {
     let eagerModules: string[] = [];
 
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
+
     if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
     }
@@ -1294,6 +1331,7 @@ export class CompatAppBuilder {
       styles,
       // this is a backward-compatibility feature: addons can force inclusion of modules.
       defineModulesFrom: './-embroider-implicit-modules.js',
+      defineAmdModulesFrom: './-embroider-amd-modules.js',
     };
     if (entryParams) {
       Object.assign(params, entryParams);
@@ -1310,7 +1348,7 @@ export class CompatAppBuilder {
     return asset;
   }
 
-  private importPaths({ engine }: AppFiles, engineRelativePath: string) {
+  private importPaths({ engine }: AppFiles, engineRelativePath: string): AmdModule {
     let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
       runtime: `${engine.modulePrefix}/${noHBS}`,
@@ -1416,26 +1454,6 @@ let d = w.define;
 {{#each eagerModules as |eagerModule| ~}}
   i("{{js-string-escape eagerModule}}");
 {{/each}}
-
-{{#each amdModules as |amdModule| ~}}
-  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
-{{/each}}
-
-{{#if fastbootOnlyAmdModules}}
-  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    let fastbootModules = {};
-
-    {{#each fastbootOnlyAmdModules as |amdModule| ~}}
-      fastbootModules["{{js-string-escape amdModule.runtime}}"] = import("{{js-string-escape amdModule.buildtime}}");
-    {{/each}}
-
-    const resolvedValues = await Promise.all(Object.values(fastbootModules));
-
-    Object.keys(fastbootModules).forEach((k, i) => {
-      d(k, function(){ return resolvedValues[i];});
-    })
-  }
-{{/if}}
 
 
 {{#if lazyRoutes}}

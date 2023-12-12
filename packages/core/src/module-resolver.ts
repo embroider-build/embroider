@@ -19,6 +19,7 @@ import {
   fastbootSwitch,
   decodeFastbootSwitch,
   decodeImplicitModules,
+  decodeAmdModules,
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -86,6 +87,13 @@ export interface Options {
   modulePrefix: string;
   podModulePrefix?: string;
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
+  amdModules: AmdModule[];
+  fastbootOnlyAmdModules: AmdModule[];
+}
+
+export interface AmdModule {
+  runtime: string;
+  buildtime: string;
 }
 
 interface EngineConfig {
@@ -175,6 +183,7 @@ export class Resolver {
     request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
+    request = this.handleAmdModules(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -411,6 +420,36 @@ export class Resolver {
         `own implicit modules`,
         request,
         request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
+      );
+    }
+  }
+
+  // ❓ Should this be DRYed?
+  private handleAmdModules<R extends ModuleRequest>(request: R): R {
+    let am = decodeAmdModules(request.specifier);
+    if (!am) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found amd modules import in non-ember package at ${request.fromFile}`);
+    }
+
+    let packageName = getPackageName(am.fromFile);
+
+    if (packageName) {
+      let dep = this.packageCache.resolve(packageName, pkg);
+      return logTransition(
+        `dep's amd modules`,
+        request,
+        request.virtualize(resolve(dep.root, `-embroider-${am.type}.js`))
+      );
+    } else {
+      return logTransition(
+        `own amd modules`,
+        request,
+        request.virtualize(resolve(pkg.root, `-embroider-${am.type}.js`))
       );
     }
   }

@@ -131,6 +131,8 @@ Scenarios.fromProject(() => new Project())
                 roots: [app.dir],
               },
             ],
+            amdModules: [],
+            fastbootOnlyAmdModules: [],
           };
 
           givenFiles({

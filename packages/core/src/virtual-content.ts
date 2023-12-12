@@ -2,6 +2,7 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
+import { type AmdModule } from './module-resolver';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -33,6 +34,11 @@ export function virtualContent(filename: string, resolver: Resolver): string {
   let im = decodeImplicitModules(filename);
   if (im) {
     return renderImplicitModules(im, resolver);
+  }
+
+  let am = decodeAmdModules(filename);
+  if (am) {
+    return renderAmdModules(am, resolver);
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
@@ -186,6 +192,7 @@ export const {{name}} = mod.{{name}};
 `) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
 
 const implicitModulesPattern = /(?<filename>.*)[\\/]-embroider-implicit-(?<test>test-)?modules\.js$/;
+const amdModulesPattern = /(?<filename>.*)[\\/]-embroider-amd-(?<test>test-)?modules\.js$/;
 
 export function decodeImplicitModules(
   filename: string
@@ -198,6 +205,21 @@ export function decodeImplicitModules(
   if (m) {
     return {
       type: m.groups!.test ? 'implicit-test-modules' : 'implicit-modules',
+      fromFile: m.groups!.filename,
+    };
+  }
+}
+export function decodeAmdModules(
+  filename: string
+): { type: 'amd-modules' | 'amd-test-modules'; fromFile: string } | undefined {
+  // Performance: avoid paying regex exec cost unless needed
+  if (!filename.includes('-embroider-amd-')) {
+    return;
+  }
+  let m = amdModulesPattern.exec(filename);
+  if (m) {
+    return {
+      type: m.groups!.test ? 'amd-test-modules' : 'amd-modules',
       fromFile: m.groups!.filename,
     };
   }
@@ -275,6 +297,16 @@ function renderImplicitModules(
   return implicitModulesTemplate({ ownModules, dependencyModules });
 }
 
+function renderAmdModules(
+  _amdModulesPlaceholderModule: { type: 'amd-modules' | 'amd-test-modules'; fromFile: string },
+  resolver: Resolver
+): string {
+  return amdModulesTemplate({
+    amdModules: resolver.options.amdModules,
+    fastbootOnlyAmdModules: resolver.options.fastbootOnlyAmdModules,
+  });
+}
+
 const implicitModulesTemplate = compile(`
 
 
@@ -297,6 +329,31 @@ export default Object.assign({},
   }
 );
 `) as (params: { dependencyModules: string[]; ownModules: { runtime: string; buildtime: string }[] }) => string;
+
+const amdModulesTemplate = compile(`
+let d = window.define;
+import { getGlobalConfig, importSync as i, macroCondition } from '@embroider/macros';
+
+{{#each amdModules as |amdModule|}}
+d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+{{/each}}
+
+{{#if fastbootOnlyAmdModules}}
+if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+  let fastbootModules = {};
+
+  {{#each fastbootOnlyAmdModules as |amdModule| ~}}
+    fastbootModules["{{js-string-escape amdModule.runtime}}"] = import("{{js-string-escape amdModule.buildtime}}");
+  {{/each}}
+
+  const resolvedValues = await Promise.all(Object.values(fastbootModules));
+
+  Object.keys(fastbootModules).forEach((k, i) => {
+    d(k, function(){ return resolvedValues[i];});
+  })
+}
+{{/if}}
+`) as (params: { amdModules: AmdModule[]; fastbootOnlyAmdModules: AmdModule[] }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.
 // This takes that and converts it to the inverst mapping from real import path

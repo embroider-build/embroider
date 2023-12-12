@@ -99,6 +99,8 @@ Scenarios.fromProject(() => new Project())
                 ...extraOpts?.appPackageRules,
               },
             ],
+            amdModules: [],
+            fastbootOnlyAmdModules: [],
           };
 
           givenFiles({

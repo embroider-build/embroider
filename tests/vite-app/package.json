@@ -11,7 +11,8 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "ember build --environment=production",
+    "build:ember": "ember b",
+    "build": "vite build",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",
     "lint:css": "stylelint \"**/*.css\"",
     "lint:css:fix": "concurrently \"npm:lint:css -- --fix\"",
@@ -22,14 +23,14 @@
     "lint:js:fix": "eslint . --fix",
     "start:prebuild": "ember build --watch",
     "start:dev": "vite",
-    "start": "concurrently \"npm:start:*\" --names \"start:\"",
+    "start:test": "vite --open /tests/",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
-    "test:ember": "ember test"
+    "test:ember": "node ./scripts/run-tests.mjs"
   },
   "devDependencies": {
-    "@babel/core": "^7.22.6",
+    "@babel/core": "^7.23.6",
     "@babel/eslint-parser": "^7.22.5",
-    "@babel/plugin-proposal-decorators": "^7.22.5",
+    "@babel/plugin-proposal-decorators": "^7.23.6",
     "@ember/optional-features": "^2.0.0",
     "@ember/string": "^3.1.1",
     "@ember/test-helpers": "^3.0.3",
@@ -75,7 +76,9 @@
     "stylelint-prettier": "^3.0.0",
     "tracked-built-ins": "^3.1.1",
     "typescript": "^5.1.6",
-    "vite": "^5.0.9"
+    "vite": "^5.0.9",
+    "js-reporters": "^2.1.0",
+    "puppeteer-chromium-resolver": "^21.0.0"
   },
   "engines": {
     "node": "16.* || >= 18"

@@ -1,7 +1,5 @@
 import { type ModuleRequest, cleanUrl } from '@embroider/core';
 
-export const virtualNamespace = 'embroider';
-
 export class EsBuildModuleRequest implements ModuleRequest {
   static from(
     source: string,

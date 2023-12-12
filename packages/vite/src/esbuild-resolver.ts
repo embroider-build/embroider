@@ -23,6 +23,9 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
     name: 'embroider-esbuild-resolver',
     setup(build) {
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
+        if (importer.includes('rewritten-app')) {
+          importer = importer.split('rewritten')[1];
+        }
         let request = EsBuildModuleRequest.from(path, importer, pluginData);
         if (!request) {
           return null;

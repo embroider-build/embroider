@@ -542,12 +542,22 @@ export class Resolver {
   }
 
   private *componentJSCandidates(inPackageName: string) {
+    const extensions = ['.ts', '.gjs', '.gts'];
     yield { prefix: '/components/', suffix: '' };
     yield { prefix: '/components/', suffix: '/component' };
+
+    for (const ext of extensions) {
+      yield { prefix: '/components/', suffix: ext };
+      yield { prefix: '/components/', suffix: `index${ext}` };
+      yield { prefix: '/components/', suffix: `/component${ext}` };
+    }
 
     let pods = this.podPrefix(inPackageName);
     if (pods) {
       yield { prefix: `${pods}/components/`, suffix: '/component' };
+      for (const ext of extensions) {
+        yield { prefix: `${pods}/components/`, suffix: `/component${ext}` };
+      }
     }
   }
 

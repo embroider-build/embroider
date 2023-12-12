@@ -48,7 +48,12 @@ export function baseTSApp() {
   return Project.fromDir(dirname(require.resolve('../ts-app-template/package.json')), { linkDevDeps: true });
 }
 
+export function baseViteApp() {
+  return Project.fromDir(dirname(require.resolve('../vite-app/package.json')), { linkDevDeps: true });
+}
+
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
+export const viteAppScenarios = supportMatrix(Scenarios.fromProject(baseViteApp)).skip('lts_3_28');
 
 // we're standardizing on Ember's native types, which become available starting
 // at 4.8. So we're not going to run type tests on older releases that don't

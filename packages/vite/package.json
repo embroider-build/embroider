@@ -20,7 +20,8 @@
     "fs-extra": "^10.0.0",
     "jsdom": "^16.6.0",
     "source-map-url": "^0.4.1",
-    "terser": "^5.7.0"
+    "terser": "^5.7.0",
+    "puppeteer-chromium-resolver": "^21.0.0"
   },
   "devDependencies": {
     "@embroider/core": "workspace:^",
@@ -35,6 +36,7 @@
     "index.mjs",
     "index.d.ts",
     "src/**/*.js",
+    "bin/**/*.mjs",
     "src/**/*.d.ts",
     "src/**/*.js.map"
   ]

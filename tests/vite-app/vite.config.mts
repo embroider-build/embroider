@@ -4,7 +4,6 @@ import {
   hbs,
   scripts,
   templateTag,
-  addons,
   optimizeDeps,
 } from "@embroider/vite";
 import { resolve } from "path";
@@ -27,7 +26,7 @@ export default defineConfig({
       // javascript but the javascript still also needs babel, but we don't want
       // to rename them because vite isn't great about knowing how to hot-reload
       // them if we resolve them to made-up names.
-      extensions: [".gjs", ".js", ".hbs"],
+      extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
   optimizeDeps: optimizeDeps(),

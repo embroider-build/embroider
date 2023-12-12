@@ -50,15 +50,18 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
       (err as any).code = 'MODULE_NOT_FOUND';
       return { type: 'not_found', err };
     }
-    let result = await context.resolve(request.specifier, request.fromFile, {
-      skipSelf: true,
-      custom: {
-        embroider: {
-          enableCustomResolver: false,
-          meta: request.meta,
+    let result;
+    try {
+      result = await context.resolve(request.specifier, request.fromFile, {
+        skipSelf: true,
+        custom: {
+          embroider: {
+            enableCustomResolver: false,
+            meta: request.meta,
+          },
         },
-      },
-    });
+      });
+    } catch (e) {}
     if (result) {
       return { type: 'found', result };
     } else {

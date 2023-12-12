@@ -10,7 +10,11 @@ import semver from 'semver';
 
 export default class extends V1Addon {
   static shouldApplyAdapter(addonInstance: any) {
-    return semver.lt(addonInstance.pkg.version, '5.0.0');
+    // after (>=) 2.3.0, PR #316 was merged. https://github.com/DockYard/ember-composable-helpers/pull/316
+    //  2.3.0: https://github.com/DockYard/ember-composable-helpers/blob/v2.3.0/index.js
+    //  and the ember-composable-helpers' index.js has not been touched since then.
+    //  5.0.0: https://github.com/DockYard/ember-composable-helpers/blob/v5.0.0/index.js
+    return semver.lt(addonInstance.pkg.version, '2.3.0');
   }
 
   get v2Tree(): Node {

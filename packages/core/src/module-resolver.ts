@@ -1060,10 +1060,10 @@ export class Resolver {
     // but then come back to the original location here in the fallback when the
     // rehomed request fails
     let movedPkg = this.packageCache.maybeMoved(pkg);
-    if (movedPkg !== pkg) {
+    if (movedPkg !== pkg && !pkg.isV2App()) {
       let originalFromFile = request.meta?.originalFromFile;
       if (typeof originalFromFile !== 'string') {
-        throw new Error(`bug: embroider resolver's meta is not propagating`);
+        throw new Error(`bug: embroider resolver's meta is not propagating for ${request.specifier} form ${request.fromFile}`);
       }
       request = request.rehome(originalFromFile);
       pkg = movedPkg;

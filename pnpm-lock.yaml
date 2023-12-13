@@ -1685,6 +1685,9 @@ importers:
       ember-cli-4.4:
         specifier: npm:ember-cli@~4.4.0
         version: /ember-cli@4.4.1(lodash@4.17.21)
+      ember-cli-babel-8:
+        specifier: npm:ember-cli-babel@^8.2.0
+        version: /ember-cli-babel@8.2.0(@babel/core@7.23.5)
       ember-cli-beta:
         specifier: npm:ember-cli@beta
         version: /ember-cli@5.5.0-beta.1(lodash@4.17.21)

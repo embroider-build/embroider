@@ -77,7 +77,7 @@ export function makeFirstTransform(opts: FirstTransformParams) {
             }
           },
         },
-        SubExpression(node: any) {
+        SubExpression(node: any, walker: { parent: { node: any } }) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
@@ -97,7 +97,16 @@ export function makeFirstTransform(opts: FirstTransformParams) {
             );
           }
           if (node.path.original === 'macroDependencySatisfies') {
-            return literal(dependencySatisfies(node, opts.packageRoot, moduleName, packageCache), env.syntax.builders);
+            const staticValue = literal(
+              dependencySatisfies(node, opts.packageRoot, moduleName, packageCache),
+              env.syntax.builders
+            );
+            // If this is a macro expression by itself, then turn it into a macroCondition for the second pass to prune.
+            // Otherwise assume it's being composed with another macro and evaluate it as a literal
+            if (walker.parent.node.path.original === 'if') {
+              return env.syntax.builders.sexpr('macroCondition', [staticValue]);
+            }
+            return staticValue;
           }
         },
         MustacheStatement(node: any) {

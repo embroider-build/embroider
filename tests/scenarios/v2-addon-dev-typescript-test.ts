@@ -12,11 +12,10 @@ appScenarios
   .map('v2-addon-dev-typescript', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
-    addon.pkg.type = 'module';
     addon.pkg.files = ['dist'];
     addon.pkg.exports = {
       './*': './dist/*.js',
-      './addon-main.cjs': './addon-main.cjs',
+      './addon-main.js': './addon-main.js',
       './package.json': './package.json',
     };
     addon.pkg.scripts = {

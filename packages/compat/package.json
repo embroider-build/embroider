@@ -63,7 +63,8 @@
     "tree-sync": "^2.1.0",
     "typescript-memoize": "^1.0.1",
     "walk-sync": "^3.0.0",
-    "yargs": "^17.0.1"
+    "yargs": "^17.0.1",
+    "fast-glob": "^3.3.2"
   },
   "devDependencies": {
     "@embroider/core": "workspace:^",

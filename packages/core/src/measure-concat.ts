@@ -24,4 +24,12 @@ export default class MeasureConcat {
     );
     return await this.concat.end();
   }
+
+  get content() {
+    return this.concat.content;
+  }
+
+  get stream() {
+    return this.concat.stream;
+  }
 }

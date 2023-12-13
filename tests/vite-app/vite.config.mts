@@ -4,8 +4,8 @@ import {
   hbs,
   scripts,
   templateTag,
-  addons,
   optimizeDeps,
+  assets,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -19,6 +19,7 @@ export default defineConfig({
     templateTag(),
     scripts(),
     resolver(),
+    assets(),
 
     babel({
       babelHelpers: "runtime",

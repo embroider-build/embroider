@@ -1,16 +1,24 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin } from 'vite';
+import { join } from 'path/posix';
 import type { Resolution, ResolverFunction } from '@embroider/core';
-import { virtualContent, ResolverLoader } from '@embroider/core';
+import { ResolverLoader, virtualContent } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 
-export function resolver(): Plugin {
-  let resolverLoader = new ResolverLoader(process.cwd());
+type Options = {
+  entryFolders: string[];
+};
 
+export function resolver(_options?: Options): Plugin {
+  const resolverLoader = new ResolverLoader(process.cwd());
+  resolverLoader.resolver.options.environment = 'production';
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
+    configureServer() {
+      resolverLoader.resolver.options.environment = 'development';
+    },
     async resolveId(source, importer, options) {
       let request = RollupModuleRequest.from(source, importer, options.custom);
       if (!request) {

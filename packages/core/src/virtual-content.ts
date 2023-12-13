@@ -51,7 +51,7 @@ export function virtualContent(filename: string, resolver: Resolver): string {
       return compatAppBuilder.rebuildHtml(resolver.options.appRoot, resolver.options.environment!, 'app');
     }
     if (asset.moduleName === join(resolver.options.appRoot, 'tests', 'index.html')) {
-      return compatAppBuilder.rebuildHtml(join(resolver.options.appRoot, 'tests'), resolver.options.environment!, 'app');
+      return compatAppBuilder.rebuildHtml(join(resolver.options.appRoot, 'tests'), resolver.options.environment!, 'test');
     }
     const finalAssets = compatAppBuilder.buildCachedAssets(resolver.options.environment!);
     const found = finalAssets.find(a => '/' + a.relativePath === asset!.moduleName.replace(resolver.options.appRoot, '') || a.relativePath === asset!.moduleName);

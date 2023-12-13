@@ -1388,7 +1388,7 @@ export class CompatAppBuilder {
     return this.appJSAsset(relativePath, app, childEngines, prepared, {
       autoRun: this.compatApp.autoRun,
       appBoot: !this.compatApp.autoRun ? this.compatApp.appBoot.readAppBoot() : '',
-      mainModule: explicitRelative(relativePath, 'app/app'),
+      mainModule: `${this.compatApp.name}/app`,
       appConfig: this.configTree.readConfig().APP,
     });
   }
@@ -1564,7 +1564,7 @@ export class CompatAppBuilder {
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
     let eagerModules: string[] = [
-      explicitRelative(dirname(myName), this.topAppJSAsset(appFiles, prepared).relativePath),
+      '/' + this.topAppJSAsset(appFiles, prepared).relativePath
     ];
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
@@ -1674,7 +1674,7 @@ if (!runningTests) {
 
 
   {{!- this is the traditional tests-suffix.js -}}
-  i('../tests/test-helper');
+  i('./tests/test-helper');
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {

@@ -61,15 +61,36 @@ function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRe
         result: { id: request.specifier, resolvedBy: request.fromFile },
       };
     }
-    let result = await context.resolve(request.specifier, request.fromFile, {
-      skipSelf: true,
-      custom: {
-        embroider: {
-          enableCustomResolver: false,
-          meta: request.meta,
+    if (request.isNotFound) {
+      // TODO: we can make sure this looks correct in rollup & vite output when a
+      // user encounters it
+      let err = new Error(`module not found ${request.specifier}`);
+      (err as any).code = 'MODULE_NOT_FOUND';
+      return { type: 'not_found', err };
+    }
+    let result;
+    if (request.specifier.includes('config/environment')) {
+      result = await context.resolve(request.specifier, join(rewrittenApp, 'package.json'), {
+        skipSelf: true,
+        custom: {
+          embroider: {
+            enableCustomResolver: false,
+            meta: request.meta,
+          },
         },
-      },
-    });
+      });
+    }
+    if (!result) {
+      result = await context.resolve(request.specifier, request.fromFile, {
+        skipSelf: true,
+        custom: {
+          embroider: {
+            enableCustomResolver: false,
+            meta: request.meta,
+          },
+        },
+      });
+    }
     if (!result) {
       result = await context.resolve(
         request.specifier,

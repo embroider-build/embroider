@@ -20,7 +20,6 @@ import {
   fastbootSwitch,
   decodeFastbootSwitch,
   decodeImplicitModules,
-  decodeVirtualAsset
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -984,7 +983,7 @@ export class Resolver {
       }[]
     };
     const assets = info.assets;
-    if (dirname(request.fromFile) === this.options.appRoot || request.fromFile === '<stdin>') {
+    if (dirname(request.fromFile) === this.options.appRoot || request.fromFile === '<stdin>' || request.fromFile.startsWith('@embroider-assets:')) {
       const asset = assets.find((a) => request.specifier === join(this.options.appRoot, a.relativePath) || request.specifier === '/' + a.relativePath);
       if (asset) {
         let specifier = request.specifier;

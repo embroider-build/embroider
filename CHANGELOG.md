@@ -1,6 +1,16 @@
 # Embroider Changelog
 ## Release (2023-12-13)
 
+@embroider/compat 3.4.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#1717](https://github.com/embroider-build/embroider/pull/1717) Always load ember-testing package eagerly ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+## Release (2023-12-13)
+
 @embroider/addon-dev 4.1.3 (patch)
 @embroider/compat 3.4.1 (patch)
 @embroider/core 3.4.3 (patch)

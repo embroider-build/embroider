@@ -6,7 +6,7 @@ import { BuiltEmberAsset, ConcatenatedAsset, InMemoryAsset } from './asset';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
-const assetPrefix = '/@embroider/assets/';
+const assetPrefix = '@embroider-assets:';
 
 // Given a filename that was passed to your ModuleRequest's `virtualize()`,
 // this produces the corresponding contents. It's a static, stateless function
@@ -41,10 +41,10 @@ export function virtualContent(filename: string, resolver: Resolver): string {
 
   let asset = decodeVirtualAsset(filename);
   if (asset) {
-    if (asset.moduleName === join(resolver.options.appRoot, 'assets', resolver.options.modulePrefix + '.js')) {
-      return compatAppBuilder.rebuildEntryFile(resolver.options.appRoot);
+    if (asset.moduleName === '/' + join('assets', resolver.options.modulePrefix + '.js')) {
+      return compatAppBuilder.rebuildEntryFile(join(resolver.options.appRoot, 'app'));
     }
-    if (asset.moduleName === join(resolver.options.appRoot, 'assets', 'test.js')) {
+    if (asset.moduleName === '/' + join('assets', 'test.js')) {
       return compatAppBuilder.rebuildEntryFile(join(resolver.options.appRoot, 'tests'));
     }
     if (asset.moduleName === join(resolver.options.appRoot, 'index.html')) {
@@ -54,8 +54,8 @@ export function virtualContent(filename: string, resolver: Resolver): string {
       return compatAppBuilder.rebuildHtml(join(resolver.options.appRoot, 'tests'), resolver.options.environment!, 'app');
     }
     const finalAssets = compatAppBuilder.buildCachedAssets(resolver.options.environment!);
-    const found = finalAssets.find(a => a.relativePath === asset!.moduleName.slice(resolver.options.appRoot.length));
-    return (found as (InMemoryAsset|BuiltEmberAsset)).source.toString() || (found as ConcatenatedAsset).code!
+    const found = finalAssets.find(a => '/' + a.relativePath === asset!.moduleName.replace(resolver.options.appRoot, '') || a.relativePath === asset!.moduleName);
+    return (found as (InMemoryAsset|BuiltEmberAsset)).source?.toString() || (found as ConcatenatedAsset).code!
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);

@@ -987,7 +987,8 @@ export class Resolver {
     if (dirname(request.fromFile) === this.options.appRoot || request.fromFile === '<stdin>') {
       const asset = assets.find((a) => request.specifier === join(this.options.appRoot, a.relativePath) || request.specifier === '/' + a.relativePath);
       if (asset) {
-        return request.virtualize('/@embroider/assets/' + request.specifier);
+        let specifier = request.specifier;
+        return request.virtualize(`@embroider-assets:${specifier}`);
       }
     }
     return request;

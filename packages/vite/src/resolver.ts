@@ -16,6 +16,7 @@ type Options = {
 
 export function resolver(_options?: Options): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
+  resolverLoader.resolver.options.environment = 'production';
   resolverLoader.resolver.options.engines.forEach(engine => {
     engine.root = engine.root.replace(rewrittenApp, cwd);
     engine.activeAddons.forEach(addon => {
@@ -25,6 +26,9 @@ export function resolver(_options?: Options): Plugin {
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
+    configureServer() {
+      resolverLoader.resolver.options.environment = 'development';
+    },
     async resolveId(source, importer, options) {
       let request = RollupModuleRequest.from(source, importer, options.custom);
       if (!request) {

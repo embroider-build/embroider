@@ -946,8 +946,9 @@ export class CompatAppBuilder {
   private firstBuild = true;
 
   buildCachedAssets(environment: 'production' | 'development') {
-    const appJS = this.root;
-    let appFiles = this.updateAppJS(appJS, null);
+    const workingDir = locateEmbroiderWorkingDir(this.root);
+    const rewrittenApp = join(workingDir, 'rewritten-app');
+    let appFiles = this.updateAppJS(rewrittenApp, null);
     let assets = this.gatherAssets({
       htmlTree: this.root,
       publicTree: 'public'
@@ -1387,7 +1388,7 @@ export class CompatAppBuilder {
     return this.appJSAsset(relativePath, app, childEngines, prepared, {
       autoRun: this.compatApp.autoRun,
       appBoot: !this.compatApp.autoRun ? this.compatApp.appBoot.readAppBoot() : '',
-      mainModule: explicitRelative(dirname(relativePath), 'app'),
+      mainModule: explicitRelative(relativePath, 'app/app'),
       appConfig: this.configTree.readConfig().APP,
     });
   }

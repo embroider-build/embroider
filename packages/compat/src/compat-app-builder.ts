@@ -40,8 +40,8 @@ import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSy
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
 import type { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
+import { ConcatenatedAsset, ParsedEmberAsset, BuiltEmberAsset } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
 import type { RouteFiles } from '@embroider/core/src/app-files';
 import { AppFiles } from '@embroider/core/src/app-files';
@@ -64,6 +64,7 @@ import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
 import glob from 'fast-glob';
 import { readFileSync } from 'fs';
+import MeasureConcat from '@embroider/core/src/measure-concat';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -727,7 +728,7 @@ export class CompatAppBuilder {
 
   private engines: { engine: Engine; appSync: SyncDir; fastbootSync: SyncDir | undefined }[] | undefined;
 
-  private updateAppJS(appJSPath: string): AppFiles[] {
+  private updateAppJS(appJSPath: string, root: string|null = this.root): AppFiles[] {
     if (!this.engines) {
       this.engines = this.partitionEngines(appJSPath).map(engine => {
         if (engine.sourcePath === appJSPath) {
@@ -737,12 +738,12 @@ export class CompatAppBuilder {
           if (this.activeFastboot) {
             let fastbootDir = this.fastbootJSSrcDir();
             if (fastbootDir) {
-              fastbootSync = new SyncDir(fastbootDir, resolvePath(this.root, '_fastboot_'));
+              fastbootSync = new SyncDir(fastbootDir, root && resolvePath(root, '_fastboot_') || undefined);
             }
           }
           return {
             engine,
-            appSync: new SyncDir(appJSPath, this.root),
+            appSync: new SyncDir(appJSPath, root || undefined),
             fastbootSync,
           };
         } else {
@@ -833,26 +834,14 @@ export class CompatAppBuilder {
     copySync(asset.sourcePath, destination, { dereference: true });
   }
 
-  private updateInMemoryAsset(dst: string, asset: InMemoryAsset) {
-    let destination = join(dst, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, 'utf8');
-  }
-
-  private updateBuiltEmberAsset(dst: string, asset: BuiltEmberAsset) {
-    let destination = join(dst, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, 'utf8');
-  }
-
-  private async updateConcatenatedAsset(dst: string, asset: ConcatenatedAsset) {
+  private updateConcatenatedAsset(dst: string, asset: ConcatenatedAsset) {
     let concat = new SourceMapConcat({
-      outputFile: join(dst, asset.relativePath),
+      mapURL: join(dst, asset.relativePath),
+      file: join(dst, asset.relativePath),
       mapCommentType: asset.relativePath.endsWith('.js') ? 'line' : 'block',
       baseDir: dst,
     });
     if (process.env.EMBROIDER_CONCAT_STATS) {
-      let MeasureConcat = (await import('@embroider/core/src/measure-concat')).default;
       concat = new MeasureConcat(asset.relativePath, concat, dst);
     }
     for (let source of asset.sources) {
@@ -870,10 +859,14 @@ export class CompatAppBuilder {
           assertNever(source);
       }
     }
-    await concat.end();
+    // since we are using in-memory streams, its synchronous
+    void concat.end();
+    asset.code = concat.stream.toString();
+    const sourceMapComment = '\n' + '/*# sourceMappingURL=data:application/json;base64,' + Buffer.from(JSON.stringify(concat.content)).toString('base64') + '*/';
+    asset.code += sourceMapComment;
   }
 
-  private async updateAssets(
+  private updateAssets(
     requestedAssets: Asset[],
     appFiles: AppFiles[],
     noWrite?: boolean,
@@ -890,13 +883,13 @@ export class CompatAppBuilder {
           this.updateOnDiskAsset(dst, asset);
           break;
         case 'in-memory':
-          this.updateInMemoryAsset(dst, asset);
+          //this.updateInMemoryAsset(dst, asset);
           break;
         case 'built-ember':
-          this.updateBuiltEmberAsset(dst, asset);
+          // this.updateBuiltEmberAsset(dst, asset);
           break;
         case 'concatenated-asset':
-          await this.updateConcatenatedAsset(dst, asset);
+          this.updateConcatenatedAsset(dst, asset);
           break;
         default:
           assertNever(asset);
@@ -952,7 +945,29 @@ export class CompatAppBuilder {
 
   private firstBuild = true;
 
-  async build(inputPaths: OutputPaths<TreeNames>) {
+  buildCachedAssets(environment: 'production' | 'development') {
+    const appJS = this.root;
+    let appFiles = this.updateAppJS(appJS, null);
+    let assets = this.gatherAssets({
+      htmlTree: this.root,
+      publicTree: 'public'
+    } as any);
+
+    assets.forEach((asset) => {
+      if (asset.relativePath.endsWith('index.html')) {
+        let env = environment as 'production'|'development'|'test';
+        if (asset.relativePath.endsWith('tests/index.html')) {
+          env = 'test';
+        }
+        const html = this.prepareHtml(asset.relativePath, env);
+        (asset as EmberAsset).source = html;
+      }
+    })
+
+    return this.updateAssets(assets, appFiles);
+  }
+
+  build(inputPaths: OutputPaths<TreeNames>) {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
     this.compatApp.macrosConfig.finalize();
@@ -966,7 +981,7 @@ export class CompatAppBuilder {
     let appFiles = this.updateAppJS(inputPaths.appJS);
     let assets = this.gatherAssets(inputPaths);
 
-    let finalAssets = await this.updateAssets(assets, appFiles);
+    let finalAssets = this.updateAssets(assets, appFiles);
 
     let assetPaths = assets.map(asset => asset.relativePath);
 
@@ -1006,6 +1021,7 @@ export class CompatAppBuilder {
     let resolverConfig = this.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
     this.addLegacyAppInfo();
+    this.addAssetInfo(finalAssets, inputPaths);
     let babelConfig = this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
@@ -1054,7 +1070,7 @@ export class CompatAppBuilder {
     return html;
   }
 
-  async rebuildHtml(root: string, environment: 'production' | 'development', appOrTestHtml: 'app' | 'test') {
+  rebuildHtml(root: string, environment: 'production' | 'development', appOrTestHtml: 'app' | 'test') {
     const file = appOrTestHtml === 'app' ? 'index.html' : 'tests/index.html';
     const env = appOrTestHtml === 'test' ? 'test' : environment === 'production' ? 'production' : 'development';
     const html = this.prepareHtml(file, env);
@@ -1078,12 +1094,12 @@ export class CompatAppBuilder {
       );
     });
 
-    const internalAssets = await this.updateAssets(assets, appFiles, true);
+    const internalAssets = this.updateAssets(assets, appFiles, true);
     const indexFile = internalAssets.find(a => (a as any).relativePath === file)!;
     return (indexFile as BuiltEmberAsset).source;
   }
 
-  async rebuildEntryFile(root: string) {
+  rebuildEntryFile(root: string) {
     const engines = this.partitionEngines(root);
     const rewrittenPackageCache = RewrittenPackageCache.shared('embroider', this.root);
     const pkg = rewrittenPackageCache.get(this.root);
@@ -1111,7 +1127,7 @@ export class CompatAppBuilder {
       (asset as EmberAsset).source = this.prepareHtml(asset.relativePath, 'development');
       assets.push(asset);
     }
-    const internalAssets = await this.updateAssets(assets, appFiles, true);
+    const internalAssets = this.updateAssets(assets, appFiles, true);
     const indexFile = internalAssets.find(a => (a as any).relativePath === relativePath)!;
     return (indexFile as BuiltEmberAsset).source;
   }
@@ -1120,7 +1136,7 @@ export class CompatAppBuilder {
     const assets = this.gatherAssets({
       publicTree: 'public',
     } as any);
-    await this.updateAssets(assets, [], false, dir);
+    this.updateAssets(assets, [], false, dir);
   }
 
   private combinePackageJSON(meta: AppMeta): object {
@@ -1210,6 +1226,20 @@ export class CompatAppBuilder {
 
   private addResolverConfig(config: CompatResolverOptions) {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config, { spaces: 2 });
+  }
+
+  private addAssetInfo(finalAssets: InternalAsset[], inputPaths: OutputPaths<TreeNames>) {
+    outputJSONSync(
+        join(locateEmbroiderWorkingDir(this.compatApp.root), 'asset-info.json'),
+        {
+          assets: finalAssets.map((a) => ({
+            kind: a.kind,
+            relativePath: a.relativePath,
+            sourcePath: (a as OnDiskAsset).sourcePath,
+          })),
+          inputPaths: inputPaths
+        }
+    );
   }
 
   private addLegacyAppInfo() {
@@ -1745,44 +1775,3 @@ interface TreeNames {
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 
-class ParsedEmberAsset {
-  kind: 'parsed-ember' = 'parsed-ember';
-  relativePath: string;
-  fileAsset: EmberAsset;
-  html: PreparedEmberHTML;
-
-  constructor(asset: EmberAsset) {
-    this.fileAsset = asset;
-    this.html = new PreparedEmberHTML(asset);
-    this.relativePath = asset.relativePath;
-  }
-
-  validFor(other: EmberAsset) {
-    return this.fileAsset.mtime === other.mtime && this.fileAsset.size === other.size;
-  }
-}
-
-class BuiltEmberAsset {
-  kind: 'built-ember' = 'built-ember';
-  relativePath: string;
-  parsedAsset: ParsedEmberAsset;
-  source: string;
-
-  constructor(asset: ParsedEmberAsset) {
-    this.parsedAsset = asset;
-    this.source = asset.html.dom.serialize();
-    this.relativePath = asset.relativePath;
-  }
-}
-
-class ConcatenatedAsset {
-  kind: 'concatenated-asset' = 'concatenated-asset';
-  constructor(
-    public relativePath: string,
-    public sources: (OnDiskAsset | InMemoryAsset)[],
-    private resolvableExtensions: RegExp
-  ) {}
-  get sourcemapPath() {
-    return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
-  }
-}

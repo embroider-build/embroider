@@ -22,6 +22,7 @@
     "lint:js:fix": "eslint . --fix",
     "start:dev": "vite",
     "start:test": "vite --open /tests",
+    "start:prebuild": "ember b",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
     "test:ember": "node ./node_modules/@embroider/vite/src/bin/run-tests.mjs"
   },
@@ -69,6 +70,7 @@
     "prettier": "^2.8.8",
     "qunit": "^2.19.4",
     "qunit-dom": "^2.0.0",
+    "qunit-theme-ember": "^0.2.0",
     "stylelint": "^15.7.0",
     "stylelint-config-standard": "^33.0.0",
     "stylelint-prettier": "^3.0.0",

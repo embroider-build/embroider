@@ -810,7 +810,7 @@ export default class CompatApp {
     });
   }
 
-  static getCachedBuilderInstance(root: string) {
+  static getCachedBuilderInstance(root: string): CompatAppBuilder {
     const workingDir = locateEmbroiderWorkingDir(root);
     const options = readJSONSync(join(workingDir, 'resolver.json'));
     const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));

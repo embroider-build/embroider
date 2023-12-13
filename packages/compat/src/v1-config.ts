@@ -9,6 +9,7 @@ export interface ConfigContents {
   EmberENV: unknown;
   APP: unknown;
   rootURL: string;
+  environment: string;
 }
 
 export class V1Config extends Plugin {

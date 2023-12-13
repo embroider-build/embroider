@@ -2,7 +2,7 @@
 import { autoRegister } from 'js-reporters';
 import qunit from 'qunit';
 
-export async function setupQunit() {
+export function setupQunit() {
   const runner = autoRegister();
   const tap = qunit.reporters.tap;
   tap.init(runner, { log: console.info });
@@ -18,8 +18,6 @@ export async function setupQunit() {
     label: 'Enable CI Mode',
     tooltip: 'CI mode makes tests run faster by sacrificing UI responsiveness',
   });
-
-  await Promise.resolve();
 
   console.log(`[HARNESS] ci=${hasFlag('ci')}`);
 

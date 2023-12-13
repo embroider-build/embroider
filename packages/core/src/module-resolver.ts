@@ -1,7 +1,7 @@
 import {
   emberVirtualPackages,
   emberVirtualPeerDeps,
-  extensionsPattern,
+  extensionsPattern, locateEmbroiderWorkingDir,
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
@@ -12,6 +12,7 @@ import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import reversePackageExports from '@embroider/reverse-exports';
 
+
 import {
   virtualExternalESModule,
   virtualExternalCJSModule,
@@ -19,12 +20,15 @@ import {
   fastbootSwitch,
   decodeFastbootSwitch,
   decodeImplicitModules,
+  decodeVirtualAsset
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import type UserOptions from './options';
 import { nodeResolve } from './node-resolve';
+import { join } from 'path/posix';
+import { readJSONSync } from 'fs-extra';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -82,6 +86,7 @@ export interface Options {
   };
   resolvableExtensions: string[];
   appRoot: string;
+  environment?: 'production' | 'development';
   engines: EngineConfig[];
   modulePrefix: string;
   podModulePrefix?: string;
@@ -179,6 +184,7 @@ export class Resolver {
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
     request = this.preHandleExternal(request);
+    request = this.handleVirtualAssets(request);
 
     // this should probably stay the last step in beforeResolve, because it can
     // rehome requests to their un-rewritten locations, and for the most part we
@@ -963,6 +969,25 @@ export class Resolver {
         throw new Error(
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
         );
+      }
+    }
+    return request;
+  }
+
+  private handleVirtualAssets<R extends ModuleRequest>(request: R): R {
+    if (request.isVirtual || request.isNotFound) {
+      return request;
+    }
+    const info = readJSONSync(join(locateEmbroiderWorkingDir(this.options.appRoot), 'asset-info.json')) as {
+      assets:{
+        relativePath: string
+      }[]
+    };
+    const assets = info.assets;
+    if (dirname(request.fromFile) === this.options.appRoot || request.fromFile === '<stdin>') {
+      const asset = assets.find((a) => request.specifier === join(this.options.appRoot, a.relativePath) || request.specifier === '/' + a.relativePath);
+      if (asset) {
+        return request.virtualize('/@embroider/assets/' + request.specifier);
       }
     }
     return request;

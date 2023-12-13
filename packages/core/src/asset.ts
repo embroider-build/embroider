@@ -1,5 +1,6 @@
 import type { JSDOM } from 'jsdom';
 import type { EmberHTML } from './ember-html';
+import { PreparedEmberHTML } from './ember-html';
 
 export interface ImplicitAssetPaths {
   'implicit-scripts': string[];
@@ -53,5 +54,50 @@ export interface EmberAsset extends BaseAsset {
   // supposed to insert the parts of the Ember app.
   prepare(dom: JSDOM): EmberHTML;
 }
+
+
+export class BuiltEmberAsset {
+  kind: 'built-ember' = 'built-ember';
+  relativePath: string;
+  parsedAsset: ParsedEmberAsset;
+  source: string;
+
+  constructor(asset: ParsedEmberAsset) {
+    this.parsedAsset = asset;
+    this.source = asset.html.dom.serialize();
+    this.relativePath = asset.relativePath;
+  }
+}
+
+export class ConcatenatedAsset {
+  kind: 'concatenated-asset' = 'concatenated-asset';
+  code?: string;
+  constructor(
+      public relativePath: string,
+      public sources: (OnDiskAsset | InMemoryAsset)[],
+      private resolvableExtensions: RegExp
+  ) {}
+  get sourcemapPath() {
+    return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
+  }
+}
+
+export class ParsedEmberAsset {
+  kind: 'parsed-ember' = 'parsed-ember';
+  relativePath: string;
+  fileAsset: EmberAsset;
+  html: PreparedEmberHTML;
+
+  constructor(asset: EmberAsset) {
+    this.fileAsset = asset;
+    this.html = new PreparedEmberHTML(asset);
+    this.relativePath = asset.relativePath;
+  }
+
+  validFor(other: EmberAsset) {
+    return this.fileAsset.mtime === other.mtime && this.fileAsset.size === other.size;
+  }
+}
+
 
 export type Asset = OnDiskAsset | InMemoryAsset | EmberAsset;

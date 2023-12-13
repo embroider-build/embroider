@@ -2,15 +2,19 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
+import { BuiltEmberAsset, ConcatenatedAsset, InMemoryAsset } from './asset';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
+const assetPrefix = '/@embroider/assets/';
 
 // Given a filename that was passed to your ModuleRequest's `virtualize()`,
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
 export function virtualContent(filename: string, resolver: Resolver): string {
+  const CompatApp = require('../../compat/src/compat-app').default;
+  const compatAppBuilder = CompatApp.getCachedBuilderInstance(resolver.options.appRoot);
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
     return renderCJSExternalShim(cjsExtern);
@@ -33,6 +37,25 @@ export function virtualContent(filename: string, resolver: Resolver): string {
   let im = decodeImplicitModules(filename);
   if (im) {
     return renderImplicitModules(im, resolver);
+  }
+
+  let asset = decodeVirtualAsset(filename);
+  if (asset) {
+    if (asset.moduleName === join(resolver.options.appRoot, 'assets', resolver.options.modulePrefix + '.js')) {
+      return compatAppBuilder.rebuildEntryFile(resolver.options.appRoot);
+    }
+    if (asset.moduleName === join(resolver.options.appRoot, 'assets', 'test.js')) {
+      return compatAppBuilder.rebuildEntryFile(join(resolver.options.appRoot, 'tests'));
+    }
+    if (asset.moduleName === join(resolver.options.appRoot, 'index.html')) {
+      return compatAppBuilder.rebuildHtml(resolver.options.appRoot, resolver.options.environment!, 'app');
+    }
+    if (asset.moduleName === join(resolver.options.appRoot, 'tests', 'index.html')) {
+      return compatAppBuilder.rebuildHtml(join(resolver.options.appRoot, 'tests'), resolver.options.environment!, 'app');
+    }
+    const finalAssets = compatAppBuilder.buildCachedAssets(resolver.options.environment!);
+    const found = finalAssets.find(a => a.relativePath === asset!.moduleName.slice(resolver.options.appRoot.length));
+    return (found as (InMemoryAsset|BuiltEmberAsset)).source.toString() || (found as ConcatenatedAsset).code!
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
@@ -104,6 +127,12 @@ function decodeVirtualExternalESModule(filename: string): { moduleName: string; 
 function decodeVirtualExternalCJSModule(filename: string) {
   if (filename.startsWith(externalCJSPrefix)) {
     return { moduleName: filename.slice(externalCJSPrefix.length) };
+  }
+}
+
+export function decodeVirtualAsset(filename: string) {
+  if (filename.startsWith(assetPrefix)) {
+    return { moduleName: filename.slice(assetPrefix.length) };
   }
 }
 

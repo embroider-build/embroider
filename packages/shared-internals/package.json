@@ -36,7 +36,9 @@
     "typescript-memoize": "^1.0.1",
     "fs-extra": "^9.1.0",
     "lodash": "^4.17.21",
-    "semver": "^7.3.5"
+    "semver": "^7.3.5",
+    "walk-sync": "^3.0.0",
+    "resolve": "^1.22.8"
   },
   "devDependencies": {
     "broccoli-node-api": "^1.7.0",

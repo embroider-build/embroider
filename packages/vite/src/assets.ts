@@ -1,52 +1,53 @@
-import type { RewrittenPackageCache, Resolver } from '@embroider/core';
-import { getAppMeta, locateEmbroiderWorkingDir, ResolverLoader } from '@embroider/core';
+import type { Resolver } from '@embroider/core';
+import { getAppMeta, locateEmbroiderWorkingDir, ResolverLoader, virtualContent } from '@embroider/core';
 import { join } from 'path/posix';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import CompatApp from '@embroider/compat/src/compat-app';
 import type { Plugin } from 'vite';
 import * as process from 'process';
+import { RollupModuleRequest, virtualPrefix } from './request';
 
-type Options = {
-  root: string;
-  compatAppDir?: string;
-  rewrittenPackageCache: RewrittenPackageCache;
-};
+// type Options = {
+//   root: string;
+//   compatAppDir?: string;
+//   rewrittenPackageCache: RewrittenPackageCache;
+// };
 
 let InMemoryAssets: Record<string, string> = {};
 
 let environment: 'production' | 'development' = 'production';
-
-async function generateHtml(root: string, appOrTest: 'app' | 'test') {
-  const file = appOrTest === 'app' ? 'index.html' : 'tests/index.html';
-  if (!InMemoryAssets[file]) {
-    InMemoryAssets[file] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildHtml(
-      root,
-      environment,
-      appOrTest
-    );
-  }
-
-  return InMemoryAssets[file];
-}
-
-async function generateAppEntries({ rewrittenPackageCache, root }: Options) {
-  const pkg = rewrittenPackageCache.get(process.cwd());
-  if (!InMemoryAssets[`assets/${pkg.name}.js`]) {
-    InMemoryAssets[`assets/${pkg.name}.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(
-      root
-    );
-  }
-  return InMemoryAssets[`assets/${pkg.name}.js`];
-}
-
-async function generateTestEntries(testFolder: string) {
-  if (!InMemoryAssets[`assets/test.js`]) {
-    InMemoryAssets[`assets/test.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(
-      testFolder
-    );
-  }
-  return InMemoryAssets[`assets/test.js`];
-}
+//
+// async function generateHtml(root: string, appOrTest: 'app' | 'test') {
+//   const file = appOrTest === 'app' ? 'index.html' : 'tests/index.html';
+//   if (!InMemoryAssets[file]) {
+//     InMemoryAssets[file] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildHtml(
+//       root,
+//       environment,
+//       appOrTest
+//     );
+//   }
+//
+//   return InMemoryAssets[file];
+// }
+//
+// async function generateAppEntries({ rewrittenPackageCache, root }: Options) {
+//   const pkg = rewrittenPackageCache.get(process.cwd());
+//   if (!InMemoryAssets[`assets/${pkg.name}.js`]) {
+//     InMemoryAssets[`assets/${pkg.name}.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(
+//       root
+//     );
+//   }
+//   return InMemoryAssets[`assets/${pkg.name}.js`];
+// }
+//
+// async function generateTestEntries(testFolder: string) {
+//   if (!InMemoryAssets[`assets/test.js`]) {
+//     InMemoryAssets[`assets/test.js`] = await CompatApp.getCachedBuilderInstance(process.cwd()).rebuildEntryFile(
+//       testFolder
+//     );
+//   }
+//   return InMemoryAssets[`assets/test.js`];
+// }
 
 function findPublicAsset(relativePath: string, resolver: Resolver, embroiderWorkingDir: string) {
   const packageCache = resolver.packageCache;
@@ -82,8 +83,8 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
   const cwd = process.cwd();
   const root = join(cwd, 'app');
   const embroiderWorkingDir = locateEmbroiderWorkingDir(cwd);
-  const rewrittenApp = join(embroiderWorkingDir, 'rewritten-app');
   const resolverLoader = new ResolverLoader(cwd);
+  resolverLoader.resolver.options.environment = environment;
   const appMeta = getAppMeta(cwd);
   const tests = join(cwd, 'tests');
   const appIndex = join(cwd, 'index.html');
@@ -97,6 +98,7 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
     enforce: 'pre',
     configureServer(server) {
       environment = 'development';
+      resolverLoader.resolver.options.environment = environment;
       const watcher = server.watcher;
       // this is required because we do not open the /tests url directly and via the middleware
       watcher.on('add', filename => {
@@ -160,35 +162,12 @@ export function assets(options?: { entryDirectories?: string[] }): Plugin {
     transformIndexHtml: {
       order: 'pre',
       async handler(_html, ctx) {
-        if (ctx.filename === appIndex) {
-          return await generateHtml(root, 'app');
-        }
-        if (ctx.filename === testsIndex) {
-          return await generateHtml(root, 'test');
+        const request = RollupModuleRequest.from(ctx.filename, '<stdin>', {})!;
+        const resolution = resolverLoader.resolver.resolveSync(request, (req) => ({ type: 'found', result: req.specifier }));
+        if (resolution.result.startsWith(virtualPrefix)) {
+          return virtualContent(resolution.result.slice(virtualPrefix.length), resolverLoader.resolver);
         }
       },
-    },
-    load(id) {
-      id = id.split('?')[0];
-      if (id.endsWith('/testem.js')) {
-        return '';
-      }
-      if (id === join(cwd, 'config', 'environment.js')) {
-        const code = readFileSync(id).toString();
-        return code.replace('module.exports = ', 'export default ');
-      }
-      if (id.startsWith(root + '/assets/')) {
-        if (id.endsWith(appMeta.name + '.js')) {
-          return generateAppEntries({
-            root,
-            rewrittenPackageCache: resolverLoader.resolver.packageCache,
-          });
-        }
-        if (id.endsWith('/assets/test.js')) {
-          return generateTestEntries(tests);
-        }
-        return readFileSync(rewrittenApp + id.replace(root + '/assets/', '/assets/').split('?')[0]).toString();
-      }
     },
     async writeBundle(options) {
       await CompatApp.getCachedBuilderInstance(root).copyPublicAssetsToDir(options.dir || join(cwd, 'dist'));

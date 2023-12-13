@@ -54,6 +54,7 @@ appScenarios
           babel({ extensions: ['.js', '.gjs', '.ts', '.gts'], babelHelpers: 'bundled' }),
           addon.gjs(),
           addon.hbs(),
+          addon.keepAssets(["**/*.css"]),
           addon.clean(),
         ],
       };
@@ -61,10 +62,17 @@ appScenarios
       `,
       src: {
         components: {
+          'styles.css': `button { font-weight: bold; color: blue; }`,
           'demo.gjs': `
             import Component from '@glimmer/component';
             import { tracked } from '@glimmer/tracking';
             import { on } from '@ember/modifier';
+
+            import { importSync, isDevelopingApp, macroCondition } from '@embroider/macros';
+
+            if (macroCondition(isDevelopingApp())) {
+              importSync('./styles.css');
+            }
 
             export default class ExampleComponent extends Component {
               @tracked active = false;

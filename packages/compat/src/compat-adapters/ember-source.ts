@@ -124,11 +124,16 @@ export default class extends V1Addon {
         meta['implicit-modules'] = [];
       }
       meta['implicit-modules'].push('./ember/index.js');
-
-      if (!meta['implicit-test-modules']) {
-        meta['implicit-test-modules'] = [];
+      // before 5.6, Ember uses the AMD loader to decide if it's test-only parts
+      // are present, so we must ensure they're registered. After that it's
+      // enough to evaluate ember-testing, which @embroider/core is hard-coded
+      // to do in the backward-compatible tests bundle.
+      if (!satisfies(this.packageJSON.version, '>= 5.6.0-alpha.0', { includePrerelease: true })) {
+        if (!meta['implicit-test-modules']) {
+          meta['implicit-test-modules'] = [];
+        }
+        meta['implicit-test-modules'].push('./ember-testing/index.js');
       }
-      meta['implicit-test-modules'].push('./ember-testing/index.js');
     }
     return meta;
   }

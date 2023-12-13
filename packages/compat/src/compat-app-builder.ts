@@ -1346,6 +1346,7 @@ export class CompatAppBuilder {
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
     let eagerModules: string[] = [
+      'ember-testing',
       explicitRelative(dirname(myName), this.topAppJSAsset(appFiles, prepared).relativePath),
     ];
 

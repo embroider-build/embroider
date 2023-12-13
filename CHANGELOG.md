@@ -1,4 +1,34 @@
 # Embroider Changelog
+## Release (2023-12-13)
+
+@embroider/addon-dev 4.1.3 (patch)
+@embroider/compat 3.4.1 (patch)
+@embroider/core 3.4.3 (patch)
+@embroider/macros 1.13.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1688](https://github.com/embroider-build/embroider/pull/1688) Fix branch elimination for `macroDependencySatisfies` ([@mike-engel](https://github.com/mike-engel))
+* `@embroider/compat`
+  * [#1706](https://github.com/embroider-build/embroider/pull/1706) Support engine's lazyLoading boolean config ([@fengb](https://github.com/fengb))
+* `@embroider/addon-dev`
+  * [#1696](https://github.com/embroider-build/embroider/pull/1696) Use rollup's `addWatchFile` API to mark dependencies ([@chancancode](https://github.com/chancancode))
+
+#### :house: Internal
+* Other
+  * [#1716](https://github.com/embroider-build/embroider/pull/1716) update release-plan ([@mansona](https://github.com/mansona))
+  * [#1698](https://github.com/embroider-build/embroider/pull/1698) Use release plan ([@mansona](https://github.com/mansona))
+* `@embroider/macros`
+  * [#1709](https://github.com/embroider-build/embroider/pull/1709) Jest types broke our CI ([@ef4](https://github.com/ef4))
+* `@embroider/test-scenarios`
+  * [#1705](https://github.com/embroider-build/embroider/pull/1705) Backport #1703 to stable ([@chancancode](https://github.com/chancancode))
+
+#### Committers: 5
+- Benjamin Feng ([@fengb](https://github.com/fengb))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Godfrey Chan ([@chancancode](https://github.com/chancancode))
+- Mike Engel ([@mike-engel](https://github.com/mike-engel))
 
 ## Release (2023-11-28)
 

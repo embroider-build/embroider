@@ -29,6 +29,11 @@ describe('dependency satisfies', () => {
       expect(result).toMatch(/@a=\{\{true\}\}/);
     });
 
+    test('in branch', () => {
+      let result = transform(`{{#if (macroDependencySatisfies 'qunit' '^2.8.0')}}red{{else}}blue{{/if}}`, { filename });
+      expect(result).toEqual('red');
+    });
+
     test('emits false for out-of-range package', () => {
       let result = transform(`{{macroDependencySatisfies 'qunit' '^10.0.0'}}`, { filename });
       expect(result).toEqual('{{false}}');

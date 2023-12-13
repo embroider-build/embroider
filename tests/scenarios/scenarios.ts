@@ -21,11 +21,18 @@ async function release(project: Project) {
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
 }
 
+async function beta(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-beta' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-beta' });
+}
+
 export function supportMatrix(scenarios: Scenarios) {
   return scenarios.expand({
     lts_3_28,
     lts_4_4,
     release,
+    beta,
   });
 }
 

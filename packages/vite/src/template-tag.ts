@@ -1,6 +1,5 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
-import { readFileSync } from 'fs';
 import { Preprocessor } from 'content-tag';
 
 const gjsFilter = createFilter('**/*.gjs?(\\?)*');
@@ -40,11 +39,11 @@ export function templateTag(): Plugin {
       }
     },
 
-    load(id: string) {
+    transform(code: string, id: string) {
       if (!gjsFilter(id)) {
         return null;
       }
-      return preprocessor.process(readFileSync(id.replace(/\.gjs\?.*/, '.gjs'), 'utf8'), id);
+      return preprocessor.process(code, id);
     },
   };
 }

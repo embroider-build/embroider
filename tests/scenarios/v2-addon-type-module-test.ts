@@ -17,6 +17,8 @@ appScenarios
     addon.pkg.exports = {
       './*': './dist/*.js',
       './addon-main.cjs': './addon-main.cjs',
+      // needed for our "inDependency" function defined in this test
+      './package.json': './package.json',
     };
     addon.pkg.scripts = {
       build: 'node ./node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
@@ -30,7 +32,7 @@ appScenarios
               "targetFormat": "hbs",
               "transforms": []
             }],
-            ["module:decorator-transforms", { "runtime": { "import": "decorator-transforms/runtime" } }],
+            ["module:decorator-transforms", { "runtime": { "import": "decorator-transforms/runtime" } }]
           ]
         }
       `,
@@ -44,9 +46,10 @@ appScenarios
       });
 
       export default {
+        output: addon.output(),
         plugins: [
           addon.publicEntrypoints(['**/*.js']),
-          addon.appReexports(['components/*']),
+          addon.appReexports(['components/*.js']),
           addon.dependencies(),
           babel({ extensions: ['.js', '.gjs', '.ts', '.gts'], babelHelpers: 'bundled' }),
           addon.gjs(),
@@ -63,7 +66,7 @@ appScenarios
             import { tracked } from '@glimmer/tracking';
             import { on } from '@ember/modifier';
 
-            export default class ExampleComponent extends Component<Signature> {
+            export default class ExampleComponent extends Component {
               @tracked active = false;
 
               flip = () => (this.active = !this.active);
@@ -86,7 +89,7 @@ appScenarios
     addon.linkDependency('@babel/runtime', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
     addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });
-    addon.linkDevDependency('decorator-transforms', { baseDir: __dirname });
+    addon.linkDependency('decorator-transforms', { baseDir: __dirname });
     addon.linkDevDependency('rollup', { baseDir: __dirname });
 
     project.addDevDependency(addon);

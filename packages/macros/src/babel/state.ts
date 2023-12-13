@@ -1,6 +1,4 @@
 import type { NodePath, Node } from '@babel/traverse';
-import cloneDeepWith from 'lodash/cloneDeepWith';
-import lodashCloneDeep from 'lodash/cloneDeep';
 import { join, dirname, resolve } from 'path';
 import type { Package } from '@embroider/shared-internals';
 import { cleanUrl, explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
@@ -9,7 +7,6 @@ import type * as Babel from '@babel/core';
 
 export default interface State {
   importUtil: ImportUtil;
-  generatedRequires: Set<Node>;
   removed: Set<Node>;
   calledIdentifiers: Set<Node>;
   jobs: (() => void)[];
@@ -18,7 +15,6 @@ export default interface State {
   pathToOurAddon(moduleName: string): string;
   owningPackage(): Package;
   originalOwningPackage(): Package;
-  cloneDeep(node: Node): Node;
 
   opts: {
     userConfigs: {
@@ -45,15 +41,14 @@ export default interface State {
 
     embroiderMacrosConfigMarker: true;
 
-    mode: 'compile-time' | 'run-time';
+    hideRequires: boolean;
 
-    importSyncImplementation: 'cjs' | 'eager';
+    mode: 'compile-time' | 'run-time';
   };
 }
 
 export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Program>, state: State) {
   state.importUtil = new ImportUtil(t, path);
-  state.generatedRequires = new Set();
   state.jobs = [];
   state.removed = new Set();
   state.calledIdentifiers = new Set();
@@ -62,7 +57,6 @@ export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Prog
   state.pathToOurAddon = pathToAddon;
   state.owningPackage = owningPackage;
   state.originalOwningPackage = originalOwningPackage;
-  state.cloneDeep = cloneDeep;
 }
 
 const runtimeAddonPath = resolve(join(__dirname, '..', 'addon'));
@@ -95,15 +89,4 @@ function owningPackage(this: State): Package {
 function originalOwningPackage(this: State): Package {
   let pkg = this.owningPackage();
   return this.packageCache.original(pkg);
-}
-
-function cloneDeep(this: State, node: Node): Node {
-  let state = this;
-  return cloneDeepWith(node, function (value: any) {
-    if (state.generatedRequires.has(value)) {
-      let cloned = lodashCloneDeep(value);
-      state.generatedRequires.add(cloned);
-      return cloned;
-    }
-  });
 }

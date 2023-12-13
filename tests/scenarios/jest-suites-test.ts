@@ -7,7 +7,7 @@ const { module: Qmodule, test } = QUnit;
 // this is the bridge between our older Jest-based node tests and our newer
 // scenario-tester powered tests
 Scenarios.fromProject(() => new Project('node-tests'))
-  .map('node', () => {})
+  .map('jest-suites', () => {})
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function () {
       test('run node tests', async function (assert) {

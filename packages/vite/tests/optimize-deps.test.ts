@@ -4,10 +4,28 @@ describe('optimizeDeps', function () {
   test('should produce default output when invoked without arguments', function () {
     const actual = optimizeDeps();
 
-    const expected = {
-      exclude: ['@embroider/macros'],
-    };
-
-    expect(actual).toEqual(expected);
+    expect(actual).toMatchInlineSnapshot(
+      {
+        esbuildOptions: {
+          plugins: [expect.any(Object)],
+        },
+      },
+      `
+      {
+        "esbuildOptions": {
+          "plugins": [
+            Any<Object>,
+          ],
+        },
+        "exclude": [
+          "@embroider/macros",
+        ],
+        "extensions": [
+          ".hbs",
+          ".gjs",
+        ],
+      }
+    `
+    );
   });
 });

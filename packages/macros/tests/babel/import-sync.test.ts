@@ -6,13 +6,13 @@ describe('importSync', function () {
     config.setOwnConfig(__filename, { target: 'my-plugin' });
     config.finalize();
 
-    test('importSync becomes esc(require())', () => {
+    test('importSync becomes import * as _something', () => {
       let code = transform(`
       import { importSync } from '@embroider/macros';
       importSync('foo');
       `);
-      expect(code).toMatch(/import esc from "\.\.\/\.\.\/src\/addon\/es-compat2"/);
-      expect(code).toMatch(/esc\(require\(['"]foo['"]\)\)/);
+      expect(code).toMatch(/import \* as _importSync\d from "foo"/);
+      expect(code).toMatch(/esc\(_importSync\d\);/);
       expect(code).not.toMatch(/window/);
     });
     test('importSync leaves existing binding for require alone', () => {
@@ -22,16 +22,16 @@ describe('importSync', function () {
       importSync('foo');
       require('x');
       `);
-      expect(code).toMatch(/esc\(require\(['"]foo['"]\)\)/);
-      expect(code).toMatch(/import _require from 'require'/);
-      expect(code).toMatch(/_require\(['"]x['"]\)/);
+      expect(code).toMatch(/import \* as _importSync\d from "foo"/);
+      expect(code).toMatch(/import require from 'require'/);
+      expect(code).toMatch(/require\(['"]x['"]\)/);
     });
-    test('aliased importSync becomes require', () => {
+    test('aliased importSync becomes aliased variable', () => {
       let code = transform(`
       import { importSync as i } from '@embroider/macros';
       i('foo');
       `);
-      expect(code).toMatch(/require\(['"]foo['"]\)/);
+      expect(code).toMatch(/import \* as _i\d from "foo"/);
       expect(code).not.toMatch(/window/);
     });
     test('import of importSync itself gets removed', () => {
@@ -51,7 +51,7 @@ describe('importSync', function () {
       import { importSync, getOwnConfig } from '@embroider/macros';
       importSync(getOwnConfig().target);
       `);
-      expect(code).toMatch(/require\(['"]my-plugin['"]\)/);
+      expect(code).toMatch(/import \* as _importSync\d from "my-plugin"/);
     });
   });
 });

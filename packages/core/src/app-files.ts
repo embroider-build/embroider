@@ -44,7 +44,7 @@ export class AppFiles {
       combinedFiles.add(f);
     }
 
-    for (let addon of engine.addons) {
+    for (let addon of engine.addons.keys()) {
       let appJS = addon.meta['app-js'];
       if (appJS) {
         for (let filename of Object.keys(appJS)) {
@@ -202,8 +202,8 @@ export class AppFiles {
 export interface Engine {
   // the engine's own package
   package: Package;
-  // the set of active addons in the engine
-  addons: Set<AddonPackage>;
+  // the set of active addons in the engine. For each one we keep track of a file that can resolve the addon, because we'll need that later.
+  addons: Map<AddonPackage, string>;
   // the parent engine, if any
   parent: Engine | undefined;
   // where the engine's own V2 code comes from

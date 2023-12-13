@@ -263,11 +263,6 @@ export class CompatAppBuilder {
     let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
     let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
 
-    let activeAddons: CompatResolverOptions['activeAddons'] = {};
-    for (let addon of this.allActiveAddons) {
-      activeAddons[addon.name] = addon.root;
-    }
-
     let options: CompatResolverOptions['options'] = {
       staticHelpers: this.options.staticHelpers,
       staticModifiers: this.options.staticModifiers,
@@ -277,7 +272,6 @@ export class CompatAppBuilder {
 
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
-      activeAddons,
       renameModules,
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),
@@ -289,9 +283,10 @@ export class CompatAppBuilder {
         root: realpathSync(index === 0 ? this.root : appFiles.engine.package.root),
         fastbootFiles: appFiles.fastbootFiles,
         activeAddons: [...appFiles.engine.addons]
-          .map(a => ({
-            name: a.name,
-            root: a.root,
+          .map(([addon, canResolveFromFile]) => ({
+            name: addon.name,
+            root: addon.root,
+            canResolveFromFile,
           }))
           // the traditional order is the order in which addons will run, such
           // that the last one wins. Our resolver's order is the order to
@@ -396,7 +391,7 @@ export class CompatAppBuilder {
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
     let result: Array<string> = [];
-    for (let addon of sortBy(Array.from(engine.addons), this.scriptPriority.bind(this))) {
+    for (let addon of sortBy(Array.from(engine.addons.keys()), this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         let styles = [];
@@ -640,12 +635,21 @@ export class CompatAppBuilder {
       if (!child.isEngine()) {
         this.findActiveAddons(child, engine, true);
       }
-      engine.addons.add(child);
+      let canResolveFrom: string;
+      if (pkg === this.appPackageWithMovedDeps) {
+        // we want canResolveFrom to always be a rewritten package path, and our
+        // app's package is not rewritten yet here.
+        canResolveFrom = resolvePath(this.root, 'package.json');
+      } else {
+        // whereas our addons are already moved
+        canResolveFrom = resolvePath(pkg.root, 'package.json');
+      }
+      engine.addons.set(child, canResolveFrom);
     }
     // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
     if (!isChild) {
-      engine.addons = new Set(
-        [...engine.addons].sort((a, b) => {
+      engine.addons = new Map(
+        [...engine.addons].sort(([a], [b]) => {
           return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
         })
       );
@@ -656,7 +660,7 @@ export class CompatAppBuilder {
     let queue: Engine[] = [
       {
         package: this.appPackageWithMovedDeps,
-        addons: new Set(),
+        addons: new Map(),
         parent: undefined,
         sourcePath: appJSPath,
         modulePrefix: this.modulePrefix(),
@@ -671,12 +675,12 @@ export class CompatAppBuilder {
         break;
       }
       this.findActiveAddons(current.package, current);
-      for (let addon of current.addons) {
+      for (let addon of current.addons.keys()) {
         if (addon.isEngine() && !seenEngines.has(addon)) {
           seenEngines.add(addon);
           queue.push({
             package: addon,
-            addons: new Set(),
+            addons: new Map(),
             parent: current,
             sourcePath: addon.root,
             modulePrefix: addon.name,
@@ -990,6 +994,10 @@ export class CompatAppBuilder {
     this.addResolverConfig(resolverConfig);
     let babelConfig = this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
+    writeFileSync(
+      join(this.root, 'macros-config.json'),
+      JSON.stringify(this.compatApp.macrosConfig.babelPluginConfig()[0], null, 2)
+    );
   }
 
   private combinePackageJSON(meta: AppMeta): object {
@@ -1401,9 +1409,17 @@ let d = w.define;
 
 {{#if fastbootOnlyAmdModules}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+    let fastbootModules = {};
+
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
-      d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+      fastbootModules["{{js-string-escape amdModule.runtime}}"] = import("{{js-string-escape amdModule.buildtime}}");
     {{/each}}
+
+    const resolvedValues = await Promise.all(Object.values(fastbootModules));
+
+    Object.keys(fastbootModules).forEach((k, i) => {
+      d(k, function(){ return resolvedValues[i];});
+    })
   }
 {{/if}}
 

@@ -121,25 +121,16 @@ export default function main(context: typeof Babel): unknown {
         // For example ember-auto-import needs to do some custom transforms to enable use of dynamic template strings,
         // so its babel plugin needs to see and handle the importSync call first!
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
-          if (state.opts.importSyncImplementation === 'eager') {
-            let specifier = path.node.arguments[0];
-            if (specifier?.type !== 'StringLiteral') {
-              throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
-            }
-            path.replaceWith(state.importUtil.import(path, specifier.value, '*'));
-            state.calledIdentifiers.add(callee.node);
-          } else {
-            if (path.scope.hasBinding('require')) {
-              path.scope.rename('require');
-            }
-            let r = t.identifier('require');
-            state.generatedRequires.add(r);
-            path.replaceWith(
-              t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
-                t.callExpression(r, path.node.arguments),
-              ])
-            );
+          let specifier = path.node.arguments[0];
+          if (specifier?.type !== 'StringLiteral') {
+            throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
           }
+          path.replaceWith(
+            t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
+              state.importUtil.import(path, specifier.value, '*'),
+            ])
+          );
+          state.calledIdentifiers.add(callee.node);
           return;
         }
       },
@@ -187,9 +178,8 @@ export default function main(context: typeof Babel): unknown {
       }
 
       if (
-        state.opts.importSyncImplementation === 'cjs' &&
+        state.opts.hideRequires &&
         path.node.name === 'require' &&
-        !state.generatedRequires.has(path.node) &&
         !path.scope.hasBinding('require') &&
         state.owningPackage().isEmberPackage()
       ) {

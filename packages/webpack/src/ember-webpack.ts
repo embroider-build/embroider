@@ -285,6 +285,10 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           'style-loader': require.resolve('style-loader'),
         },
       },
+      experiments: {
+        // this is needed because fasboot-only modules need to use await import()
+        topLevelAwait: true,
+      },
     };
   }
 

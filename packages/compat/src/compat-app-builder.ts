@@ -945,7 +945,7 @@ export class CompatAppBuilder {
 
   private firstBuild = true;
 
-  buildCachedAssets(environment: 'production' | 'development') {
+  buildCachedAssets(environment: 'production' | 'development'): InternalAsset[] {
     const workingDir = locateEmbroiderWorkingDir(this.root);
     const rewrittenApp = join(workingDir, 'rewritten-app');
     let appFiles = this.updateAppJS(rewrittenApp, null);
@@ -1577,6 +1577,7 @@ export class CompatAppBuilder {
     }
 
     let source = entryTemplate({
+      mainModule: `${this.compatApp.name}/tests/test-helper`,
       amdModules,
       eagerModules,
       testSuffix: true,
@@ -1674,7 +1675,7 @@ if (!runningTests) {
 
 
   {{!- this is the traditional tests-suffix.js -}}
-  i('./tests/test-helper');
+  i("{{js-string-escape mainModule}}")
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
@@ -1774,5 +1775,5 @@ interface TreeNames {
   configTree: BroccoliNode;
 }
 
-type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
+export type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 

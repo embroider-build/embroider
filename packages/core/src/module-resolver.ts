@@ -983,11 +983,11 @@ export class Resolver {
       }[]
     };
     const assets = info.assets;
-    if (dirname(request.fromFile) === this.options.appRoot || request.fromFile === '<stdin>' || request.fromFile.startsWith('@embroider-assets:')) {
-      const asset = assets.find((a) => request.specifier === join(this.options.appRoot, a.relativePath) || request.specifier === '/' + a.relativePath);
+    if (request.specifier.startsWith('/')) {
+      const specifier = request.specifier.split('?')[0];
+      const asset = assets.find((a) => specifier === join(this.options.appRoot, a.relativePath) || specifier === '/' + a.relativePath);
       if (asset) {
-        let specifier = request.specifier;
-        return request.virtualize(`@embroider-assets:${specifier}`);
+        return request.virtualize(`@embroider-assets:${request.specifier}`);
       }
     }
     return request;

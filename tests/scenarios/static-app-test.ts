@@ -346,7 +346,14 @@ appScenarios
             'ember-bootstrap': {
               bootstrapVersion: 4,
               importBootstrapCSS: true
-            }
+            },
+            'ember-composable-helpers': {
+              only: [
+                'reverse',
+                // everything else is not included
+                // via removal in ember-composable-helpers/index.js (the node file)
+              ],
+            },
           });
 
           MacrosConfig.for(app).setOwnConfig(__filename, {
@@ -387,14 +394,14 @@ appScenarios
     });
   })
   .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
+    Qmodule(scenario.name, function(hooks) {
       let app: PreparedApp;
       hooks.before(async () => {
         app = await scenario.prepare();
       });
 
       ['production', 'development'].forEach(env => {
-        test(`pnpm test: ${env}`, async function (assert) {
+        test(`pnpm test: ${env}`, async function(assert) {
           let result = await app.execute(`cross-env EMBER_ENV=${env} pnpm test`);
           assert.equal(result.exitCode, 0, result.output);
         });

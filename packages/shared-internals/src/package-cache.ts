@@ -2,7 +2,7 @@ import Package from './package';
 import { existsSync, realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
-import { dirname, sep } from 'path';
+import { dirname, posix } from 'path';
 
 const realpathSyncCache = new Map<string, string>();
 
@@ -67,7 +67,7 @@ export default class PackageCache {
   }
 
   ownerOfFile(filename: string): Package | undefined {
-    let segments = filename.split(sep);
+    let segments = filename.replace(/\\/g, '/').split(posix.sep);
 
     // first we look through our cached packages for any that are rooted right
     // at or above the file.
@@ -79,11 +79,11 @@ export default class PackageCache {
       }
 
       let usedSegments = segments.slice(0, length);
-      let candidate = usedSegments.join(sep);
+      let candidate = usedSegments.join(posix.sep);
       if (this.rootCache.has(candidate)) {
         return this.rootCache.get(candidate);
       }
-      if (getCachedExists([...usedSegments, 'package.json'].join(sep))) {
+      if (getCachedExists([...usedSegments, 'package.json'].join(posix.sep))) {
         return this.get(candidate);
       }
     }

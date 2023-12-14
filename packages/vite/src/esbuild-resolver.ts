@@ -10,7 +10,7 @@ import {
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, resolve, join } from 'path';
+import { dirname, resolve, join, sep } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
@@ -24,7 +24,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
     setup(build) {
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
         if (importer.includes('rewritten-app')) {
-          importer = importer.split('rewritten')[1];
+          importer = importer.split(`rewritten-app${sep}`)[1];
         }
         let request = EsBuildModuleRequest.from(path, importer, pluginData);
         if (!request) {

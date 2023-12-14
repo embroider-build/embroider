@@ -11,9 +11,13 @@ async function run() {
 
   await /** @type {Promise<void>} */ (
     new Promise(fulfill => {
-      const runvite = child.spawn(resolve(__root, 'node_modules', '.bin', 'vite'), ['--port', '60173', '--no-open'], {
-        stdio: 'pipe',
-      });
+      const runvite = child.fork(
+        resolve(__root, 'node_modules', 'vite', 'bin', 'vite.js'),
+        ['--port', '60173', '--no-open'],
+        {
+          stdio: 'pipe',
+        }
+      );
 
       process.on('exit', () => runvite.kill());
 

@@ -1,6 +1,5 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin } from 'vite';
-import { join } from 'path/posix';
 import type { Resolution, ResolverFunction } from '@embroider/core';
 import { ResolverLoader, virtualContent } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';

@@ -1,25 +1,34 @@
 import type { Node as BroccoliNode } from 'broccoli-node-api';
-import type { Stage, Package } from '@embroider/core';
-import { PackageCache, WaitForTrees, RewrittenPackageCache, locateEmbroiderWorkingDir } from '@embroider/core';
+import type {
+  AddonInstance,
+  AddonMeta,
+  EmberAppInstance,
+  OutputFileToInputFileMap,
+  Package,
+  PackageInfo,
+  Stage,
+} from '@embroider/core';
+import { locateEmbroiderWorkingDir, PackageCache, RewrittenPackageCache, WaitForTrees } from '@embroider/core';
 import type Options from './options';
 import { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
-import { join, dirname, isAbsolute, sep } from 'path';
+import { dirname, isAbsolute, join, sep } from 'path';
 import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import { V1Config, WriteV1Config } from './v1-config';
-import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
-import type {
-  AddonMeta,
-  EmberAppInstance,
-  OutputFileToInputFileMap,
-  PackageInfo,
-  AddonInstance,
-} from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
+import { ReadV1AppBoot, WriteV1AppBoot } from './v1-appboot';
+import {
+  copySync,
+  ensureDirSync,
+  existsSync,
+  pathExistsSync,
+  readdirSync,
+  readJSONSync,
+  writeJSONSync,
+} from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import type { TransformOptions } from '@babel/core';
@@ -35,6 +44,7 @@ import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import semver from 'semver';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import { CompatAppBuilder } from './compat-app-builder';
+import * as process from 'process';
 
 type EmberCliHTMLBarsAddon = AddonInstance & {
   htmlbarsOptions(): HTMLBarsOptions;
@@ -200,7 +210,7 @@ export default class CompatApp {
 
   private get indexTree() {
     let indexFilePath = this.legacyEmberAppInstance.options.outputPaths.app.html;
-    let index = buildFunnel(this.legacyEmberAppInstance.trees.app, {
+    let index = buildFunnel(this.legacyEmberAppInstance.trees.indexHtml || this.legacyEmberAppInstance.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,
@@ -801,6 +811,16 @@ export default class CompatApp {
     });
   }
 
+  static getCachedBuilderInstance(root: string, embroiderAppRoot: string): CompatAppBuilder {
+    const workingDir = locateEmbroiderWorkingDir(process.cwd());
+    const options = readJSONSync(join(workingDir, 'resolver.json'));
+    const legacyApp = readJSONSync(join(workingDir, 'legacy-app-info.json'));
+    legacyApp.project.configPath = () => '';
+    const compatApp = new CompatApp(legacyApp, options);
+    compatApp.config['lastConfig'] = legacyApp.environments.development;
+    return compatApp.instantiate(embroiderAppRoot, RewrittenPackageCache.shared('embroider', root), compatApp.config);
+  }
+
   private inTrees(prevStageTree: BroccoliNode) {
     let publicTree = this.publicTree;
     let configTree = this.config;
@@ -835,7 +855,7 @@ export default class CompatApp {
     }
   }
 
-  private async instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
+  private instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
     let origAppPkg = this.appPackage();
     let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
     let workingDir = locateEmbroiderWorkingDir(this.root);
@@ -861,7 +881,7 @@ export default class CompatApp {
         if (!this.active) {
           let { outputPath } = await prevStage.ready();
           let packageCache = RewrittenPackageCache.shared('embroider', this.root);
-          this.active = await this.instantiate(outputPath, packageCache, inTrees.configTree);
+          this.active = this.instantiate(outputPath, packageCache, inTrees.configTree);
           resolve({ outputPath });
         }
         await this.active.build(treePaths);

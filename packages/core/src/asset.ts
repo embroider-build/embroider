@@ -55,7 +55,6 @@ export interface EmberAsset extends BaseAsset {
   prepare(dom: JSDOM): EmberHTML;
 }
 
-
 export class BuiltEmberAsset {
   kind: 'built-ember' = 'built-ember';
   relativePath: string;
@@ -73,9 +72,9 @@ export class ConcatenatedAsset {
   kind: 'concatenated-asset' = 'concatenated-asset';
   code?: string;
   constructor(
-      public relativePath: string,
-      public sources: (OnDiskAsset | InMemoryAsset)[],
-      private resolvableExtensions: RegExp
+    public relativePath: string,
+    public sources: (OnDiskAsset | InMemoryAsset)[],
+    private resolvableExtensions: RegExp
   ) {}
   get sourcemapPath() {
     return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
@@ -98,6 +97,5 @@ export class ParsedEmberAsset {
     return this.fileAsset.mtime === other.mtime && this.fileAsset.size === other.size;
   }
 }
-
 
 export type Asset = OnDiskAsset | InMemoryAsset | EmberAsset;

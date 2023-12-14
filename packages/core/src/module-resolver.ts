@@ -1,7 +1,8 @@
 import {
   emberVirtualPackages,
   emberVirtualPeerDeps,
-  extensionsPattern, locateEmbroiderWorkingDir,
+  extensionsPattern,
+  locateEmbroiderWorkingDir,
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
@@ -177,12 +178,12 @@ export class Resolver {
 
     request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
+    request = this.handleVirtualAssets(request);
     request = this.handleImplicitModules(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
     request = this.preHandleExternal(request);
-    request = this.handleVirtualAssets(request);
 
     // this should probably stay the last step in beforeResolve, because it can
     // rehome requests to their un-rewritten locations, and for the most part we
@@ -398,6 +399,9 @@ export class Resolver {
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (pkg && request.fromFile.startsWith('@embroider-assets:')) {
+      pkg = this.packageCache.maybeMoved(pkg);
+    }
     if (!pkg?.isV2Ember()) {
       throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
     }
@@ -957,17 +961,24 @@ export class Resolver {
     if (request.isVirtual || request.isNotFound) {
       return request;
     }
+    if (request.fromFile.startsWith('@embroider-assets:')) {
+      request = request.rehome(
+        resolve(this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root, 'package.json')
+      );
+    }
     const info = readJSONSync(join(locateEmbroiderWorkingDir(this.options.appRoot), 'asset-info.json')) as {
-      assets:{
-        relativePath: string
-      }[]
+      assets: {
+        relativePath: string;
+      }[];
     };
     const assets = info.assets;
-    if (dirname(request.fromFile) === this.options.appRoot || request.fromFile === '<stdin>' || request.fromFile.startsWith('@embroider-assets:')) {
-      const asset = assets.find((a) => request.specifier === join(this.options.appRoot, a.relativePath) || request.specifier === '/' + a.relativePath);
+    if (request.specifier.startsWith('/')) {
+      const specifier = request.specifier.split('?')[0];
+      const asset = assets.find(
+        a => specifier === join(this.options.appRoot, a.relativePath) || specifier === '/' + a.relativePath
+      );
       if (asset) {
-        let specifier = request.specifier;
-        return request.virtualize(`@embroider-assets:${specifier}`);
+        return request.virtualize(`@embroider-assets:${request.specifier}`);
       }
     }
     return request;
@@ -1068,7 +1079,9 @@ export class Resolver {
     if (movedPkg !== pkg) {
       let originalFromFile = request.meta?.originalFromFile;
       if (typeof originalFromFile !== 'string') {
-        throw new Error(`bug: embroider resolver's meta is not propagating`);
+        throw new Error(
+          `bug: embroider resolver's meta is not propagating for ${request.specifier} from ${request.fromFile}`
+        );
       }
       request = request.rehome(originalFromFile);
       pkg = movedPkg;

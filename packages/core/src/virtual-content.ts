@@ -2,7 +2,9 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
-import { BuiltEmberAsset, ConcatenatedAsset, InMemoryAsset } from './asset';
+import type { BuiltEmberAsset, ConcatenatedAsset, InMemoryAsset, OnDiskAsset } from './asset';
+import { existsSync, readFileSync } from 'fs';
+import { locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -13,8 +15,12 @@ const assetPrefix = '@embroider-assets:';
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
 export function virtualContent(filename: string, resolver: Resolver): string {
-  const CompatApp = require('../../compat/src/compat-app').default;
-  const compatAppBuilder = CompatApp.getCachedBuilderInstance(resolver.options.appRoot);
+  const workingDir = locateEmbroiderWorkingDir(resolver.options.appRoot);
+  const rewrittenApp = join(workingDir, 'rewritten-app');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const CompatApp = require('@embroider/compat/src/compat-app') // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    .default as typeof import('@embroider/compat/src/compat-app').default;
+  const compatAppBuilder = CompatApp.getCachedBuilderInstance(resolver.options.appRoot, rewrittenApp);
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
     return renderCJSExternalShim(cjsExtern);
@@ -51,11 +57,26 @@ export function virtualContent(filename: string, resolver: Resolver): string {
       return compatAppBuilder.rebuildHtml(resolver.options.appRoot, resolver.options.environment!, 'app');
     }
     if (asset.moduleName === join(resolver.options.appRoot, 'tests', 'index.html')) {
-      return compatAppBuilder.rebuildHtml(join(resolver.options.appRoot, 'tests'), resolver.options.environment!, 'test');
+      return compatAppBuilder.rebuildHtml(
+        join(resolver.options.appRoot, 'tests'),
+        resolver.options.environment!,
+        'test'
+      );
     }
     const finalAssets = compatAppBuilder.buildCachedAssets(resolver.options.environment!);
-    const found = finalAssets.find(a => '/' + a.relativePath === asset!.moduleName.replace(resolver.options.appRoot, '') || a.relativePath === asset!.moduleName);
-    return (found as (InMemoryAsset|BuiltEmberAsset)).source?.toString() || (found as ConcatenatedAsset).code!
+    const found = finalAssets.find(
+      a =>
+        '/' + a.relativePath === asset!.moduleName.replace(resolver.options.appRoot, '') ||
+        a.relativePath === asset!.moduleName
+    );
+    const source = (found as InMemoryAsset | BuiltEmberAsset).source?.toString() || (found as ConcatenatedAsset).code!;
+    if (source) {
+      return source;
+    }
+    const onDisk = found as OnDiskAsset;
+    if (onDisk.sourcePath && existsSync(onDisk.sourcePath)) {
+      return readFileSync(onDisk.sourcePath).toString();
+    }
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
@@ -132,7 +153,7 @@ function decodeVirtualExternalCJSModule(filename: string) {
 
 export function decodeVirtualAsset(filename: string) {
   if (filename.startsWith(assetPrefix)) {
-    return { moduleName: filename.slice(assetPrefix.length) };
+    return { moduleName: filename.slice(assetPrefix.length).split('?')[0] };
   }
 }
 

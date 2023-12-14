@@ -49,6 +49,7 @@
   "devDependencies": {
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
+    "@embroider/compat": "workspace:*",
     "@glimmer/syntax": "^0.84.2",
     "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",

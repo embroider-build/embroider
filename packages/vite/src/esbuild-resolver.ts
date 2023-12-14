@@ -18,6 +18,8 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let macrosConfig: PluginItem | undefined;
   let preprocessor = new Preprocessor();
+  let workingDir = locateEmbroiderWorkingDir(root);
+  let rewrittenApp = join(workingDir, 'rewritten-app');
 
   return {
     name: 'embroider-esbuild-resolver',
@@ -28,6 +30,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           return null;
         }
         let resolution = await resolverLoader.resolver.resolve(request, defaultResolve(build, kind));
+
         switch (resolution.type) {
           case 'found':
             return resolution.result;
@@ -41,14 +44,12 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
         let src = virtualContent(path, resolverLoader.resolver);
         if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
+          macrosConfig = readJSONSync(resolve(workingDir, 'rewritten-app', 'macros-config.json')) as PluginItem;
         }
-        return { contents: runMacros(src, path, macrosConfig) };
+        return { contents: runMacros(src, path, macrosConfig), resolveDir: rewrittenApp };
       });
 
-      build.onLoad({ filter: /\.gjs$/ }, async ({ path: filename }) => {
+      build.onLoad({ filter: /\.g[tj]s$/ }, async ({ path: filename }) => {
         const code = readFileSync(filename, 'utf8');
 
         const result = transform(preprocessor.process(code, filename), {
@@ -87,9 +88,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           src = readFileSync(path, 'utf8');
         }
         if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
+          macrosConfig = readJSONSync(resolve(workingDir, 'rewritten-app', 'macros-config.json')) as PluginItem;
         }
         return { contents: runMacros(src, path, macrosConfig) };
       });

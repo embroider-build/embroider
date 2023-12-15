@@ -200,7 +200,7 @@ export default class CompatApp {
 
   private get indexTree() {
     let indexFilePath = this.legacyEmberAppInstance.options.outputPaths.app.html;
-    let index = buildFunnel(this.legacyEmberAppInstance.trees.app, {
+    let index = buildFunnel(this.legacyEmberAppInstance.trees.indexHtml || this.legacyEmberAppInstance.trees.app, {
       allowEmpty: true,
       include: [`index.html`],
       getDestinationPath: () => indexFilePath,

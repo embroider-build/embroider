@@ -6,7 +6,12 @@
     "**/test-packages/*/tmp/**": true,
     "**/tmp/**": true
   },
-  "eslint.validate": ["javascript", "typescript"],
+  "eslint.validate": [
+    "javascript",
+    "typescript",
+    "glimmer-ts",
+    "glimmer-js"
+  ],
   "editor.formatOnSave": true,
   "typescript.tsdk": "node_modules/typescript/lib"
 }

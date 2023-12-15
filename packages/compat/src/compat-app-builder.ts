@@ -1453,8 +1453,9 @@ w._embroiderEngineBundles_ = [
 {{/if}}
 
 {{#if autoRun ~}}
+import App from "{{js-string-escape mainModule}}";
 if (!runningTests) {
-  i("{{js-string-escape mainModule}}").default.create({{json-stringify appConfig}});
+  App.create({{json-stringify appConfig}});
 }
 {{else  if appBoot ~}}
   {{ appBoot }}

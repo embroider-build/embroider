@@ -4,7 +4,6 @@ import {
   hbs,
   scripts,
   templateTag,
-  addons,
   optimizeDeps,
 } from "@embroider/vite";
 import { resolve } from "path";
@@ -32,6 +31,8 @@ export default defineConfig({
   ],
   optimizeDeps: optimizeDeps(),
   server: {
+    hmr: false,
+    port: 4200,
     watch: {
       ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
     },

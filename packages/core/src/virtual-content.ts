@@ -318,7 +318,8 @@ const implicitModulesTemplate = compile(`
   import * as own{{index}} from "{{js-string-escape module.buildtime}}";
 {{/each}}
 
-export default Object.assign({},
+export default Object.assign(
+  {},
   {{#each dependencyModules as |module index|}}
     dep{{index}},
   {{/each}}
@@ -331,28 +332,34 @@ export default Object.assign({},
 `) as (params: { dependencyModules: string[]; ownModules: { runtime: string; buildtime: string }[] }) => string;
 
 const amdModulesTemplate = compile(`
-let d = window.define;
 import { getGlobalConfig, importSync as i, macroCondition } from '@embroider/macros';
 
-{{#each amdModules as |amdModule|}}
-d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
-{{/each}}
+{{#each amdModules as |amdModule index|~}}
+  import * as amdMod{{index}} from "{{js-string-escape amdModule.buildtime}}";
+{{~/each}}
 
-{{#if fastbootOnlyAmdModules}}
-if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-  let fastbootModules = {};
-
-  {{#each fastbootOnlyAmdModules as |amdModule| ~}}
-    fastbootModules["{{js-string-escape amdModule.runtime}}"] = import("{{js-string-escape amdModule.buildtime}}");
+{{#if fastbootOnlyAmdModules~}}
+  {{#each fastbootOnlyAmdModules as |fastbootOnlyAmdModule| ~}}
+    import * as fastbootOnlyAmdMod{{index}} from "{{js-string-escape fastbootOnlyAmdModule.buildtime}}";
   {{/each}}
+{{~/if}}
 
-  const resolvedValues = await Promise.all(Object.values(fastbootModules));
+const modules = {
+  {{#each amdModules as |amdModule index| ~}}
+    "{{js-string-escape amdModule.runtime}}": amdMod{{index}},
+  {{~/each}}
+};
 
-  Object.keys(fastbootModules).forEach((k, i) => {
-    d(k, function(){ return resolvedValues[i];});
-  })
-}
-{{/if}}
+
+{{#if fastbootOnlyAmdModules~}}
+  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
+    {{#each fastbootOnlyAmdModules as |fastbootOnlyamdModule| ~}}
+      modules.["{{js-string-escape fastbootOnlyAmdModule.runtime}}"] = fastbootOnlyAmdModule{{index}};
+    {{~/each}}
+  }
+{{~/if}}
+
+export default modules;
 `) as (params: { amdModules: AmdModule[]; fastbootOnlyAmdModules: AmdModule[] }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.

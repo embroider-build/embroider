@@ -1331,7 +1331,6 @@ export class CompatAppBuilder {
       styles,
       // this is a backward-compatibility feature: addons can force inclusion of modules.
       defineModulesFrom: './-embroider-implicit-modules.js',
-      defineAmdModulesFrom: './-embroider-amd-modules.js',
     };
     if (entryParams) {
       Object.assign(params, entryParams);

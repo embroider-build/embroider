@@ -14,8 +14,18 @@ import { dirname, resolve, join } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
+const cwd = process.cwd();
+const embroiderDir = join(cwd, 'node_modules', '.embroider');
+const rewrittenApp = join(embroiderDir, 'rewritten-app');
+
 export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
-  let resolverLoader = new ResolverLoader(process.cwd());
+  let resolverLoader = new ResolverLoader(cwd);
+  resolverLoader.resolver.options.engines.forEach(engine => {
+    engine.root = engine.root.replace(rewrittenApp, cwd);
+    engine.activeAddons.forEach(addon => {
+      addon.canResolveFromFile = addon.canResolveFromFile.replace(rewrittenApp, cwd);
+    });
+  });
   let macrosConfig: PluginItem | undefined;
   let preprocessor = new Preprocessor();
 
@@ -27,6 +37,9 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         if (!request) {
           return null;
         }
+        request = request.withMeta({
+          useRootApp: true,
+        });
         let resolution = await resolverLoader.resolver.resolve(request, defaultResolve(build, kind));
         switch (resolution.type) {
           case 'found':
@@ -45,7 +58,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
             resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
           ) as PluginItem;
         }
-        return { contents: runMacros(src, path, macrosConfig) };
+        return { contents: runMacros(src, path, macrosConfig), resolveDir: dirname(path) };
       });
 
       build.onLoad({ filter: /\.g[jt]s$/ }, async ({ path: filename }) => {
@@ -91,7 +104,8 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
             resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
           ) as PluginItem;
         }
-        return { contents: runMacros(src, path, macrosConfig) };
+        const resolveDir = dirname(path).replace(rewrittenApp, cwd);
+        return { contents: runMacros(src, path, macrosConfig), resolveDir };
       });
     },
   };
@@ -136,7 +150,21 @@ function defaultResolve(
         },
       },
     });
-    if (result.errors.length > 0) {
+
+    if (result?.external) {
+      try {
+        const resolved = require.resolve(request.specifier, { paths: [request.fromFile] });
+        if (resolved) {
+          result.namespace = 'file';
+          result.path = resolved;
+          result.external = false;
+        }
+      } catch (e) {
+        //
+      }
+    }
+
+    if (result.errors.length > 0 || result?.external) {
       return { type: 'not_found', err: result };
     } else {
       return { type: 'found', result };

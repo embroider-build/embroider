@@ -22,7 +22,7 @@
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
     "start:prebuild": "ember build --watch",
-    "start:dev": "vite",
+    "start:dev": "vite --force",
     "start:test": "vite --open /tests/",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
     "test:ember": "node ./scripts/run-tests.mjs"

@@ -8,6 +8,7 @@ export interface AppMeta {
 
   main?: string;
   'auto-upgraded'?: true;
+  'is-real-app'?: true;
   assets: Filename[];
   babel: {
     filename: string;

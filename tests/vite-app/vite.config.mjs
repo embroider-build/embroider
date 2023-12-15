@@ -5,6 +5,7 @@ import {
   scripts,
   templateTag,
   optimizeDeps,
+  assets,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -12,7 +13,7 @@ import { babel } from "@rollup/plugin-babel";
 const root = "node_modules/.embroider/rewritten-app";
 
 export default defineConfig({
-  root,
+  root: ".",
   // esbuild in vite does not support decorators
   esbuild: false,
   plugins: [
@@ -20,6 +21,7 @@ export default defineConfig({
     templateTag(),
     scripts(),
     resolver(),
+    assets(),
 
     babel({
       babelHelpers: "runtime",
@@ -31,6 +33,9 @@ export default defineConfig({
       extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
+  resolve: {
+    extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
+  },
   optimizeDeps: optimizeDeps(),
   server: {
     port: 4200,
@@ -41,8 +46,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(root, "index.html"),
-        tests: resolve(root, "tests/index.html"),
+        main: resolve(".", "index.html"),
+        tests: resolve(".", "tests/index.html"),
       },
     },
   },

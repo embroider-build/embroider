@@ -15,9 +15,19 @@ export function templateTag(): Plugin {
     name: 'embroider-template-tag',
     enforce: 'pre',
 
-    async resolveId(id: string, importer: string | undefined) {
+    async resolveId(id: string, importer: string | undefined, options) {
+      if (options.custom?.onlyResolver || options.custom?.embroider?.enableCustomResolver === false) {
+        return null;
+      }
       let resolution = await this.resolve(id, importer, {
         skipSelf: true,
+        custom: {
+          ...options.custom,
+          onlyResolver: true,
+          embroider: {
+            meta: options.custom?.embroider?.meta,
+          },
+        },
       });
       if (resolution) {
         return resolution;
@@ -26,8 +36,11 @@ export function templateTag(): Plugin {
         resolution = await this.resolve(candidate, importer, {
           skipSelf: true,
           custom: {
+            ...options.custom,
+            onlyResolver: true,
             embroider: {
               enableCustomResolver: false,
+              meta: options.custom?.embroider?.meta,
             },
           },
         });

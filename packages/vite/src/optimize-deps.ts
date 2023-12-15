@@ -11,6 +11,7 @@ export function optimizeDeps(): OptimizeDeps {
     extensions: ['.hbs', '.gjs', '.gts'],
     esbuildOptions: {
       plugins: [esBuildResolver()],
+      resolveExtensions: ['.js', '.ts', '.gjs', '.gts'],
     },
   };
 }

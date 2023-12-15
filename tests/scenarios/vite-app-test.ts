@@ -114,9 +114,7 @@ viteAppScenarios
         assert.ok(result.output.includes('should have Yay for gjs!'), 'should have tested');
         assert.ok(result.output.includes(' -- from gjs test file'), 'should have tested with gjs file');
         assert.ok(result.output.includes(' -- from gts test file'), 'should have tested with gts file');
-        const depCache = readdirSync(
-          join(app.dir, 'node_modules', '.embroider', 'rewritten-app', 'node_modules', '.vite', 'deps')
-        );
+        const depCache = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps'));
         assert.ok(depCache.length > 0, 'should have created cached deps');
       });
     });

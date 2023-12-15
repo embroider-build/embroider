@@ -2,10 +2,11 @@ import {
   emberVirtualPackages,
   emberVirtualPeerDeps,
   extensionsPattern,
+  locateEmbroiderWorkingDir,
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve, posix, join, relative } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -172,6 +173,7 @@ export class Resolver {
       return this.external('early require', request, request.specifier);
     }
 
+    request = this.handleRewrittenApp(request);
     request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
@@ -184,6 +186,7 @@ export class Resolver {
     // rehome requests to their un-rewritten locations, and for the most part we
     // want to be dealing with the rewritten packages.
     request = this.handleRewrittenPackages(request);
+    request = this.handleRealApp(request);
     return request;
   }
 
@@ -546,21 +549,19 @@ export class Resolver {
   }
 
   private *componentJSCandidates(inPackageName: string) {
-    const extensions = ['.ts', '.gjs', '.gts'];
-    yield { prefix: '/components/', suffix: '' };
-    yield { prefix: '/components/', suffix: '/component' };
-
-    for (const ext of extensions) {
-      yield { prefix: '/components/', suffix: ext };
-      yield { prefix: '/components/', suffix: `/index${ext}` };
-      yield { prefix: '/components/', suffix: `/component${ext}` };
-    }
-
+    const suffixes = ['', '/component', '.ts', '.gjs', '.gts'];
+    const prefixes = ['/components/', '/app/components/'];
     let pods = this.podPrefix(inPackageName);
     if (pods) {
-      yield { prefix: `${pods}/components/`, suffix: '/component' };
-      for (const ext of extensions) {
-        yield { prefix: `${pods}/components/`, suffix: `/component${ext}` };
+      prefixes.push(`${pods}/components/`);
+      prefixes.push(`app/${pods}/components/`);
+    }
+
+    for (const prefix of prefixes) {
+      for (const suffix of suffixes) {
+        yield { prefix, suffix };
+        yield { prefix, suffix: `/index${suffix}` };
+        yield { prefix, suffix: `/component${suffix}` };
       }
     }
   }
@@ -768,6 +769,70 @@ export class Resolver {
       }
     }
 
+    return request;
+  }
+
+  private handleRewrittenApp<R extends ModuleRequest>(request: R): R {
+    if (!request.meta?.useRootApp) return request;
+    const cwd = process.cwd();
+    const embroiderDir = locateEmbroiderWorkingDir(cwd);
+    const rewrittenApp = resolve(embroiderDir, 'rewritten-app');
+    if (
+      !request.specifier.startsWith('.') &&
+      !request.specifier.startsWith('/assets') &&
+      !request.fromFile.startsWith(rewrittenApp)
+    ) {
+      return request;
+    }
+    if (!request.specifier.startsWith('..') && request.fromFile.startsWith(rewrittenApp)) {
+      request = request.rehome(request.fromFile.replace(rewrittenApp, process.cwd()));
+    }
+    if (request.specifier.startsWith('/assets/')) {
+      request = request.alias('./' + relative(cwd, join(rewrittenApp, request.specifier)));
+    }
+    return request;
+  }
+
+  private handleRealApp<R extends ModuleRequest>(request: R): R {
+    if (!request.meta?.useRootApp) return request;
+    const cwd = process.cwd();
+    const embroiderDir = locateEmbroiderWorkingDir(cwd);
+    const rewrittenApp = resolve(embroiderDir, 'rewritten-app');
+    if (
+      !request.specifier.startsWith('.') &&
+      !request.specifier.startsWith('/config') &&
+      !request.specifier.startsWith('/testem')
+    ) {
+      return request;
+    }
+    if (['./config/environment.js', './config/environment', '/config/environment'].includes(request.specifier)) {
+      request = request.alias(join(rewrittenApp, './config/environment.js'));
+    }
+    if (['/testem.js'].includes(request.specifier)) {
+      request = request.alias(join(rewrittenApp, './testem.js'));
+    }
+    const appRootPkg = this.packageCache.ownerOfFile(this.options.appRoot);
+    if (request.fromFile.includes('rewritten-app') && appRootPkg?.isV2App() && appRootPkg?.meta['is-real-app']) {
+      let home = resolve(appRootPkg?.root, 'app');
+      if (request.specifier.startsWith('./tests')) {
+        home = appRootPkg.root;
+      }
+      return logTransition('handleRealApp', request, request.rehome(request.fromFile.replace(rewrittenApp, home)));
+    }
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (pkg?.isV2App() && pkg?.meta['is-real-app']) {
+      if (request.fromFile !== resolve(pkg?.root, 'package.json')) {
+        return request;
+      }
+      if (request.specifier.startsWith('./app/') && request.fromFile === resolve(pkg?.root, 'package.json')) {
+        return request;
+      }
+      let home = resolve(pkg?.root, 'app', 'package.json');
+      if (request.specifier.startsWith('./tests') && appRootPkg) {
+        home = resolve(pkg?.root, 'package.json');
+      }
+      return logTransition('handleRealApp', request, request.rehome(home));
+    }
     return request;
   }
 
@@ -1051,11 +1116,15 @@ export class Resolver {
       return logTransition('no identifiable owningPackage', request);
     }
 
+    if (pkg.isV2App() && pkg.meta['is-real-app']) {
+      (request as any).fromFile = resolve(pkg.root, 'package.json');
+    }
+
     // meta.originalFromFile gets set when we want to try to rehome a request
     // but then come back to the original location here in the fallback when the
     // rehomed request fails
     let movedPkg = this.packageCache.maybeMoved(pkg);
-    if (movedPkg !== pkg) {
+    if (movedPkg !== pkg && !pkg.isV2App()) {
       let originalFromFile = request.meta?.originalFromFile;
       if (typeof originalFromFile !== 'string') {
         throw new Error(`bug: embroider resolver's meta is not propagating`);

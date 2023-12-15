@@ -327,6 +327,7 @@ export class CompatAppBuilder {
     engine: AppFiles,
     emberENV?: EmberENV
   ): (OnDiskAsset | InMemoryAsset)[] {
+    const appName = this.modulePrefix();
     let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
       (sourcePath: string): OnDiskAsset => {
         let stats = statSync(sourcePath);
@@ -350,7 +351,28 @@ export class CompatAppBuilder {
       result.unshift({
         kind: 'in-memory',
         relativePath: '_ember_env_.js',
-        source: `window.EmberENV={ ...(window.EmberENV || {}), ...${JSON.stringify(emberENV, null, 2)} };`,
+        source: `
+        (function() {
+          function merge(e, t) {
+              for (var r in t)
+                  e[r] = t[r]
+              return e
+          }
+          var metaName = '${appName}' + '/config/environment';
+          var metaTag = typeof document !== 'undefined' && document.querySelector('meta[name="' + metaName + '"]');
+          if (metaTag) {
+            try {
+              var rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
+              var config = JSON.parse(decodeURIComponent(rawConfig));
+              window.EmberENV = merge(window.EmberENV || {}, config.EmberENV);
+            } catch (e) {
+              console.error('Could not read config from meta tag with name "${appName}"');
+            }
+          } else {
+            window.EmberENV= merge(window.EmberENV || {}, ${JSON.stringify(emberENV, null, 2)});
+          }
+        })();
+        `,
       });
 
       result.push({
@@ -366,6 +388,10 @@ export class CompatAppBuilder {
         kind: 'in-memory',
         relativePath: '_testing_suffix_.js',
         source: `
+        import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
+        let w = window;
+        let d = w.define;
+        d("ember-testing", function() { return i("ember-testing") });
         var runningTests=true;
         if (typeof Testem !== 'undefined' && (typeof QUnit !== 'undefined' || typeof Mocha !== 'undefined')) {
           Testem.hookIntoTestFramework();
@@ -554,7 +580,7 @@ export class CompatAppBuilder {
 
     let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared, parentEngine);
     if (implicitTestScriptsAsset) {
-      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath);
+      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath, { type: 'module' });
     }
 
     let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);
@@ -1293,7 +1319,7 @@ export class CompatAppBuilder {
       eagerModules,
       styles,
       // this is a backward-compatibility feature: addons can force inclusion of modules.
-      defineModulesFrom: './-embroider-implicit-modules.js',
+      defineModulesFrom: '/assets/-embroider-implicit-modules.js',
     };
     if (entryParams) {
       Object.assign(params, entryParams);
@@ -1350,10 +1376,7 @@ export class CompatAppBuilder {
     // script tag in the tests HTML, but that isn't as easy for final stage
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
-    let eagerModules: string[] = [
-      'ember-testing',
-      explicitRelative(dirname(myName), this.topAppJSAsset(appFiles, prepared).relativePath),
-    ];
+    let eagerModules: string[] = ['ember-testing', '/' + this.topAppJSAsset(appFiles, prepared).relativePath];
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
 
@@ -1366,7 +1389,7 @@ export class CompatAppBuilder {
       eagerModules,
       testSuffix: true,
       // this is a backward-compatibility feature: addons can force inclusion of test support modules.
-      defineModulesFrom: './-embroider-implicit-test-modules.js',
+      defineModulesFrom: '/assets/-embroider-implicit-test-modules.js',
     });
 
     asset = {
@@ -1478,7 +1501,7 @@ if (!runningTests) {
 
 
   {{!- this is the traditional tests-suffix.js -}}
-  i('../tests/test-helper');
+  i('/tests/test-helper');
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {

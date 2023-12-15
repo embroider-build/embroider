@@ -14,9 +14,19 @@ export function hbs(): Plugin {
   return {
     name: 'rollup-hbs-plugin',
     enforce: 'pre',
-    async resolveId(source: string, importer: string | undefined) {
+    async resolveId(source: string, importer: string | undefined, options) {
+      if (options.custom?.onlyResolver || options.custom?.embroider?.enableCustomResolver === false) {
+        return null;
+      }
       let resolution = await this.resolve(source, importer, {
         skipSelf: true,
+        custom: {
+          ...options.custom,
+          onlyResolver: true,
+          embroider: {
+            meta: options.custom?.embroider?.meta,
+          },
+        },
       });
 
       if (!resolution) {
@@ -79,6 +89,7 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
   let templateResolution = await context.resolve(correspondingTemplate(source), importer, {
     skipSelf: true,
     custom: {
+      onlyResolver: true,
       embroider: {
         // we don't want to recurse into the whole embroider compatbility
         // resolver here. It has presumably already steered our request to the

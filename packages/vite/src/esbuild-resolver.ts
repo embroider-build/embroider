@@ -1,22 +1,15 @@
 import type { Plugin as EsBuildPlugin, ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
-import { type PluginItem, transform } from '@babel/core';
-import {
-  type Resolution,
-  type ResolverFunction,
-  ResolverLoader,
-  virtualContent,
-  locateEmbroiderWorkingDir,
-} from '@embroider/core';
-import { readFileSync, readJSONSync } from 'fs-extra';
+import { transform } from '@babel/core';
+import { type Resolution, type ResolverFunction, ResolverLoader, virtualContent } from '@embroider/core';
+import { readFileSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, resolve, join } from 'path';
+import { dirname, join } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
 export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
-  let resolverLoader = new ResolverLoader(process.cwd());
-  let macrosConfig: PluginItem | undefined;
+  let resolverLoader = new ResolverLoader(root);
   let preprocessor = new Preprocessor();
 
   return {
@@ -40,19 +33,28 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
 
       build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
         let src = virtualContent(path, resolverLoader.resolver);
-        if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
+
+        const result = transform(src, {
+          configFile: join(root, 'babel.config.js'),
+          filename: path,
+        });
+
+        if (!result || !result.code) {
+          throw new Error(`Failed to load file ${path} in esbuild-hbs-loader`);
         }
-        return { contents: runMacros(src, path, macrosConfig) };
+
+        const contents = result.code;
+
+        return { contents };
       });
 
       build.onLoad({ filter: /\.gjs$/ }, async ({ path: filename }) => {
         const code = readFileSync(filename, 'utf8');
 
+        debugger;
+
         const result = transform(preprocessor.process(code, filename), {
-          configFile: join(process.cwd(), 'babel.config.js'),
+          configFile: join(root, 'babel.config.js'),
           filename,
         });
 
@@ -68,7 +70,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       build.onLoad({ filter: /\.hbs$/ }, async ({ path: filename }) => {
         const code = readFileSync(filename, 'utf8');
 
-        const result = transform(hbsToJS(code), { configFile: join(process.cwd(), 'babel.config.js'), filename });
+        const result = transform(hbsToJS(code), { configFile: join(root, 'babel.config.js'), filename });
 
         if (!result || !result.code) {
           throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
@@ -86,22 +88,22 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         } else {
           src = readFileSync(path, 'utf8');
         }
-        if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
+
+        const result = transform(src, {
+          configFile: join(root, 'babel.config.js'),
+          filename: path,
+        });
+
+        if (!result || !result.code) {
+          throw new Error(`Failed to load file ${path} in esbuild-hbs-loader`);
         }
-        return { contents: runMacros(src, path, macrosConfig) };
+
+        const contents = result.code;
+
+        return { contents };
       });
     },
   };
-}
-
-function runMacros(src: string, filename: string, macrosConfig: PluginItem): string {
-  return transform(src, {
-    filename,
-    plugins: [macrosConfig],
-  })!.code!;
 }
 
 function defaultResolve(

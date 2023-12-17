@@ -11,7 +11,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build:ember": "ember b",
+    "prebuild:ember": "ember b",
     "build": "vite build",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",
     "lint:css": "stylelint \"**/*.css\"",
@@ -22,7 +22,7 @@
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
     "start:prebuild": "ember build --watch",
-    "start:dev": "vite",
+    "start:dev": "vite  --force",
     "start:test": "vite --open /tests/",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
     "test:ember": "node ./node_modules/@embroider/vite/src/bin/run-tests.mjs"

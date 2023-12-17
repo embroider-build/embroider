@@ -22,15 +22,13 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   return {
     name: 'embroider-esbuild-resolver',
     setup(build) {
-      build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        if (importer.includes('rewritten-app')) {
-          importer = importer.split(`rewritten-app${sep}`)[1];
-        }
+      build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind}) => {
         let request = EsBuildModuleRequest.from(path, importer, pluginData);
         if (!request) {
           return null;
         }
         let resolution = await resolverLoader.resolver.resolve(request, defaultResolve(build, kind));
+
         switch (resolution.type) {
           case 'found':
             return resolution.result;
@@ -48,7 +46,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
             resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
           ) as PluginItem;
         }
-        return { contents: runMacros(src, path, macrosConfig) };
+        return { contents: runMacros(src, path, macrosConfig), resolveDir: '.' };
       });
 
       build.onLoad({ filter: /\.gjs$/ }, async ({ path: filename }) => {

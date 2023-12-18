@@ -49,7 +49,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         return { contents: runMacros(src, path, macrosConfig), resolveDir: '.' };
       });
 
-      build.onLoad({ filter: /\.gjs$/ }, async ({ path: filename }) => {
+      build.onLoad({ filter: /\.g[tj]s$/ }, async ({ path: filename }) => {
         const code = readFileSync(filename, 'utf8');
 
         const result = transform(preprocessor.process(code, filename), {

@@ -22,7 +22,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   return {
     name: 'embroider-esbuild-resolver',
     setup(build) {
-      build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind}) => {
+      build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
         let request = EsBuildModuleRequest.from(path, importer, pluginData);
         if (!request) {
           return null;

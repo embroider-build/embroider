@@ -10,7 +10,7 @@ import {
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, resolve, join, sep } from 'path';
+import { dirname, resolve, join } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 

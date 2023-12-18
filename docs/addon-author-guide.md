@@ -1,6 +1,6 @@
 # Addon Author Guide
 
-This document lays out the recommended best practices for addon authors who want their addons to work in apps built with Embroider.
+This document lays out the recommended best practices for addon authors who want their addons to work in apps built with Embroider. For a step by step guide on how to convert an addon from v1 to v2, see [Guide: Porting an Addon to V2](https://github.com/embroider-build/embroider/blob/main/docs/porting-addons-to-v2.md)
 
 ## Give me the tl;dr: what should I do?
 

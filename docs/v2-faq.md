@@ -197,4 +197,4 @@ When using `package.json#exports` make sure that:
 - the modules that `addon.appReexports(...)` exposes must have overlap with the `package.json#exports` so that the app-tree merging may import from the addon
 
 ### How can I test an addon branch or fork that is not yet published to NPM?
-Because a V2 addon library needs to be built, you can't easily point package.json files at the git repo for easy cross-repo testing. There are [workflows you can use](https://github.com/embroider-build/addon-blueprint/blob/main/files/.github/workflows/push-dist.yml) to bring back that capability.
+Because we use features/syntax that require compilation, you can't easily point package.json files at the git repo for easy cross-repo testing. There are [workflows you can use](https://github.com/embroider-build/addon-blueprint/blob/main/files/.github/workflows/push-dist.yml) to bring back that capability.

@@ -264,7 +264,7 @@ module.exports = addonV1Shim(__dirname);
 ## Part 5: Testing your addon
 In a separate shell, you should be able to go into the `test-app` directory and run `yarn start` or `yarn test` and see that your tests are passing.
 
-Note that v2 addon needs to be built, so you can't easily point package.json files at the git repo of your addon for easy cross-repo testing before it is published to NPM. There are [workflows you can use](https://github.com/embroider-build/addon-blueprint/blob/main/files/.github/workflows/push-dist.yml) to bring back that capability.
+Note that we use features/syntax that require compilation, so you can't easily point package.json files at the git repo of your addon for easy cross-repo testing before it is published to NPM. There are [workflows you can use](https://github.com/embroider-build/addon-blueprint/blob/main/files/.github/workflows/push-dist.yml) to bring back that capability.
 
 ## Part 6: Publishing
 When all tests are passing, you have a fully-working V2 addon and you're ready to release it. To publish, you will run `npm publish` in the `addon` directory.

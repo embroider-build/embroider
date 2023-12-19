@@ -23,13 +23,17 @@ export class Addon {
   // package.json metadata to list them all.
   appReexports(
     patterns: string[],
-    opts: { mapFilename?: (fileName: string) => string } = {}
+    opts: {
+      mapFilename?: (fileName: string) => string;
+      exports?: (filename: string) => string[] | string | undefined;
+    } = {}
   ): Plugin {
     return appReexports({
       from: this.#srcDir,
       to: this.#destDir,
       include: patterns,
       mapFilename: opts.mapFilename,
+      exports: opts.exports,
     });
   }
 

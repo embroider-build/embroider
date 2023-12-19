@@ -14,7 +14,10 @@ export function hbs(): Plugin {
   return {
     name: 'rollup-hbs-plugin',
     enforce: 'pre',
-    async resolveId(source: string, importer: string | undefined) {
+    async resolveId(source: string, importer: string | undefined, options) {
+      if (options.custom?.embroider?.isExtensionSearch) {
+        return null;
+      }
       let resolution = await this.resolve(source, importer, {
         skipSelf: true,
       });
@@ -89,6 +92,7 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
         // Currently this guard is only actually exercised in rollup, not in
         // vite, due to https://github.com/vitejs/vite/issues/13852
         enableCustomResolver: false,
+        isExtensionSearch: true,
       },
     },
   });

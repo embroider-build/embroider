@@ -55,7 +55,7 @@ export function resolver(): Plugin {
       if (id.startsWith(virtualPrefix)) {
         let { src, watches } = virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
         virtualDeps.set(id, watches);
-        server.watcher.add(watches);
+        server?.watcher.add(watches);
         return src;
       }
     },

@@ -112,5 +112,16 @@ viteAppScenarios
         const depCache = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps'));
         assert.ok(depCache.length > 0, 'should have created cached deps');
       });
+
+      test(`pnpm build`, async function (assert) {
+        let result = await app.execute('pnpm build');
+        assert.equal(result.exitCode, 0, result.output);
+        const distFiles = readdirSync(join(app.dir, 'dist'));
+        assert.ok(distFiles.length > 1, 'should have created dist folder');
+        assert.ok(distFiles.includes('assets'), 'should have created assets folder');
+
+        const assetFiles = readdirSync(join(app.dir, 'dist', 'assets'));
+        assert.ok(assetFiles.length > 1, 'should have created asset files');
+      });
     });
   });

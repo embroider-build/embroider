@@ -51,17 +51,6 @@ export function assets(): Plugin {
     async buildStart() {
       if (mode !== 'build') return;
       const engines = resolverLoader.resolver.options.engines;
-      const pubDir = join(process.cwd(), 'public');
-      const publicAppFiles = glob.sync('**/*', {
-        cwd: pubDir,
-      });
-      for (const publicAppFile of publicAppFiles) {
-        this.emitFile({
-          type: 'asset',
-          source: readFileSync(join(pubDir, publicAppFile)),
-          fileName: publicAppFile,
-        });
-      }
       for (const engine of engines) {
         engine.activeAddons.forEach(addon => {
           const pkg = resolverLoader.resolver.packageCache.ownerOfFile(addon.root);

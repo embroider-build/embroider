@@ -932,6 +932,9 @@ importers:
       esbuild:
         specifier: ^0.17.19
         version: 0.17.19
+      fast-glob:
+        specifier: ^3.3.2
+        version: 3.3.2
       fs-extra:
         specifier: ^10.0.0
         version: 10.1.0

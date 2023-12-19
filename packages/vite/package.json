@@ -20,7 +20,8 @@
     "fs-extra": "^10.0.0",
     "jsdom": "^16.6.0",
     "source-map-url": "^0.4.1",
-    "terser": "^5.7.0"
+    "terser": "^5.7.0",
+    "fast-glob": "^3.3.2"
   },
   "devDependencies": {
     "@embroider/core": "workspace:^",

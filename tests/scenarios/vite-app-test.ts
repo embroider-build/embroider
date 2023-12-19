@@ -119,6 +119,8 @@ viteAppScenarios
         const distFiles = readdirSync(join(app.dir, 'dist'));
         assert.ok(distFiles.length > 1, 'should have created dist folder');
         assert.ok(distFiles.includes('assets'), 'should have created assets folder');
+        assert.ok(distFiles.includes('ember-welcome-page'), 'should have copied addon asset files');
+        assert.ok(distFiles.includes('robots.txt'), 'should have copied app assets');
 
         const assetFiles = readdirSync(join(app.dir, 'dist', 'assets'));
         assert.ok(assetFiles.length > 1, 'should have created asset files');

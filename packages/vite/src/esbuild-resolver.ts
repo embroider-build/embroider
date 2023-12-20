@@ -7,10 +7,10 @@ import {
   virtualContent,
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
-import { readFileSync, readJSONSync } from 'fs-extra';
+import { existsSync, readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, resolve, join } from 'path';
+import { dirname, resolve, join, isAbsolute } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
@@ -121,6 +121,14 @@ function defaultResolve(
         type: 'not_found',
         err: {
           errors: [{ text: `module not found ${request.specifier}` }],
+        },
+      };
+    }
+    if (isAbsolute(request.specifier) && existsSync(request.specifier)) {
+      return {
+        type: 'found',
+        result: {
+          path: request.specifier,
         },
       };
     }

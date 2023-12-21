@@ -23,6 +23,7 @@ describe('optimizeDeps', function () {
         "extensions": [
           ".hbs",
           ".gjs",
+          ".gts",
         ],
       }
     `

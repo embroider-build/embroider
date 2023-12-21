@@ -6,11 +6,11 @@ import { hbs } from 'ember-cli-htmlbars';
 module('Integration | Component | Example', (hooks) => {
   setupRenderingTest(hooks);
 
-  test('should have Yay for gjs!', async function (assert) {
+  test('should have Yay for gts!', async function (assert) {
     await render(hbs`
     <Example></Example>
     `);
     await rerender();
-    assert.dom().includesText('Yay for gjs!');
+    assert.dom().includesText('Yay for gts!');
   });
 });

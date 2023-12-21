@@ -7,10 +7,10 @@ import {
   virtualContent,
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
-import { existsSync, readFileSync, readJSONSync } from 'fs-extra';
+import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, resolve, join, isAbsolute } from 'path';
+import { dirname, resolve, join } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
@@ -125,17 +125,6 @@ function defaultResolve(
       };
     }
 
-    // if the path is already absolute and the file exists it will cause vite:depscan to mark it as external
-    // since we call it by invoking context.resolve with the resolved path
-    // see https://github.com/vitejs/vite/pull/15402
-    if (isAbsolute(request.specifier) && existsSync(request.specifier)) {
-      return {
-        type: 'found',
-        result: {
-          path: request.specifier,
-        },
-      };
-    }
     let result = await context.resolve(request.specifier, {
       importer: request.fromFile,
       resolveDir: dirname(request.fromFile),

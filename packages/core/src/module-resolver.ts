@@ -458,27 +458,27 @@ export class Resolver {
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
       let resolution = this.nodeResolve(
         `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
         target.from
       );
       if (resolution.type === 'real') {
-        hbsModule = resolution.filename;
+        hbsModule = candidateSpecifier;
         break;
       }
     }
 
     // then the various places our javascript might be.
     for (let candidate of this.componentJSCandidates(target.packageName)) {
-      let resolution = this.nodeResolve(
-        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
-        target.from
-      );
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
+
+      let resolution = this.nodeResolve(candidateSpecifier, target.from);
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
       if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = resolution.filename;
+        jsModule = candidateSpecifier;
         break;
       }
     }

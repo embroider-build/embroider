@@ -453,32 +453,32 @@ export class Resolver {
   private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
 
-    let hbsModule: string | null = null;
-    let jsModule: string | null = null;
+    let hbsModule: { requested: string; found: string } | null = null;
+    let jsModule: { requested: string; found: string } | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}.hbs`;
       let resolution = this.nodeResolve(
         `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
         target.from
       );
       if (resolution.type === 'real') {
-        hbsModule = resolution.filename;
+        hbsModule = { requested: candidateSpecifier, found: resolution.filename };
         break;
       }
     }
 
     // then the various places our javascript might be.
     for (let candidate of this.componentJSCandidates(target.packageName)) {
-      let resolution = this.nodeResolve(
-        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
-        target.from
-      );
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
+
+      let resolution = this.nodeResolve(candidateSpecifier, target.from);
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
       if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = resolution.filename;
+        jsModule = { requested: candidateSpecifier, found: resolution.filename };
         break;
       }
     }
@@ -487,10 +487,14 @@ export class Resolver {
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize(virtualPairComponent(hbsModule, jsModule))
+        request.virtualize(virtualPairComponent(hbsModule.found, jsModule?.found))
       );
     } else if (jsModule) {
-      return logTransition(`resolveComponent found only JS`, request, request.alias(jsModule).rehome(target.from));
+      return logTransition(
+        `resolveComponent found only JS`,
+        request,
+        request.alias(jsModule.requested).rehome(target.from)
+      );
     } else {
       return logTransition(`resolveComponent failed`, request);
     }

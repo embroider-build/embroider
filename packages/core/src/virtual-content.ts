@@ -110,7 +110,7 @@ function decodeVirtualExternalCJSModule(filename: string) {
 const pairComponentMarker = '/embroider-pair-component';
 const pairComponentPattern = /^(?<hbsModule>.*)\/(?<jsModule>[^\/]*)\/embroider-pair-component$/;
 
-export function virtualPairComponent(hbsModule: string, jsModule: string | null): string {
+export function virtualPairComponent(hbsModule: string, jsModule: string | undefined): string {
   let relativeJSModule = '';
   if (jsModule) {
     // The '/j/' here represents the relativeJSModule itself that we're about to

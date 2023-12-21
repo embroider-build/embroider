@@ -124,6 +124,7 @@ function defaultResolve(
         },
       };
     }
+
     let result = await context.resolve(request.specifier, {
       importer: request.fromFile,
       resolveDir: dirname(request.fromFile),

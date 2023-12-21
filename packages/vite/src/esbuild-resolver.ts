@@ -124,6 +124,10 @@ function defaultResolve(
         },
       };
     }
+
+    // if the path is already absolute and the file exists it will cause vite:depscan to mark it as external
+    // since we call it by invoking context.resolve with the resolved path
+    // see https://github.com/vitejs/vite/pull/15402
     if (isAbsolute(request.specifier) && existsSync(request.specifier)) {
       return {
         type: 'found',

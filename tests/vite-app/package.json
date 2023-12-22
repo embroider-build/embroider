@@ -11,7 +11,6 @@
     "test": "tests"
   },
   "scripts": {
-    "build:ember": "ember b",
     "build": "vite build",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",
     "lint:css": "stylelint \"**/*.css\"",
@@ -21,7 +20,6 @@
     "lint:hbs:fix": "ember-template-lint . --fix",
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
-    "start:prebuild": "ember build --watch",
     "start:dev": "vite",
     "start:test": "vite --open /tests/",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",

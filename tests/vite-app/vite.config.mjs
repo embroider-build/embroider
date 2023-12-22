@@ -13,6 +13,8 @@ const root = "node_modules/.embroider/rewritten-app";
 
 export default defineConfig({
   root,
+  // esbuild in vite does not support decorators
+  esbuild: false,
   plugins: [
     hbs(),
     templateTag(),
@@ -26,7 +28,7 @@ export default defineConfig({
       // javascript but the javascript still also needs babel, but we don't want
       // to rename them because vite isn't great about knowing how to hot-reload
       // them if we resolve them to made-up names.
-      extensions: [".gjs", ".js", ".hbs"],
+      extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
     }),
   ],
   optimizeDeps: optimizeDeps(),

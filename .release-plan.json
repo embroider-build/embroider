@@ -11,8 +11,8 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.4.1",
-      "newVersion": "3.4.2",
+      "oldVersion": "3.4.2",
+      "newVersion": "3.4.3",
       "constraints": [
         {
           "impact": "patch",
@@ -52,5 +52,5 @@
       "oldVersion": "3.2.1"
     }
   },
-  "description": "## Release (2023-12-13)\n\n@embroider/compat 3.4.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#1717](https://github.com/embroider-build/embroider/pull/1717) Always load ember-testing package eagerly ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2023-12-23)\n\n@embroider/compat 3.4.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@types/ember-cli`\n  * [#1743](https://github.com/embroider-build/embroider/pull/1743) Don't rely on htmlbars internals ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* [#1724](https://github.com/embroider-build/embroider/pull/1724) fix publish for stable branch ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

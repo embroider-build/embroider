@@ -1,4 +1,18 @@
 # Embroider Changelog
+## Release (2023-12-23)
+
+@embroider/compat 3.4.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@types/ember-cli`
+  * [#1743](https://github.com/embroider-build/embroider/pull/1743) Don't rely on htmlbars internals ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#1724](https://github.com/embroider-build/embroider/pull/1724) fix publish for stable branch ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
 ## Release (2023-12-13)
 
 @embroider/compat 3.4.2 (patch)

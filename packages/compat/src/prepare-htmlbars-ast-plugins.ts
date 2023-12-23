@@ -32,6 +32,10 @@ export default function loadAstPlugins(registry: any): Transform[] {
     }
   }
   let plugins = wrappers.map((wrapper: any) => wrapper.plugin);
+
+  // the plugins in the registry historically run in backwards order for dumb
+  // reasons. Embroider keeps them in sensible order, so here is where we do the
+  // compatibility switch.
   plugins.reverse();
   return plugins;
 }

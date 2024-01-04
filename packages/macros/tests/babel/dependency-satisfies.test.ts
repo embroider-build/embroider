@@ -20,7 +20,7 @@ describe(`dependencySatisfies`, function () {
   allBabelVersions({
     includePresetsTests: true,
     babelConfig() {
-      project.writeSync();
+      project.write();
       let config = MacrosConfig.for({}, project.baseDir);
       config.finalize();
       return {
@@ -141,7 +141,7 @@ describe(`dependencySatisfies`, function () {
         import { dependencySatisfies } from '@embroider/macros';
 
         export default function() {
-          return { 
+          return {
             // specified in dependencies
             util: dependencySatisfies('@embroider/util', '*'),
 

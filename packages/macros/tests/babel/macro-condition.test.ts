@@ -12,7 +12,7 @@ describe('macroCondition', function () {
   beforeAll(() => {
     project = new Project('test-app');
     project.addDependency('qunit', '2.0.0');
-    project.writeSync();
+    project.write();
     filename = join(project.baseDir, 'sample.js');
   });
 

@@ -789,7 +789,7 @@ export class Resolver {
     // ember-source might provide backburner via module renaming, but if you
     // have an explicit dependency on backburner you should still get that real
     // copy.
-    if (!pkg.hasDependency(packageName)) {
+    if (!reliablyResolvable(pkg, packageName)) {
       for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
         if (candidate === request.specifier) {
           return logTransition(`renameModules`, request, request.alias(replacement));
@@ -1275,6 +1275,11 @@ function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
 // work because of the symlinking) without setting up "exports" (which makes
 // your own name reliably resolvable)
 function reliablyResolvable(pkg: V2Package, packageName: string) {
+  if (pkg.meta['auto-upgraded'] && !pkg.hasDependency('ember-auto-import')) {
+    // v1 addons without ember-auto-import cannot resolve NPM dependencies
+    return false;
+  }
+
   if (pkg.hasDependency(packageName)) {
     return true;
   }

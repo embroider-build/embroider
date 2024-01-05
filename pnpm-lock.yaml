@@ -1117,7 +1117,7 @@ importers:
         version: 2.0.1
       ember-load-initializers:
         specifier: ^2.0.0
-        version: 2.1.2(@babel/core@7.23.5)
+        version: 2.1.2(@babel/core@7.23.6)
       ember-maybe-import-regenerator:
         specifier: ^1.0.0
         version: 1.0.0
@@ -1129,7 +1129,7 @@ importers:
         version: 10.1.1(@ember/string@3.1.1)(ember-source@3.26.2)
       ember-source:
         specifier: ~3.26
-        version: 3.26.2(@babel/core@7.23.5)
+        version: 3.26.2
       ember-source-channel-url:
         specifier: ^1.1.0
         version: 1.2.0
@@ -1577,8 +1577,8 @@ importers:
         specifier: ^3.23.0
         version: 3.29.4
       scenario-tester:
-        specifier: ^3.0.1
-        version: 3.0.1
+        specifier: ^3.1.0
+        version: 3.1.0
       semver:
         specifier: ^7.3.8
         version: 7.5.4
@@ -5863,7 +5863,7 @@ packages:
       ember-cli-babel: 7.26.11
       ember-cli-htmlbars: 6.3.0
       ember-destroyable-polyfill: 2.0.3
-      ember-source: 3.26.2(@babel/core@7.23.5)
+      ember-source: 3.26.2
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/environment-ember-loose'
@@ -6032,7 +6032,7 @@ packages:
       '@embroider/macros': 1.13.3(@glint/template@1.2.1)
       broccoli-funnel: 3.0.8
       ember-cli-babel: 7.26.11
-      ember-source: 3.26.2(@babel/core@7.23.5)
+      ember-source: 3.26.2
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -15329,7 +15329,7 @@ packages:
       ember-auto-import: 2.7.0(@glint/template@1.2.1)(webpack@5.89.0)
       ember-cli-babel: 7.26.11
       ember-cli-test-loader: 3.1.0
-      ember-source: 3.26.2(@babel/core@7.23.5)
+      ember-source: 3.26.2
       qunit: 2.20.0
       resolve-package-path: 4.0.3
       silent-error: 1.1.1
@@ -15444,7 +15444,7 @@ packages:
     dependencies:
       '@ember/string': 3.1.1
       ember-cli-babel: 7.26.11
-      ember-source: 3.26.2(@babel/core@7.23.5)
+      ember-source: 3.26.2
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -15528,6 +15528,40 @@ packages:
     transitivePeerDependencies:
       - encoding
 
+  /ember-source@3.26.2:
+    resolution: {integrity: sha512-s7S+6xVwYYmNCK0rGTAimPw1ahiuOXsFgs0jFMVqwMEndvo+GQvk4rEYDHs0JgN+o5UhQjVpoPqXxkgfPTL38A==}
+    engines: {node: 10.* || >= 12.*}
+    dependencies:
+      '@babel/helper-module-imports': 7.22.15
+      '@babel/plugin-transform-block-scoping': 7.23.4(@babel/core@7.23.6)
+      '@babel/plugin-transform-object-assign': 7.23.3(@babel/core@7.23.5)
+      '@ember/edition-utils': 1.2.0
+      '@glimmer/vm-babel-plugins': 0.77.5(@babel/core@7.23.5)
+      babel-plugin-debug-macros: 0.3.4(@babel/core@7.23.5)
+      babel-plugin-filter-imports: 4.0.0
+      broccoli-concat: 4.2.5
+      broccoli-debug: 0.6.5
+      broccoli-funnel: 2.0.2
+      broccoli-merge-trees: 4.2.0
+      chalk: 4.1.2
+      ember-cli-babel: 7.26.11
+      ember-cli-get-component-path-option: 1.0.0
+      ember-cli-is-package-missing: 1.0.0
+      ember-cli-normalize-entity-name: 1.0.0
+      ember-cli-path-utils: 1.0.0
+      ember-cli-string-utils: 1.1.0
+      ember-cli-version-checker: 5.1.2
+      ember-router-generator: 2.0.0
+      inflection: 1.13.4
+      jquery: 3.7.1
+      resolve: 1.22.8
+      semver: 7.5.4
+      silent-error: 1.1.1
+    transitivePeerDependencies:
+      - '@babel/core'
+      - supports-color
+    dev: true
+
   /ember-source@3.26.2(@babel/core@7.23.5):
     resolution: {integrity: sha512-s7S+6xVwYYmNCK0rGTAimPw1ahiuOXsFgs0jFMVqwMEndvo+GQvk4rEYDHs0JgN+o5UhQjVpoPqXxkgfPTL38A==}
     engines: {node: 10.* || >= 12.*}
@@ -15560,6 +15594,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
+    dev: false
 
   /ember-source@3.28.12(@babel/core@7.23.5):
     resolution: {integrity: sha512-HGrBpY6TN+MAi7F6BS8XYtNFG6vtbKE9ttPcyj0Ps+76kP7isCHyN0hk8ecKciLq7JYDqiPDNWjdIXAn2JfhZA==}
@@ -22792,6 +22827,18 @@ packages:
       glob: 7.2.3
       tmp: 0.2.1
       yargs: 16.2.0
+    dev: true
+
+  /scenario-tester@3.1.0:
+    resolution: {integrity: sha512-Xb7Kk8etl71QObHLC00zSHCacOdqZW2IRI6pta1blQ8oLxyhqmHsmqQLVHTBysbVvOrqSkr4wCK8mY3t7tQt1w==}
+    hasBin: true
+    dependencies:
+      fixturify-project: 6.0.0
+      fs-extra: 9.1.0
+      glob: 7.2.3
+      tmp: 0.2.1
+      yargs: 16.2.0
+    dev: false
 
   /schema-utils@2.7.1:
     resolution: {integrity: sha512-SHiNtMOUGWBQJwzISiVYKu82GiV4QYGePp3odlY1tuKO7gPtphAT5R/py0fA6xtbgLL/RvtJZnU9b8s0F1q0Xg==}

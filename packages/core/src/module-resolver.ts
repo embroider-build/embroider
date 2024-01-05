@@ -951,9 +951,10 @@ export class Resolver {
     // assertions on what native v2 addons can import
     if (!pkg.meta['auto-upgraded']) {
       if (
-        !pkg.meta['auto-upgraded'] &&
         !appImportInAppTree(pkg, logicalPackage, packageName) &&
-        !reliablyResolvable(pkg, packageName)
+        !reliablyResolvable(pkg, packageName) &&
+        !emberVirtualPeerDeps.has(packageName) &&
+        !emberVirtualPackages.has(packageName)
       ) {
         throw new Error(
           `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
@@ -1285,10 +1286,6 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
   }
 
   if (pkg.name === packageName && pkg.packageJSON.exports) {
-    return true;
-  }
-
-  if (emberVirtualPeerDeps.has(packageName) || emberVirtualPackages.has(packageName)) {
     return true;
   }
 

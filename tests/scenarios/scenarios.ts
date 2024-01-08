@@ -1,7 +1,7 @@
 import { Scenarios, Project } from 'scenario-tester';
 import { dirname } from 'path';
 
-async function lts_3_28(project: Project) {
+export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });

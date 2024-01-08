@@ -6,7 +6,7 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('release')
+  .only('canary')
   .map('app-config-environment', project => {
     merge(project.files, {
       'ember-cli-build.js': `

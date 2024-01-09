@@ -228,11 +228,14 @@ appScenarios
         expectAudit
           .module('assets/app-template.js')
           .resolves('./-embroider-implicit-modules.js')
-          .toModule().codeContains(`
-          d('somebody-elses-package/environment', function() {
-            return i('emits-multiple-packages/somebody-elses-package/environment')
-          });
-        `);
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"somebody-elses-package\/environment": (own\d+),/.exec(contents) ?? [];
+
+            return contents.includes(
+              `import * as ${objectName} from "emits-multiple-packages/somebody-elses-package/environment";`
+            );
+          }, 'module imports from the correct place and exports object with the right key');
       });
       test('rewriting one module does not capture entire package namespace', function () {
         expectAudit

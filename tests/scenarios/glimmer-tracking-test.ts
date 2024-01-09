@@ -5,7 +5,7 @@ import merge from 'lodash/merge';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('release')
+  .only('canary')
   .map('transform-@glimmer/tracking', project => {
     merge(project.files, {
       app: {

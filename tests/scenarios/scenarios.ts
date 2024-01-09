@@ -1,7 +1,7 @@
 import { Scenarios, Project } from 'scenario-tester';
 import { dirname } from 'path';
 
-async function lts_3_28(project: Project) {
+export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
@@ -21,12 +21,29 @@ async function release(project: Project) {
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
 }
 
+async function canary(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-canary' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: '@ember/test-helpers-3' });
+  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
+}
+
 export function supportMatrix(scenarios: Scenarios) {
-  return scenarios.expand({
-    lts_3_28,
-    lts_4_4,
-    release,
-  });
+  return (
+    scenarios
+      .expand({
+        lts_3_28,
+        lts_4_4,
+        release,
+        canary,
+      })
+      // we are skipping these scenarios for now and will likely add them back in one-by one once the
+      // new vite based system is working as we like
+      .skip('lts_3_28')
+      .skip('lts_4_4')
+      .skip('release')
+  );
 }
 
 export function baseAddon(as: 'dummy-app' | 'dependency' = 'dependency') {

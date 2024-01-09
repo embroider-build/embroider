@@ -220,8 +220,8 @@ function renderImplicitModules(
     throw new Error(`bug: saw special implicit modules import in non-ember package at ${fromFile}`);
   }
 
-  let lazyModules: { runtime: string; buildtime: string }[] = [];
-  let eagerModules: string[] = [];
+  let ownModules: { runtime: string; buildtime: string }[] = [];
+  let dependencyModules: string[] = [];
 
   let deps = pkg.dependencies.sort(orderAddons);
 
@@ -260,7 +260,7 @@ function renderImplicitModules(
           runtime = renamedModules[runtimeRenameLookup];
         }
         runtime = runtime.split(sep).join('/');
-        lazyModules.push({
+        ownModules.push({
           runtime,
           buildtime: posix.join(packageName, name),
         });
@@ -269,22 +269,34 @@ function renderImplicitModules(
     // we don't recurse across an engine boundary. Engines import their own
     // implicit-modules.
     if (!dep.isEngine()) {
-      eagerModules.push(posix.join(dep.name, `-embroider-${type}.js`));
+      dependencyModules.push(posix.join(dep.name, `-embroider-${type}.js`));
     }
   }
-  return implicitModulesTemplate({ lazyModules, eagerModules });
+  return implicitModulesTemplate({ ownModules, dependencyModules });
 }
 
 const implicitModulesTemplate = compile(`
-import { importSync as i } from '@embroider/macros';
-let d = window.define;
-{{#each lazyModules as |module|}}
-d("{{js-string-escape module.runtime}}", function(){ return i("{{js-string-escape module.buildtime}}");});
+
+
+{{#each dependencyModules as |module index|}}
+  import dep{{index}} from "{{js-string-escape module}}";
 {{/each}}
-{{#each eagerModules as |module|}}
-import "{{js-string-escape module}}";
+
+{{#each ownModules as |module index|}}
+  import * as own{{index}} from "{{js-string-escape module.buildtime}}";
 {{/each}}
-`) as (params: { eagerModules: string[]; lazyModules: { runtime: string; buildtime: string }[] }) => string;
+
+export default Object.assign({},
+  {{#each dependencyModules as |module index|}}
+    dep{{index}},
+  {{/each}}
+  {
+    {{#each ownModules as |module index|}}
+      "{{js-string-escape module.runtime}}": own{{index}},
+    {{/each}}
+  }
+);
+`) as (params: { dependencyModules: string[]; ownModules: { runtime: string; buildtime: string }[] }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.
 // This takes that and converts it to the inverst mapping from real import path
@@ -315,24 +327,33 @@ function orderAddons(depA: Package, depB: Package): number {
 }
 
 const renderCJSExternalShim = compile(`
-{{#if (eq moduleName "require")}}
-const m = window.requirejs;
-{{else}}
-const m = window.require("{{{js-string-escape moduleName}}}");
-{{/if}}
-{{!-
-  There are plenty of hand-written AMD defines floating around
-  that lack this, and they will break when other build systems
-  encounter them.
+module.exports = new Proxy({}, {
+  get(target, prop) {
 
-  As far as I can tell, Ember's loader was already treating this
-  case as a module, so in theory we aren't breaking anything by
-  marking it as such when other packagers come looking.
+    {{!- our proxy always presents as ES module so that we can intercept "get('default')" -}}
+    if (prop === '__esModule') {
+      return true;
+    }
 
-  todo: get review on this part.
--}}
-if (m.default && !m.__esModule) {
-  m.__esModule = true;
-}
-module.exports = m;
+    {{#if (eq moduleName "require")}}
+      const m = window.requirejs;
+    {{else}}
+      const m = window.require("{{{js-string-escape moduleName}}}");
+    {{/if}}
+
+    {{!-
+      There are plenty of hand-written AMD defines floating around
+      that lack an __esModule declaration.
+
+      As far as I can tell, Ember's loader was already treating the Boolean(m.default)===true
+      case as a module, so in theory we aren't breaking anything by
+      treating it as such when other packagers come looking.
+    -}}
+    if (prop === 'default' && !m.__esModule && !m.default) {
+      return m;
+    }
+
+    return m[prop];
+  }
+});
 `) as (params: { moduleName: string }) => string;

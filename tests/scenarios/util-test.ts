@@ -1,4 +1,4 @@
-import { supportMatrix } from './scenarios';
+import { lts_3_28 } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import { Scenarios } from 'scenario-tester';
 import QUnit from 'qunit';
@@ -6,8 +6,10 @@ import { dirname } from 'path';
 
 const { module: Qmodule, test } = QUnit;
 
-supportMatrix(Scenarios.fromDir(dirname(require.resolve('@embroider/util/package.json'))))
-  .only('lts_3_28')
+Scenarios.fromDir(dirname(require.resolve('@embroider/util/package.json')))
+  .expand({
+    lts_3_28,
+  })
   .map('util', project => {
     // the oldest ember-data we're able to test does not work on the old node
     // we're trying to verify here

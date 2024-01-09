@@ -1285,11 +1285,16 @@ export class CompatAppBuilder {
     let amdModules = nonFastboot.map(file => this.importPaths(appFiles, file));
     let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(appFiles, file));
 
-    // this is a backward-compatibility feature: addons can force inclusion of
-    // modules.
-    eagerModules.push('./-embroider-implicit-modules.js');
-
-    let params = { amdModules, fastbootOnlyAmdModules, lazyRoutes, lazyEngines, eagerModules, styles };
+    let params = {
+      amdModules,
+      fastbootOnlyAmdModules,
+      lazyRoutes,
+      lazyEngines,
+      eagerModules,
+      styles,
+      // this is a backward-compatibility feature: addons can force inclusion of modules.
+      defineModulesFrom: './-embroider-implicit-modules.js',
+    };
     if (entryParams) {
       Object.assign(params, entryParams);
     }
@@ -1351,9 +1356,6 @@ export class CompatAppBuilder {
     ];
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
-    // this is a backward-compatibility feature: addons can force inclusion of
-    // test support modules.
-    eagerModules.push('./-embroider-implicit-test-modules.js');
 
     for (let relativePath of engine.tests) {
       amdModules.push(this.importPaths(engine, relativePath));
@@ -1363,6 +1365,8 @@ export class CompatAppBuilder {
       amdModules,
       eagerModules,
       testSuffix: true,
+      // this is a backward-compatibility feature: addons can force inclusion of test support modules.
+      defineModulesFrom: './-embroider-implicit-test-modules.js',
     });
 
     asset = {
@@ -1399,6 +1403,15 @@ let d = w.define;
     {{/each}}
   }
 {{/if}}
+
+{{#if defineModulesFrom ~}}
+  import implicitModules from "{{js-string-escape defineModulesFrom}}";
+
+  for(const [name, module] of Object.entries(implicitModules)) {
+    d(name, function() { return module });
+  }
+{{/if}}
+
 
 {{#each eagerModules as |eagerModule| ~}}
   i("{{js-string-escape eagerModule}}");
@@ -1471,6 +1484,7 @@ if (!runningTests) {
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];
+  defineModulesFrom?: string;
   eagerModules?: string[];
   autoRun?: boolean;
   appBoot?: string;

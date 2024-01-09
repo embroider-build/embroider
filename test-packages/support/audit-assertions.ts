@@ -109,6 +109,20 @@ export class ExpectModule {
     });
   }
 
+  withContents(fn: (src: string) => boolean, message?: string) {
+    if (!this.module) {
+      this.emitMissingModule();
+      return;
+    }
+    const result = fn(this.module.content);
+    this.expectAudit.assert.pushResult({
+      result,
+      actual: result,
+      expected: true,
+      message: message ?? `Expected passed function to return true for the contents of ${this.inputName}`,
+    });
+  }
+
   codeEquals(expectedSource: string) {
     if (!this.module) {
       this.emitMissingModule();
@@ -212,6 +226,7 @@ class EmptyExpectModule implements PublicAPI<ExpectModule> {
   doesNotExist() {}
   codeEquals() {}
   codeContains() {}
+  withContents() {}
 
   resolves(): PublicAPI<ExpectResolution> {
     return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;

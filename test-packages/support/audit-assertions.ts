@@ -173,6 +173,34 @@ export class ExpectModule {
     return new ExpectResolution(this.expectAudit, target, resolution);
   }
 
+  doesNotImport(specifier: string): PublicAPI<ExpectResolution> {
+    let resolution = this.module.resolutions[specifier];
+
+    if (!this.module) {
+      this.emitMissingModule();
+    } else if (!(specifier in this.module.resolutions)) {
+      this.expectAudit.assert.pushResult({
+        result: true,
+        expected: Object.keys(this.module.resolutions),
+        actual: `${this.module.appRelativePath} does not refer to ${specifier}`,
+      });
+    } else if (!resolution) {
+      this.expectAudit.assert.pushResult({
+        result: true,
+        expected: `${specifier} not to resolve`,
+        actual: `${specifier} resolves in ${this.module.appRelativePath}`,
+      });
+    } else {
+      this.expectAudit.assert.pushResult({
+        result: false,
+        expected: `${specifier} not to resolve`,
+        actual: `${specifier} resolves in ${this.module.appRelativePath}`,
+      });
+    }
+
+    return new EmptyExpectResolution();
+  }
+
   // this is testing explicitly for the template-only component moduels that we
   // synthesize in our module-resolver
   isTemplateOnlyComponent(template: string, message?: string) {
@@ -229,6 +257,9 @@ class EmptyExpectModule implements PublicAPI<ExpectModule> {
   withContents() {}
 
   resolves(): PublicAPI<ExpectResolution> {
+    return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;
+  }
+  doesNotImport(): PublicAPI<ExpectResolution> {
     return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;
   }
   isTemplateOnlyComponent() {}

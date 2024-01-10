@@ -297,7 +297,6 @@ export class CompatAppBuilder {
       );
     }
 
-    // ❓ Should this be DRYed?
     let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
       appFiles.isFastbootOnly.get(file)
     );
@@ -1316,21 +1315,13 @@ export class CompatAppBuilder {
       );
     }
 
-    let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
-      appFiles.isFastbootOnly.get(file)
-    );
-    let amdModules = nonFastboot.map(file => this.importPaths(appFiles, file));
-    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(appFiles, file));
-
     let params = {
-      amdModules,
-      fastbootOnlyAmdModules,
       lazyRoutes,
       lazyEngines,
       eagerModules,
       styles,
       // this is a backward-compatibility feature: addons can force inclusion of modules.
-      defineModulesFrom: './-embroider-implicit-modules.js',
+      defineModulesFrom: ['./-embroider-implicit-modules.js', './-embroider-amd-modules.js'],
     };
     if (entryParams) {
       Object.assign(params, entryParams);
@@ -1399,11 +1390,10 @@ export class CompatAppBuilder {
     }
 
     let source = entryTemplate({
-      amdModules,
       eagerModules,
       testSuffix: true,
       // this is a backward-compatibility feature: addons can force inclusion of test support modules.
-      defineModulesFrom: './-embroider-implicit-test-modules.js',
+      defineModulesFrom: ['./-embroider-implicit-test-modules.js', './-embroider-amd-test-modules.js'],
     });
 
     asset = {
@@ -1441,13 +1431,13 @@ let d = w.define;
   }
 {{/if}}
 
-{{#if defineModulesFrom ~}}
-  import implicitModules from "{{js-string-escape defineModulesFrom}}";
+{{#each defineModulesFrom as |defineModuleFrom i| ~}}
+  import defineModuleFrom{{i}} from "{{js-string-escape defineModuleFrom}}";
 
-  for(const [name, module] of Object.entries(implicitModules)) {
+  for(const [name, module] of Object.entries(defineModuleFrom{{i}})) {
     d(name, function() { return module });
   }
-{{/if}}
+{{/each}}
 
 
 {{#each eagerModules as |eagerModule| ~}}
@@ -1499,9 +1489,7 @@ if (!runningTests) {
   EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
-  amdModules: { runtime: string; buildtime: string }[];
-  fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];
-  defineModulesFrom?: string;
+  defineModulesFrom?: string[];
   eagerModules?: string[];
   autoRun?: boolean;
   appBoot?: string;

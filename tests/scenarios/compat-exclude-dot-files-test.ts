@@ -6,6 +6,7 @@ import { appScenarios, baseAddon } from './scenarios';
 import QUnit from 'qunit';
 import { merge } from 'lodash';
 const { module: Qmodule, test } = QUnit;
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 appScenarios
   .map('compat-exclude-dot-files', app => {
@@ -41,6 +42,8 @@ appScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+
       hooks.beforeEach(assert => {
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
@@ -51,10 +54,17 @@ appScenarios
         expectFile('./.barbaz.js').exists();
         expectFile('./bizbiz.js').exists();
 
-        // dot files should not be included as modules
-        expectFile('./assets/app-template.js').doesNotMatch('app-template/.foobar');
-        expectFile('./assets/app-template.js').doesNotMatch('app-template/.barbaz');
-        expectFile('./assets/app-template.js').matches('app-template/bizbiz');
+        const embroiderAuditModules = expectAudit
+          .module('./assets/app-template.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule();
+
+        embroiderAuditModules.doesNotImport('app-template/.barbaz.js');
+        embroiderAuditModules.doesNotImport('app-template/.foobar.js');
+
+        embroiderAuditModules
+          .resolves('app-template/bizbiz.js')
+          .to('./node_modules/.embroider/rewritten-app/bizbiz.js');
       });
 
       test('dot files are not included as addon implicit-modules', function () {

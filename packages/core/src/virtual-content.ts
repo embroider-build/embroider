@@ -350,14 +350,14 @@ const modules = {
   {{~/each}}
 };
 
-
-{{#if fastbootOnlyAmdModules~}}
+{{! ❓ how to deal without macroCondition in virtual file? }}
+{{!--#if fastbootOnlyAmdModules~}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
     {{#each fastbootOnlyAmdModules as |fastbootOnlyamdModule| ~}}
-      modules.["{{js-string-escape fastbootOnlyAmdModule.runtime}}"] = fastbootOnlyAmdModule{{index}};
+      modules["{{js-string-escape fastbootOnlyAmdModule.runtime}}"] = fastbootOnlyAmdModule{{index}};
     {{~/each}}
   }
-{{~/if}}
+{{~/if--}}
 
 export default modules;
 `) as (params: { amdModules: AmdModule[]; fastbootOnlyAmdModules: AmdModule[] }) => string;

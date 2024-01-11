@@ -92,6 +92,8 @@ splitScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
@@ -119,7 +121,15 @@ splitScenarios
       });
 
       test('has non-split routes in main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('routes/index');
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/routes\/index": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app\/routes/index.js";`);
+          }, 'routes/index import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('does not have split controllers in main entrypoint', function () {
@@ -172,9 +182,7 @@ splitScenarios
         expectFile('./assets/_route_/people.js').doesNotMatch('auto-focus');
       });
 
-      Qmodule('audit', function (hooks) {
-        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
-
+      Qmodule('audit', function (/* hooks */) {
         test('has no issues', function () {
           expectAudit.hasNoFindings();
         });
@@ -264,6 +272,8 @@ splitScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
@@ -291,7 +301,15 @@ splitScenarios
       });
 
       test('has non-split routes in main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('pods/index/route');
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/pods\/index\/route": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app\/pods/index/route.js";`);
+          }, 'pods/index/route import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('does not have split controllers in main entrypoint', function () {
@@ -344,9 +362,7 @@ splitScenarios
         expectFile('./assets/_route_/people.js').doesNotMatch('auto-focus');
       });
 
-      Qmodule('audit', function (hooks) {
-        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
-
+      Qmodule('audit', function (/* hooks */) {
         test('has no issues', function () {
           expectAudit.hasNoFindings();
         });
@@ -436,6 +452,8 @@ splitScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
@@ -463,7 +481,15 @@ splitScenarios
       });
 
       test('has non-split routes in main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('routes/index/route');
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/routes\/index\/route": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app\/routes/index/route.js";`);
+          }, 'routes/index/route import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('does not have split controllers in main entrypoint', function () {
@@ -516,9 +542,7 @@ splitScenarios
         expectFile('./assets/_route_/people.js').doesNotMatch('auto-focus');
       });
 
-      Qmodule('audit', function (hooks) {
-        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
-
+      Qmodule('audit', function (/* hooks */) {
         test('has no issues', function () {
           expectAudit.hasNoFindings();
         });

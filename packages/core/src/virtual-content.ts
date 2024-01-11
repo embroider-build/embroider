@@ -332,14 +332,14 @@ export default Object.assign(
 `) as (params: { dependencyModules: string[]; ownModules: { runtime: string; buildtime: string }[] }) => string;
 
 const amdModulesTemplate = compile(`
-{{! import { getGlobalConfig, macroCondition } from '@embroider/macros';}}
+import { getGlobalConfig, macroCondition } from '@embroider/macros';
 
 {{#each amdModules as |amdModule index|~}}
   import * as amdMod{{index}} from "{{js-string-escape amdModule.buildtime}}";
 {{~/each}}
 
 {{#if fastbootOnlyAmdModules~}}
-  {{#each fastbootOnlyAmdModules as |fastbootOnlyAmdModule| ~}}
+  {{#each fastbootOnlyAmdModules as |fastbootOnlyAmdModule index| ~}}
     import * as fastbootOnlyAmdMod{{index}} from "{{js-string-escape fastbootOnlyAmdModule.buildtime}}";
   {{/each}}
 {{~/if}}
@@ -350,14 +350,13 @@ const modules = {
   {{~/each}}
 };
 
-{{! ❓ how to deal without macroCondition in virtual file? }}
-{{!--#if fastbootOnlyAmdModules~}}
+{{#if fastbootOnlyAmdModules~}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    {{#each fastbootOnlyAmdModules as |fastbootOnlyamdModule| ~}}
-      modules["{{js-string-escape fastbootOnlyAmdModule.runtime}}"] = fastbootOnlyAmdModule{{index}};
+    {{#each fastbootOnlyAmdModules as |fastbootOnlyAmdModule index| ~}}
+      modules["{{js-string-escape fastbootOnlyAmdModule.runtime}}"] = fastbootOnlyAmdMod{{index}};
     {{~/each}}
   }
-{{~/if--}}
+{{~/if}}
 
 export default modules;
 `) as (params: { amdModules: AmdModule[]; fastbootOnlyAmdModules: AmdModule[] }) => string;

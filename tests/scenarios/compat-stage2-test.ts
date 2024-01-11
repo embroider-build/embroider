@@ -126,6 +126,8 @@ stage2Scenarios
         // check that the app trees with in repo addon are combined correctly
         expectAudit
           .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
           .resolves('my-app/service/in-repo.js')
           .to('./node_modules/dep-b/lib/in-repo-c/_app_/service/in-repo.js');
       });
@@ -134,6 +136,8 @@ stage2Scenarios
         // secondary in-repo-addon was correctly detected and activated
         expectAudit
           .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
           .resolves('my-app/services/secondary.js')
           .to('./lib/secondary-in-repo-addon/_app_/services/secondary.js');
 
@@ -196,7 +200,7 @@ stage2Scenarios
       let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
 
       test('verifies that the correct lexigraphically sorted addons win', function () {
-        let expectModule = expectAudit.module('./assets/my-app.js');
+        let expectModule = expectAudit.module('./assets/my-app.js').resolves('./-embroider-amd-modules.js').toModule();
         expectModule.resolves('my-app/service/in-repo.js').to('./lib/in-repo-b/_app_/service/in-repo.js');
         expectModule.resolves('my-app/service/addon.js').to('./node_modules/dep-b/_app_/service/addon.js');
         expectModule.resolves('my-app/service/dev-addon.js').to('./node_modules/dev-c/_app_/service/dev-addon.js');
@@ -205,6 +209,8 @@ stage2Scenarios
       test('addons declared as dependencies should win over devDependencies', function () {
         expectAudit
           .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
           .resolves('my-app/service/dep-wins-over-dev.js')
           .to('./node_modules/dep-b/_app_/service/dep-wins-over-dev.js');
       });
@@ -212,6 +218,8 @@ stage2Scenarios
       test('in repo addons declared win over dependencies', function () {
         expectAudit
           .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
           .resolves('my-app/service/in-repo-over-deps.js')
           .to('./lib/in-repo-a/_app_/service/in-repo-over-deps.js');
       });
@@ -219,6 +227,8 @@ stage2Scenarios
       test('ordering with before specified', function () {
         expectAudit
           .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
           .resolves('my-app/service/test-before.js')
           .to('./node_modules/dev-d/_app_/service/test-before.js');
       });
@@ -226,6 +236,8 @@ stage2Scenarios
       test('ordering with after specified', function () {
         expectAudit
           .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
           .resolves('my-app/service/test-after.js')
           .to('./node_modules/dev-b/_app_/service/test-after.js');
       });
@@ -681,19 +693,43 @@ stage2Scenarios
       });
 
       test('non-static other paths are included in the entrypoint', function () {
-        expectFile('assets/my-app.js').matches(/i\("my-app\/non-static-dir\/another-library\.js"\)/);
+        expectAudit
+          .module('assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/non-static-dir\/another-library": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app\/non-static-dir\/another-library.js";`);
+          }, 'my-app/non-static-dir/another-library.js import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('static other paths are not included in the entrypoint', function () {
-        expectFile('assets/my-app.js').doesNotMatch(/i\("my-app\/static-dir\/my-library\.js"\)/);
+        expectAudit
+          .module('assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => !contents.includes('my-app/static-dir/my-library'));
       });
 
       test('top-level static other paths are not included in the entrypoint', function () {
-        expectFile('assets/my-app.js').doesNotMatch(/i\("my-app\/top-level-static\.js"\)/);
+        expectAudit
+          .module('assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => !contents.includes('my-app/top-level-static'));
       });
 
       test('staticAppPaths do not match partial path segments', function () {
-        expectFile('assets/my-app.js').matches(/i\("my-app\/static-dir-not-really\/something\.js"\)/);
+        expectAudit
+          .module('assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/static-dir-not-really\/something": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app\/static-dir-not-really\/something.js";`);
+          }, 'my-app/static-dir-not-really/somethingh.js import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('invokes rule on appTemplates produces synthetic import', function () {

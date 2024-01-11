@@ -32,6 +32,7 @@
   "pnpm": {
     "overrides": {
       "browserslist": "^4.14.0",
+      "fixturify-project": "lolmaus/node-fixturify-project#files-leaking",
       "graceful-fs": "^4.0.0",
       "@types/eslint": "^8.37.0"
     }

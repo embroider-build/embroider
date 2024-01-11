@@ -8,10 +8,21 @@ import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
+import merge from 'lodash/merge';
 
 appScenarios
   .map('compat-namespaced-app', app => {
     renameApp(app, '@ef4/namespaced-app');
+
+    merge(app.files, {
+      app: {
+        components: {
+          'import-lodash.js': `
+          import lodash from "lodash";
+          `,
+        },
+      },
+    });
 
     let addon = baseAddon();
     addon.pkg.name = 'my-addon';
@@ -54,9 +65,20 @@ appScenarios
           .resolves('my-addon/my-implicit-module.js')
           .to('./node_modules/my-addon/my-implicit-module.js');
 
-        expectAudit.module('assets/@ef4/namespaced-app.js').codeContains(`
-          d('@ef4/namespaced-app/app', function(){ return i('@ef4/namespaced-app/app.js');});
-        `);
+        expectAudit
+          .module('assets/@ef4/namespaced-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .to('./node_modules/.embroider/rewritten-app/-embroider-amd-modules.js');
+
+        expectAudit
+          .module('assets/@ef4/namespaced-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"@ef4\/namespaced-app\/app": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "@ef4\/namespaced-app\/app.js";`);
+          }, 'app.js import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test(`app css location`, function () {

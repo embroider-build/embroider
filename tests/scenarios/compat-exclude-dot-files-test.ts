@@ -59,8 +59,8 @@ appScenarios
           .resolves('./-embroider-amd-modules.js')
           .toModule();
 
-        embroiderAuditModules.doesNotImport('app-template/.barbaz.js');
-        embroiderAuditModules.doesNotImport('app-template/.foobar.js');
+        embroiderAuditModules.withContents(contents => !contents.includes('app-template/.barbaz.js'));
+        embroiderAuditModules.withContents(contents => !contents.includes('app-template/.foobar.js'));
 
         embroiderAuditModules
           .resolves('app-template/bizbiz.js')

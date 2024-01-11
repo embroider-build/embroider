@@ -332,7 +332,7 @@ export default Object.assign(
 `) as (params: { dependencyModules: string[]; ownModules: { runtime: string; buildtime: string }[] }) => string;
 
 const amdModulesTemplate = compile(`
-import { getGlobalConfig, importSync as i, macroCondition } from '@embroider/macros';
+{{! import { getGlobalConfig, macroCondition } from '@embroider/macros';}}
 
 {{#each amdModules as |amdModule index|~}}
   import * as amdMod{{index}} from "{{js-string-escape amdModule.buildtime}}";

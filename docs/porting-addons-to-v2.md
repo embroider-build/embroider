@@ -255,7 +255,10 @@ module.exports = addonV1Shim(__dirname);
     "ember-addon": {
       "main": "addon-main.js",
       "type": "addon",
-      "version": 2
+      "version": 2,
+      "app-js": {
+        "./components/path/component-name.js
+      }
     }
     ```
 16. In the `addon` directory, run `yarn start` to start building the addon.

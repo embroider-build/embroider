@@ -272,8 +272,6 @@ export class CompatAppBuilder {
     };
 
     let [appFiles] = engines;
-
-    // ToDo: DRY? ❓
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
 
     if (!this.options.staticComponents) {
@@ -1251,18 +1249,6 @@ export class CompatAppBuilder {
 
     let eagerModules: string[] = [];
 
-    let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
-
-    if (!this.options.staticComponents) {
-      requiredAppFiles.push(appFiles.components);
-    }
-    if (!this.options.staticHelpers) {
-      requiredAppFiles.push(appFiles.helpers);
-    }
-    if (!this.options.staticModifiers) {
-      requiredAppFiles.push(appFiles.modifiers);
-    }
-
     let styles = [];
     // only import styles from engines with a parent (this excludeds the parent application) as their styles
     // will be inserted via a direct <link> tag.
@@ -1306,9 +1292,7 @@ export class CompatAppBuilder {
       this.splitRoute(
         routeName,
         routeFiles,
-        (_: string, filename: string) => {
-          requiredAppFiles.push([filename]);
-        },
+        () => {}, // We are not collecting app imports at this point
         (routeNames: string[], files: string[]) => {
           let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
           if (!prepared.has(routeEntrypoint)) {

@@ -425,7 +425,6 @@ export class Resolver {
     }
   }
 
-  // ❓ Should this be DRYed?
   private handleAmdModules<R extends ModuleRequest>(request: R): R {
     let am = decodeAmdModules(request.specifier);
     if (!am) {

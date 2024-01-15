@@ -56,7 +56,7 @@ appScenarios
 
         const embroiderAuditModules = expectAudit
           .module('./assets/app-template.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule();
 
         embroiderAuditModules.withContents(contents => !contents.includes('app-template/.barbaz.js'));

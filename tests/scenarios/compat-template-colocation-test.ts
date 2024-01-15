@@ -127,19 +127,19 @@ scenarios
       });
 
       test(`app's colocated components are implicitly included correctly`, function () {
-        let assertModule = expectAudit.module('assets/my-app.js').resolves('./-embroider-amd-modules.js').toModule();
+        let assertModule = expectAudit.module('assets/my-app.js').resolves('./-embroider-app-modules.js').toModule();
 
         assertModule.withContents(contents => {
-          const [, objectName] = /"my-app\/components\/has-colocated-template": (amdMod\d+),/.exec(contents) ?? [];
+          const [, objectName] = /"my-app\/components\/has-colocated-template": (appMod\d+),/.exec(contents) ?? [];
 
           return contents.includes(`import * as ${objectName} from "my-app\/components\/has-colocated-template.js";`);
-        }, 'my-app/components/has-colocated-template.js import/export should be present in the virtual -embroider-amd-modules.js file');
+        }, 'my-app/components/has-colocated-template.js import/export should be present in the virtual -embroider-app-modules.js file');
 
         assertModule.withContents(contents => {
-          const [, objectName] = /"my-app\/components\/template-only-component": (amdMod\d+),/.exec(contents) ?? [];
+          const [, objectName] = /"my-app\/components\/template-only-component": (appMod\d+),/.exec(contents) ?? [];
 
           return contents.includes(`import * as ${objectName} from "my-app\/components\/template-only-component.js";`);
-        }, 'my-app/components/template-only-component.js import/export should be present in the virtual -embroider-amd-modules.js file');
+        }, 'my-app/components/template-only-component.js import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test(`addon's colocated template is associated with JS`, function () {
@@ -297,26 +297,26 @@ appScenarios
       let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
 
       test(`app's pod components and templates are implicitly included correctly`, function () {
-        let assertModule = expectAudit.module('assets/my-app.js').resolves('./-embroider-amd-modules.js').toModule();
+        let assertModule = expectAudit.module('assets/my-app.js').resolves('./-embroider-app-modules.js').toModule();
 
         assertModule.withContents(contents => {
           console.log(contents);
-          const [, objectName] = /"my-app\/components\/pod-component\/component": (amdMod\d+),/.exec(contents) ?? [];
+          const [, objectName] = /"my-app\/components\/pod-component\/component": (appMod\d+),/.exec(contents) ?? [];
 
           return contents.includes(`import * as ${objectName} from "my-app\/components\/pod-component\/component.js";`);
-        }, 'my-app/components/pod-component/component.js import/export should be present in the virtual -embroider-amd-modules.js file');
+        }, 'my-app/components/pod-component/component.js import/export should be present in the virtual -embroider-app-modules.js file');
 
         assertModule.withContents(contents => {
-          const [, objectName] = /"my-app\/components\/pod-component\/template": (amdMod\d+),/.exec(contents) ?? [];
+          const [, objectName] = /"my-app\/components\/pod-component\/template": (appMod\d+),/.exec(contents) ?? [];
 
           return contents.includes(`import * as ${objectName} from "my-app\/components\/pod-component\/template.hbs";`);
-        }, 'my-app/components/pod-component/template.hbs import/export should be present in the virtual -embroider-amd-modules.js file');
+        }, 'my-app/components/pod-component/template.hbs import/export should be present in the virtual -embroider-app-modules.js file');
 
         assertModule.withContents(contents => {
-          const [, objectName] = /"my-app\/components\/template-only\/template": (amdMod\d+),/.exec(contents) ?? [];
+          const [, objectName] = /"my-app\/components\/template-only\/template": (appMod\d+),/.exec(contents) ?? [];
 
           return contents.includes(`import * as ${objectName} from "my-app\/components\/template-only\/template.hbs";`);
-        }, 'my-app/components/template-only/template.hbs import/export should be present in the virtual -embroider-amd-modules.js file');
+        }, 'my-app/components/template-only/template.hbs import/export should be present in the virtual -embroider-app-modules.js file');
       });
     });
   });

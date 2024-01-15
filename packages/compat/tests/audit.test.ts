@@ -51,8 +51,8 @@ describe('audit', function () {
         },
       ],
       resolvableExtensions,
-      amdModules: [],
-      fastbootOnlyAmdModules: [],
+      appModules: [],
+      fastbootOnlyAppModules: [],
       testModules: [],
     };
 

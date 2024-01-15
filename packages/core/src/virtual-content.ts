@@ -2,7 +2,7 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
-import { type AmdModule } from './module-resolver';
+import { type AppModule } from './module-resolver';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -36,9 +36,9 @@ export function virtualContent(filename: string, resolver: Resolver): string {
     return renderImplicitModules(im, resolver);
   }
 
-  let am = decodeAmdModules(filename);
+  let am = decodeAppModules(filename);
   if (am) {
-    return renderAmdModules(am, resolver);
+    return renderAppModules(am, resolver);
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
@@ -192,7 +192,7 @@ export const {{name}} = mod.{{name}};
 `) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
 
 const implicitModulesPattern = /(?<filename>.*)[\\/]-embroider-implicit-(?<test>test-)?modules\.js$/;
-const amdModulesPattern = /(?<filename>.*)[\\/]-embroider-amd-(?<test>test-)?modules\.js$/;
+const appModulesPattern = /(?<filename>.*)[\\/]-embroider-app-(?<test>test-)?modules\.js$/;
 
 export function decodeImplicitModules(
   filename: string
@@ -209,17 +209,17 @@ export function decodeImplicitModules(
     };
   }
 }
-export function decodeAmdModules(
+export function decodeAppModules(
   filename: string
-): { type: 'amd-modules' | 'amd-test-modules'; fromFile: string } | undefined {
+): { type: 'app-modules' | 'app-test-modules'; fromFile: string } | undefined {
   // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes('-embroider-amd-')) {
+  if (!filename.includes('-embroider-app-')) {
     return;
   }
-  let m = amdModulesPattern.exec(filename);
+  let m = appModulesPattern.exec(filename);
   if (m) {
     return {
-      type: m.groups!.test ? 'amd-test-modules' : 'amd-modules',
+      type: m.groups!.test ? 'app-test-modules' : 'app-modules',
       fromFile: m.groups!.filename,
     };
   }
@@ -297,20 +297,20 @@ function renderImplicitModules(
   return implicitModulesTemplate({ ownModules, dependencyModules });
 }
 
-function renderAmdModules(
-  { type }: { type: 'amd-modules' | 'amd-test-modules'; fromFile: string },
+function renderAppModules(
+  { type }: { type: 'app-modules' | 'app-test-modules'; fromFile: string },
   resolver: Resolver
 ): string {
-  const amdModules = [...resolver.options.amdModules];
+  const appModules = [...resolver.options.appModules];
 
-  if (type === 'amd-test-modules') {
-    amdModules.push(...resolver.options.testModules);
+  if (type === 'app-test-modules') {
+    appModules.push(...resolver.options.testModules);
   }
 
-  return amdModulesTemplate({
-    amdModules,
-    fastbootOnlyAmdModules: resolver.options.fastbootOnlyAmdModules,
-    isTest: type === 'amd-test-modules',
+  return appModulesTemplate({
+    appModules,
+    fastbootOnlyAppModules: resolver.options.fastbootOnlyAppModules,
+    isTest: type === 'app-test-modules',
   });
 }
 
@@ -338,39 +338,39 @@ export default Object.assign(
 );
 `) as (params: { dependencyModules: string[]; ownModules: { runtime: string; buildtime: string }[] }) => string;
 
-const amdModulesTemplate = compile(`
+const appModulesTemplate = compile(`
 {{#if isTest}}
   import 'ember-testing';
 {{/if}}
 
 import { getGlobalConfig, macroCondition } from '@embroider/macros';
 
-{{#each amdModules as |amdModule index|~}}
-  import * as amdMod{{index}} from "{{js-string-escape amdModule.buildtime}}";
+{{#each appModules as |appModule index|~}}
+  import * as appMod{{index}} from "{{js-string-escape appModule.buildtime}}";
 {{~/each}}
 
-{{#if fastbootOnlyAmdModules~}}
-  {{#each fastbootOnlyAmdModules as |fastbootOnlyAmdModule index| ~}}
-    import * as fastbootOnlyAmdMod{{index}} from "{{js-string-escape fastbootOnlyAmdModule.buildtime}}";
+{{#if fastbootOnlyAppModules~}}
+  {{#each fastbootOnlyAppModules as |fastbootOnlyAppModule index| ~}}
+    import * as fastbootOnlyAppMod{{index}} from "{{js-string-escape fastbootOnlyAppModule.buildtime}}";
   {{/each}}
 {{~/if}}
 
 const modules = {
-  {{#each amdModules as |amdModule index| ~}}
-    "{{js-string-escape amdModule.runtime}}": amdMod{{index}},
+  {{#each appModules as |appModule index| ~}}
+    "{{js-string-escape appModule.runtime}}": appMod{{index}},
   {{~/each}}
 };
 
-{{#if fastbootOnlyAmdModules~}}
+{{#if fastbootOnlyAppModules~}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    {{#each fastbootOnlyAmdModules as |fastbootOnlyAmdModule index| ~}}
-      modules["{{js-string-escape fastbootOnlyAmdModule.runtime}}"] = fastbootOnlyAmdMod{{index}};
+    {{#each fastbootOnlyAppModules as |fastbootOnlyAppModule index| ~}}
+      modules["{{js-string-escape fastbootOnlyAppModule.runtime}}"] = fastbootOnlyAppMod{{index}};
     {{~/each}}
   }
 {{~/if}}
 
 export default modules;
-`) as (params: { amdModules: AmdModule[]; fastbootOnlyAmdModules: AmdModule[]; isTest: boolean }) => string;
+`) as (params: { appModules: AppModule[]; fastbootOnlyAppModules: AppModule[]; isTest: boolean }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.
 // This takes that and converts it to the inverst mapping from real import path

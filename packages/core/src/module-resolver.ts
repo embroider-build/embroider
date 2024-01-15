@@ -19,7 +19,7 @@ import {
   fastbootSwitch,
   decodeFastbootSwitch,
   decodeImplicitModules,
-  decodeAmdModules,
+  decodeAppModules,
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -87,12 +87,12 @@ export interface Options {
   modulePrefix: string;
   podModulePrefix?: string;
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
-  amdModules: AmdModule[];
-  fastbootOnlyAmdModules: AmdModule[];
-  testModules: AmdModule[];
+  appModules: AppModule[];
+  fastbootOnlyAppModules: AppModule[];
+  testModules: AppModule[];
 }
 
-export interface AmdModule {
+export interface AppModule {
   runtime: string;
   buildtime: string;
 }
@@ -184,7 +184,7 @@ export class Resolver {
     request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
-    request = this.handleAmdModules(request);
+    request = this.handleAppModules(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -425,15 +425,15 @@ export class Resolver {
     }
   }
 
-  private handleAmdModules<R extends ModuleRequest>(request: R): R {
-    let am = decodeAmdModules(request.specifier);
+  private handleAppModules<R extends ModuleRequest>(request: R): R {
+    let am = decodeAppModules(request.specifier);
     if (!am) {
       return request;
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!pkg?.isV2Ember()) {
-      throw new Error(`bug: found amd modules import in non-ember package at ${request.fromFile}`);
+      throw new Error(`bug: found app modules import in non-ember package at ${request.fromFile}`);
     }
 
     let packageName = getPackageName(am.fromFile);
@@ -441,13 +441,13 @@ export class Resolver {
     if (packageName) {
       let dep = this.packageCache.resolve(packageName, pkg);
       return logTransition(
-        `dep's amd modules`,
+        `dep's app modules`,
         request,
         request.virtualize(resolve(dep.root, `-embroider-${am.type}.js`))
       );
     } else {
       return logTransition(
-        `own amd modules`,
+        `own app modules`,
         request,
         request.virtualize(resolve(pkg.root, `-embroider-${am.type}.js`))
       );

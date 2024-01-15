@@ -67,18 +67,18 @@ appScenarios
 
         expectAudit
           .module('assets/@ef4/namespaced-app.js')
-          .resolves('./-embroider-amd-modules.js')
-          .to('./node_modules/.embroider/rewritten-app/-embroider-amd-modules.js');
+          .resolves('./-embroider-app-modules.js')
+          .to('./node_modules/.embroider/rewritten-app/-embroider-app-modules.js');
 
         expectAudit
           .module('assets/@ef4/namespaced-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"@ef4\/namespaced-app\/app": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"@ef4\/namespaced-app\/app": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "@ef4\/namespaced-app\/app.js";`);
-          }, 'app.js import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'app.js import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test(`app css location`, function () {

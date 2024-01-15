@@ -60,7 +60,7 @@ import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
-import { type AmdModule } from '@embroider/core/src/module-resolver';
+import { type AppModule } from '@embroider/core/src/module-resolver';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -298,8 +298,8 @@ export class CompatAppBuilder {
     let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
       appFiles.isFastbootOnly.get(file)
     );
-    let amdModules = nonFastboot.map(file => this.importPaths(appFiles, file));
-    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(appFiles, file));
+    let appModules = nonFastboot.map(file => this.importPaths(appFiles, file));
+    let fastbootOnlyAppModules = fastboot.map(file => this.importPaths(appFiles, file));
 
     let testModules: { runtime: string; buildtime: string }[] = [];
 
@@ -338,8 +338,8 @@ export class CompatAppBuilder {
       podModulePrefix: this.podModulePrefix(),
       activePackageRules: this.activeRules(),
       options,
-      amdModules,
-      fastbootOnlyAmdModules,
+      appModules,
+      fastbootOnlyAppModules,
       testModules,
     };
 
@@ -1312,7 +1312,7 @@ export class CompatAppBuilder {
       eagerModules,
       styles,
       // this is a backward-compatibility feature: addons can force inclusion of modules.
-      defineModulesFrom: ['./-embroider-implicit-modules.js', './-embroider-amd-modules.js'],
+      defineModulesFrom: ['./-embroider-implicit-modules.js', './-embroider-app-modules.js'],
     };
     if (entryParams) {
       Object.assign(params, entryParams);
@@ -1329,7 +1329,7 @@ export class CompatAppBuilder {
     return asset;
   }
 
-  private importPaths({ engine }: AppFiles, engineRelativePath: string): AmdModule {
+  private importPaths({ engine }: AppFiles, engineRelativePath: string): AppModule {
     let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
       runtime: `${engine.modulePrefix}/${noHBS}`,
@@ -1372,7 +1372,7 @@ export class CompatAppBuilder {
       eagerModules,
       testSuffix: true,
       // this is a backward-compatibility feature: addons can force inclusion of test support modules.
-      defineModulesFrom: ['./-embroider-implicit-test-modules.js', './-embroider-amd-test-modules.js'],
+      defineModulesFrom: ['./-embroider-implicit-test-modules.js', './-embroider-app-test-modules.js'],
     });
 
     asset = {
@@ -1484,14 +1484,14 @@ if (!runningTests) {
 const routeEntryTemplate = jsHandlebarsCompile(`
 import { importSync as i } from '@embroider/macros';
 let d = window.define;
-{{#each files as |amdModule| ~}}
-d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+{{#each files as |appModule| ~}}
+d("{{js-string-escape appModule.runtime}}", function(){ return i("{{js-string-escape appModule.buildtime}}");});
 {{/each}}
 {{#if fastbootOnlyFiles}}
   import { macroCondition, getGlobalConfig } from '@embroider/macros';
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    {{#each fastbootOnlyFiles as |amdModule| ~}}
-    d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+    {{#each fastbootOnlyFiles as |appModule| ~}}
+    d("{{js-string-escape appModule.runtime}}", function(){ return i("{{js-string-escape appModule.buildtime}}");});
     {{/each}}
   }
 {{/if}}

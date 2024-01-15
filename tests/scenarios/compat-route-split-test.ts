@@ -115,37 +115,37 @@ splitScenarios
       test('has non-split controllers in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/controllers\/index": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/controllers\/index": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app/controllers/index.js";`);
-          }, 'controllers/index import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'controllers/index import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('has non-split route templates in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/templates\/index": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/templates\/index": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app/templates/index.hbs";`);
-          }, 'templates/index import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'templates/index import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('has non-split routes in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/routes\/index": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/routes\/index": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app\/routes/index.js";`);
-          }, 'routes/index import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'routes/index import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('does not have split controllers in main entrypoint', function () {
@@ -311,37 +311,37 @@ splitScenarios
       test('has non-split controllers in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/pods\/index\/controller": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/pods\/index\/controller": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app\/pods\/index\/controller.js";`);
-          }, 'pods/index/controller import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'pods/index/controller import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('has non-split route templates in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/pods\/index\/template": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/pods\/index\/template": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app\/pods\/index\/template.hbs";`);
-          }, 'pods/index/template import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'pods/index/template import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('has non-split routes in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/pods\/index\/route": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/pods\/index\/route": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app\/pods/index/route.js";`);
-          }, 'pods/index/route import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'pods/index/route import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('does not have split controllers in main entrypoint', function () {
@@ -507,37 +507,37 @@ splitScenarios
       test('has non-split controllers in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/routes\/index\/controller": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/routes\/index\/controller": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app\/routes\/index\/controller.js";`);
-          }, 'routes/index/controller import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'routes/index/controller import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('has non-split route templates in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/routes\/index\/template": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/routes\/index\/template": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app\/routes\/index\/template.hbs";`);
-          }, 'routes/index/template import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'routes/index/template import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('has non-split routes in main entrypoint', function () {
         expectAudit
           .module('./assets/my-app.js')
-          .resolves('./-embroider-amd-modules.js')
+          .resolves('./-embroider-app-modules.js')
           .toModule()
           .withContents(contents => {
-            const [, objectName] = /"my-app\/routes\/index\/route": (amdMod\d+),/.exec(contents) ?? [];
+            const [, objectName] = /"my-app\/routes\/index\/route": (appMod\d+),/.exec(contents) ?? [];
 
             return contents.includes(`import * as ${objectName} from "my-app\/routes/index/route.js";`);
-          }, 'routes/index/route import/export should be present in the virtual -embroider-amd-modules.js file');
+          }, 'routes/index/route import/export should be present in the virtual -embroider-app-modules.js file');
       });
 
       test('does not have split controllers in main entrypoint', function () {

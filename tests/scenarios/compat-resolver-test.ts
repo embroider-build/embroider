@@ -101,6 +101,7 @@ Scenarios.fromProject(() => new Project())
             ],
             amdModules: [],
             fastbootOnlyAmdModules: [],
+            testModules: [],
           };
 
           givenFiles({

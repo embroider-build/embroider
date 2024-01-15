@@ -303,6 +303,12 @@ export class CompatAppBuilder {
     let amdModules = nonFastboot.map(file => this.importPaths(appFiles, file));
     let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(appFiles, file));
 
+    let testModules: { runtime: string; buildtime: string }[] = [];
+
+    for (let relativePath of appFiles.tests) {
+      testModules.push(this.importPaths(appFiles, relativePath));
+    }
+
     let config: CompatResolverOptions = {
       // this part is the base ModuleResolverOptions as required by @embroider/core
       renameModules,
@@ -336,6 +342,7 @@ export class CompatAppBuilder {
       options,
       amdModules,
       fastbootOnlyAmdModules,
+      testModules,
     };
 
     return config;
@@ -1366,11 +1373,6 @@ export class CompatAppBuilder {
       return asset;
     }
 
-    // We're only building tests from the first engine (the app). This is the
-    // normal thing to do -- tests from engines don't automatically roll up into
-    // the app.
-    let engine = appFiles[0];
-
     const myName = 'assets/test.js';
 
     // tests necessarily also include the app. This is where we account for
@@ -1382,12 +1384,6 @@ export class CompatAppBuilder {
       'ember-testing',
       explicitRelative(dirname(myName), this.topAppJSAsset(appFiles, prepared).relativePath),
     ];
-
-    let amdModules: { runtime: string; buildtime: string }[] = [];
-
-    for (let relativePath of engine.tests) {
-      amdModules.push(this.importPaths(engine, relativePath));
-    }
 
     let source = entryTemplate({
       eagerModules,

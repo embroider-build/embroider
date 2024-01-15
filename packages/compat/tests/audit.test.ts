@@ -53,6 +53,7 @@ describe('audit', function () {
       resolvableExtensions,
       amdModules: [],
       fastbootOnlyAmdModules: [],
+      testModules: [],
     };
 
     let babel: TransformOptions = {

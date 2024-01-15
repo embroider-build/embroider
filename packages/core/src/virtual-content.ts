@@ -298,11 +298,17 @@ function renderImplicitModules(
 }
 
 function renderAmdModules(
-  _amdModulesPlaceholderModule: { type: 'amd-modules' | 'amd-test-modules'; fromFile: string },
+  { type }: { type: 'amd-modules' | 'amd-test-modules'; fromFile: string },
   resolver: Resolver
 ): string {
+  const amdModules = [...resolver.options.amdModules];
+
+  if (type === 'amd-test-modules') {
+    amdModules.push(...resolver.options.testModules);
+  }
+
   return amdModulesTemplate({
-    amdModules: resolver.options.amdModules,
+    amdModules,
     fastbootOnlyAmdModules: resolver.options.fastbootOnlyAmdModules,
   });
 }

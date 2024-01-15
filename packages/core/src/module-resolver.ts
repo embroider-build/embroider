@@ -89,6 +89,7 @@ export interface Options {
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
   amdModules: AmdModule[];
   fastbootOnlyAmdModules: AmdModule[];
+  testModules: AmdModule[];
 }
 
 export interface AmdModule {

@@ -120,12 +120,20 @@ splitScenarios
           .withContents(contents => {
             const [, objectName] = /"my-app\/controllers\/index": (amdMod\d+),/.exec(contents) ?? [];
 
-            return contents.includes(`import * as ${objectName} from "my-app\/controllers/index.js";`);
+            return contents.includes(`import * as ${objectName} from "my-app/controllers/index.js";`);
           }, 'controllers/index import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('has non-split route templates in main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('templates/index');
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/templates\/index": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app/templates/index.hbs";`);
+          }, 'templates/index import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('has non-split routes in main entrypoint', function () {
@@ -313,7 +321,15 @@ splitScenarios
       });
 
       test('has non-split route templates in main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('pods/index/template');
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/pods\/index\/template": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app\/pods\/index\/template.hbs";`);
+          }, 'pods/index/template import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('has non-split routes in main entrypoint', function () {
@@ -501,7 +517,15 @@ splitScenarios
       });
 
       test('has non-split route templates in main entrypoint', function () {
-        expectFile('./assets/my-app.js').matches('routes/index/template');
+        expectAudit
+          .module('./assets/my-app.js')
+          .resolves('./-embroider-amd-modules.js')
+          .toModule()
+          .withContents(contents => {
+            const [, objectName] = /"my-app\/routes\/index\/template": (amdMod\d+),/.exec(contents) ?? [];
+
+            return contents.includes(`import * as ${objectName} from "my-app\/routes\/index\/template.hbs";`);
+          }, 'routes/index/template import/export should be present in the virtual -embroider-amd-modules.js file');
       });
 
       test('has non-split routes in main entrypoint', function () {

@@ -1381,7 +1381,6 @@ export class CompatAppBuilder {
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
     let eagerModules: string[] = [
-      'ember-testing',
       explicitRelative(dirname(myName), this.topAppJSAsset(appFiles, prepared).relativePath),
     ];
 
@@ -1437,8 +1436,9 @@ let d = w.define;
 
 
 {{#each eagerModules as |eagerModule| ~}}
-  i("{{js-string-escape eagerModule}}");
+  import("{{js-string-escape eagerModule}}");
 {{/each}}
+
 
 
 {{#if lazyRoutes}}

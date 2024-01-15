@@ -310,6 +310,7 @@ function renderAmdModules(
   return amdModulesTemplate({
     amdModules,
     fastbootOnlyAmdModules: resolver.options.fastbootOnlyAmdModules,
+    isTest: type === 'amd-test-modules',
   });
 }
 
@@ -338,6 +339,10 @@ export default Object.assign(
 `) as (params: { dependencyModules: string[]; ownModules: { runtime: string; buildtime: string }[] }) => string;
 
 const amdModulesTemplate = compile(`
+{{#if isTest}}
+  import 'ember-testing';
+{{/if}}
+
 import { getGlobalConfig, macroCondition } from '@embroider/macros';
 
 {{#each amdModules as |amdModule index|~}}
@@ -365,7 +370,7 @@ const modules = {
 {{~/if}}
 
 export default modules;
-`) as (params: { amdModules: AmdModule[]; fastbootOnlyAmdModules: AmdModule[] }) => string;
+`) as (params: { amdModules: AmdModule[]; fastbootOnlyAmdModules: AmdModule[]; isTest: boolean }) => string;
 
 // meta['renamed-modules'] has mapping from classic filename to real filename.
 // This takes that and converts it to the inverst mapping from real import path

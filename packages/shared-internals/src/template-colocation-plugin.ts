@@ -93,6 +93,9 @@ export default function main(babel: typeof Babel) {
       },
 
       ExportDefaultDeclaration(path: NodePath<t.ExportDefaultDeclaration>, state: State) {
+        if (state.associate) {
+          return;
+        }
         let template = getTemplate(path, state);
         if (!template) {
           return;
@@ -131,6 +134,9 @@ export default function main(babel: typeof Babel) {
         }
       },
       ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>, state: State) {
+        if (state.associate) {
+          return;
+        }
         let template = getTemplate(path, state);
         if (!template) {
           return;

@@ -76,6 +76,18 @@ async function maybeSynthesizeComponentJS(
   if (!templateResolution) {
     return null;
   }
+  // A rather primivite approach that will probably need to be refined.
+  // If an `hbs` file has `templates` in its path, it's considered a route template.
+  if (source.includes('templates')) {
+    return {
+      id: templateResolution.id.replace(/\.hbs$/, '.js'),
+      meta: {
+        'rollup-ember-route-templates-plugin': {
+          type: 'route-template',
+        },
+      },
+    };
+  }
   // we're trying to resolve a JS module but only the corresponding HBS
   // file exists. Synthesize the template-only component JS.
   return {

@@ -62,7 +62,9 @@ appScenarios
           plugins: [
             addon.publicEntrypoints([
               'components/**/*.js',
-            ]),
+            ], {
+              exclude: ['**/-excluded/**/*'],
+            }),
 
             addon.appReexports(['components/**/*.js'], {
               mapFilename: (name) => reexportMappings[name] || name,
@@ -247,11 +249,17 @@ appScenarios
           });
         });
 
-        test('the addon was built successfully', async function () {
+        test('the addon has expected public entrypoints', async function () {
+          expectFile('dist/components/demo/index.js').exists();
+          expectFile('dist/components/demo/out.js').exists();
+          expectFile('dist/components/demo/namespace-me.js').exists();
+          expectFile('dist/components/-excluded/never-import-this.js').doesNotExist();
+        });
+
+        test('the addon has expected app-reexports', async function () {
           expectFile('dist/_app_/components/demo/index.js').matches(
             'export { default } from "v2-addon/components/demo/index"'
           );
-
           expectFile('dist/_app_/components/demo/out.js').matches(
             'export { default } from "v2-addon/components/demo/out"'
           );

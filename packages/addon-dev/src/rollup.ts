@@ -36,8 +36,12 @@ export class Addon {
   // This configures rollup to emit public entrypoints for each module in your
   // srcDir that matches one of the given globs. Typical addons will want to
   // match patterns like "components/**/*.js", "index.js", and "test-support.js".
-  publicEntrypoints(patterns: string[]) {
-    return publicEntrypoints({ srcDir: this.#srcDir, include: patterns });
+  publicEntrypoints(patterns: string[], opts: { exclude?: string[] } = {}) {
+    return publicEntrypoints({
+      srcDir: this.#srcDir,
+      include: patterns,
+      exclude: opts.exclude,
+    });
   }
 
   // This wraps standalone .hbs files as Javascript files using inline

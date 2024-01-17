@@ -66,6 +66,7 @@ appScenarios
 
             addon.appReexports(['components/**/*.js'], {
               mapFilename: (name) => reexportMappings[name] || name,
+              exclude: ['**/-excluded/**/*'],
             }),
 
             addon.hbs(),
@@ -139,6 +140,11 @@ appScenarios
               <this.Button @onClick={{this.flip}} />
 
               <div data-test="should-transform">{{transformMe}}</div>
+            `,
+          },
+          '-excluded': {
+            'never-import-this.js': `
+              throw new Exception('This should never have been imported!');
             `,
           },
         },

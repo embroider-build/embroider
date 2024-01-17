@@ -26,6 +26,7 @@ export class Addon {
     opts: {
       mapFilename?: (fileName: string) => string;
       exports?: (filename: string) => string[] | string | undefined;
+      exclude?: string[];
     } = {}
   ): Plugin {
     return appReexports({
@@ -34,6 +35,7 @@ export class Addon {
       include: patterns,
       mapFilename: opts.mapFilename,
       exports: opts.exports,
+      exclude: opts.exclude,
     });
   }
 

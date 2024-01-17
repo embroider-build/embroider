@@ -29,6 +29,7 @@ async function githubMatrix() {
     ...suites
       .filter(s => s.name !== 'node') // TODO: node tests do not work under windows yet
       .filter(s => !s.name.includes('watch-mode')) // TODO: watch tests are far too slow on windows right now
+      .filter(s => !s.name.startsWith('beta-')) // only test ember beta to not slow down CI too much
       .map(s => ({
         name: `${s.name} windows`,
         os: 'windows',

@@ -10,29 +10,29 @@ const externalCJSPrefix = '/@embroider/ext-cjs/';
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
-export function virtualContent(filename: string, resolver: Resolver): string {
+export function virtualContent(filename: string, resolver: Resolver): { src: string; watches: string[] } {
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
-    return renderCJSExternalShim(cjsExtern);
+    return { src: renderCJSExternalShim(cjsExtern), watches: [] };
   }
 
   let extern = decodeVirtualExternalESModule(filename);
   if (extern) {
-    return renderESExternalShim(extern);
+    return { src: renderESExternalShim(extern), watches: [] };
   }
   let match = decodeVirtualPairComponent(filename);
   if (match) {
-    return pairedComponentShim(match);
+    return { src: pairedComponentShim(match), watches: [] };
   }
 
   let fb = decodeFastbootSwitch(filename);
   if (fb) {
-    return fastbootSwitchTemplate(fb);
+    return { src: fastbootSwitchTemplate(fb), watches: [] };
   }
 
   let im = decodeImplicitModules(filename);
   if (im) {
-    return renderImplicitModules(im, resolver);
+    return { src: renderImplicitModules(im, resolver), watches: [] };
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);

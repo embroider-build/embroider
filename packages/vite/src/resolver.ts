@@ -1,5 +1,5 @@
 import type { PluginContext, ResolveIdResult } from 'rollup';
-import type { Plugin } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
 import type { Resolution, ResolverFunction } from '@embroider/core';
 import { virtualContent, ResolverLoader } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';
@@ -7,10 +7,31 @@ import assertNever from 'assert-never';
 
 export function resolver(): Plugin {
   let resolverLoader = new ResolverLoader(process.cwd());
+  let server: ViteDevServer;
+  let virtualDeps: Map<string, string[]> = new Map();
 
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
+
+    configureServer(s) {
+      server = s;
+      server.watcher.on('all', (_eventName, path) => {
+        for (let [id, watches] of virtualDeps) {
+          for (let watch of watches) {
+            if (path.startsWith(watch)) {
+              console.log(`Invalidate ${id} because ${path}`);
+              server.moduleGraph.onFileChange(id);
+              let m = server.moduleGraph.getModuleById(id);
+              if (m) {
+                server.reloadModule(m);
+              }
+            }
+          }
+        }
+      });
+    },
+
     async resolveId(source, importer, options) {
       let request = RollupModuleRequest.from(source, importer, options.custom);
       if (!request) {
@@ -29,7 +50,10 @@ export function resolver(): Plugin {
     },
     load(id) {
       if (id.startsWith(virtualPrefix)) {
-        return virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
+        let { src, watches } = virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
+        virtualDeps.set(id, watches);
+        server.watcher.add(watches);
+        return src;
       }
     },
   };

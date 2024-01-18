@@ -3,6 +3,7 @@ import { baseV2Addon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import { Scenarios } from 'scenario-tester';
 import fs from 'fs/promises';
+import { pathExists } from 'fs-extra';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { DevWatcher, becomesModified, isNotModified } from './helpers';
@@ -184,6 +185,35 @@ Scenarios.fromProject(() => baseV2Addon())
               await watcher?.nextBuild();
             },
           });
+        });
+
+        test('adding a new file triggers a re-build', async function (assert) {
+          watcher = new DevWatcher(addon);
+
+          await watcher.start();
+
+          const src = path.join(addon.dir, 'src/components/foo.js');
+          const dist = path.join(addon.dir, 'dist/components/foo.js');
+
+          assert.false(await pathExists(src), 'src/components/foo.js does not exist');
+          assert.false(await pathExists(dist), 'dist/components/foo.js does not exist');
+
+          await fs.writeFile(
+            src,
+            `
+            import Component from '@glimmer/component';
+            export default class FooComponent extends Component {}
+            `
+          );
+
+          assert.true(await pathExists(src), 'src/components/foo.js exists');
+
+          await watcher.nextBuild();
+
+          assert.true(
+            (await fs.readFile(dist)).includes('FooComponent'),
+            'dist/components/foo.js exists and has the right content'
+          );
         });
       });
 

@@ -23,6 +23,8 @@
     "src/**/*.js.map"
   ],
   "scripts": {
+    "prepack": "tsc",
+    "build": "tsc",
     "test": "jest"
   },
   "dependencies": {
@@ -41,8 +43,11 @@
   "devDependencies": {
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.84.2",
+    "@tsconfig/ember": "^3.0.3",
+    "@types/broccoli-funnel": "^3.0.4",
     "@types/fs-extra": "^9.0.12",
     "@types/minimatch": "^3.0.4",
+    "@types/node": "^20.11.5",
     "@types/yargs": "^17.0.3",
     "rollup": "^3.23.0",
     "tmp": "^0.1.0",

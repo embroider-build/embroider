@@ -95,12 +95,21 @@ importers:
       '@glimmer/syntax':
         specifier: ^0.84.2
         version: 0.84.3
+      '@tsconfig/ember':
+        specifier: ^3.0.3
+        version: 3.0.3
+      '@types/broccoli-funnel':
+        specifier: ^3.0.4
+        version: 3.0.4
       '@types/fs-extra':
         specifier: ^9.0.12
         version: 9.0.13
       '@types/minimatch':
         specifier: ^3.0.4
         version: 3.0.5
+      '@types/node':
+        specifier: ^20.11.5
+        version: 20.11.5
       '@types/yargs':
         specifier: ^17.0.3
         version: 17.0.32
@@ -6512,6 +6521,10 @@ packages:
     resolution: {integrity: sha512-aPzLw5BfQxsFPrh5fNDOK4SbSkp2q5fMlrKVeniVjMz1lAcyOh2eH5THkKKcBi1YN1/fbMdAWN/dKGW6lg2+8g==}
     dev: true
 
+  /@tsconfig/ember@3.0.3:
+    resolution: {integrity: sha512-StVVkcg/VxA+eDzBcTQAcnmmcmg1OxaV41OqFYluqVHpUX28TOD91DGg58n2AMU9ia27zeBBeVQiLsfmzuIV7w==}
+    dev: true
+
   /@tsconfig/node10@1.0.9:
     resolution: {integrity: sha512-jNsYVVxU8v5g43Erja32laIDHXeoNvFEpX33OK4d6hljo3jDhCBDhx5dhCCTMWUojscpAagGiRkBKxpdl9fxqA==}
     dev: false
@@ -6582,6 +6595,16 @@ packages:
     dependencies:
       '@types/connect': 3.4.38
       '@types/node': 15.14.9
+
+  /@types/broccoli-funnel@3.0.4:
+    resolution: {integrity: sha512-M8/dl2eDR65yMMp64av9IpG0kpKlAdr8R66qZxdouIkdcQqum7QHuPWGz5MYS1HWPonfVuF+qkiWiXLO3JjrHA==}
+    dependencies:
+      '@types/node': 20.11.5
+      broccoli-node-api: 1.7.0
+      broccoli-plugin: 4.0.7
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
 
   /@types/broccoli-plugin@3.0.0:
     resolution: {integrity: sha512-f+TcsARR2PovfFRKFdCX0kfH/QoM3ZVD2h1rl2mNvrKO0fq2uBNCBsTU3JanfU4COCt5cXpTfARyUsERlC8vIw==}
@@ -6796,6 +6819,12 @@ packages:
 
   /@types/node@15.14.9:
     resolution: {integrity: sha512-qjd88DrCxupx/kJD5yQgZdcYKZKSIGBVDIBE1/LTGcNm3d2Np/jxojkdePDdfnBHJc5W7vSMpbJ1aB7p/Py69A==}
+
+  /@types/node@20.11.5:
+    resolution: {integrity: sha512-g557vgQjUUfN76MZAN/dt1z3dzcUsimuysco0KeluHgrPdJXkP/XdAURgyO2W9fZWHRtRBiVKzKn8vyOAwlG+w==}
+    dependencies:
+      undici-types: 5.26.5
+    dev: true
 
   /@types/node@9.6.61:
     resolution: {integrity: sha512-/aKAdg5c8n468cYLy2eQrcR5k6chlbNwZNGUj3TboyPa2hcO2QAJcfymlqPzMiRj8B6nYKXjzQz36minFE0RwQ==}
@@ -22017,6 +22046,10 @@ packages:
 
   /underscore@1.13.6:
     resolution: {integrity: sha512-+A5Sja4HP1M08MaXya7p5LvjuM7K6q/2EaC0+iovj/wOcMsTzMvDFbasi/oSapiwOlt252IqsKqPjCl7huKS0A==}
+
+  /undici-types@5.26.5:
+    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+    dev: true
 
   /unicode-canonical-property-names-ecmascript@2.0.0:
     resolution: {integrity: sha512-yY5PpDlfVIU5+y/BSCxAJRBIS1Zc2dDG3Ujq+sR0U+JjUevW2JhocOF+soROYDSaAezOzOKuyyixhD6mBknSmQ==}

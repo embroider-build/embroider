@@ -32,6 +32,7 @@
     "test-packages/*/node_modules",
     "tmp",
     "tests/scenarios/output",
-    "packages/router/src"
+    "packages/router/src",
+    "packages/addon-dev",
   ]
 }

@@ -1,13 +1,13 @@
-import { default as hbs } from './rollup-hbs-plugin';
-import { default as glint } from './rollup-glint-plugin';
-import { default as gjs } from './rollup-gjs-plugin';
-import { default as publicEntrypoints } from './rollup-public-entrypoints';
-import { default as appReexports } from './rollup-app-reexports';
+import { default as hbs } from './rollup-hbs-plugin.js';
+import { default as glint } from './rollup-glint-plugin.js';
+import { default as gjs } from './rollup-gjs-plugin.js';
+import { default as publicEntrypoints } from './rollup-public-entrypoints.js';
+import { default as appReexports } from './rollup-app-reexports.js';
 import type { Options as DelOptions } from 'rollup-plugin-delete';
 import { default as clean } from 'rollup-plugin-delete';
-import { default as keepAssets } from './rollup-keep-assets';
-import { default as dependencies } from './rollup-addon-dependencies';
-import { default as publicAssets } from './rollup-public-assets';
+import { default as keepAssets } from './rollup-keep-assets.js';
+import { default as dependencies } from './rollup-addon-dependencies.js';
+import { default as publicAssets } from './rollup-public-assets.js';
 import type { Plugin } from 'rollup';
 
 export class Addon {

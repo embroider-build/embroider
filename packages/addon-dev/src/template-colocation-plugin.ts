@@ -1,6 +1,6 @@
 import {
   templateColocationPlugin,
-  Options as TemplateColocationPluginOptions,
+  type Options as TemplateColocationPluginOptions,
 } from '@embroider/core';
 
 export { TemplateColocationPluginOptions as Options };

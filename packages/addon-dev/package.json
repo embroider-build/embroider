@@ -9,6 +9,7 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner <edward@eaf4.com>",
+  "type": "module",
   "bin": {
     "addon-dev": "./src/commands.js"
   },

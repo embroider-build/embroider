@@ -2,11 +2,15 @@
   "include": ["src/**/*"],
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    // Enabling this breaks all dependencies, since
+    // the types use import, but they are all CJS
+    //  error TS1286: ESM syntax is not allowed in a CommonJS module when 'verbatimModuleSyntax' is enabled.
+    // "verbatimModuleSyntax": true,
+
     "typeRoots": ["types", "node_modules/@types"],
     "noEmit": false,
-    "verbatimModuleSyntax": false,
     "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

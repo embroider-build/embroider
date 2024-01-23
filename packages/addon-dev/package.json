@@ -34,7 +34,9 @@
     "rollup-plugin-copy-assets": "^2.0.3",
     "rollup-plugin-delete": "^2.0.0",
     "walk-sync": "^3.0.0",
-    "yargs": "^17.0.1"
+    "yargs": "^17.0.1",
+    "fix-bad-declaration-output": "^1.0.3",
+    "execa": "^8.0.1"
   },
   "devDependencies": {
     "@embroider/test-support": "workspace:*",

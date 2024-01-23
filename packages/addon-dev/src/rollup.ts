@@ -1,4 +1,5 @@
 import { default as hbs } from './rollup-hbs-plugin';
+import { default as glint } from './rollup-glint-plugin';
 import { default as gjs } from './rollup-gjs-plugin';
 import { default as publicEntrypoints } from './rollup-public-entrypoints';
 import { default as appReexports } from './rollup-app-reexports';
@@ -59,6 +60,10 @@ export class Addon {
 
   gjs(options?: { inline_source_map: boolean }) {
     return gjs(options);
+  }
+
+  glint(pattern: string) {
+    return glint(pattern);
   }
 
   // By default rollup does not clear the output directory between builds. This

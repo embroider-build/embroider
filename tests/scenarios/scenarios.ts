@@ -34,7 +34,6 @@ export function supportMatrix(scenarios: Scenarios) {
     lts_3_28,
     lts_4_4,
     release,
-    canary,
   });
 }
 

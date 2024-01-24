@@ -11,7 +11,7 @@ const { module: Qmodule, test } = QUnit;
 appScenarios
   // we are primarily interested in the v2 addon build, we don't need to repeat
   // it per host-app version
-  .only('canary')
+  .only('release')
   .map('v2-addon-dev-js', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';

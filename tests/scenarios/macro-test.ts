@@ -105,7 +105,7 @@ appScenarios
   });
 
 appScenarios
-  .only('canary')
+  .only('release')
   .map('macro-babel-cache-busting', project => {
     scenarioSetup(project);
   })

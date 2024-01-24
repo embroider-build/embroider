@@ -38,11 +38,6 @@ export function supportMatrix(scenarios: Scenarios) {
         release,
         canary,
       })
-      // we are skipping these scenarios for now and will likely add them back in one-by one once the
-      // new vite based system is working as we like
-      .skip('lts_3_28')
-      .skip('lts_4_4')
-      .skip('release')
   );
 }
 

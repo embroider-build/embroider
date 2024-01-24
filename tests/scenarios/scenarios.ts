@@ -30,15 +30,12 @@ async function canary(project: Project) {
 }
 
 export function supportMatrix(scenarios: Scenarios) {
-  return (
-    scenarios
-      .expand({
-        lts_3_28,
-        lts_4_4,
-        release,
-        canary,
-      })
-  );
+  return scenarios.expand({
+    lts_3_28,
+    lts_4_4,
+    release,
+    canary,
+  });
 }
 
 export function baseAddon(as: 'dummy-app' | 'dependency' = 'dependency') {

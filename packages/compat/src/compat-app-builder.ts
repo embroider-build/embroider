@@ -358,10 +358,10 @@ export class CompatAppBuilder {
                   e[r] = t[r]
               return e
           }
-          var metaTag = document.querySelector('meta[name="' + metaName + '"]');
+          var metaName = '${appName}' + '/config/environment';
+          var metaTag = typeof document !== 'undefined && document.querySelector('meta[name="' + metaName + '"]');
           if (metaTag) {
             try {
-              var metaName = '${appName}' + '/config/environment';
               var rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
               var config = JSON.parse(decodeURIComponent(rawConfig));
               window.EmberENV = merge(window.EmberENV || {}, config.EmberENV);

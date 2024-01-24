@@ -16,7 +16,7 @@ If your addon is a mix of both build-time and run-time features, consider replac
 
 Traditionally, an Ember addon is a single NPM package that combines both the actual addon code _and_ a "dummy" app for hosting tests and docs. This was [problematic for several reasons](https://github.com/ember-cli/rfcs/issues/119). V2 addons instead require clean separation between addon and app, so you're going to be working with more than one distinct NPM package: one for the addon, one for the test-app, and optionally one for the documentation site.
 
-Our recommended way to manage these multiple packages is using a monorepo, via Yarn, NPM, or PNPM Workspaces. The example in this guide assumes a Yarn Workspaces monorepo.
+Our recommended way to manage these multiple packages is using a monorepo, via pnpm, Yarn, or npm workspaces. The example in this guide assumes a pnpm workspaces monorepo because it's a good solution to work with Embroider in general.
 
 ## Part 1: Separate Addon from Dummy App
 
@@ -26,7 +26,7 @@ For a complete example of a PR that performed these steps on a real addon, see h
 
 The steps:
 
-1. Delete yarn.lock.
+1. Delete `pnpm-lock.yaml`.
 
 1. At the top-level of your repo, make new directories named `test-app` and `_addon`
 
@@ -65,6 +65,15 @@ The steps:
    }
    ```
 
+   With pnpm, the workspace packages must also be described in [`pnpm-workspace.yaml`](https://pnpm.io/pnpm-workspace_yaml):
+
+   ```yaml
+   packages:
+     - 'addon'
+     - 'test-app'
+   ```
+
+
 1. Make a new top-level .gitignore:
 
    ```
@@ -72,7 +81,7 @@ The steps:
    node_modules
 
    # and you can put in anything else that tends to accumulate in your environment:
-   yarn-error.log
+   .pnpm-debug.log
    .DS_Store
    ```
 
@@ -96,7 +105,7 @@ The steps:
    ```
 
 1. `In test-app/package.json`, change the top-level "name" to "test-app", remove the "ember-addon" section, and remove "ember-addon" from keywords.
-1. At the top-level of the project, run `yarn install`.
+1. At the top-level of the project, run `pnpm install`.
 1. In `test-app/ember-cli-build.js` switch from the dummy app build pipeline to the normal app build pipeline:
 
    ```diff
@@ -128,7 +137,7 @@ The steps:
 
    Copy the lint-related scripts from `test-app/package.json` to `addon/package.json`.
 
-   Test that `yarn lint` works inside the `addon` workspace.
+   Test that `pnpm lint` works inside the `addon` workspace.
 
 1. Remove `test-app/config/ember-cli-update.json` because it still says you're using the **addon** blueprint and next time you run ember-cli-update in `test-app` it uses the **app** blueprint instead.
 
@@ -136,7 +145,7 @@ The steps:
 
    ```diff
     - name: Test
-      run: yarn test:ember --launch ${{ matrix.browser }}
+      run: pnpm test:ember --launch ${{ matrix.browser }}
    +  working-directory: test-app
    ```
 
@@ -144,12 +153,12 @@ The steps:
 
    ```diff
    -    - name: Lint
-   -      run: yarn lint
+   -      run: pnpm lint
    +    - name: Lint Addon
-   +      run: yarn lint
+   +      run: pnpm lint
    +      working-directory: addon
    +    - name: Lint Test App
-   +      run: yarn lint
+   +      run: pnpm lint
    +      working-directory: test-app
    ```
 
@@ -210,10 +219,10 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
 
    All of these implement standard features of V2 addons that don't need to come as dependencies.
 
-4. `yarn add @embroider/addon-shim`. This is the only dependency a v2 addon needs (in order to interoperate with ember-cli.
+4. `pnpm add @embroider/addon-shim`. This is the only dependency a v2 addon needs (in order to interoperate with ember-cli.
 5. We're going to set up a default build pipeline for things like template colocation and decorator support. Install these dev dependencies:
 
-   `yarn add --dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-transform-class-properties @babel/plugin-proposal-decorators`
+   `pnpm add --save-dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-transform-class-properties @babel/plugin-proposal-decorators`
 
 6. Grab the [example babel config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.json) and save it as `addon/babel.config.json`
    - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using the `babel-plugin-ember-template-compilation`. View how to use this in the [example babel.config.js](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.js)
@@ -258,7 +267,7 @@ module.exports = addonV1Shim(__dirname);
       "version": 2
     }
     ```
-16. In the `addon` directory, run `yarn start` to start building the addon.
-17. In a separate shell, you should be able to go into the `test-app` directory and run `yarn start` or `yarn test` and see your tests passing.
+16. In the `addon` directory, run `pnpm start` to start building the addon.
+17. In a separate shell, you should be able to go into the `test-app` directory and run `pnpm start` or `pnpm test` and see your tests passing.
 
 When all tests are passing, you have a fully-working V2 addon and you're ready to release it. To publish, you will run `npm publish` in the `addon` directory.

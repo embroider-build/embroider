@@ -366,7 +366,11 @@ export class CompatAppBuilder {
         kind: 'in-memory',
         relativePath: '_testing_suffix_.js',
         source: `
-        var runningTests=true;
+        import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
+        let w = window;
+        let d = w.define;
+        d("ember-testing", function() { return i("ember-testing") });
+        runningTests=true;
         if (typeof Testem !== 'undefined' && (typeof QUnit !== 'undefined' || typeof Mocha !== 'undefined')) {
           Testem.hookIntoTestFramework();
         }`,
@@ -554,7 +558,7 @@ export class CompatAppBuilder {
 
     let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared, parentEngine);
     if (implicitTestScriptsAsset) {
-      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath);
+      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath, { type: 'module' });
     }
 
     let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);

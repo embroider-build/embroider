@@ -322,7 +322,11 @@ export class CompatAppBuilder {
     return extensionsPattern(this.resolvableExtensions());
   }
 
-  private impliedAssets(type: keyof ImplicitAssetPaths, engine: AppFiles): (OnDiskAsset | InMemoryAsset)[] {
+  private impliedAssets(
+    type: keyof ImplicitAssetPaths,
+    engine: AppFiles,
+    emberENV?: EmberENV
+  ): (OnDiskAsset | InMemoryAsset)[] {
     const appName = this.modulePrefix();
     let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
       (sourcePath: string): OnDiskAsset => {
@@ -354,13 +358,18 @@ export class CompatAppBuilder {
                   e[r] = t[r]
               return e
           }
-          try {
-            var metaName = '${appName}' + '/config/environment';
-            var rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
-            var config = JSON.parse(decodeURIComponent(rawConfig));
-            window.EmberENV = merge(window.EmberENV || {}, config.EmberENV);
-          } catch (e) {
-            console.error('Could not read config from meta tag with name "${appName}"');
+          var metaTag = document.querySelector('meta[name="' + metaName + '"]');
+          if (metaTag) {
+            try {
+              var metaName = '${appName}' + '/config/environment';
+              var rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');
+              var config = JSON.parse(decodeURIComponent(rawConfig));
+              window.EmberENV = merge(window.EmberENV || {}, config.EmberENV);
+            } catch (e) {
+              console.error('Could not read config from meta tag with name "${appName}"');
+            }
+          } else {
+            window.EmberENV= merge(window.EmberENV || {}, ${JSON.stringify(emberENV, null, 2)});
           }
         })();
         `,
@@ -502,7 +511,12 @@ export class CompatAppBuilder {
     return portable;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>) {
+  private insertEmberApp(
+    asset: ParsedEmberAsset,
+    appFiles: AppFiles[],
+    prepared: Map<string, InternalAsset>,
+    emberENV: EmberENV
+  ) {
     let html = asset.html;
 
     if (this.fastbootConfig) {
@@ -532,7 +546,7 @@ export class CompatAppBuilder {
     html.insertStyleLink(html.styles, `assets/${this.origAppPackage.name}.css`);
 
     const parentEngine = appFiles.find(e => !e.engine.parent)!;
-    let vendorJS = this.implicitScriptsAsset(prepared, parentEngine);
+    let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
     if (vendorJS) {
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
     }
@@ -571,10 +585,14 @@ export class CompatAppBuilder {
     }
   }
 
-  private implicitScriptsAsset(prepared: Map<string, InternalAsset>, application: AppFiles): InternalAsset | undefined {
+  private implicitScriptsAsset(
+    prepared: Map<string, InternalAsset>,
+    application: AppFiles,
+    emberENV: EmberENV
+  ): InternalAsset | undefined {
     let asset = prepared.get('assets/vendor.js');
     if (!asset) {
-      let implicitScripts = this.impliedAssets('implicit-scripts', application);
+      let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
       if (implicitScripts.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
@@ -769,7 +787,7 @@ export class CompatAppBuilder {
     );
   }
 
-  private prepareAsset(asset: Asset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>) {
+  private prepareAsset(asset: Asset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>, emberENV: EmberENV) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -780,17 +798,21 @@ export class CompatAppBuilder {
       } else {
         parsed = new ParsedEmberAsset(asset);
       }
-      this.insertEmberApp(parsed, appFiles, prepared);
+      this.insertEmberApp(parsed, appFiles, prepared, emberENV);
       prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
     } else {
       prepared.set(asset.relativePath, asset);
     }
   }
 
-  private prepareAssets(requestedAssets: Asset[], appFiles: AppFiles[]): Map<string, InternalAsset> {
+  private prepareAssets(
+    requestedAssets: Asset[],
+    appFiles: AppFiles[],
+    emberENV: EmberENV
+  ): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
-      this.prepareAsset(asset, appFiles, prepared);
+      this.prepareAsset(asset, appFiles, prepared, emberENV);
     }
     return prepared;
   }
@@ -864,8 +886,8 @@ export class CompatAppBuilder {
     await concat.end();
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[]) {
-    let assets = this.prepareAssets(requestedAssets, appFiles);
+  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[], emberENV: EmberENV) {
+    let assets = this.prepareAssets(requestedAssets, appFiles, emberENV);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
         continue;
@@ -950,9 +972,10 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
+    let emberENV = this.configTree.readConfig().EmberENV;
     let assets = this.gatherAssets(inputPaths);
 
-    let finalAssets = await this.updateAssets(assets, appFiles);
+    let finalAssets = await this.updateAssets(assets, appFiles, emberENV);
 
     let assetPaths = assets.map(asset => asset.relativePath);
 
@@ -1577,6 +1600,8 @@ interface TreeNames {
   publicTree: BroccoliNode | undefined;
   configTree: BroccoliNode;
 }
+
+type EmberENV = unknown;
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
 

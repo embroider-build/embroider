@@ -359,7 +359,7 @@ export class CompatAppBuilder {
               return e
           }
           var metaName = '${appName}' + '/config/environment';
-          var metaTag = typeof document !== 'undefined && document.querySelector('meta[name="' + metaName + '"]');
+          var metaTag = typeof document !== 'undefined' && document.querySelector('meta[name="' + metaName + '"]');
           if (metaTag) {
             try {
               var rawConfig = document.querySelector('meta[name="' + metaName + '"]').getAttribute('content');

@@ -23,7 +23,59 @@ function execPromise(command: string): Promise<string> {
 }
 
 viteAppScenarios
-  .map('vite-app-basics', _project => {})
+  .map('vite-app-basics', project => {
+    project.mergeFiles({
+      app: {
+        adapters: {
+          'post.js': `
+            import JSONAPIAdapter from '@ember-data/adapter/json-api';
+            export default class extends JSONAPIAdapter {
+              urlForFindRecord(/* id, modelName */) {
+                return \`\${super.urlForFindRecord(...arguments)}.json\`;
+              }
+            }
+          `,
+        },
+        models: {
+          'post.js': `
+            import Model, { attr } from '@ember-data/model';
+            export default class extends Model {
+              @attr message;
+            }
+          `,
+        },
+        routes: {
+          'application.ts': `
+            import Route from '@ember/routing/route';
+            import { service } from '@ember/service';
+            export default class extends Route {
+              @service store;
+              async model() {
+                return await this.store.findRecord('post', 1);
+              }
+            }
+          `,
+        },
+      },
+      public: {
+        posts: {
+          '1.json': JSON.stringify(
+            {
+              data: {
+                type: 'post',
+                id: '1',
+                attributes: {
+                  message: 'From Ember Data',
+                },
+              },
+            },
+            null,
+            2
+          ),
+        },
+      },
+    });
+  })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;

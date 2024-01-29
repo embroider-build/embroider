@@ -292,6 +292,7 @@ export class CompatAppBuilder {
           // that the last one wins. Our resolver's order is the order to
           // search, so first one wins.
           .reverse(),
+        isLazy: appFiles.engine.package.isLazyEngine(),
       })),
       amdCompatibility: this.options.amdCompatibility,
 

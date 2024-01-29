@@ -81,6 +81,7 @@ Scenarios.fromProject(() => new Project())
                 root: app.dir,
                 activeAddons: [],
                 fastbootFiles: {},
+                isLazy: false,
               },
             ],
             modulePrefix: 'my-app',

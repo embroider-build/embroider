@@ -48,6 +48,7 @@ describe('audit', function () {
           fastbootFiles: {},
           activeAddons: [],
           root: app.baseDir,
+          isLazy: false,
         },
       ],
       resolvableExtensions,

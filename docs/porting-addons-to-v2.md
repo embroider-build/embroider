@@ -191,11 +191,11 @@ In this part, we address potential blockers before we actually switch to V2. Thi
 
 1. Make sure your test-app (and docs app if you have one) has `ember-auto-import` >= 2. Once you convert your addon to v2 format, it can only be consumed by apps that have ember-auto-import >= 2. This also means you should plan to make a semver major release to communicate this new requirement to your users.
 
-2. Make sure all the files in the `addon/app` contain _only_ reexport statements. If there's anything that's not a reexport statement, move that code into somewhere in the `addon/addon` directory and reexport it from `addon/app`. This was already best practice, but we're about to enforce it.
+1. Make sure all the files in the `addon/app` contain _only_ reexport statements. If there's anything that's not a reexport statement, move that code into somewhere in the `addon/addon` directory and reexport it from `addon/app`. This was already best practice, but we're about to enforce it.
 
-3. Make sure all the reexports in `addon/app` follow the default naming convention, such that `addon/app/components/whatever.js` contains only a reexport of `your-addon-name/components/whatever`. If the names don't align, move files around inside `addon/addon` until they do.
+1. Make sure all the reexports in `addon/app` follow the default naming convention, such that `addon/app/components/whatever.js` contains only a reexport of `your-addon-name/components/whatever`. If the names don't align, move files around inside `addon/addon` until they do.
 
-4. Make sure your `addon/index.js` file isn't trying to do anything "interesting". Ideally it contains nothing other than your addon's name.
+1. Make sure your `addon/index.js` file isn't trying to do anything "interesting". Ideally it contains nothing other than your addon's name.
    - if it was using `app.import()` or `this.import()`, port those usages to `ember-auto-import` instead
    - if you're trying to modify your own source code based on the presence of other packages or based on development vs testing vs production, switch to `@embroider/macros` instead
    - if you have other cases you're not sure what to do with, ask in an issue on this repo, or https://discuss.emberjs.com, or the #dev-embroider channel in the Ember community discord.

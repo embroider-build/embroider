@@ -195,6 +195,8 @@ In this part, we address potential blockers before we actually switch to V2. Thi
 
 1. Make sure all the reexports in `addon/app` follow the default naming convention, such that `addon/app/components/whatever.js` contains only a reexport of `your-addon-name/components/whatever`. If the names don't align, move files around inside `addon/addon` until they do.
 
+1. Make sure your addon has [co-located templates](https://rfcs.emberjs.com/id/0481-component-templates-co-location/). By default, the build tools expect to find the component's `.js` and `.hbs` in the same folder. If your addon used to have an `addon/templates/components` folder, move to co-location. Note that a [codemod](https://www.npmjs.com/package/ember-component-template-colocation-migrator) has been released when co-location has become the recommended structure.
+
 1. Make sure your `addon/index.js` file isn't trying to do anything "interesting". Ideally it contains nothing other than your addon's name.
    - if it was using `app.import()` or `this.import()`, port those usages to `ember-auto-import` instead
    - if you're trying to modify your own source code based on the presence of other packages or based on development vs testing vs production, switch to `@embroider/macros` instead

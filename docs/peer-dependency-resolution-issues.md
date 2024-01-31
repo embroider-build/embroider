@@ -19,9 +19,9 @@ Given the example names from above (`my-example-lib` has a peerDep on `my-exampl
 
 If some other package named `another-lib` puts `my-example-lib` into its dependencies, then `another-lib` is obligated to either:
  - put `my-example-peer` into its own peerDependencies, so that users of `another-lib` are aware of the need to provide this shared package to keep `my-example-lib` working.
- - or put `my-example-peer`into its own dependencies, producing an entirely self-contained use of `my-example-peer`. This is only appropriate if it's totally fine that users of `another-lib` might get duplicate copies of `my-example-peer` if they happen to use it elsewhere.
+ - or put `my-example-peer` into its own dependencies, producing an entirely self-contained use of `my-example-peer`. This is only appropriate if it's totally fine that users of `another-lib` might get duplicate copies of `my-example-peer` if they happen to use it elsewhere.
 
-If `another-lib` does neither of those things, the package manager is free to arbitrarily install a duplicate copy of `my-example-peer` or not provide it at all. If all the version ranges happen to overlap, often things will work out by luck, only to fail mysteriously later when someone upgrades a dependnecy and they no longer overlap.
+If `another-lib` does neither of those things, the package manager is free to arbitrarily install a duplicate copy of `my-example-peer` or not provide it at all. If all the version ranges happen to overlap, often things will work out by luck, only to fail mysteriously later when someone upgrades a dependency and they no longer overlap.
 
 If your library uses a library that declares peer dependencies, those peer dependencies are fundamentally part of your library's own public API. Your users need to know and care about them. This is why it's clearest if you declare them as your own peers transitively.
 
@@ -43,7 +43,7 @@ You may want to investigate pnpm's [options for adjusting peer dependency handli
 
 Sometimes it's as simple as deleting your lockfile and recreating it from scratch. This allows your package manager to do more optimization and that can often deduplicate things enough that the problem goes away.
 
-Tools like `yarn-deduplicate` can achieve a similar effect.
+Tools like [pnpm dedupe](https://pnpm.io/cli/dedupe) and [yarn-deduplicate](https://www.npmjs.com/package/yarn-deduplicate) can achieve a similar effect.
 
 You can use [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides), [yarn selective dependency resolutions](https://classic.yarnpkg.com/en/docs/selective-version-resolutions/), or [npm overrides](https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides) to manually adjust versions until things settled onto one copy.
 

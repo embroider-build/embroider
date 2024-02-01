@@ -12,13 +12,7 @@ import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
-import type {
-  AddonMeta,
-  EmberAppInstance,
-  OutputFileToInputFileMap,
-  PackageInfo,
-  AddonInstance,
-} from '@embroider/core';
+import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
@@ -29,16 +23,11 @@ import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
 import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic, isInlinePrecompilePlugin } from './detect-babel-plugins';
-import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
+import loadAstPlugins from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
-import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import semver from 'semver';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import { CompatAppBuilder } from './compat-app-builder';
-
-type EmberCliHTMLBarsAddon = AddonInstance & {
-  htmlbarsOptions(): HTMLBarsOptions;
-};
 
 interface Group {
   outputFiles: OutputFileToInputFileMap;
@@ -585,25 +574,11 @@ export default class CompatApp {
   }
 
   get htmlbarsPlugins(): Transform[] {
-    let addon = this.legacyEmberAppInstance.project.addons.find(
-      (a: AddonInstance) => a.name === 'ember-cli-htmlbars'
-    ) as unknown as EmberCliHTMLBarsAddon;
-    let options = addon.htmlbarsOptions();
-    if (options?.plugins?.ast) {
-      // even if the app was using @embroider/macros, we drop it from the config
-      // here in favor of our globally-configured one.
-      options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
-      prepHtmlbarsAstPluginsForUnwrap(this.legacyEmberAppInstance.registry);
-
-      // classically, this list was backwards for silly historic reasons. But
-      // we're the compatibility system, so we're putting it back into
-      // reasonable order.
-      options.plugins.ast.reverse();
-
-      return options.plugins.ast;
-    } else {
-      return [];
-    }
+    let plugins = loadAstPlugins(this.legacyEmberAppInstance.registry);
+    // even if the app was using @embroider/macros, we drop it from the config
+    // here in favor of our globally-configured one.
+    plugins = plugins.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+    return plugins;
   }
 
   // our own appTree. Not to be confused with the one that combines the app js

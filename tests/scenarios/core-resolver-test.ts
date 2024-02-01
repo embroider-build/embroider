@@ -185,13 +185,13 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "../../hello-world.hbs";
-            import component from "../../../../components/hello-world.js";
+            import template from "../hello-world.hbs";
+            import component from "../../../components/hello-world.js";
             export default setComponentTemplate(template, component);
           `);
 
-          pairModule.resolves('../../hello-world.hbs').to('./templates/components/hello-world.hbs');
-          pairModule.resolves('../../../../components/hello-world.js').to('./components/hello-world.js');
+          pairModule.resolves('../hello-world.hbs').to('./templates/components/hello-world.hbs');
+          pairModule.resolves('../../../components/hello-world.js').to('./components/hello-world.js');
         });
 
         test('hbs-only component', async function () {
@@ -354,13 +354,13 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "../../template.hbs";
-            import component from "../../component.js";
+            import template from "../template.hbs";
+            import component from "../component.js";
             export default setComponentTemplate(template, component);
           `);
 
-          pairModule.resolves('../../template.hbs').to('./components/hello-world/template.hbs');
-          pairModule.resolves('../../component.js').to('./components/hello-world/component.js');
+          pairModule.resolves('../template.hbs').to('./components/hello-world/template.hbs');
+          pairModule.resolves('../component.js').to('./components/hello-world/component.js');
         });
 
         test('podded js-and-hbs component with non-blank podModulePrefix', async function () {
@@ -379,13 +379,13 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "../../template.hbs";
-            import component from "../../component.js";
+            import template from "../template.hbs";
+            import component from "../component.js";
             export default setComponentTemplate(template, component);
           `);
 
-          pairModule.resolves('../../template.hbs').to('./pods/components/hello-world/template.hbs');
-          pairModule.resolves('../../component.js').to('./pods/components/hello-world/component.js');
+          pairModule.resolves('../template.hbs').to('./pods/components/hello-world/template.hbs');
+          pairModule.resolves('../component.js').to('./pods/components/hello-world/component.js');
         });
 
         test('plain helper', async function () {

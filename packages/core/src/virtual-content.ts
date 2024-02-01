@@ -107,16 +107,13 @@ function decodeVirtualExternalCJSModule(filename: string) {
   }
 }
 
-const pairComponentMarker = '/embroider-pair-component';
-const pairComponentPattern = /^(?<hbsModule>.*)\/(?<jsModule>[^\/]*)\/embroider-pair-component$/;
+const pairComponentMarker = '-embroider-pair-component';
+const pairComponentPattern = /^(?<hbsModule>.*)\/(?<jsModule>[^\/]*)-embroider-pair-component$/;
 
 export function virtualPairComponent(hbsModule: string, jsModule: string | undefined): string {
   let relativeJSModule = '';
   if (jsModule) {
-    // The '/j/' here represents the relativeJSModule itself that we're about to
-    // use to create the complete filename. It's there to get the right number
-    // of `..` in our relative path.
-    relativeJSModule = explicitRelative(hbsModule + '/j/', jsModule);
+    relativeJSModule = explicitRelative(hbsModule, jsModule);
   }
   return `${hbsModule}/${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
 }

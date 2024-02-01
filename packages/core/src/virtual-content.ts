@@ -6,11 +6,16 @@ import { compile } from './js-handlebars';
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
 
+export interface VirtualContentResult {
+  src: string;
+  watches: string[];
+}
+
 // Given a filename that was passed to your ModuleRequest's `virtualize()`,
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
-export function virtualContent(filename: string, resolver: Resolver): string {
+export function virtualContent(filename: string, resolver: Resolver): VirtualContentResult {
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
     return renderCJSExternalShim(cjsExtern);
@@ -27,7 +32,7 @@ export function virtualContent(filename: string, resolver: Resolver): string {
 
   let fb = decodeFastbootSwitch(filename);
   if (fb) {
-    return fastbootSwitchTemplate(fb);
+    return renderFastbootSwitchTemplate(fb);
   }
 
   let im = decodeImplicitModules(filename);
@@ -56,15 +61,37 @@ export { {{#each names as |name|}}{{name}}, {{/each}} }
 {{/if}}
 `) as (params: { moduleName: string; default: boolean; names: string[] }) => string;
 
-function renderESExternalShim({ moduleName, exports }: { moduleName: string; exports: string[] }): string {
-  return externalESShim({
-    moduleName,
-    default: exports.includes('default'),
-    names: exports.filter(n => n !== 'default'),
-  });
+function renderESExternalShim({
+  moduleName,
+  exports,
+}: {
+  moduleName: string;
+  exports: string[];
+}): VirtualContentResult {
+  return {
+    src: externalESShim({
+      moduleName,
+      default: exports.includes('default'),
+      names: exports.filter(n => n !== 'default'),
+    }),
+    watches: [],
+  };
 }
 
-const pairedComponentShim = compile(`
+interface PairedComponentShimParams {
+  relativeHBSModule: string;
+  relativeJSModule: string | null;
+  debugName: string;
+}
+
+function pairedComponentShim(params: PairedComponentShimParams): VirtualContentResult {
+  return {
+    src: pairedComponentShimTemplate(params),
+    watches: [],
+  };
+}
+
+const pairedComponentShimTemplate = compile(`
 import { setComponentTemplate } from "@ember/component";
 import template from "{{{js-string-escape relativeHBSModule}}}";
 {{#if relativeJSModule}}
@@ -74,7 +101,7 @@ export default setComponentTemplate(template, component);
 import templateOnlyComponent from "@ember/component/template-only";
 export default setComponentTemplate(template, templateOnlyComponent(undefined, "{{{js-string-escape debugName}}}"));
 {{/if}}
-`) as (params: { relativeHBSModule: string; relativeJSModule: string | null; debugName: string }) => string;
+`) as (params: PairedComponentShimParams) => string;
 
 export function virtualExternalESModule(specifier: string, exports: string[] | undefined): string {
   if (exports) {
@@ -166,6 +193,18 @@ export function decodeFastbootSwitch(filename: string) {
   }
 }
 
+interface FastbootSwitchParams {
+  names: string[];
+  hasDefaultExport: boolean;
+}
+
+function renderFastbootSwitchTemplate(params: FastbootSwitchParams): VirtualContentResult {
+  return {
+    src: fastbootSwitchTemplate(params),
+    watches: [],
+  };
+}
+
 const fastbootSwitchTemplate = compile(`
 import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
 let mod;
@@ -180,7 +219,7 @@ export default mod.default;
 {{#each names as |name|}}
 export const {{name}} = mod.{{name}};
 {{/each}}
-`) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
+`) as (params: FastbootSwitchParams) => string;
 
 const implicitModulesPattern = /(?<filename>.*)[\\/]-embroider-implicit-(?<test>test-)?modules\.js$/;
 
@@ -209,7 +248,7 @@ function renderImplicitModules(
     fromFile: string;
   },
   resolver: Resolver
-): string {
+): VirtualContentResult {
   let resolvableExtensionsPattern = extensionsPattern(resolver.options.resolvableExtensions);
 
   const pkg = resolver.packageCache.ownerOfFile(fromFile);
@@ -269,7 +308,7 @@ function renderImplicitModules(
       dependencyModules.push(posix.join(dep.name, `-embroider-${type}.js`));
     }
   }
-  return implicitModulesTemplate({ ownModules, dependencyModules });
+  return { src: implicitModulesTemplate({ ownModules, dependencyModules }), watches: [] };
 }
 
 const implicitModulesTemplate = compile(`
@@ -323,7 +362,14 @@ function orderAddons(depA: Package, depB: Package): number {
   return depAIdx - depBIdx;
 }
 
-const renderCJSExternalShim = compile(`
+function renderCJSExternalShim(params: { moduleName: string }): VirtualContentResult {
+  return {
+    src: renderCJSExternalShimTemplate(params),
+    watches: [],
+  };
+}
+
+const renderCJSExternalShimTemplate = compile(`
 module.exports = new Proxy({}, {
   get(target, prop) {
 

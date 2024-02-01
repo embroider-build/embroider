@@ -39,7 +39,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       });
 
       build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
-        let src = virtualContent(path, resolverLoader.resolver);
+        let { src } = virtualContent(path, resolverLoader.resolver);
         if (!macrosConfig) {
           macrosConfig = readJSONSync(
             resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
@@ -82,7 +82,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       build.onLoad({ filter: /\.[jt]s$/ }, ({ path, namespace }) => {
         let src: string;
         if (namespace === 'embroider') {
-          src = virtualContent(path, resolverLoader.resolver);
+          src = virtualContent(path, resolverLoader.resolver).src;
         } else {
           src = readFileSync(path, 'utf8');
         }

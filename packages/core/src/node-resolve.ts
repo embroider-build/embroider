@@ -56,7 +56,7 @@ export function nodeResolve(
           type: 'found',
           result: {
             type: 'virtual' as 'virtual',
-            content: virtualContent(request.specifier, resolver),
+            content: virtualContent(request.specifier, resolver).src,
             filename: request.specifier,
           },
         };

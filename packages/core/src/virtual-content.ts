@@ -7,6 +7,8 @@ import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test
 import { decodeVirtualVendor, renderVendor } from './virtual-vendor';
 import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
 
+import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
+
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
 
@@ -23,6 +25,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
     return renderCJSExternalShim(cjsExtern);
+  }
+
+  let entrypoint = decodeEntrypoint(filename);
+  if (entrypoint) {
+    return renderEntrypoint(resolver, entrypoint);
   }
 
   let extern = decodeVirtualExternalESModule(filename);

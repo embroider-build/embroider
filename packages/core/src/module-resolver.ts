@@ -178,6 +178,7 @@ export class Resolver {
     request = this.handleFastbootSwitch(request);
     request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
+    request = this.handleEntrypoint(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -416,6 +417,26 @@ export class Resolver {
         request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
       );
     }
+  }
+
+  private handleEntrypoint<R extends ModuleRequest>(request: R): R {
+    // TODO: also handle targeting from the outside (for engines) like:
+    // request.specifier === 'my-package-name/-embroider-entrypoint.js'
+    // just like implicit-modules does.
+
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = ['@embroider/core/entrypoint', '/@embroider/core/entrypoint'];
+
+    if (!candidates.includes(request.specifier)) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
   }
 
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {

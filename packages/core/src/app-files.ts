@@ -204,12 +204,10 @@ export interface Engine {
   package: Package;
   // the set of active addons in the engine. For each one we keep track of a file that can resolve the addon, because we'll need that later.
   addons: Map<AddonPackage, string>;
-  // the parent engine, if any
-  parent: Engine | undefined;
-  // where the engine's own V2 code comes from
-  sourcePath: string;
+  // is this the top-level engine?
+  isApp: boolean;
   // runtime name for the engine's own module namespace
   modulePrefix: string;
-  // this is destPath but relative to the app itself
+  // TODO: remove this after we remove the stage2 entrypoint
   appRelativePath: string;
 }

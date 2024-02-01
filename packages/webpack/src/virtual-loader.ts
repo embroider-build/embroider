@@ -10,7 +10,7 @@ function setup(appRoot: string): ResolverLoader {
   return resolverLoader;
 }
 
-export default function virtualLoader(this: LoaderContext<unknown>) {
+export default function virtualLoader(this: LoaderContext<unknown>): string | undefined {
   if (typeof this.query === 'string' && this.query[0] === '?') {
     let params = new URLSearchParams(this.query);
     let filename = params.get('f');
@@ -20,7 +20,7 @@ export default function virtualLoader(this: LoaderContext<unknown>) {
     }
     let { resolver } = setup(appRoot);
     this.resourcePath = filename;
-    return virtualContent(filename, resolver);
+    return virtualContent(filename, resolver).src;
   }
   throw new Error(`@embroider/webpack/src/virtual-loader received unexpected request: ${this.query}`);
 }

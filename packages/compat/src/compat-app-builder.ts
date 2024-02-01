@@ -524,7 +524,7 @@ export class CompatAppBuilder {
 
     html.insertStyleLink(html.styles, `assets/${this.origAppPackage.name}.css`);
 
-    const parentEngine = appFiles.find(e => !e.engine.parent)!;
+    const parentEngine = appFiles.find(e => e.engine.isApp)!;
     let vendorJS = this.implicitScriptsAsset(prepared, parentEngine, emberENV);
     if (vendorJS) {
       html.insertScriptTag(html.implicitScripts, vendorJS.relativePath);
@@ -657,13 +657,12 @@ export class CompatAppBuilder {
     }
   }
 
-  private partitionEngines(appJSPath: string): Engine[] {
+  private partitionEngines(): Engine[] {
     let queue: Engine[] = [
       {
         package: this.appPackageWithMovedDeps,
         addons: new Map(),
-        parent: undefined,
-        sourcePath: appJSPath,
+        isApp: true,
         modulePrefix: this.modulePrefix(),
         appRelativePath: '.',
       },
@@ -682,8 +681,7 @@ export class CompatAppBuilder {
           queue.push({
             package: addon,
             addons: new Map(),
-            parent: current,
-            sourcePath: addon.root,
+            isApp: !current,
             modulePrefix: addon.name,
             appRelativePath: explicitRelative(this.root, addon.root),
           });
@@ -717,8 +715,8 @@ export class CompatAppBuilder {
 
   private updateAppJS(appJSPath: string): AppFiles[] {
     if (!this.engines) {
-      this.engines = this.partitionEngines(appJSPath).map(engine => {
-        if (engine.sourcePath === appJSPath) {
+      this.engines = this.partitionEngines().map(engine => {
+        if (engine.isApp) {
           // this is the app. We have more to do for the app than for other
           // engines.
           let fastbootSync: SyncDir | undefined;
@@ -739,7 +737,7 @@ export class CompatAppBuilder {
           // their files, not doing any actual copying or building.
           return {
             engine,
-            appSync: new SyncDir(engine.sourcePath, undefined),
+            appSync: new SyncDir(engine.package.root, undefined),
 
             // AFAIK, we've never supported a fastboot overlay directory in an
             // engine. But if we do need that, it would go here.
@@ -1224,7 +1222,7 @@ export class CompatAppBuilder {
     let styles = [];
     // only import styles from engines with a parent (this excludeds the parent application) as their styles
     // will be inserted via a direct <link> tag.
-    if (appFiles.engine.parent && appFiles.engine.package.isLazyEngine()) {
+    if (!appFiles.engine.isApp && appFiles.engine.package.isLazyEngine()) {
       let implicitStyles = this.impliedAssets('implicit-styles', appFiles);
       for (let style of implicitStyles) {
         styles.push({

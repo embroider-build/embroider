@@ -8,6 +8,7 @@ export default function appReexports(opts: {
   to: string;
   include: string[];
   mapFilename?: (filename: string) => string;
+  exports?: (filename: string) => string[] | string | undefined;
 }): Plugin {
   return {
     name: 'app-reexports',
@@ -16,6 +17,12 @@ export default function appReexports(opts: {
       let appJS: Record<string, string> = {};
       for (let addonFilename of Object.keys(bundle)) {
         let appFilename = opts.mapFilename?.(addonFilename) ?? addonFilename;
+        let appExports = opts.exports?.(addonFilename) || ['default'];
+
+        let computedExports =
+          typeof appExports === 'string'
+            ? appExports
+            : `{ ${appExports.join(', ')} }`;
 
         if (
           opts.include.some((glob) => minimatch(addonFilename, glob)) &&
@@ -25,10 +32,9 @@ export default function appReexports(opts: {
           this.emitFile({
             type: 'asset',
             fileName: `_app_/${appFilename}`,
-            source: `export { default } from "${pkg.name}/${addonFilename.slice(
-              0,
-              -extname(addonFilename).length
-            )}";\n`,
+            source: `export ${computedExports} from "${
+              pkg.name
+            }/${addonFilename.slice(0, -extname(addonFilename).length)}";\n`,
           });
         }
       }

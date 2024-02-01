@@ -21,6 +21,9 @@ appScenarios
     addon.pkg.scripts = {
       build: 'node ./node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
     };
+    addon.pkg['ember-addon']['app-js'] = {
+      './components/previously-added.js': './dist/_app_/components/previously-added.js',
+    };
 
     merge(addon.files, {
       'babel.config.json': `
@@ -91,14 +94,25 @@ appScenarios
         plugins: [
           addon.publicEntrypoints([
             'components/**/*.js',
+            'initializers/**/*.js',
+            'utils/**/*.js',
           ]),
 
           addon.appReexports([
             'components/demo/index.js',
             'components/demo/out.js',
             'components/demo/namespace-me.js',
+            'initializers/**/*.js',
+            'utils/**/*.js',
           ], {
             mapFilename: (name) => reexportMappings[name] || name,
+            exports: (name) => {
+              if (name.startsWith('initializers/')) {
+                return ['default', 'initialize'];
+              } else if (name.startsWith('utils/')) {
+                return '*';
+              }
+            }
           }),
 
           addon.dependencies(),
@@ -166,6 +180,25 @@ appScenarios
               <this.Button @onClick={{this.flip}} />
             `,
           },
+        },
+        initializers: {
+          'demo.js': `
+            export function initialize() {
+              // Wow, we're doing the init in the app
+            }
+
+            export default {
+              name: 'demo',
+              initialize,
+            };
+          `,
+        },
+        utils: {
+          'demo-util.js': `
+            export function demoUtil() {
+              return 42;
+            }
+          `,
         },
       },
     });
@@ -250,6 +283,8 @@ appScenarios
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
             './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
+            './initializers/demo.js': './dist/_app_/initializers/demo.js',
+            './utils/demo-util.js': './dist/_app_/utils/demo-util.js',
           });
         });
 
@@ -260,6 +295,8 @@ appScenarios
             './dist/_app_/components/demo/out.js': 'export { default } from "v2-addon/components/demo/out";\n',
             './dist/_app_/components/demo/namespace/namespace-me.js':
               'export { default } from "v2-addon/components/demo/namespace-me";\n',
+            './dist/_app_/initializers/demo.js': 'export { default, initialize } from "v2-addon/initializers/demo";\n',
+            './dist/_app_/utils/demo-util.js': 'export * from "v2-addon/utils/demo-util";\n',
           };
 
           assert.strictEqual(

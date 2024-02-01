@@ -392,7 +392,7 @@ export class CompatAppBuilder {
         let w = window;
         let d = w.define;
         d("ember-testing", function() { return i("ember-testing") });
-        var runningTests=true;
+        runningTests=true;
         if (typeof Testem !== 'undefined' && (typeof QUnit !== 'undefined' || typeof Mocha !== 'undefined')) {
           Testem.hookIntoTestFramework();
         }`,
@@ -1319,7 +1319,7 @@ export class CompatAppBuilder {
       eagerModules,
       styles,
       // this is a backward-compatibility feature: addons can force inclusion of modules.
-      defineModulesFrom: '/assets/-embroider-implicit-modules.js',
+      defineModulesFrom: '/-embroider-implicit-modules.js',
     };
     if (entryParams) {
       Object.assign(params, entryParams);

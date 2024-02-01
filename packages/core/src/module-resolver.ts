@@ -443,7 +443,7 @@ export class Resolver {
     // just like implicit-modules does.
 
     //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = ['@embroider/core/entrypoint', '/@embroider/core/entrypoint'];
+    const candidates = ['@embroider/core/entrypoint', '/@embroider/core/entrypoint', './@embroider/core/entrypoint'];
 
     if (!candidates.includes(request.specifier)) {
       return request;

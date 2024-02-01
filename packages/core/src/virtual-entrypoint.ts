@@ -184,7 +184,7 @@ let d = w.define;
 {{#if styles}}
   if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
     {{#each styles as |stylePath| ~}}
-      i("{{js-string-escape stylePath.path}}");
+      await import("{{js-string-escape stylePath.path}}");
     {{/each}}
   }
 {{/if}}
@@ -199,11 +199,12 @@ let d = w.define;
 
 
 {{#each eagerModules as |eagerModule| ~}}
-  i("{{js-string-escape eagerModule}}");
+  import "{{js-string-escape eagerModule}}";
 {{/each}}
 
-{{#each amdModules as |amdModule| ~}}
-  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
+{{#each amdModules as |amdModule index| ~}}
+  import * as amdModule{{index}} from "{{js-string-escape amdModule.buildtime}}"
+  d("{{js-string-escape amdModule.runtime}}", function(){ return amdModule{{index}}; });
 {{/each}}
 
 {{#if fastbootOnlyAmdModules}}

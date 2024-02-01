@@ -291,7 +291,7 @@ function importPaths(resolver: Resolver, { engine }: AppFiles, engineRelativePat
   let noHBS = engineRelativePath.replace(resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
   return {
     runtime: `${engine.modulePrefix}/${noHBS}`,
-    buildtime: posix.join(engine.package.name, engineRelativePath),
+    buildtime: `@embroider-dep/${posix.join(engine.package.name, engineRelativePath)}`,
   };
 }
 

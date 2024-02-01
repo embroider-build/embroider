@@ -1,7 +1,9 @@
+import type { Transform } from 'babel-plugin-ember-template-compilation';
 import { join } from 'path';
 
-export default function prepHtmlbarsAstPluginsForUnwrap(registry: any): void {
-  for (let wrapper of registry.load('htmlbars-ast-plugin')) {
+export default function loadAstPlugins(registry: any): Transform[] {
+  let wrappers = registry.load('htmlbars-ast-plugin');
+  for (let wrapper of wrappers) {
     const { plugin, parallelBabel, baseDir, cacheKey } = wrapper;
     if (plugin) {
       // if the parallelBabel options were set on the wrapper, but not on the plugin, add it
@@ -29,4 +31,11 @@ export default function prepHtmlbarsAstPluginsForUnwrap(registry: any): void {
       }
     }
   }
+  let plugins = wrappers.map((wrapper: any) => wrapper.plugin);
+
+  // the plugins in the registry historically run in backwards order for dumb
+  // reasons. Embroider keeps them in sensible order, so here is where we do the
+  // compatibility switch.
+  plugins.reverse();
+  return plugins;
 }

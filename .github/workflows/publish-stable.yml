@@ -49,7 +49,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: npm publish
-        run: pnpm release-plan publish
+        run: pnpm release-plan publish --publish-branch=stable
 
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}

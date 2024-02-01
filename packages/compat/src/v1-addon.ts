@@ -13,11 +13,10 @@ import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
 import type { AddonMeta, PackageCache, AddonInstance, AddonTreePath } from '@embroider/core';
-import { debug } from '@embroider/core';
+import { debug, findTopmostAddon } from '@embroider/core';
 import type Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
-import type { Options as HTMLBarsOptions } from 'ember-cli-htmlbars';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
 import type { TransformOptions, PluginItem } from '@babel/core';
 import modulesCompat from './modules-compat';
@@ -31,7 +30,7 @@ import {
 } from './detect-babel-plugins';
 import HbsToJSBroccoliPlugin from './hbs-to-js-broccoli-plugin';
 import { fromPairs } from 'lodash';
-import prepHtmlbarsAstPluginsForUnwrap from './prepare-htmlbars-ast-plugins';
+import loadAstPlugins from './prepare-htmlbars-ast-plugins';
 import getRealAddon from './get-real-addon';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type CompatApp from './compat-app';
@@ -116,27 +115,24 @@ export default class V1Addon {
   // this is only defined when there are custom AST transforms that need it
   @Memoize()
   private get templateCompilerBabelPlugin(): PluginItem | undefined {
-    let htmlbars = this.addonInstance.addons.find(a => a.name === 'ember-cli-htmlbars');
-    if (htmlbars) {
-      let options = (htmlbars as any).htmlbarsOptions() as HTMLBarsOptions;
-      if (options?.plugins?.ast) {
-        // our macros don't run here in stage1
-        options.plugins.ast = options.plugins.ast.filter((p: any) => !isEmbroiderMacrosPlugin(p));
-        prepHtmlbarsAstPluginsForUnwrap(this.addonInstance.registry);
-        if (options.plugins.ast.length > 0) {
-          let opts: EtcOptions = {
-            compilerPath: options.templateCompilerPath,
-            targetFormat: 'hbs',
-            enableLegacyModules: [
-              'ember-cli-htmlbars',
-              'ember-cli-htmlbars-inline-precompile',
-              'htmlbars-inline-precompile',
-            ],
-            transforms: options.plugins.ast as any,
-          };
-          return [require.resolve('babel-plugin-ember-template-compilation'), opts];
-        }
-      }
+    let plugins = loadAstPlugins(this.addonInstance.registry);
+    // our macros don't run here in stage1
+    plugins = plugins.filter((p: any) => !isEmbroiderMacrosPlugin(p));
+    if (plugins.length > 0) {
+      let compilerPath = require.resolve('ember-source/dist/ember-template-compiler.js', {
+        paths: [findTopmostAddon(this.addonInstance).parent.root],
+      });
+      let opts: EtcOptions = {
+        compilerPath,
+        targetFormat: 'hbs',
+        enableLegacyModules: [
+          'ember-cli-htmlbars',
+          'ember-cli-htmlbars-inline-precompile',
+          'htmlbars-inline-precompile',
+        ],
+        transforms: plugins,
+      };
+      return [require.resolve('babel-plugin-ember-template-compilation'), opts];
     }
   }
 

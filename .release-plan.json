@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "4.1.2",
-      "newVersion": "4.1.3",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "4.1.3"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.7"
@@ -20,13 +11,9 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.4.0",
-      "newVersion": "3.4.1",
+      "oldVersion": "3.4.2",
+      "newVersion": "3.4.3",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
@@ -35,35 +22,13 @@
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.2",
-      "newVersion": "3.4.3",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.4.3"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.13.3",
-      "newVersion": "1.13.4",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.13.4"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -87,5 +52,5 @@
       "oldVersion": "3.2.1"
     }
   },
-  "description": "## Release (2023-12-13)\n\n@embroider/addon-dev 4.1.3 (patch)\n@embroider/compat 3.4.1 (patch)\n@embroider/core 3.4.3 (patch)\n@embroider/macros 1.13.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#1688](https://github.com/embroider-build/embroider/pull/1688) Fix branch elimination for `macroDependencySatisfies` ([@mike-engel](https://github.com/mike-engel))\n* `@embroider/compat`\n  * [#1706](https://github.com/embroider-build/embroider/pull/1706) Support engine's lazyLoading boolean config ([@fengb](https://github.com/fengb))\n* `@embroider/addon-dev`\n  * [#1696](https://github.com/embroider-build/embroider/pull/1696) Use rollup's `addWatchFile` API to mark dependencies ([@chancancode](https://github.com/chancancode))\n\n#### :house: Internal\n* Other\n  * [#1716](https://github.com/embroider-build/embroider/pull/1716) update release-plan ([@mansona](https://github.com/mansona))\n  * [#1698](https://github.com/embroider-build/embroider/pull/1698) Use release plan ([@mansona](https://github.com/mansona))\n* `@embroider/macros`\n  * [#1709](https://github.com/embroider-build/embroider/pull/1709) Jest types broke our CI ([@ef4](https://github.com/ef4))\n* `@embroider/test-scenarios`\n  * [#1705](https://github.com/embroider-build/embroider/pull/1705) Backport #1703 to stable ([@chancancode](https://github.com/chancancode))\n\n#### Committers: 5\n- Benjamin Feng ([@fengb](https://github.com/fengb))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Godfrey Chan ([@chancancode](https://github.com/chancancode))\n- Mike Engel ([@mike-engel](https://github.com/mike-engel))\n"
+  "description": "## Release (2023-12-23)\n\n@embroider/compat 3.4.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@types/ember-cli`\n  * [#1743](https://github.com/embroider-build/embroider/pull/1743) Don't rely on htmlbars internals ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* [#1724](https://github.com/embroider-build/embroider/pull/1724) fix publish for stable branch ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

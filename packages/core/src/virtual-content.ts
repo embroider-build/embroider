@@ -6,11 +6,16 @@ import { compile } from './js-handlebars';
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
 
+export interface VirtualContentResult {
+  src: string;
+  watches: string[];
+}
+
 // Given a filename that was passed to your ModuleRequest's `virtualize()`,
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
-export function virtualContent(filename: string, resolver: Resolver): { src: string; watches: string[] } {
+export function virtualContent(filename: string, resolver: Resolver): VirtualContentResult {
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
     return renderCJSExternalShim(cjsExtern);
@@ -55,11 +60,6 @@ export { {{#each names as |name|}}{{name}}, {{/each}} }
 {{/if}}
 {{/if}}
 `) as (params: { moduleName: string; default: boolean; names: string[] }) => string;
-
-interface VirtualContentResult {
-  src: string;
-  watches: string[];
-}
 
 function renderESExternalShim({
   moduleName,

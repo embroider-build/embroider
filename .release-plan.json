@@ -1,7 +1,16 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "4.1.3"
+      "impact": "minor",
+      "oldVersion": "4.1.3",
+      "newVersion": "4.2.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.7"
@@ -11,24 +20,50 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.4.2",
-      "newVersion": "3.4.3",
+      "oldVersion": "3.4.3",
+      "newVersion": "3.4.4",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.3"
+      "impact": "patch",
+      "oldVersion": "3.4.3",
+      "newVersion": "3.4.4",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.13.4"
+      "impact": "patch",
+      "oldVersion": "1.13.4",
+      "newVersion": "1.13.5",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -37,7 +72,16 @@
       "oldVersion": "2.1.6"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.5.1"
+      "impact": "patch",
+      "oldVersion": "2.5.1",
+      "newVersion": "2.5.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "3.0.3"
@@ -49,8 +93,17 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "oldVersion": "3.2.1"
+      "impact": "patch",
+      "oldVersion": "3.2.1",
+      "newVersion": "3.2.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2023-12-23)\n\n@embroider/compat 3.4.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@types/ember-cli`\n  * [#1743](https://github.com/embroider-build/embroider/pull/1743) Don't rely on htmlbars internals ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* [#1724](https://github.com/embroider-build/embroider/pull/1724) fix publish for stable branch ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2024-02-01)\n\n@embroider/addon-dev 4.2.0 (minor)\n@embroider/compat 3.4.4 (patch)\n@embroider/core 3.4.4 (patch)\n@embroider/macros 1.13.5 (patch)\n@embroider/shared-internals 2.5.2 (patch)\n@embroider/webpack 3.2.2 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`, `@embroider/test-scenarios`\n  * [#1785](https://github.com/embroider-build/embroider/pull/1785) Backport #1760 to stable: Add exclude option to appReexports and publicEntrypoints rollup plugins ([@simonihmig](https://github.com/simonihmig))\n  * [#1777](https://github.com/embroider-build/embroider/pull/1777) Backport #1642 to stable:  Allow for more flexible addon-dev appReexports ([@simonihmig](https://github.com/simonihmig))\n\n#### :bug: Bug Fix\n* `@embroider/core`, `@embroider/shared-internals`, `@embroider/test-scenarios`\n  * [#1762](https://github.com/embroider-build/embroider/pull/1762) Fix incorrect ownerOfFile at root of filesystem ([@ef4](https://github.com/ef4))\n* `@embroider/shared-internals`\n  * [#1758](https://github.com/embroider-build/embroider/pull/1758) Make template-colocation-plugin idempotent ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/test-scenarios`\n  * [#1781](https://github.com/embroider-build/embroider/pull/1781) Fix failing addon-dev-js test on stable ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
 }

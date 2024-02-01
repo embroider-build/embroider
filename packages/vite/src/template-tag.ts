@@ -4,7 +4,7 @@ import { Preprocessor } from 'content-tag';
 
 const gjsFilter = createFilter('**/*.{gjs,gts}?(\\?)*');
 
-export function templateTag(): Plugin {
+export function templateTag({ inline_source_map } = { inline_source_map: false }): Plugin {
   let preprocessor = new Preprocessor();
 
   function candidates(id: string) {
@@ -43,7 +43,10 @@ export function templateTag(): Plugin {
       if (!gjsFilter(id)) {
         return null;
       }
-      return preprocessor.process(code, id);
+      return preprocessor.process(code, {
+        filename: id,
+        inline_source_map: inline_source_map,
+      });
     },
   };
 }

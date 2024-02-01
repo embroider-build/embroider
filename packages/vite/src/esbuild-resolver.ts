@@ -51,7 +51,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       build.onLoad({ filter: /\.g[jt]s$/ }, async ({ path: filename }) => {
         const code = readFileSync(filename, 'utf8');
 
-        const result = transform(preprocessor.process(code, filename), {
+        const result = transform(preprocessor.process(code, { filename }), {
           configFile: join(process.cwd(), 'babel.config.js'),
           filename,
         });

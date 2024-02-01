@@ -190,6 +190,14 @@ export class Resolver {
       return this.external('early require', request, request.specifier);
     }
 
+    if (request.specifier.startsWith('@embroider-dep')) {
+      return logTransition(
+        'Embroider direct dependency lookup',
+        request,
+        request.alias(request.specifier.replace(/^@embroider-dep\//, ''))
+      );
+    }
+
     request = this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);

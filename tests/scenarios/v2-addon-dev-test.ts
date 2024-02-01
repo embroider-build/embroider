@@ -268,11 +268,11 @@ import Button from "./demo/button.js";
 import Another from "./another.js";
 import { precompileTemplate } from '@ember/template-compilation';
 import { setComponentTemplate } from '@ember/component';
-var _class;
+var _SingleFileComponent;
 class SingleFileComponent extends Component {
   doIt() {}
 }
-_class = SingleFileComponent;
+_SingleFileComponent = SingleFileComponent;
 setComponentTemplate(
   precompileTemplate(
   "<div data-test-single-file-component>Hello {{@message}}</div><div data-test-another><Another /></div><Button data-test-button @onClick={{this.doIt}} />",
@@ -282,7 +282,7 @@ setComponentTemplate(
     Button,
   }),
   strictMode: true
-}), _class);
+}), _SingleFileComponent);
 
 export { SingleFileComponent as default };
 //# sourceMappingURL=single-file-component.js.map`);

@@ -7,6 +7,7 @@ export default function appReexports(opts: {
   from: string;
   to: string;
   include: string[];
+  exclude?: string[];
   mapFilename?: (filename: string) => string;
   exports?: (filename: string) => string[] | string | undefined;
 }): Plugin {
@@ -26,7 +27,8 @@ export default function appReexports(opts: {
 
         if (
           opts.include.some((glob) => minimatch(addonFilename, glob)) &&
-          !minimatch(addonFilename, '**/*.d.ts')
+          !minimatch(addonFilename, '**/*.d.ts') &&
+          opts.exclude?.some((glob) => minimatch(addonFilename, glob)) !== true
         ) {
           appJS[`./${appFilename}`] = `./dist/_app_/${appFilename}`;
           this.emitFile({

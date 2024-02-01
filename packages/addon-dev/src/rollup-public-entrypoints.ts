@@ -11,6 +11,7 @@ function normalizeFileExt(fileName: string) {
 export default function publicEntrypoints(args: {
   srcDir: string;
   include: string[];
+  exclude?: string[];
 }): Plugin {
   return {
     name: 'addon-modules',
@@ -19,6 +20,7 @@ export default function publicEntrypoints(args: {
 
       let matches = walkSync(args.srcDir, {
         globs: [...args.include, '**/*.hbs', '**/*.ts', '**/*.gts', '**/*.gjs'],
+        ignore: args.exclude,
       });
 
       for (let name of matches) {

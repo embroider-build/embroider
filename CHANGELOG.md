@@ -1,4 +1,31 @@
 # Embroider Changelog
+## Release (2024-02-01)
+
+@embroider/addon-dev 4.2.0 (minor)
+@embroider/compat 3.4.4 (patch)
+@embroider/core 3.4.4 (patch)
+@embroider/macros 1.13.5 (patch)
+@embroider/shared-internals 2.5.2 (patch)
+@embroider/webpack 3.2.2 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#1785](https://github.com/embroider-build/embroider/pull/1785) Backport #1760 to stable: Add exclude option to appReexports and publicEntrypoints rollup plugins ([@simonihmig](https://github.com/simonihmig))
+  * [#1777](https://github.com/embroider-build/embroider/pull/1777) Backport #1642 to stable:  Allow for more flexible addon-dev appReexports ([@simonihmig](https://github.com/simonihmig))
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/shared-internals`, `@embroider/test-scenarios`
+  * [#1762](https://github.com/embroider-build/embroider/pull/1762) Fix incorrect ownerOfFile at root of filesystem ([@ef4](https://github.com/ef4))
+* `@embroider/shared-internals`
+  * [#1758](https://github.com/embroider-build/embroider/pull/1758) Make template-colocation-plugin idempotent ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/test-scenarios`
+  * [#1781](https://github.com/embroider-build/embroider/pull/1781) Fix failing addon-dev-js test on stable ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
 ## Release (2023-12-23)
 
 @embroider/compat 3.4.3 (patch)

@@ -4,6 +4,9 @@ import type { Resolution, ResolverFunction } from '@embroider/core';
 import { virtualContent, ResolverLoader } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
+import makeDebug from 'debug';
+
+const debug = makeDebug('embroider:vite');
 
 export function resolver(): Plugin {
   let resolverLoader = new ResolverLoader(process.cwd());
@@ -20,7 +23,7 @@ export function resolver(): Plugin {
         for (let [id, watches] of virtualDeps) {
           for (let watch of watches) {
             if (path.startsWith(watch)) {
-              console.log(`Invalidate ${id} because ${path}`);
+              debug('Invalidate %s because %s', id, path);
               server.moduleGraph.onFileChange(id);
               let m = server.moduleGraph.getModuleById(id);
               if (m) {

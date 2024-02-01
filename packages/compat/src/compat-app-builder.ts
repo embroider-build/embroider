@@ -1130,10 +1130,7 @@ export class CompatAppBuilder {
     // script tag in the tests HTML, but that isn't as easy for final stage
     // packagers to understand. It's better to express it here as a direct
     // module dependency.
-    let eagerModules: string[] = [
-      'ember-testing',
-      explicitRelative(dirname(myName), this.topAppJSAsset(appFiles, prepared).relativePath),
-    ];
+    let eagerModules: string[] = ['ember-testing', explicitRelative(dirname(myName), '-embroider-entrypoint.js')];
 
     let amdModules: { runtime: string; buildtime: string }[] = [];
 

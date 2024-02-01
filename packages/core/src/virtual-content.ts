@@ -3,6 +3,8 @@ import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 
+import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
+
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
 
@@ -19,6 +21,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let cjsExtern = decodeVirtualExternalCJSModule(filename);
   if (cjsExtern) {
     return renderCJSExternalShim(cjsExtern);
+  }
+
+  let entrypoint = decodeEntrypoint(filename);
+  if (entrypoint) {
+    return renderEntrypoint(resolver, entrypoint);
   }
 
   let extern = decodeVirtualExternalESModule(filename);

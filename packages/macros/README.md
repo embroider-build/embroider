@@ -235,3 +235,4 @@ Below are a list of addons that have started using `@embroider/macros` so that y
 
 - [ember-bootstrap](https://github.com/kaliber5/ember-bootstrap)
 - [liquid-fire](https://github.com/ember-animation/liquid-fire)
+- [ember-qunit](https://github.com/emberjs/ember-qunit/)

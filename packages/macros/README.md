@@ -233,6 +233,6 @@ declare module '@glint/environment-ember-loose/registry' {
 
 Below are a list of addons that have started using `@embroider/macros` so that you can get a feel for common use cases that can be solved via the macro system.
 
-- [ember-exam](https://github.com/ember-cli/ember-exam)
 - [ember-bootstrap](https://github.com/kaliber5/ember-bootstrap)
-- [ember-stargate](https://github.com/kaliber5/ember-stargate)
+- [liquid-fire](https://github.com/ember-animation/liquid-fire)
+- [ember-qunit](https://github.com/emberjs/ember-qunit/)

@@ -104,7 +104,10 @@ The steps:
    }
    ```
 
-1. `In test-app/package.json`, change the top-level "name" to "test-app", remove the "ember-addon" section, and remove "ember-addon" from keywords.
+1. In  `test-app/package.json`, change the top-level "name" to "test-app", remove the "ember-addon" section, and remove "ember-addon" from keywords.
+
+1. In  `test-app/package.json`, add the field `"private": true` because this package is not meant to be published on npm.
+
 1. At the top-level of the project, run `pnpm install`.
 1. In `test-app/ember-cli-build.js` switch from the dummy app build pipeline to the normal app build pipeline:
 
@@ -125,6 +128,14 @@ The steps:
    ember s
    ember test
    ```
+
+1. The lint scripts are expected to work the same way as before inside the test-app. However, there's one common issue you may encounter when running the linter if you use `eslint-plugin-n` or `eslint-plugin-node`: 
+   ```sh
+   error  "@embroider/test-setup" is not published  n/no-unpublished-require
+   error  "ember-cli" is not published  n/no-unpublished-require
+   ```
+   The [lint rule](https://github.com/eslint-community/eslint-plugin-n/blob/master/docs/rules/no-unpublished-require.md) tells that `"@embroider/test-setup"` and `"ember-cli"` are `devDependencies` being imported with `require()`. It's not a problem since the test-app is a private package. To solve the issue, make sure you use an up-to-date version of `eslint-plugin-n` (at least `15.4.0`). If you don't want to update the lint tools right now, you can also deactivate the rule.
+
 1. At this point all tests and lint scripts work the same way as before inside the test-app. But we will also want linting, prettier, etc for the newly-separated addon workspace too.
 
    > You could create one unified config at the top of the monorepo if you want, but I think it's simpler over the long run to manage each workspace separately. It's nice that the test-app is a totally stock Ember app that can be updated by ember-cli-update -- including all the default linting setup.

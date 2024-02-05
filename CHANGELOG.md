@@ -1,4 +1,14 @@
 # Embroider Changelog
+## Release (2024-02-05)
+
+@embroider/addon-dev 4.2.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#1787](https://github.com/embroider-build/embroider/pull/1787) Fix source map option not being passed to plugin ([@vstefanovic97](https://github.com/vstefanovic97))
+
+#### Committers: 1
+- Vuk ([@vstefanovic97](https://github.com/vstefanovic97))
 ## Release (2024-02-01)
 
 @embroider/addon-dev 4.2.0 (minor)

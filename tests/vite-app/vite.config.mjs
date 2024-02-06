@@ -8,6 +8,7 @@ import {
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
+import { hmr } from "ember-vite-hmr";
 
 const root = "node_modules/.embroider/rewritten-app";
 
@@ -20,6 +21,7 @@ export default defineConfig({
     templateTag(),
     scripts(),
     resolver(),
+    hmr(),
 
     babel({
       babelHelpers: "runtime",

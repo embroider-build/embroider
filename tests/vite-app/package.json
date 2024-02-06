@@ -77,7 +77,8 @@
     "stylelint-prettier": "^3.0.0",
     "tracked-built-ins": "^3.1.1",
     "typescript": "^5.1.6",
-    "vite": "^5.0.9"
+    "vite": "^5.0.9",
+    "ember-vite-hmr": "^0.5.0"
   },
   "engines": {
     "node": "16.* || >= 18"

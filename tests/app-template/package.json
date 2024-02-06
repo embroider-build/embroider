@@ -11,7 +11,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "ember build",
+    "build": "vite build",
     "build:production": "ember build -prod",
     "lint": "npm-run-all --aggregate-output --continue-on-error --parallel \"lint:!(fix)\"",
     "lint:fix": "npm-run-all --aggregate-output --continue-on-error --parallel lint:*:fix",
@@ -19,9 +19,9 @@
     "lint:hbs:fix": "ember-template-lint . --fix",
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
-    "start": "ember serve",
-    "test": "ember test",
-    "test:ember": "ember test"
+    "start": "vite",
+    "test": "vite build && ember test --path dist",
+    "test:ember": "vite build && ember test --path dist"
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",
@@ -32,10 +32,11 @@
     "@embroider/router": "workspace:*",
     "@ember/string": "^3.1.1",
     "@embroider/test-setup": "workspace:*",
-    "@embroider/webpack": "workspace:*",
+    "@embroider/vite": "workspace:*",
     "@glimmer/component": "^1.1.2",
     "@glimmer/tracking": "^1.1.2",
     "babel-eslint": "^10.1.0",
+    "@rollup/plugin-babel": "^5.3.1",
     "broccoli-asset-rev": "^3.0.0",
     "ember-auto-import": "^2.4.2",
     "ember-cli": "~4.6.0",
@@ -46,8 +47,6 @@
     "ember-cli-inject-live-reload": "^2.1.0",
     "ember-cli-sri": "^2.1.1",
     "ember-cli-terser": "^4.0.2",
-    "ember-data": "~4.4.0",
-    "ember-fetch": "^8.1.1",
     "ember-load-initializers": "^2.1.2",
     "ember-page-title": "^7.0.0",
     "ember-qunit": "^6.1.1",
@@ -65,7 +64,7 @@
     "prettier": "^2.7.1",
     "qunit": "^2.19.1",
     "qunit-dom": "^2.0.0",
-    "webpack": "^5.74.0"
+    "vite": "^5.0.9"
   },
   "engines": {
     "node": "14.* || >= 16"

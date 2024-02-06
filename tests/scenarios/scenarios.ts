@@ -58,7 +58,7 @@ export function baseV2Addon() {
 }
 
 export function baseApp() {
-  return Project.fromDir(dirname(require.resolve('../app-template/package.json')), { linkDevDeps: true });
+  return Project.fromDir(dirname(require.resolve('../vite-app/package.json')), { linkDevDeps: true });
 }
 
 export function baseTSApp() {

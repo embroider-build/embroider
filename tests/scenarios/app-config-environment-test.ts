@@ -13,14 +13,25 @@ appScenarios
         'use strict';
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+        const { compatBuild } = require('@embroider/compat');
 
         module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {
+          const app = new EmberApp(defaults, {
             tests: true,
             storeConfigInMeta: false,
           });
-          return maybeEmbroider(app, {});
+
+          return compatBuild(app, undefined, {
+            staticAddonTrees: true,
+            staticAddonTestSupportTrees: true,
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+            staticEmberSource: true,
+            amdCompatibility: {
+              es: [],
+            },
+          });
         };
       `,
       config: {
@@ -80,7 +91,7 @@ appScenarios
         // later. This difference in environment is important because it's the
         // only way for us to test ember-cli-build.js' `tests: true` behavior,
         // and is equivalent to visiting the app's /tests page
-        let devBuildResult = await app.execute(`pnpm build --environment=development`);
+        let devBuildResult = await app.execute(`pnpm build:development`);
         assert.equal(devBuildResult.exitCode, 0, devBuildResult.output);
         let testRunResult = await app.execute(`pnpm test:ember --path dist`);
         assert.equal(testRunResult.exitCode, 0, testRunResult.output);

@@ -1,7 +1,7 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { render, click, rerender, settled } from '@ember/test-helpers';
-import Fancy from 'vite-app/components/fancy2';
+import Fancy from 'app-template/components/fancy2';
 
 
 module('Integration | Component | Fany -- from gjs test file', (hooks) => {

@@ -1,6 +1,6 @@
 import { module, test } from 'qunit';
 import { visit } from '@ember/test-helpers';
-import { setupApplicationTest } from 'vite-app/tests/helpers';
+import { setupApplicationTest } from 'app-template/tests/helpers';
 
 module('Acceptance | app route', function (hooks) {
   setupApplicationTest(hooks);

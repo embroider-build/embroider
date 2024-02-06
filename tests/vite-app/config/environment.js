@@ -2,7 +2,7 @@
 
 module.exports = function (environment) {
   const ENV = {
-    modulePrefix: 'vite-app',
+    modulePrefix: 'app-template',
     environment,
     rootURL: '/',
     locationType: 'history',

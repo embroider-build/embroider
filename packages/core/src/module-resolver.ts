@@ -194,60 +194,28 @@ export class Resolver {
   // that calls your build system's normal module resolver, this does both pre-
   // and post-resolution adjustments as needed to implement our compatibility
   // rules.
-  //
-  // Depending on the plugin architecture you're working in, it may be easier to
-  // call beforeResolve and fallbackResolve directly, in which case matching the
-  // details of the recursion to what this method does are your responsibility.
-  async resolve<Req extends ModuleRequest, Res extends Resolution>(
-    request: Req,
-    defaultResolve: ResolverFunction<Req, Res>
-  ): Promise<Res> {
-    let gen = this.internalResolve<Req, Res, Promise<Res>>(request, defaultResolve);
-    let out = gen.next();
-    while (!out.done) {
-      out = gen.next(await out.value);
-    }
-    return out.value;
-  }
-
-  // synchronous alternative to resolve() above. Because our own internals are
-  // all synchronous, you can use this if your defaultResolve function is
-  // synchronous.
-  resolveSync<Req extends ModuleRequest, Res extends Resolution>(
-    request: Req,
-    defaultResolve: SyncResolverFunction<Req, Res>
-  ): Res {
-    let gen = this.internalResolve<Req, Res, Res>(request, defaultResolve);
-    let out = gen.next();
-    while (!out.done) {
-      out = gen.next(out.value);
-    }
-    return out.value;
-  }
-
-  // Our core implementation is a generator so it can power both resolve() and
-  // resolveSync()
-  private *internalResolve<Res extends Resolution, Yielded>(request: ModuleRequest<Res>): Generator<Yielded, Res, Res> {
+  async resolve<ResolveRequest extends ModuleRequest, ResolveResolution extends Resolution>(
+    request: ResolveRequest
+  ): Promise<ResolveResolution> {
     request = this.beforeResolve(request);
     if (request.resolvedTo) {
-      return request.resolvedTo;
+      return request.resolvedTo as ResolveResolution;
     }
 
-    // TODO remove resolveSync and remove this generator and just use resolve :+1:
-    let resolution = yield request.defaultResolve();
+    let resolution = await request.defaultResolve();
 
     switch (resolution.type) {
       case 'found':
-        return resolution;
+        return resolution as ResolveResolution;
       case 'not_found':
         break;
       default:
         throw assertNever(resolution);
     }
-    let nextRequest = this.fallbackResolve(request, defaultResolve);
+    let nextRequest = this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
-      return resolution;
+      return resolution as ResolveResolution;
     }
 
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
@@ -260,9 +228,10 @@ export class Resolver {
       // virtual and NotFound requests are terminal, there is no more
       // beforeResolve or fallbackResolve around them. The defaultResolve is
       // expected to know how to implement them.
-      return yield defaultResolve(nextRequest);
+      return nextRequest.defaultResolve() as Promise<ResolveResolution>;
     }
-    return yield* this.internalResolve(nextRequest, defaultResolve);
+
+    return this.resolve(nextRequest);
   }
 
   // Use standard NodeJS resolving, with our required compatibility rules on

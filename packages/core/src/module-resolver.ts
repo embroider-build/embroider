@@ -130,18 +130,21 @@ type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName 
 
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
-export interface ModuleRequest {
+export interface ModuleRequest<Res extends Resolution = Resolution> {
   readonly specifier: string;
   readonly fromFile: string;
   readonly isVirtual: boolean;
   readonly meta: Record<string, unknown> | undefined;
   readonly debugType: string;
   readonly isNotFound: boolean;
+  readonly resolvedTo: Res | undefined;
   alias(newSpecifier: string): this;
   rehome(newFromFile: string): this;
   virtualize(virtualFilename: string): this;
   withMeta(meta: Record<string, any> | undefined): this;
   notFound(): this;
+  defaultResolve(): Promise<Res>;
+  resolveTo(resolution: Res): this;
 }
 
 // This is generic because different build systems have different ways of
@@ -159,7 +162,7 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 export class Resolver {
   constructor(readonly options: Options) {}
 
-  beforeResolve<R extends ModuleRequest>(request: R): R {
+  private beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -224,12 +227,14 @@ export class Resolver {
 
   // Our core implementation is a generator so it can power both resolve() and
   // resolveSync()
-  private *internalResolve<Req extends ModuleRequest, Res extends Resolution, Yielded>(
-    request: Req,
-    defaultResolve: (req: Req) => Yielded
-  ): Generator<Yielded, Res, Res> {
+  private *internalResolve<Res extends Resolution, Yielded>(request: ModuleRequest<Res>): Generator<Yielded, Res, Res> {
     request = this.beforeResolve(request);
-    let resolution = yield defaultResolve(request);
+    if (request.resolvedTo) {
+      return request.resolvedTo;
+    }
+
+    // TODO remove resolveSync and remove this generator and just use resolve :+1:
+    let resolution = yield request.defaultResolve();
 
     switch (resolution.type) {
       case 'found':
@@ -239,7 +244,7 @@ export class Resolver {
       default:
         throw assertNever(resolution);
     }
-    let nextRequest = this.fallbackResolve(request);
+    let nextRequest = this.fallbackResolve(request, defaultResolve);
     if (nextRequest === request) {
       // no additional fallback is available.
       return resolution;
@@ -1020,7 +1025,7 @@ export class Resolver {
     }
   }
 
-  fallbackResolve<R extends ModuleRequest>(request: R): R {
+  private fallbackResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.

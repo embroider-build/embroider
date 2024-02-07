@@ -36,7 +36,7 @@ export function resolver(): Plugin {
     },
 
     async resolveId(source, importer, options) {
-      let request = RollupModuleRequest.from(source, importer, options.custom);
+      let request = RollupModuleRequest.from(this, source, importer, options.custom);
       if (!request) {
         // fallthrough to other rollup plugins
         return null;

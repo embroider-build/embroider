@@ -218,6 +218,10 @@ export class Resolver {
       return resolution;
     }
 
+    if (nextRequest.resolvedTo) {
+      return nextRequest.resolvedTo;
+    }
+
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
       throw new Error(
         'Bug Discovered! New request is not === original request but has the same fromFile and specifier. This will likely create a loop.'

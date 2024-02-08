@@ -5,6 +5,7 @@ import {
   scripts,
   templateTag,
   optimizeDeps,
+  compatPrebuild,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -15,11 +16,13 @@ export default defineConfig({
   root,
   // esbuild in vite does not support decorators
   esbuild: false,
+  cacheDir: resolve("node_modules", ".vite"),
   plugins: [
     hbs(),
     templateTag(),
     scripts(),
     resolver(),
+    compatPrebuild(),
 
     babel({
       babelHelpers: "runtime",

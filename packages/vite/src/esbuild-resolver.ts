@@ -1,16 +1,10 @@
-import type { Plugin as EsBuildPlugin, ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
+import type { Plugin as EsBuildPlugin } from 'esbuild';
 import { type PluginItem, transform } from '@babel/core';
-import {
-  type Resolution,
-  type ResolverFunction,
-  ResolverLoader,
-  virtualContent,
-  locateEmbroiderWorkingDir,
-} from '@embroider/core';
+import { ResolverLoader, virtualContent, locateEmbroiderWorkingDir } from '@embroider/core';
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, resolve, join } from 'path';
+import { resolve, join } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
@@ -23,7 +17,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
     name: 'embroider-esbuild-resolver',
     setup(build) {
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let request = EsBuildModuleRequest.from(path, importer, pluginData);
+        let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
         if (!request) {
           return null;
         }
@@ -102,44 +96,4 @@ function runMacros(src: string, filename: string, macrosConfig: PluginItem): str
     filename,
     plugins: [macrosConfig],
   })!.code!;
-}
-
-function defaultResolve(
-  context: PluginBuild,
-  kind: ImportKind
-): ResolverFunction<EsBuildModuleRequest, Resolution<OnResolveResult, OnResolveResult>> {
-  return async (request: EsBuildModuleRequest) => {
-    if (request.isVirtual) {
-      return {
-        type: 'found',
-        result: { path: request.specifier, namespace: 'embroider' },
-      };
-    }
-    if (request.isNotFound) {
-      // todo: make sure this looks correct to users
-      return {
-        type: 'not_found',
-        err: {
-          errors: [{ text: `module not found ${request.specifier}` }],
-        },
-      };
-    }
-
-    let result = await context.resolve(request.specifier, {
-      importer: request.fromFile,
-      resolveDir: dirname(request.fromFile),
-      kind,
-      pluginData: {
-        embroider: {
-          enableCustomResolver: false,
-          meta: request.meta,
-        },
-      },
-    });
-    if (result.errors.length > 0) {
-      return { type: 'not_found', err: result };
-    } else {
-      return { type: 'found', result };
-    }
-  };
 }

@@ -194,19 +194,19 @@ export class Resolver {
   // that calls your build system's normal module resolver, this does both pre-
   // and post-resolution adjustments as needed to implement our compatibility
   // rules.
-  async resolve<ResolveRequest extends ModuleRequest, ResolveResolution extends Resolution>(
-    request: ResolveRequest
+  async resolve<ResolveResolution extends Resolution>(
+    request: ModuleRequest<ResolveResolution>
   ): Promise<ResolveResolution> {
     request = await this.beforeResolve(request);
     if (request.resolvedTo) {
-      return request.resolvedTo as ResolveResolution;
+      return request.resolvedTo;
     }
 
     let resolution = await request.defaultResolve();
 
     switch (resolution.type) {
       case 'found':
-        return resolution as ResolveResolution;
+        return resolution;
       case 'not_found':
         break;
       default:
@@ -215,7 +215,7 @@ export class Resolver {
     let nextRequest = await this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
-      return resolution as ResolveResolution;
+      return resolution;
     }
 
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
@@ -228,7 +228,7 @@ export class Resolver {
       // virtual and NotFound requests are terminal, there is no more
       // beforeResolve or fallbackResolve around them. The defaultResolve is
       // expected to know how to implement them.
-      return nextRequest.defaultResolve() as Promise<ResolveResolution>;
+      return nextRequest.defaultResolve();
     }
 
     return this.resolve(nextRequest);

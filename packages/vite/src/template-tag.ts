@@ -8,6 +8,10 @@ export function templateTag({ inline_source_map } = { inline_source_map: false }
   let preprocessor = new Preprocessor();
 
   function candidates(id: string) {
+    // only provide candidates if it's an extensionless import
+    if (id.endsWith('.hbs')) {
+      return [];
+    }
     return [id + '.gjs', id + '.gts'];
   }
 

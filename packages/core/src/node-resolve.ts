@@ -40,15 +40,16 @@ export class NodeModuleRequest implements ModuleRequest {
   }
 }
 
-export function nodeResolve(
+export async function nodeResolve(
   resolver: Resolver,
   specifier: string,
   fromFile: string
-):
+): Promise<
   | { type: 'virtual'; filename: string; content: string }
   | { type: 'real'; filename: string }
-  | { type: 'not_found'; err: Error } {
-  let resolution = resolver.resolveSync(
+  | { type: 'not_found'; err: Error }
+> {
+  let resolution = await resolver.resolve(
     new NodeModuleRequest(specifier, fromFile, false, undefined, false),
     request => {
       if (request.isVirtual) {

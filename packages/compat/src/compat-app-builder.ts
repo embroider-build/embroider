@@ -1012,7 +1012,7 @@ export class CompatAppBuilder {
     return combinePackageJSON(...pkgLayers);
   }
 
-  private etcOptions(resolverConfig: CompatResolverOptions): EtcOptions {
+  private async etcOptions(resolverConfig: CompatResolverOptions): Promise<EtcOptions> {
     let transforms = this.compatApp.htmlbarsPlugins;
 
     let { plugins: macroPlugins, setConfig } = MacrosConfig.transforms();
@@ -1034,7 +1034,7 @@ export class CompatAppBuilder {
     }
 
     let resolver = new Resolver(resolverConfig);
-    let resolution = resolver.nodeResolve(
+    let resolution = await resolver.nodeResolve(
       'ember-source/vendor/ember/ember-template-compiler',
       resolvePath(this.root, 'package.json')
     );

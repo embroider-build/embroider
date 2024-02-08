@@ -162,7 +162,7 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 export class Resolver {
   constructor(readonly options: Options) {}
 
-  private beforeResolve<R extends ModuleRequest>(request: R): R {
+  private async beforeResolve<R extends ModuleRequest>(request: R): Promise<R> {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -176,7 +176,7 @@ export class Resolver {
     }
 
     request = this.handleFastbootSwitch(request);
-    request = this.handleGlobalsCompat(request);
+    request = await this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
@@ -197,7 +197,7 @@ export class Resolver {
   async resolve<ResolveRequest extends ModuleRequest, ResolveResolution extends Resolution>(
     request: ResolveRequest
   ): Promise<ResolveResolution> {
-    request = this.beforeResolve(request);
+    request = await this.beforeResolve(request);
     if (request.resolvedTo) {
       return request.resolvedTo as ResolveResolution;
     }
@@ -212,7 +212,7 @@ export class Resolver {
       default:
         throw assertNever(resolution);
     }
-    let nextRequest = this.fallbackResolve(request);
+    let nextRequest = await this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
       return resolution as ResolveResolution;
@@ -237,13 +237,14 @@ export class Resolver {
   // Use standard NodeJS resolving, with our required compatibility rules on
   // top. This is a convenience method for calling resolveSync with the
   // defaultResolve already configured to be "do the normal node thing".
-  nodeResolve(
+  async nodeResolve(
     specifier: string,
     fromFile: string
-  ):
+  ): Promise<
     | { type: 'virtual'; filename: string; content: string }
     | { type: 'real'; filename: string }
-    | { type: 'not_found'; err: Error } {
+    | { type: 'not_found'; err: Error }
+  > {
     return nodeResolve(this, specifier, fromFile);
   }
 
@@ -389,7 +390,7 @@ export class Resolver {
     }
   }
 
-  private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
+  private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {
     let match = compatPattern.exec(request.specifier);
     if (!match) {
       return request;
@@ -424,7 +425,11 @@ export class Resolver {
     );
   }
 
-  private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
+  private async resolveComponent<R extends ModuleRequest>(
+    path: string,
+    inEngine: EngineConfig,
+    request: R
+  ): Promise<R> {
     let target = this.parseGlobalPath(path, inEngine);
 
     let hbsModule: { requested: string; found: string } | null = null;
@@ -433,7 +438,7 @@ export class Resolver {
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}.hbs`;
-      let resolution = this.nodeResolve(
+      let resolution = await this.nodeResolve(
         `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
         target.from
       );
@@ -447,7 +452,7 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = this.nodeResolve(candidateSpecifier, target.from);
+      let resolution = await this.nodeResolve(candidateSpecifier, target.from);
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
@@ -474,12 +479,16 @@ export class Resolver {
     }
   }
 
-  private resolveHelperOrComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
+  private async resolveHelperOrComponent<R extends ModuleRequest>(
+    path: string,
+    inEngine: EngineConfig,
+    request: R
+  ): Promise<R> {
     // resolveHelper just rewrites our request to one that should target the
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
+    let helperMatch = await this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
     if (helperMatch.type === 'real') {
       return logTransition('ambiguous case matched a helper', request, helperCandidate);
     }
@@ -487,7 +496,7 @@ export class Resolver {
     // unlike resolveHelper, resolveComponent already does pre-resolution in
     // order to deal with its own internal ambiguity around JS vs HBS vs
     // colocation.≥
-    let componentMatch = this.resolveComponent(path, inEngine, request);
+    let componentMatch = await this.resolveComponent(path, inEngine, request);
     if (componentMatch !== request) {
       return logTransition('ambiguous case matched a cmoponent', request, componentMatch);
     }
@@ -994,7 +1003,7 @@ export class Resolver {
     }
   }
 
-  private fallbackResolve<R extends ModuleRequest>(request: R): R {
+  private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -1050,7 +1059,7 @@ export class Resolver {
       if (withinEngine) {
         // it's a relative import inside an engine (which also means app), which
         // means we may need to satisfy the request via app tree merging.
-        let appJSMatch = this.searchAppTree(
+        let appJSMatch = await this.searchAppTree(
           request,
           withinEngine,
           explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier))
@@ -1097,7 +1106,7 @@ export class Resolver {
 
     let targetingEngine = this.engineConfig(packageName);
     if (targetingEngine) {
-      let appJSMatch = this.searchAppTree(request, targetingEngine, request.specifier.replace(packageName, '.'));
+      let appJSMatch = await this.searchAppTree(request, targetingEngine, request.specifier.replace(packageName, '.'));
       if (appJSMatch) {
         return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
       }
@@ -1146,11 +1155,11 @@ export class Resolver {
     }
   }
 
-  private searchAppTree<R extends ModuleRequest>(
+  private async searchAppTree<R extends ModuleRequest>(
     request: R,
     engine: EngineConfig,
     inEngineSpecifier: string
-  ): R | undefined {
+  ): Promise<R | undefined> {
     let matched = this.getEntryFromMergeMap(inEngineSpecifier, engine.root);
 
     switch (matched?.entry.type) {
@@ -1161,7 +1170,7 @@ export class Resolver {
       case 'fastboot-only':
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
-        let foundAppJS = this.nodeResolve(matched.entry['app-js'].specifier, matched.entry['app-js'].fromFile);
+        let foundAppJS = await this.nodeResolve(matched.entry['app-js'].specifier, matched.entry['app-js'].fromFile);
         if (foundAppJS.type !== 'real') {
           throw new Error(
             `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`

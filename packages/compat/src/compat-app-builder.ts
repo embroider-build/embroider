@@ -415,7 +415,7 @@ export class CompatAppBuilder {
   }
 
   @Memoize()
-  private babelConfig(resolverConfig: CompatResolverOptions) {
+  private async babelConfig(resolverConfig: CompatResolverOptions) {
     let babel = cloneDeep(this.compatApp.babelConfig());
 
     if (!babel.plugins) {
@@ -429,7 +429,10 @@ export class CompatAppBuilder {
     // https://github.com/webpack/webpack/issues/12154
     babel.plugins.push(require.resolve('./rename-require-plugin'));
 
-    babel.plugins.push([require.resolve('babel-plugin-ember-template-compilation'), this.etcOptions(resolverConfig)]);
+    babel.plugins.push([
+      require.resolve('babel-plugin-ember-template-compilation'),
+      await this.etcOptions(resolverConfig),
+    ]);
 
     // this is @embroider/macros configured for full stage3 resolution
     babel.plugins.push(...this.compatApp.macrosConfig.babelPluginConfig());
@@ -992,7 +995,7 @@ export class CompatAppBuilder {
 
     let resolverConfig = this.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
-    let babelConfig = this.babelConfig(resolverConfig);
+    let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
       join(this.root, 'macros-config.json'),

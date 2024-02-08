@@ -42,6 +42,7 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: resolve(process.cwd(), "dist"),
     rollupOptions: {
       input: {
         main: resolve(root, "index.html"),

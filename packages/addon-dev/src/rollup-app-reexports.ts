@@ -1,4 +1,4 @@
-import { readJsonSync, writeJsonSync } from 'fs-extra';
+import { readJsonSync, writeJsonSync } from 'fs-extra/esm';
 import { extname } from 'node:path';
 import minimatch from 'minimatch';
 import type { Plugin } from 'rollup';
@@ -34,9 +34,8 @@ export default function appReexports(opts: {
           this.emitFile({
             type: 'asset',
             fileName: `_app_/${appFilename}`,
-            source: `export ${computedExports} from "${
-              pkg.name
-            }/${addonFilename.slice(0, -extname(addonFilename).length)}";\n`,
+            source: `export ${computedExports} from "${pkg.name
+              }/${addonFilename.slice(0, -extname(addonFilename).length)}";\n`,
           });
         }
       }

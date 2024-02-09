@@ -11,20 +11,20 @@
   "author": "Edward Faulkner <edward@eaf4.com>",
   "type": "module",
   "bin": {
-    "addon-dev": "./dist/commands.js"
+    "addon-dev": "./dist/src/commands.js"
   },
   "exports": {
-    "./template-colocation-plugin": "./dist/template-colocation-plugin.js",
-    "./rollup": "./dist/rollup.js"
+    "./template-colocation-plugin": "./dist/src/template-colocation-plugin.js",
+    "./rollup": "./dist/src/rollup.js"
   },
   "files": [
-    "sample-rollup.config.js",
     "dist",
     "declarations"
   ],
   "scripts": {
-    "prepack": "vite build",
-    "build": "vite build",
+    "prepack": "pnpm build",
+    "build": "rm -rf dist && pnpm build:js",
+    "build:js": "swc ./src -d dist",
     "test": "jest"
   },
   "dependencies": {
@@ -33,28 +33,27 @@
     "content-tag": "^2.0.1",
     "execa": "^8.0.1",
     "fix-bad-declaration-output": "^1.1.2",
-    "fs-extra": "^10.0.0",
+    "fs-extra": "^11.2.0",
     "minimatch": "^3.0.4",
     "rollup-plugin-copy-assets": "^2.0.3",
     "rollup-plugin-delete": "^2.0.0",
     "walk-sync": "^3.0.0",
-    "yargs": "^17.0.1",
-    "execa": "^8.0.1"
+    "yargs": "^17.0.1"
   },
   "devDependencies": {
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.84.2",
+    "@swc/cli": "^0.3.9",
+    "@swc/core": "^1.4.0",
     "@tsconfig/ember": "^3.0.3",
     "@types/broccoli-funnel": "^3.0.4",
-    "@types/fs-extra": "^9.0.12",
+    "@types/fs-extra": "^11.0.4",
     "@types/minimatch": "^3.0.4",
     "@types/node": "^20.11.5",
     "@types/yargs": "^17.0.3",
     "rollup": "^3.23.0",
     "tmp": "^0.1.0",
-    "typescript": "^5.1.6",
-    "vite": "^4.3.9",
-    "vite-plugin-dts": "^3.7.2"
+    "typescript": "^5.1.6"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

@@ -21,5 +21,11 @@
     "strict": true,
     "skipLibCheck": true,
     "useUnknownInCatchVariables": false,
+
+    // Only use TS for declarations
+    // Can't typecheck due to type errors in @embroider/core
+    //   (NestedHooks isn't defined, for example)
+    "declarations": true,
+    "emitDeclarationOnly": true,
   }
 }

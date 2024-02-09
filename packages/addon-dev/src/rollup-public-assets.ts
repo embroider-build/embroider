@@ -1,4 +1,4 @@
-import { readJsonSync, writeJsonSync } from 'fs-extra';
+import { readJsonSync, writeJsonSync } from 'fs-extra/esm';
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
 

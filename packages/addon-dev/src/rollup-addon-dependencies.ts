@@ -1,11 +1,14 @@
 import type { Plugin } from 'rollup';
-import { readJsonSync } from 'fs-extra';
-import {
+import { readJsonSync } from 'fs-extra/esm';
+// NOTE: @embroider/core is compiled to CJS, so its own `export * from shared-internals`
+// doesn't work how we want (which is what would provide packageName
+import eCore from '@embroider/core';
+const {
   emberVirtualPackages,
   emberVirtualPeerDeps,
   packageName,
   templateCompilationModules,
-} from '@embroider/core';
+} = eCore;
 
 const compilationModules = new Set(
   templateCompilationModules.map((m) => m.module)

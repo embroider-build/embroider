@@ -34,8 +34,9 @@ export default function appReexports(opts: {
           this.emitFile({
             type: 'asset',
             fileName: `_app_/${appFilename}`,
-            source: `export ${computedExports} from "${pkg.name
-              }/${addonFilename.slice(0, -extname(addonFilename).length)}";\n`,
+            source: `export ${computedExports} from "${
+              pkg.name
+            }/${addonFilename.slice(0, -extname(addonFilename).length)}";\n`,
           });
         }
       }

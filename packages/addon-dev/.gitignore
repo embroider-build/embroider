@@ -1,6 +1,9 @@
 # See https://help.github.com/ignore-files/ for more about ignoring files.
+# new compiled output
+dist/
+declarations/
 
-# compiled output
+# old compiled output
 /src/**/*.js
 /src/**/*.d.ts
 /src/**/*.map

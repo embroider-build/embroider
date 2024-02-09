@@ -11,34 +11,34 @@
   "author": "Edward Faulkner <edward@eaf4.com>",
   "type": "module",
   "bin": {
-    "addon-dev": "./src/commands.js"
+    "addon-dev": "./dist/commands.js"
   },
   "exports": {
-    "./template-colocation-plugin": "./src/template-colocation-plugin.js",
-    "./rollup": "./src/rollup.js"
+    "./template-colocation-plugin": "./dist/template-colocation-plugin.js",
+    "./rollup": "./dist/rollup.js"
   },
   "files": [
     "sample-rollup.config.js",
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist",
+    "declarations"
   ],
   "scripts": {
-    "prepack": "tsc",
-    "build": "tsc",
+    "prepack": "vite build",
+    "build": "vite build",
     "test": "jest"
   },
   "dependencies": {
     "@embroider/core": "workspace:^",
-    "@rollup/pluginutils": "^4.1.1",
+    "@rollup/pluginutils": "^5.1.0",
     "content-tag": "^2.0.1",
+    "execa": "^8.0.1",
+    "fix-bad-declaration-output": "^1.1.2",
     "fs-extra": "^10.0.0",
     "minimatch": "^3.0.4",
     "rollup-plugin-copy-assets": "^2.0.3",
     "rollup-plugin-delete": "^2.0.0",
     "walk-sync": "^3.0.0",
     "yargs": "^17.0.1",
-    "fix-bad-declaration-output": "^1.0.3",
     "execa": "^8.0.1"
   },
   "devDependencies": {
@@ -52,7 +52,9 @@
     "@types/yargs": "^17.0.3",
     "rollup": "^3.23.0",
     "tmp": "^0.1.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "vite": "^4.3.9",
+    "vite-plugin-dts": "^3.7.2"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

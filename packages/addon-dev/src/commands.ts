@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { ensureSymlinkSync, readJSONSync, writeJSONSync } from 'fs-extra';
-import { join } from 'path';
+import { join } from 'node:path';
 import yargs from 'yargs/yargs';
 import type { Argv } from 'yargs';
 
@@ -25,7 +25,7 @@ yargs(process.argv.slice(2))
     'link-test-app',
     'Ensures that a test app (that lives a subdir under an addon) has access to the addon and all appropriate deps',
     (yargs) => commonArgs(yargs),
-    function (opts) {
+    function(opts) {
       let { testAppDir, addonDir } = opts;
       ensureSymlinkSync(
         join(addonDir, 'node_modules', '.bin'),
@@ -53,7 +53,7 @@ yargs(process.argv.slice(2))
         default: false,
       });
     },
-    function (opts) {
+    function(opts) {
       let { testAppDir, addonDir, lint } = opts;
       let addonPkg = readJSONSync(join(addonDir, 'package.json'));
       let testPkg = readJSONSync(join(testAppDir, 'package.json'));

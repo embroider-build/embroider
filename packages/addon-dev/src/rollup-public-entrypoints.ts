@@ -1,5 +1,5 @@
 import walkSync from 'walk-sync';
-import path from 'path';
+import path from 'node:path';
 import minimatch from 'minimatch';
 
 import type { Plugin } from 'rollup';

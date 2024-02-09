@@ -1,8 +1,8 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin, PluginContext, CustomPluginOptions } from 'rollup';
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import { hbsToJS } from '@embroider/core';
-import { parse as pathParse } from 'path';
+import { parse as pathParse } from 'node:path';
 
 export default function rollupHbsPlugin(): Plugin {
   return {

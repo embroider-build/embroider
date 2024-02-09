@@ -24,8 +24,9 @@
 
     // Only use TS for declarations
     // Can't typecheck due to type errors in @embroider/core
-    //   (NestedHooks isn't defined, for example)
-    "declarations": true,
+    //   (NestedHooks, beforeAll, etc isn't defined, for example)
+    "declaration": true,
+    "declarationDir": "declarations",
     "emitDeclarationOnly": true,
   }
 }

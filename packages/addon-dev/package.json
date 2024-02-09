@@ -14,12 +14,15 @@
     "addon-dev": "./dist/src/commands.js"
   },
   "exports": {
-    "./template-colocation-plugin": "./dist/src/template-colocation-plugin.js",
+    "./template-colocation-plugin": {
+      "types": "./public-types/template-colocation-plugin.d.ts",
+      "default": "./dist/src/template-colocation-plugin.js"
+    },
     "./rollup": "./dist/src/rollup.js"
   },
   "files": [
     "dist",
-    "declarations"
+    "public-types"
   ],
   "scripts": {
     "prepack": "pnpm build",

@@ -1,7 +1,7 @@
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
-import { readFileSync } from 'fs';
-import { dirname, join, resolve } from 'path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import minimatch from 'minimatch';
 
 export default function keepAssets({

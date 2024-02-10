@@ -1,5 +1,5 @@
-import { readJsonSync, writeJsonSync } from 'fs-extra';
-import { extname } from 'path';
+import { readJsonSync, writeJsonSync } from 'fs-extra/esm';
+import { extname } from 'node:path';
 import minimatch from 'minimatch';
 import type { Plugin } from 'rollup';
 

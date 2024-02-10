@@ -1,8 +1,13 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin, PluginContext, CustomPluginOptions } from 'rollup';
-import { readFileSync } from 'fs';
-import { hbsToJS } from '@embroider/core';
-import { parse as pathParse } from 'path';
+import { readFileSync } from 'node:fs';
+import { parse as pathParse } from 'node:path';
+
+// NOTE: @embroider/core is compiled to CJS, so its own `export * from shared-internals`
+// doesn't work how we want (which is what would provide packageName
+import eCore from '@embroider/core';
+
+const { hbsToJS } = eCore;
 
 export default function rollupHbsPlugin(): Plugin {
   return {

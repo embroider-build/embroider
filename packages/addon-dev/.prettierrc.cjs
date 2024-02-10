@@ -1,9 +1,9 @@
-'use strict';
+"use strict";
 
 module.exports = {
   overrides: [
     {
-      files: '*.{js,ts}',
+      files: "*.{js,ts}",
       options: {
         singleQuote: true,
       },

@@ -1,6 +1,6 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'rollup';
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import { Preprocessor } from 'content-tag';
 
 const PLUGIN_NAME = 'rollup-gjs-plugin';

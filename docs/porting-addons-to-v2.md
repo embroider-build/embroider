@@ -216,7 +216,7 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
    `yarn add --dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-transform-class-properties @babel/plugin-proposal-decorators`
 
 6. Grab the example babel config (below) and save it as `addon/babel.config.json`
-   - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using the `babel-plugin-ember-template-compilation`. View how to use this in the example babel.config.cjs (below).
+   - If your addon requires template transforms in order to publish to a shareable format, apply transforms using the `babel-plugin-ember-template-compilation`. View how to use this in the example babel.config.cjs (below).
 
   <details><summary>example babel.config.json</summary>
   

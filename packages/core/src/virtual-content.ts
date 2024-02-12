@@ -4,6 +4,7 @@ import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
 import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
+import { decodeVirtualVendor, renderVendor } from './virtual-vendor';
 import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
 
 const externalESPrefix = '/@embroider/ext-es/';
@@ -41,6 +42,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let im = decodeImplicitModules(filename);
   if (im) {
     return renderImplicitModules(im, resolver);
+  }
+
+  let isVendor = decodeVirtualVendor(filename);
+  if (isVendor) {
+    return renderVendor(filename, resolver);
   }
 
   let isImplicitTestScripts = decodeImplicitTestScripts(filename);

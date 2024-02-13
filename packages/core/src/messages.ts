@@ -59,15 +59,12 @@ export function throwOnWarnings(hooks?: NestedHooks) {
       hardFailMode--;
     });
   } else {
-    // Jest mode
-    if ('beforeAll' in globalThis && 'afterAll' in globalThis) {
-      /**
-       * Like with QUnit's NestedHooks, we can't be certain that our
-       * consuming environment will provide types for beforeAll and afterAll
-       */
-      (globalThis as any).beforeAll(() => hardFailMode++);
-      (globalThis as any).afterAll(() => hardFailMode--);
-    }
+    /**
+     * Like with QUnit's NestedHooks, we can't be certain that our
+     * consuming environment will provide types for beforeAll and afterAll
+     */
+    (globalThis as any).beforeAll(() => hardFailMode++);
+    (globalThis as any).afterAll(() => hardFailMode--);
   }
 }
 

@@ -30,10 +30,10 @@ export function compatPrebuild(): Plugin {
   return {
     name: 'embroider-builder',
     enforce: 'pre',
-    configureServer() {
-      mode = 'development';
-    },
-    async buildStart() {
+    async configResolved(config) {
+      if (config.command === 'serve') {
+        mode = 'development';
+      }
       await emberBuild(mode);
     },
   };

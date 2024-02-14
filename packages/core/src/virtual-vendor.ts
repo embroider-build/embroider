@@ -1,52 +1,27 @@
-import type { VirtualContentResult } from './virtual-content';
-import type { Resolver } from './module-resolver';
-import { explicitRelative, type Package, extensionsPattern } from '@embroider/shared-internals';
-import { AppFiles } from './app-files';
+import { type Package, extensionsPattern } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
-import walkSync from 'walk-sync';
-import { join } from 'path';
-import type { InMemoryAsset, OnDiskAsset } from './asset';
-// import SourceMapConcat from 'fast-sourcemap-concat';
-import { readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { sortBy } from 'lodash';
+import { join } from 'path';
 import resolve from 'resolve';
-
-class ConcatenatedAsset {
-  kind: 'concatenated-asset' = 'concatenated-asset';
-  constructor(
-    public relativePath: string,
-    public sources: (OnDiskAsset | InMemoryAsset)[],
-    private resolvableExtensions: RegExp
-  ) {}
-  get sourcemapPath() {
-    return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
-  }
-}
+import walkSync from 'walk-sync';
+import { AppFiles } from './app-files';
+import type { Resolver } from './module-resolver';
+import type { VirtualContentResult } from './virtual-content';
 
 export function decodeVirtualVendor(filename: string): boolean {
   return filename.endsWith('-embroider-vendor.js');
 }
 
 export function renderVendor(filename: string, resolver: Resolver): VirtualContentResult {
-  const vendorScript = vendorContents(filename, resolver);
-  return { src: `${vendorScript}`, watches: [] };
-}
-
-function vendorContents(fromFile: string, resolver: Resolver) {
-  const owner = resolver.packageCache.ownerOfFile(fromFile);
+  const owner = resolver.packageCache.ownerOfFile(filename);
   if (!owner) {
-    throw new Error(`Failed to find a valid owner for ${fromFile}`);
+    throw new Error(`Failed to find a valid owner for ${filename}`);
   }
-  // TODO: Rebuild the vendor generated in the rewritten-app instead of reading it
-  let asset = implicitScriptsAsset(owner, resolver);
-  if (asset) {
-    let finalAsset = updateImplicitScriptAssetSync(asset);
-    return finalAsset;
-  }
-  return undefined;
+  return { src: getVendor(owner, resolver), watches: [] };
 }
 
-function implicitScriptsAsset(owner: Package, resolver: Resolver) {
+function getVendor(owner: Package, resolver: Resolver): string {
   let engine = resolver.owningEngine(owner);
   let hasFastboot = Boolean(resolver.options.engines[0]!.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
   let appFiles = new AppFiles(
@@ -68,7 +43,7 @@ function implicitScriptsAsset(owner: Package, resolver: Resolver) {
     resolver.options.podModulePrefix
   );
 
-  // TODO - From where do I get this dynamically?
+  // TODO - From where do we get this dynamically? in compat-app-builder:
   // let emberENV = this.configTree.readConfig().EmberENV;
   const emberENV = {
     EXTEND_PROTOTYPES: false,
@@ -79,12 +54,7 @@ function implicitScriptsAsset(owner: Package, resolver: Resolver) {
     _TEMPLATE_ONLY_GLIMMER_COMPONENTS: true,
   };
 
-  let asset;
-  let implicitScripts = impliedAssets(appFiles, owner.root, emberENV);
-  if (implicitScripts.length > 0) {
-    asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, /\.js/);
-  }
-  return asset;
+  return generateVendor(appFiles, emberENV);
 }
 
 function getAppFiles(appRoot: string): Set<string> {
@@ -100,42 +70,34 @@ function getFastbootFiles(appRoot: string): Set<string> {
   return new Set(files);
 }
 
-function impliedAssets(engine: AppFiles, root: string, emberENV?: unknown): (OnDiskAsset | InMemoryAsset)[] {
-  let result: (OnDiskAsset | InMemoryAsset)[] = impliedAddonAssets(engine).map((sourcePath: string): OnDiskAsset => {
-    let stats = statSync(sourcePath);
-    return {
-      kind: 'on-disk',
-      relativePath: explicitRelative(root, sourcePath),
-      sourcePath,
-      mtime: stats.mtimeMs,
-      size: stats.size,
-    };
+function generateVendor(engine: AppFiles, emberENV?: unknown): string {
+  // Add addons implicit-scripts
+  let vendor: string[] = impliedAddonVendors(engine).map((sourcePath: string): string => {
+    let source = readFileSync(sourcePath);
+    return `${source}`;
   });
+  // Add _testing_prefix_.js
+  vendor.unshift(`var runningTests=false;`);
+  // Add _ember_env_.js
+  vendor.unshift(`window.EmberENV={ ...(window.EmberENV || {}), ...${JSON.stringify(emberENV, null, 2)} };`);
+  // Add _loader_.js
+  vendor.push(`loader.makeDefaultExport=false;`);
 
-  result.unshift({
-    kind: 'in-memory',
-    relativePath: '_testing_prefix_.js',
-    source: `var runningTests=false;`,
-  });
-
-  result.unshift({
-    kind: 'in-memory',
-    relativePath: '_ember_env_.js',
-    source: `window.EmberENV={ ...(window.EmberENV || {}), ...${JSON.stringify(emberENV, null, 2)} };`,
-  });
-
-  result.push({
-    kind: 'in-memory',
-    relativePath: '_loader_.js',
-    source: `loader.makeDefaultExport=false;`,
-  });
-
-  return result;
+  return vendor.join('') as string;
 }
 
-function impliedAddonAssets({ engine }: AppFiles): string[] {
+function impliedAddonVendors({ engine }: AppFiles): string[] {
   let result: Array<string> = [];
-  for (let addon of sortBy(Array.from(engine.addons.keys()) /*, scriptPriority.bind(this)*/)) {
+  for (let addon of sortBy(Array.from(engine.addons.keys()), pkg => {
+    switch (pkg.name) {
+      case 'loader.js':
+        return 0;
+      case 'ember-source':
+        return 10;
+      default:
+        return 1000;
+    }
+  })) {
     let implicitScripts = addon.meta['implicit-scripts'];
     if (implicitScripts) {
       let options = { basedir: addon.root };
@@ -146,65 +108,3 @@ function impliedAddonAssets({ engine }: AppFiles): string[] {
   }
   return result;
 }
-
-// function scriptPriority(pkg: Package) {
-//   switch (pkg.name) {
-//     case 'loader.js':
-//       return 0;
-//     case 'ember-source':
-//       return 10;
-//     default:
-//       return 1000;
-//   }
-// }
-
-// TODO - the initial function updateConcatenatedAsset is async and relies on SourceMapConcat
-// see commented function below
-function updateImplicitScriptAssetSync(asset: ConcatenatedAsset) {
-  let concat = '';
-  for (let source of asset.sources) {
-    switch (source.kind) {
-      case 'on-disk':
-        let content = readFileSync(source.sourcePath);
-        concat = `${concat}${content}`;
-        break;
-      case 'in-memory':
-        if (typeof source.source !== 'string') {
-          throw new Error(`attempted to concatenated a Buffer-backed in-memory asset`);
-        }
-        concat = `${concat}${source.source}`;
-        break;
-      // default:
-      //   assertNever(source);
-    }
-  }
-  return concat;
-}
-
-// async function updateImplicitScriptAsset(asset: ConcatenatedAsset, root: string, fromFile: string) {
-//   let concat = new SourceMapConcat({
-//     outputFile: fromFile,
-//     mapCommentType: asset.relativePath.endsWith('.js') ? 'line' : 'block',
-//     baseDir: root,
-//   });
-//   if (process.env.EMBROIDER_CONCAT_STATS) {
-//     let MeasureConcat = (await import('@embroider/core/src/measure-concat')).default;
-//     concat = new MeasureConcat(asset.relativePath, concat, root);
-//   }
-//   for (let source of asset.sources) {
-//     switch (source.kind) {
-//       case 'on-disk':
-//         concat.addFile(explicitRelative(root, source.sourcePath));
-//         break;
-//       case 'in-memory':
-//         if (typeof source.source !== 'string') {
-//           throw new Error(`attempted to concatenated a Buffer-backed in-memory asset`);
-//         }
-//         concat.addSpace(source.source);
-//         break;
-//       default:
-//         assertNever(source);
-//     }
-//   }
-//   await concat.end();
-// }

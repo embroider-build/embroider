@@ -438,18 +438,17 @@ export class Resolver {
   ): Promise<R> {
     let target = this.parseGlobalPath(path, inEngine);
 
-    let hbsModule: { requested: string; found: string } | null = null;
-    let jsModule: { requested: string; found: string } | null = null;
+    let hbsModule: Resolution | null = null;
+    let jsModule: Resolution | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
-      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}.hbs`;
-      let resolution = await this.nodeResolve(
-        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
-        target.from
-      );
-      if (resolution.type === 'real') {
-        hbsModule = { requested: candidateSpecifier, found: resolution.filename };
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
+
+      let resolution = await request.alias(candidateSpecifier).rehome(target.from).defaultResolve();
+
+      if (resolution.type === 'found') {
+        hbsModule = resolution;
         break;
       }
     }
@@ -458,12 +457,12 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await this.nodeResolve(candidateSpecifier, target.from);
+      let resolution = await request.alias(candidateSpecifier).rehome(target.from).defaultResolve();
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
-      if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = { requested: candidateSpecifier, found: resolution.filename };
+      if (resolution.type === 'found' && !resolution.filename.endsWith('.hbs')) {
+        jsModule = resolution;
         break;
       }
     }
@@ -472,14 +471,10 @@ export class Resolver {
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize(virtualPairComponent(hbsModule.found, jsModule?.found))
+        request.virtualize(virtualPairComponent(hbsModule.filename, jsModule?.filename))
       );
     } else if (jsModule) {
-      return logTransition(
-        `resolveComponent found only JS`,
-        request,
-        request.alias(jsModule.requested).rehome(target.from)
-      );
+      return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));
     } else {
       return logTransition(`resolveComponent failed`, request);
     }
@@ -494,9 +489,9 @@ export class Resolver {
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = await this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
-    if (helperMatch.type === 'real') {
-      return logTransition('ambiguous case matched a helper', request, helperCandidate);
+    let helperMatch = await request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile).defaultResolve();
+    if (helperMatch.type === 'found') {
+      return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
     }
 
     // unlike resolveHelper, resolveComponent already does pre-resolution in
@@ -1176,8 +1171,11 @@ export class Resolver {
       case 'fastboot-only':
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
-        let foundAppJS = await this.nodeResolve(matched.entry['app-js'].specifier, matched.entry['app-js'].fromFile);
-        if (foundAppJS.type !== 'real') {
+        let foundAppJS = await request
+          .alias(matched.entry['app-js'].specifier)
+          .rehome(matched.entry['app-js'].fromFile)
+          .defaultResolve();
+        if (foundAppJS.type === 'not_found') {
           throw new Error(
             `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
           );

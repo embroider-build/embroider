@@ -25,12 +25,16 @@ export default class CompatAddons implements Stage {
   private addons: Node;
 
   constructor(private compatApp: CompatApp) {
-    this.addons = convertLegacyAddons(compatApp);
+    this.addons = process.env.SKIP_COMPAT_ADDONS ? null : convertLegacyAddons(compatApp);
     this.inputPath = compatApp.root;
   }
 
   get tree(): Node {
-    return new WaitForTrees({ addons: this.addons }, '@embroider/compat/addons', this.build.bind(this));
+    return new WaitForTrees(
+      this.addons ? { addons: this.addons } : {},
+      '@embroider/compat/addons',
+      this.build.bind(this)
+    );
   }
 
   async ready(): Promise<{ outputPath: string }> {
@@ -43,10 +47,14 @@ export default class CompatAddons implements Stage {
     {
       addons,
     }: {
-      addons: string;
+      addons?: string;
     },
     changedMap: Map<string, boolean>
   ) {
+    if (!addons) {
+      return;
+    }
+
     if (!this.treeSync) {
       this.treeSync = new TreeSync(
         addons,

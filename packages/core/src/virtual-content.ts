@@ -4,6 +4,7 @@ import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 
 import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
+import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -26,6 +27,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let entrypoint = decodeEntrypoint(filename);
   if (entrypoint) {
     return renderEntrypoint(resolver, entrypoint);
+  }
+
+  let isVendorStyles = decodeVirtualVendorStyles(filename);
+  if (isVendorStyles) {
+    return renderVendorStyles(filename, resolver);
   }
 
   let extern = decodeVirtualExternalESModule(filename);

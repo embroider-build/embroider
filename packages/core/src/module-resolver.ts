@@ -187,6 +187,7 @@ export class Resolver {
     request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
     request = this.handleEntrypoint(request);
+    request = this.handleVendorStyles(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -450,6 +451,37 @@ export class Resolver {
     }
 
     return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
+  }
+
+  private handleVendorStyles<R extends ModuleRequest>(request: R): R {
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = [
+      '#embroider/core/vendor.css',
+      '@embroider/core/vendor.css',
+      '/@embroider/core/vendor.css',
+      './@embroider/core/vendor.css',
+    ];
+
+    if (!candidates.includes(request.specifier)) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (pkg?.root !== this.options.engines[0].root) {
+      throw new Error(
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/vendor. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+      );
+    }
+
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found vendor import in non-ember package at ${request.fromFile}`);
+    }
+
+    return logTransition(
+      'vendor-styles',
+      request,
+      request.virtualize(resolve(pkg.root, '-embroider-vendor-styles.css'))
+    );
   }
 
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {

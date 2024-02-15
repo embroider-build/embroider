@@ -19,6 +19,12 @@ let stage2Scenarios = appScenarios.map('compat-stage2-build', app => {
 
 stage2Scenarios
   .map('in-repo-addons-of-addons', app => {
+    app.mergeFiles({
+      app: {
+        'lib.js': 'import "dep-a/check-resolution.js"',
+      },
+    });
+
     let depA = addAddon(app, 'dep-a');
     let depB = addAddon(app, 'dep-b');
     let depC = addAddon(app, 'dep-c');
@@ -123,6 +129,7 @@ stage2Scenarios
         expectFile('./node_modules/dep-b/lib/in-repo-b/package.json').json().get('ember-addon.version').equals(2);
         expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
 
+        // TODO fix entrypoint checks like other tests
         // check that the app trees with in repo addon are combined correctly
         expectAudit
           .module('./assets/my-app.js')
@@ -300,24 +307,37 @@ stage2Scenarios
     };
 
     merge(app.files, {
+      // TODO fix ember-cli-build
       'ember-cli-build.js': `
-        'use strict';
+      'use strict';
+
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
-        let opts = ${JSON.stringify(options)};
+        const { compatBuild } = require('@embroider/compat');
+
         module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {
+          const app = new EmberApp(defaults, {
             babel: {
               plugins: [require.resolve('ember-auto-import/babel-plugin')]
             }
           });
-          return maybeEmbroider(app, {
+
+          let opts = ${JSON.stringify(options)};
+          return compatBuild(app, undefined, {
+            staticAddonTrees: true,
+            staticAddonTestSupportTrees: true,
+            staticComponents: true,
+            staticHelpers: true,
+            staticModifiers: true,
+            staticEmberSource: true,
+            ...opts,
             skipBabel: [
               {
                 package: 'qunit',
               },
             ],
-            ...opts
+            amdCompatibility: {
+              es: [],
+            },
           });
         };
         `,

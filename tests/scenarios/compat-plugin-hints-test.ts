@@ -17,33 +17,38 @@ appScenarios
     app.files['ember-cli-build.js'] = `
       'use strict';
 
-      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-      const { maybeEmbroider } = require('@embroider/test-setup');
+      'use strict';
 
-      module.exports = function (defaults) {
-        let app = new EmberApp(defaults, {
-          babel: {
-            plugins: [
-              // deliberately non-serializable form
-              require("${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}").samplePlugin
-            ]
-          }
-        });
+        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 
-        return maybeEmbroider(app, {
-          skipBabel: [
-            {
-              package: 'qunit',
-            },
-          ],
-          pluginHints: [
-            {
-              resolve: ["${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}"],
-              useMethod: 'samplePlugin',
-            },
-          ],
-        });
-      };
+        // TODO make prebuild so that we don't need to copy across the big chunk of code e.g. app-config-environment-test.ts
+        const { prebuild } = require('@embroider/compat');
+
+        module.exports = function (defaults) {
+          const app = new EmberApp(defaults, {
+            babel: {
+              plugins: [
+                // deliberately non-serializable form
+                require("${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}").samplePlugin
+              ]
+            }
+          });
+
+          return prebuild(app, {
+            // TODO this goes away when we fix the explicit babel config to be more sensible
+            skipBabel: [
+              {
+                package: 'qunit',
+              },
+            ],
+            pluginHints: [
+              {
+                resolve: ["${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}"],
+                useMethod: 'samplePlugin',
+              },
+            ],
+          });
+        };
       `;
   })
   .forEachScenario(scenario => {

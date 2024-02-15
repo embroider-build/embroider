@@ -67,12 +67,27 @@ scenarios
     merge(app.files, {
       'ember-cli-build.js': `
         'use strict';
+
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+        const { compatBuild } = require('@embroider/compat');
+
         module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {});
-          return maybeEmbroider(app, {
+          const app = new EmberApp(defaults, {
+            babel: {
+              plugins: [require.resolve('ember-auto-import/babel-plugin')]
+            }
+          });
+
+          return compatBuild(app, undefined, {
+            staticAddonTrees: true,
+            staticAddonTestSupportTrees: true,
             staticComponents: false,
+            staticHelpers: true,
+            staticModifiers: true,
+            staticEmberSource: true,
+            amdCompatibility: {
+              es: [],
+            },
           });
         };
       `,

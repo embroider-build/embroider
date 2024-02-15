@@ -276,6 +276,8 @@ export class Audit {
       return this.visitHTML;
     } else if (filename.endsWith('.hbs')) {
       return this.visitHBS;
+    } else if (filename.endsWith('.gjs')) {
+      return this.visitGJS;
     } else if (filename.endsWith('.json')) {
       return this.visitJSON;
     } else {
@@ -508,6 +510,19 @@ export class Audit {
   ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
     let rawSource = content.toString('utf8');
     let js = hbsToJS(rawSource);
+    return this.visitJS(filename, js);
+  }
+
+  private async visitGJS(
+    filename: string,
+    content: Buffer | string
+  ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
+    let rawSource = content.toString('utf8');
+
+    // TODO copy what the esbuild resolver does in here to get from GJS to JS
+    let js = hbsToJS(rawSource);
+
+    // leave this in at the end and it will all work
     return this.visitJS(filename, js);
   }
 

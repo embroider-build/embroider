@@ -66,6 +66,10 @@ export class ExpectAuditResults {
     return new ExpectModule(this, inputName);
   }
 
+  html(inputName: string): PublicAPI<ExpectHTML> {
+    return new ExpectHTML();
+  }
+
   get findings() {
     return this.result.findings;
   }
@@ -78,6 +82,8 @@ export class ExpectAuditResults {
     );
   }
 }
+
+export class ExpectHTML {}
 
 export class ExpectModule {
   constructor(private expectAudit: ExpectAuditResults, private inputName: string) {}

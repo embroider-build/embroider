@@ -129,6 +129,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
     if (request.isVirtual) {
       return {
         type: 'found',
+        filename: request.specifier,
         result: { path: request.specifier, namespace: 'embroider' },
       };
     }
@@ -156,7 +157,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
     if (result.errors.length > 0) {
       return { type: 'not_found', err: result };
     } else {
-      return { type: 'found', result };
+      return { type: 'found', filename: result.path, result };
     }
   }
 }

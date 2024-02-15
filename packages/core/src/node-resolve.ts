@@ -74,6 +74,7 @@ export class NodeModuleRequest implements ModuleRequest {
     if (request.isVirtual) {
       return {
         type: 'found',
+        filename: request.specifier,
         result: {
           type: 'virtual' as 'virtual',
           content: virtualContent(request.specifier, this.resolver).src,
@@ -112,7 +113,7 @@ export class NodeModuleRequest implements ModuleRequest {
       let filename = require.resolve(specifier, {
         paths: [fromDir],
       });
-      return { type: 'found', result: { type: 'real' as 'real', filename } };
+      return { type: 'found', filename, result: { type: 'real' as 'real', filename } };
     } catch (err) {
       if (err.code !== 'MODULE_NOT_FOUND') {
         throw err;

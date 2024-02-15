@@ -72,7 +72,10 @@ export class EmbroiderPlugin {
   }
 }
 
-type CB = (err: null | Error, result?: Module | undefined) => void;
+interface CB {
+  (err: null, result: Module): void;
+  (err: Error | null): void;
+}
 type DefaultResolve = (state: unknown, callback: CB) => void;
 
 // Despite being absolutely riddled with way-too-powerful tap points,
@@ -99,15 +102,15 @@ function getAdaptedResolve(
         (err as any).code = 'MODULE_NOT_FOUND';
         resolve({ type: 'not_found', err });
       }
-      defaultResolve(request.toWebpackResolveData(), (err, value) => {
-        if (err) {
+      defaultResolve(request.toWebpackResolveData(), ((err, value) => {
+        if (!value) {
           // unfortunately webpack doesn't let us distinguish between Not Found
           // and other unexpected exceptions here.
           resolve({ type: 'not_found', err });
         } else {
-          resolve({ type: 'found', result: value! });
+          resolve({ type: 'found', result: value, filename: String(value.id) });
         }
-      });
+      }) as CB);
     });
   };
 }

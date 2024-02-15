@@ -149,7 +149,9 @@ export interface ModuleRequest<Res extends Resolution = Resolution> {
 
 // This is generic because different build systems have different ways of
 // representing a found module, and we just pass those values through.
-export type Resolution<T = unknown, E = unknown> = { type: 'found'; result: T } | { type: 'not_found'; err: E };
+export type Resolution<T = unknown, E = unknown> =
+  | { type: 'found'; filename: string; result: T }
+  | { type: 'not_found'; err: E };
 
 export type ResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
   request: R

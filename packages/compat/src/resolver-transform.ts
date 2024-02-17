@@ -85,14 +85,9 @@ export const builtInKeywords = [
   'yield',
 ];
 
+export const builtInComponentKeywordsWithImports = ['input', 'textarea', 'link-to'];
 export const builtInHelperKeywordsWithImports = ['array', 'concat', 'fn', 'get', 'hash', 'unique-id'];
 export const builtInModifierKeywordsWithImports = ['on'];
-
-const STRING_CAMELIZE_REGEXP_1 = /(\-|\_|\.|\s)+(.)?/g;
-
-const camelize = function (key: string) {
-  return key.replace(STRING_CAMELIZE_REGEXP_1, (_match, _separator, chr) => (chr ? chr.toUpperCase() : ''));
-};
 
 interface ComponentResolution {
   type: 'component';
@@ -100,7 +95,7 @@ interface ComponentResolution {
   yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
-  nameHint: string;
+  nameHint?: string;
   namedImport?: string;
 }
 
@@ -387,22 +382,34 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    if (builtInKeywords.includes(name)) {
+    const importedBuiltIn = builtInComponentKeywordsWithImports.includes(name);
+    if (builtInKeywords.includes(name) && !importedBuiltIn) {
       return null;
     }
     if (this.isIgnoredComponent(name)) {
       return null;
     }
 
-    let componentRules = this.rules.components.get(name);
-    return {
-      type: 'component',
-      specifier: `#embroider_compat/components/${name}`,
-      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
-      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
-      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(name),
-    };
+    if (importedBuiltIn) {
+      return {
+        type: 'component',
+        specifier: name === 'link-to' ? '@ember/routing' : '@ember/component',
+        yieldsComponents: [],
+        yieldsArguments: [],
+        argumentsAreComponents: [],
+        namedImport: capitalize(camelize(name)),
+      };
+    } else {
+      let componentRules = this.rules.components.get(name);
+      return {
+        type: 'component',
+        specifier: `#embroider_compat/components/${name}`,
+        yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+        yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
+        argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+        nameHint: this.nameHint(name),
+      };
+    }
   }
 
   private targetComponentHelper(
@@ -454,7 +461,7 @@ class TemplateResolver implements ASTPlugin {
     // globally-named helpers. It throws an error. So it's fine for us to
     // prioritize the builtIns here without bothering to resolve a user helper
     // of the same name.
-    const importedBuiltIn = exports.builtInHelperKeywordsWithImports.includes(path);
+    const importedBuiltIn = builtInHelperKeywordsWithImports.includes(path);
     if (builtInKeywords.includes(path) && !importedBuiltIn) {
       return null;
     }
@@ -1063,6 +1070,12 @@ function extendPath<N extends ASTv1.Node, K extends keyof N>(
 
 function capitalize(word: string): string {
   return word[0].toUpperCase() + word.slice(1);
+}
+
+const STRING_CAMELIZE_REGEXP_1 = /(\-|\_|\.|\s)+(.)?/g;
+
+function camelize(key: string) {
+  return key.replace(STRING_CAMELIZE_REGEXP_1, (_match, _separator, chr) => (chr ? chr.toUpperCase() : ''));
 }
 
 // ElementNodes have both children and attributes and both of those are

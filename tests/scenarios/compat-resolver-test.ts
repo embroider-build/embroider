@@ -1062,28 +1062,41 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
-      test('built-in components are ignored when used with the component helper', async function () {
+      test('built-in components are imported when used with the component helper', async function () {
         givenFiles({
           'templates/application.hbs': `{{component "input"}}{{component "link-to"}}{{component "textarea"}}`,
         });
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        export default precompileTemplate("{{component \\"input\\"}}{{component \\"link-to\\"}}{{component \\"textarea\\"}}", {
-          moduleName: "my-app/templates/application.hbs"
+        import { Input, Textarea } from "@ember/component";
+        import { LinkTo } from "@ember/routing";
+        export default precompileTemplate("{{component Input}}{{component LinkTo}}{{component Textarea}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            Input,
+            LinkTo,
+            Textarea
+          }),
         });
       `);
       });
 
-      test('built-in helpers are ignored when used with the helper keyword', async function () {
+      test('built-in helpers are imported when used with the helper keyword', async function () {
         givenFiles({
           'templates/application.hbs': `{{helper "fn"}}{{helper "array"}}{{helper "concat"}}`,
         });
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        export default precompileTemplate("{{helper \\"fn\\"}}{{helper \\"array\\"}}{{helper \\"concat\\"}}", {
-          moduleName: "my-app/templates/application.hbs"
+        import { fn, array, concat } from "@ember/helper";
+        export default precompileTemplate("{{helper fn}}{{helper array}}{{helper concat}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            fn,
+            array,
+            concat
+          }),
         });
       `);
       });
@@ -1115,8 +1128,12 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
+        import { on } from "@ember/modifier";
         export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
-          moduleName: "my-app/templates/application.hbs"
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            on,
+          }),
         });
       `);
       });

@@ -85,6 +85,15 @@ export const builtInKeywords = [
   'yield',
 ];
 
+export const builtInHelperKeywordsWithImports = ['array', 'concat', 'fn', 'get', 'hash', 'unique-id'];
+export const builtInModifierKeywordsWithImports = ['on'];
+
+const STRING_CAMELIZE_REGEXP_1 = /(\-|\_|\.|\s)+(.)?/g;
+
+const camelize = function (key: string) {
+  return key.replace(STRING_CAMELIZE_REGEXP_1, (_match, _separator, chr) => (chr ? chr.toUpperCase() : ''));
+};
+
 interface ComponentResolution {
   type: 'component';
   specifier: string;
@@ -92,18 +101,21 @@ interface ComponentResolution {
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
   nameHint: string;
+  namedImport?: string;
 }
 
 type HelperResolution = {
   type: 'helper';
-  nameHint: string;
+  nameHint?: string;
+  namedImport?: string;
   specifier: string;
 };
 
 type ModifierResolution = {
   type: 'modifier';
   specifier: string;
-  nameHint: string;
+  nameHint?: string;
+  namedImport?: string;
 };
 
 type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
@@ -157,9 +169,14 @@ class TemplateResolver implements ASTPlugin {
       case 'component':
       case 'modifier':
       case 'helper': {
-        let name = this.env.meta.jsutils.bindImport(resolution.specifier, 'default', parentPath, {
-          nameHint: resolution.nameHint,
-        });
+        let name = this.env.meta.jsutils.bindImport(
+          resolution.specifier,
+          resolution.namedImport ?? 'default',
+          parentPath,
+          {
+            nameHint: resolution.nameHint,
+          }
+        );
         setter(parentPath.node, this.env.syntax.builders.path(name));
         return;
       }
@@ -437,15 +454,23 @@ class TemplateResolver implements ASTPlugin {
     // globally-named helpers. It throws an error. So it's fine for us to
     // prioritize the builtIns here without bothering to resolve a user helper
     // of the same name.
-    if (builtInKeywords.includes(path)) {
+    const importedBuiltIn = exports.builtInHelperKeywordsWithImports.includes(path);
+    if (builtInKeywords.includes(path) && !importedBuiltIn) {
       return null;
     }
-
-    return {
-      type: 'helper',
-      specifier: `#embroider_compat/helpers/${path}`,
-      nameHint: this.nameHint(path),
-    };
+    if (importedBuiltIn) {
+      return {
+        type: 'helper',
+        specifier: `@ember/helper`,
+        namedImport: camelize(path),
+      };
+    } else {
+      return {
+        type: 'helper',
+        specifier: `#embroider_compat/helpers/${path}`,
+        nameHint: this.nameHint(path),
+      };
+    }
   }
 
   private targetHelperOrComponent(
@@ -571,15 +596,25 @@ class TemplateResolver implements ASTPlugin {
     if (!this.staticModifiersEnabled) {
       return null;
     }
-    if (builtInKeywords.includes(path)) {
+
+    const importedBuiltIn = builtInModifierKeywordsWithImports.includes(path);
+    if (builtInKeywords.includes(path) && !importedBuiltIn) {
       return null;
     }
 
-    return {
-      type: 'modifier',
-      specifier: `#embroider_compat/modifiers/${path}`,
-      nameHint: this.nameHint(path),
-    };
+    if (importedBuiltIn) {
+      return {
+        type: 'modifier',
+        specifier: `@ember/modifier`,
+        namedImport: path,
+      };
+    } else {
+      return {
+        type: 'modifier',
+        specifier: `#embroider_compat/modifiers/${path}`,
+        nameHint: this.nameHint(path),
+      };
+    }
   }
 
   targetDynamicModifier(modifier: ComponentLocator, loc: Loc): ModifierResolution | ResolutionFail | null {

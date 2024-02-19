@@ -391,20 +391,9 @@ export class CompatAppBuilder {
     for (let addon of sortBy(Array.from(engine.addons.keys()), this.scriptPriority.bind(this))) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
-        let styles = [];
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
-          if (type === 'implicit-styles') {
-            // exclude engines because they will handle their own css importation
-            if (!addon.isLazyEngine()) {
-              styles.push(resolve.sync(mod, options));
-            }
-          } else {
-            result.push(resolve.sync(mod, options));
-          }
-        }
-        if (styles.length) {
-          result = [...styles, ...result];
+          result.push(resolve.sync(mod, options));
         }
       }
     }
@@ -534,10 +523,8 @@ export class CompatAppBuilder {
       }
     }
 
-    let implicitStyles = this.implicitStylesAsset(prepared, parentEngine);
-    if (implicitStyles) {
-      html.insertStyleLink(html.implicitStyles, implicitStyles.relativePath);
-    }
+    // virtual vendor.css entrypoint
+    html.insertStyleLink(html.implicitStyles, '@embroider/core/vendor.css');
 
     if (!asset.fileAsset.includeTests) {
       return;
@@ -569,19 +556,6 @@ export class CompatAppBuilder {
       let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
       if (implicitScripts.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
-        prepared.set(asset.relativePath, asset);
-      }
-    }
-    return asset;
-  }
-
-  private implicitStylesAsset(prepared: Map<string, InternalAsset>, application: AppFiles): InternalAsset | undefined {
-    let asset = prepared.get('assets/vendor.css');
-    if (!asset) {
-      let implicitStyles = this.impliedAssets('implicit-styles', application);
-      if (implicitStyles.length > 0) {
-        // we reverse because we want the synthetic vendor style at the top
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }

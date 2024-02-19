@@ -516,10 +516,8 @@ export class CompatAppBuilder {
       }
     }
 
-    let implicitStyles = this.implicitStylesAsset(prepared, parentEngine);
-    if (implicitStyles) {
-      html.insertStyleLink(html.implicitStyles, implicitStyles.relativePath);
-    }
+    // virtual vendor.css entrypoint
+    html.insertStyleLink(html.implicitStyles, '@embroider/core/vendor.css');
 
     if (!asset.fileAsset.includeTests) {
       return;
@@ -549,19 +547,6 @@ export class CompatAppBuilder {
       let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
       if (implicitScripts.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
-        prepared.set(asset.relativePath, asset);
-      }
-    }
-    return asset;
-  }
-
-  private implicitStylesAsset(prepared: Map<string, InternalAsset>, application: AppFiles): InternalAsset | undefined {
-    let asset = prepared.get('assets/vendor.css');
-    if (!asset) {
-      let implicitStyles = this.impliedAssets('implicit-styles', application);
-      if (implicitStyles.length > 0) {
-        // we reverse because we want the synthetic vendor style at the top
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }

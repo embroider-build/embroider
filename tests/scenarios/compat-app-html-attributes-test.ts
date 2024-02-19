@@ -59,9 +59,9 @@ appScenarios
         expectFile('./index.html').doesNotMatch('rel="stylesheet"', 'does not have rel=stylesheet');
         expectFile('./index.html').matches('<script defer', 'has script defer');
         expectFile('./index.html').doesNotMatch('<script src', 'does not have script src');
-        expectFile('./index.html').doesNotMatch(
+        expectFile('./index.html').matches(
           'data-original-filename="vendor.css">',
-          'does not have data-original-filename vendor.css'
+          'has data-original-filename vendor.css'
         );
         expectFile('./index.html').matches(
           '" data-original-filename="app-template.css">',

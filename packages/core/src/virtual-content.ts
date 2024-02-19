@@ -2,6 +2,7 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
+import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -38,6 +39,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let im = decodeImplicitModules(filename);
   if (im) {
     return renderImplicitModules(im, resolver);
+  }
+
+  let isImplicitTestScripts = decodeImplicitTestScripts(filename);
+  if (isImplicitTestScripts) {
+    return renderImplicitTestScripts(filename, resolver);
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);

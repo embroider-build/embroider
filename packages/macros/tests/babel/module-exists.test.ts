@@ -6,7 +6,7 @@ describe(`moduleExists`, function () {
       let code = transform(`
       import { moduleExists } from '@embroider/macros';
       export default function() {
-        return moduleExists('@embroider/core/src/index');
+        return moduleExists('@embroider/core/index');
       }
       `);
       expect(runDefault(code)).toBe(true);

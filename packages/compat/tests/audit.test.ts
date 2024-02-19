@@ -9,7 +9,7 @@ import { Audit } from '../src/audit';
 import type { CompatResolverOptions } from '../src/resolver-transform';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
-import { makePortable } from '@embroider/core/src/portable-babel-config';
+import { makePortable } from '@embroider/core/portable-babel-config';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from '../src/resolver-transform';
 

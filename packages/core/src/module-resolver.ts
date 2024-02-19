@@ -701,9 +701,7 @@ export class Resolver {
       pkg.isEngine() ? e.root === pkg.root : e.activeAddons.find(a => a.root === pkg.root)
     );
     if (!owningEngine) {
-      throw new Error(
-        `bug in @embroider/core/src/module-resolver: cannot figure out the owning engine for ${pkg.root}`
-      );
+      throw new Error(`bug in @embroider/core/module-resolver: cannot figure out the owning engine for ${pkg.root}`);
     }
     return owningEngine;
   }

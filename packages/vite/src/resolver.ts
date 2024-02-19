@@ -36,14 +36,31 @@ export function resolver(): Plugin {
     },
 
     async resolveId(source, importer, options) {
-      let request = RollupModuleRequest.from(source, importer, options.custom);
+      let request = RollupModuleRequest.from(source.replace(/\?direct$/, ''), importer, options.custom);
       if (!request) {
         // fallthrough to other rollup plugins
         return null;
       }
+
+      const isDirect = source.endsWith('?direct');
+
       let resolution = await resolverLoader.resolver.resolve(request, defaultResolve(this));
+
       switch (resolution.type) {
         case 'found':
+          if (!resolution.result) {
+            throw new Error('bug: false result on a found resolution');
+          }
+          if (isDirect) {
+            if (typeof resolution.result === 'string') {
+              return `${resolution.result}?direct`;
+            }
+
+            return {
+              ...resolution.result,
+              id: `${resolution.result.id}?direct`,
+            };
+          }
           return resolution.result;
         case 'not_found':
           return null;
@@ -53,7 +70,10 @@ export function resolver(): Plugin {
     },
     load(id) {
       if (id.startsWith(virtualPrefix)) {
-        let { src, watches } = virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
+        let { src, watches } = virtualContent(
+          id.slice(virtualPrefix.length).replace(/\?direct$/, ''),
+          resolverLoader.resolver
+        );
         virtualDeps.set(id, watches);
         server?.watcher.add(watches);
         return src;

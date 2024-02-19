@@ -843,7 +843,7 @@ export class CompatAppBuilder {
       baseDir: this.root,
     });
     if (process.env.EMBROIDER_CONCAT_STATS) {
-      let MeasureConcat = (await import('@embroider/core/src/measure-concat')).default;
+      let MeasureConcat = (await import('@embroider/core/src/measure-concat')).default as any;
       concat = new MeasureConcat(asset.relativePath, concat, this.root);
     }
     for (let source of asset.sources) {

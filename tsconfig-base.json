@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es2019",
-    "module": "commonjs",
+    "target": "ES2022",
+    "module": "Node16",
     "declaration": true,
     "typeRoots": ["types", "node_modules/@types"],
+    "moduleResolution": "Node16",
     "esModuleInterop": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

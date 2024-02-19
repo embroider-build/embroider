@@ -34,11 +34,6 @@ import { EmbroiderPlugin } from './webpack-resolver-plugin';
 
 const debug = makeDebug('embroider:debug');
 
-// This is a type-only import, so it gets compiled away. At runtime, we load
-// terser lazily so it's only loaded for production builds that use it. Don't
-// add any non-type-only imports here.
-import type { MinifyOptions } from 'terser';
-
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
@@ -325,7 +320,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
 
     let inCode = readFileSync(join(this.pathToVanillaApp, script), 'utf8');
-    let terserOpts: MinifyOptions = {};
+    let terserOpts: Parameters<typeof Terser.minify>[1] = {};
     let fileRelativeSourceMapURL;
     let appRelativeSourceMapURL;
     if (srcURL.default.existsIn(inCode)) {
@@ -342,7 +337,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.minify(inCode, terserOpts);
     let finalFilename = this.getFingerprintedFilename(script, outCode!);
     outputFileSync(join(this.outputPath, finalFilename), outCode!);
     written.add(script);

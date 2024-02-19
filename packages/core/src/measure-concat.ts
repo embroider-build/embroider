@@ -1,7 +1,6 @@
 import type SourceMapConcat from 'fast-sourcemap-concat';
 import { join } from 'path';
 import { statSync } from 'fs';
-import { filesize } from 'filesize';
 
 export default class MeasureConcat {
   stats: { [filename: string]: number } = {};
@@ -15,6 +14,7 @@ export default class MeasureConcat {
     return this.concat.addSpace(contents);
   }
   async end() {
+    const { filesize } = await import('filesize');
     console.log(`Concatenated ${this.name}:`);
     console.log(
       Object.entries(this.stats)

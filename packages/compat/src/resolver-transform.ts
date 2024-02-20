@@ -564,12 +564,31 @@ class TemplateResolver implements ASTPlugin {
     */
 
     // first, bail out on all the stuff we can obviously ignore
-    if (
-      (!this.staticHelpersEnabled && !this.staticComponentsEnabled) ||
-      builtInKeywords[path] ||
-      this.isIgnoredComponent(path)
-    ) {
+    if ((!this.staticHelpersEnabled && !this.staticComponentsEnabled) || this.isIgnoredComponent(path)) {
       return null;
+    }
+
+    let builtIn = builtInKeywords[path];
+
+    if (builtIn?.importableComponent) {
+      let [namedImport, specifier] = builtIn.importableComponent;
+      return {
+        type: 'component',
+        specifier,
+        yieldsComponents: [],
+        yieldsArguments: [],
+        argumentsAreComponents: [],
+        namedImport,
+      };
+    }
+
+    if (builtIn?.importableHelper) {
+      let [namedImport, specifier] = builtIn.importableHelper;
+      return {
+        type: 'helper',
+        specifier,
+        namedImport,
+      };
     }
 
     let ownComponentRules = this.findRules(this.env.filename);

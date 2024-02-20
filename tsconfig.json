@@ -12,6 +12,7 @@
       { "path": "./packages/webpack" },
       { "path": "./packages/test-setup" },
       { "path": "./packages/vite" },
+      { "path": "./packages/reverse-exports"},
       { "path": "./test-packages/support" },
   ]
 }

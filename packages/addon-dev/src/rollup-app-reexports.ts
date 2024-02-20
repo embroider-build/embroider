@@ -1,7 +1,9 @@
-import { readJsonSync, writeJsonSync } from 'fs-extra';
+import fsExtra from 'fs-extra';
 import { extname } from 'path';
 import minimatch from 'minimatch';
 import type { Plugin } from 'rollup';
+
+const { readJsonSync, writeJsonSync } = fsExtra;
 
 export default function appReexports(opts: {
   from: string;

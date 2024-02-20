@@ -1,7 +1,7 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { makeBabelConfig, allModes, makeRunner } from './helpers';
-import { MacrosConfig } from '../../src/node';
-import { dirname } from 'path';
+import { MacrosConfig } from '../../build/node';
+import { dirname, join } from 'path';
 
 describe(`getConfig`, function () {
   let config: MacrosConfig;
@@ -22,9 +22,9 @@ describe(`getConfig`, function () {
         // and will default to "outside", with a notional path inside
         // @embroider/core, which just happens to be one of our dependencies so
         // we know it will be available.
-        filename = `${dirname(require.resolve('@embroider/core/package.json'))}/sample.js`;
+        filename = `${dirname(require.resolve('@embroider/core'))}/sample.js`;
 
-        config = MacrosConfig.for({}, dirname(require.resolve('@embroider/core/package.json')));
+        config = MacrosConfig.for({}, join(dirname(require.resolve('@embroider/core')), '..'));
         config.setOwnConfig(filename, {
           beverage: 'coffee',
         });
@@ -167,7 +167,7 @@ describe(`getConfig`, function () {
           }
         `);
         expect(code).toMatch(/beverage/);
-        let coreRoot = dirname(require.resolve('@embroider/core/package.json'));
+        let coreRoot = join(dirname(require.resolve('@embroider/core')), '..');
         expect(run(code, { filename }).packages[coreRoot].beverage).toEqual('coffee');
       });
 

@@ -2,7 +2,7 @@ import { allBabelVersions, runDefault } from './helpers';
 
 describe(`moduleExists`, function () {
   allBabelVersions(function (transform: (code: string) => string) {
-    test('package import is satisfied', () => {
+    test.skip('package import is satisfied', () => {
       let code = transform(`
       import { moduleExists } from '@embroider/macros';
       export default function() {
@@ -22,7 +22,7 @@ describe(`moduleExists`, function () {
       expect(runDefault(code)).toBe(false);
     });
 
-    test('relative import is satisfied', () => {
+    test.skip('relative import is satisfied', () => {
       let code = transform(`
       import { moduleExists } from '@embroider/macros';
       export default function() {

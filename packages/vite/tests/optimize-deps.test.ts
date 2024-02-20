@@ -7,14 +7,22 @@ describe('optimizeDeps', function () {
     expect(actual).toMatchInlineSnapshot(
       {
         esbuildOptions: {
-          plugins: [expect.any(Object)],
+          plugins: [
+            {
+              name: 'embroider-esbuild-resolver',
+              setup: expect.any(Function),
+            },
+          ],
         },
       },
       `
       {
         "esbuildOptions": {
           "plugins": [
-            Any<Object>,
+            {
+              "name": "embroider-esbuild-resolver",
+              "setup": Any<Function>,
+            },
           ],
         },
         "exclude": [

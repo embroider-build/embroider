@@ -12,7 +12,7 @@ Scenarios.fromProject(() => new Project('node-tests'))
     Qmodule(scenario.name, function () {
       test('run node tests', async function (assert) {
         let app = new PreparedApp(resolve(__dirname, '..', '..'));
-        let result = await app.execute('pnpm jest --forceExit');
+        let result = await app.execute('pnpm vitest --pool=forks');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

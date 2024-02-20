@@ -4,11 +4,12 @@ import tmp from 'tmp';
 import { writeFileSync } from 'fs';
 import { writeJSONSync } from 'fs-extra';
 import type { AppMeta } from '../src';
+import { vi } from 'vitest';
 
 tmp.setGracefulCleanup();
 
 describe('template-colocation-plugin', () => {
-  jest.setTimeout(120000);
+  vi.setConfig({ testTimeout: 5_000 });
 
   let filename: string;
   let plugins: any = [];

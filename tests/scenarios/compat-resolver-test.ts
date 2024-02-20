@@ -1082,6 +1082,26 @@ Scenarios.fromProject(() => new Project())
       `);
       });
 
+      test('built-in components are imported when used directly', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Input/><LinkTo/><Textarea/>`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        import { Input, Textarea } from "@ember/component";
+        import { LinkTo } from "@ember/routing";
+        export default precompileTemplate("<Input /><LinkTo /><Textarea />", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            Input,
+            LinkTo,
+            Textarea
+          }),
+        });
+      `);
+      });
+
       test('built-in helpers are imported when used with the helper keyword', async function () {
         givenFiles({
           'templates/application.hbs': `{{helper "fn"}}{{helper "array"}}{{helper "concat"}}`,
@@ -1091,6 +1111,25 @@ Scenarios.fromProject(() => new Project())
         import { precompileTemplate } from "@ember/template-compilation";
         import { fn, array, concat } from "@ember/helper";
         export default precompileTemplate("{{helper fn}}{{helper array}}{{helper concat}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            fn,
+            array,
+            concat
+          }),
+        });
+      `);
+      });
+
+      test('built-in helpers are imported when used directly', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(fn)}}{{(array)}}{{(concat)}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        import { fn, array, concat } from "@ember/helper";
+        export default precompileTemplate("{{(fn)}}{{(array)}}{{(concat)}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
             fn,

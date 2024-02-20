@@ -1,4 +1,4 @@
-import { explicitRelative, RewrittenPackageCache } from '../../packages/shared-internals';
+import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import { resolve } from 'path';
 
 export function getRewrittenLocation(appDir: string, inputPath: string) {

@@ -1,7 +1,7 @@
 import { allBabelVersions, runDefault } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { join } from 'path';
-import { MacrosConfig } from '../../src/node';
+import { MacrosConfig } from '../../build/node';
 
 const ROOT = process.cwd();
 

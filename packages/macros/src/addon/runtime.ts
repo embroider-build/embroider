@@ -18,20 +18,20 @@
   babel plugin and runtime will match.
 */
 
-export function each(array) {
+export function each(array: any) {
   if (!Array.isArray(array)) {
     throw new Error(`the argument to the each() macro must be an array`);
   }
   return array;
 }
 
-export function macroCondition(predicate) {
+export function macroCondition(predicate: any) {
   return predicate;
 }
 
 // This is here as a compile target for `getConfig` and `getOwnConfig` when
 // we're in runtime mode. This is not public API to call from your own code.
-export function config(packageRoot) {
+export function config(packageRoot: string) {
   return runtimeConfig.packages[packageRoot];
 }
 
@@ -48,7 +48,7 @@ export function isTesting() {
 const runtimeConfig = initializeRuntimeMacrosConfig();
 
 // this exists to be targeted by our babel plugin
-function initializeRuntimeMacrosConfig() {
+function initializeRuntimeMacrosConfig(): any {
   return { packages: {}, global: {} };
 }
 
@@ -56,10 +56,10 @@ function updaterMethods() {
   return {
     config,
     getGlobalConfig,
-    setConfig(packageRoot, value) {
+    setConfig(packageRoot: any, value: any) {
       runtimeConfig.packages[packageRoot] = value;
     },
-    setGlobalConfig(key, value) {
+    setGlobalConfig(key: any, value: any) {
       runtimeConfig.global[key] = value;
     },
   };
@@ -77,6 +77,7 @@ function updaterMethods() {
 //
 // For an example user of this API, see where we generate
 // embroider_macros_fastboot_init.js' in @embroider/core.
+// @ts-ignore
 let updaters = typeof window !== 'undefined' ? window._embroider_macros_runtime_config : undefined;
 if (updaters) {
   let methods = updaterMethods();

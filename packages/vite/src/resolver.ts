@@ -2,8 +2,8 @@ import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin, ViteDevServer } from 'vite';
 import type { Resolution, ResolverFunction } from '@embroider/core';
 import { virtualContent, ResolverLoader } from '@embroider/core';
-import { RollupModuleRequest, virtualPrefix } from './request';
-import assertNever from 'assert-never';
+import { RollupModuleRequest, virtualPrefix } from './request.js';
+import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
 
 const debug = makeDebug('embroider:vite');

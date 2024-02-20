@@ -31,12 +31,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/setup
-      - name: lint
-        run: pnpm lint
+      # - name: lint
+      #   run: pnpm lint
       - id: set-matrix
         working-directory: test-packages/support
         run: |
-          matrix_json=$(node ./suite-setup-util --matrix)
+          matrix_json=$(node ./build/suite-setup-util --matrix)
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
   test:

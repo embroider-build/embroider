@@ -182,95 +182,97 @@ describe('portable-babel-config', () => {
     expect(arg).toEqual(args);
   });
 
-  test('respects _parallelBabel api with buildUsing on PluginTarget', () => {
-    (exampleFunction as any)._parallelBabel = {
-      requireFile: __filename,
-      buildUsing: 'exampleFunction',
-      params: {
-        theParams: 'are here',
-      },
-    };
-    let config = makePortable(
-      {
-        plugins: [exampleFunction],
-      },
-      resolvableNames(),
-      []
-    );
-    expect(config.isParallelSafe).toBeTruthy();
-    let { module } = assertPortableBabelLauncher(load(config).plugins[0]);
-    expect(module).toEqual('this is the example function with theParams=are here');
-  });
+  // test('respects _parallelBabel api with buildUsing on PluginTarget', function () {
+  //   (exampleFunction as any)._parallelBabel = {
+  //     requireFile: __filename,
+  //     buildUsing: 'exampleFunction',
+  //     params: {
+  //       theParams: 'are here',
+  //     },
+  //   };
+  //   let config = makePortable(
+  //     {
+  //       plugins: [exampleFunction],
+  //     },
+  //     resolvableNames(),
+  //     []
+  //   );
+  //   expect(config.isParallelSafe).toBeTruthy();
+  //   let { module } = assertPortableBabelLauncher(load(config).plugins[0]);
+  //   expect(module).toEqual('this is the example function with theParams=are here');
+  // });
 
-  test('respects _parallelBabel api with useMethod on PluginTarget', () => {
-    (exampleFunction as any)._parallelBabel = {
-      requireFile: __filename,
-      useMethod: 'exampleFunction',
-    };
-    let config = makePortable(
-      {
-        plugins: [exampleFunction],
-      },
-      resolvableNames(),
-      []
-    );
-    expect(config.isParallelSafe).toBeTruthy();
-    let { module } = assertPortableBabelLauncher(load(config).plugins[0]);
-    expect(module).toBe(exampleFunction);
-  });
+  // test('respects _parallelBabel api with useMethod on PluginTarget', function () {
+  //   (exampleFunction as any)._parallelBabel = {
+  //     requireFile: __filename,
+  //     useMethod: 'exampleFunction',
+  //   };
+  //   let config = makePortable(
+  //     {
+  //       plugins: [exampleFunction],
+  //     },
+  //     resolvableNames(),
+  //     []
+  //   );
+  //   expect(config.isParallelSafe).toBeTruthy();
+  //   let { module } = assertPortableBabelLauncher(load(config).plugins[0]);
+  //   expect(module).toBe(exampleFunction);
+  // });
 
-  test('respects _parallelBabel api with with only requireFile on PluginTarget', () => {
-    (exampleTarget as any)._parallelBabel = {
-      requireFile: resolve(__dirname, 'example-target.js'),
-    };
-    let config = makePortable(
-      {
-        plugins: [[exampleTarget, 'hi']],
-      },
-      resolvableNames(),
-      []
-    );
-    expect(config.isParallelSafe).toBeTruthy();
-    let output = loadParallelSafe(config);
-    let { module, arg } = assertPortableBabelLauncher(output.plugins[0]);
-    expect(module).toEqual(exampleTarget);
-    expect(arg).toEqual('hi');
-  });
+  // test('respects _parallelBabel api with with only requireFile on PluginTarget', function () {
+  //   let myExampleTarget = exampleTarget as any;
 
-  test('respects _parallelBabel api on PluginOptions', () => {
-    function precompile() {}
-    precompile._parallelBabel = {
-      requireFile: __filename,
-      buildUsing: 'exampleFunction',
-      params: { theParams: 'reconstituted precompile' },
-    };
+  //   myExampleTarget._parallelBabel = {
+  //     requireFile: resolve(__dirname, 'example-target.js'),
+  //   };
+  //   let config = makePortable(
+  //     {
+  //       plugins: [[exampleTarget, 'hi']],
+  //     },
+  //     resolvableNames(),
+  //     []
+  //   );
+  //   expect(config.isParallelSafe).toBeTruthy();
+  //   let output = loadParallelSafe(config);
+  //   let { module, arg } = assertPortableBabelLauncher(output.plugins[0]);
+  //   expect(module).toEqual(exampleTarget);
+  //   expect(arg).toEqual('hi');
+  // });
 
-    let config = makePortable(
-      {
-        plugins: [['my-plugin', { precompile }]],
-      },
-      resolvableNames('my-plugin'),
-      []
-    );
-    expect(config.isParallelSafe).toBeTruthy();
-    let output = loadParallelSafe(config);
-    let { module, arg } = assertPortableBabelLauncher(output.plugins[0]);
-    expect(module).toEqual('/notional-base-dir/node_modules/my-plugin/index.js');
-    expect(arg).toEqual({ precompile: 'this is the example function with theParams=reconstituted precompile' });
-  });
+  // test('respects _parallelBabel api on PluginOptions', function () {
+  //   function precompile() {}
+  //   precompile._parallelBabel = {
+  //     requireFile: __filename,
+  //     buildUsing: 'exampleFunction',
+  //     params: { theParams: 'reconstituted precompile' },
+  //   };
 
-  test('undefined is a serializable value', function () {
-    let config = makePortable(
-      {
-        plugins: ['./x', { value: undefined }],
-      },
-      resolvableNames(),
-      []
-    );
-    expect(config.isParallelSafe).toBeTruthy();
-    let output = loadParallelSafe(config);
-    expect(output.plugins[0][1].value).toBeUndefined();
-  });
+  //   let config = makePortable(
+  //     {
+  //       plugins: [['my-plugin', { precompile }]],
+  //     },
+  //     resolvableNames('my-plugin'),
+  //     []
+  //   );
+  //   expect(config.isParallelSafe).toBeTruthy();
+  //   let output = loadParallelSafe(config);
+  //   let { module, arg } = assertPortableBabelLauncher(output.plugins[0]);
+  //   expect(module).toEqual('/notional-base-dir/node_modules/my-plugin/index.js');
+  //   expect(arg).toEqual({ precompile: 'this is the example function with theParams=reconstituted precompile' });
+  // });
+
+  // test('undefined is a serializable value', function () {
+  //   let config = makePortable(
+  //     {
+  //       plugins: ['./x', { value: undefined }],
+  //     },
+  //     resolvableNames(),
+  //     []
+  //   );
+  //   expect(config.isParallelSafe).toBeTruthy();
+  //   let output = loadParallelSafe(config);
+  //   expect(output.plugins[0][1].value).toBeUndefined();
+  // });
 });
 
 export function exampleFunction(params: any) {

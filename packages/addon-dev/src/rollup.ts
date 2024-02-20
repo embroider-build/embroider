@@ -1,12 +1,14 @@
-import { default as hbs } from './rollup-hbs-plugin';
-import { default as gjs } from './rollup-gjs-plugin';
-import { default as publicEntrypoints } from './rollup-public-entrypoints';
-import { default as appReexports } from './rollup-app-reexports';
-import type { Options as DelOptions } from 'rollup-plugin-delete';
-import { default as clean } from 'rollup-plugin-delete';
-import { default as keepAssets } from './rollup-keep-assets';
-import { default as dependencies } from './rollup-addon-dependencies';
-import { default as publicAssets } from './rollup-public-assets';
+import { default as hbs } from './rollup-hbs-plugin.js';
+import { default as gjs } from './rollup-gjs-plugin.js';
+import { default as publicEntrypoints } from './rollup-public-entrypoints.js';
+import { default as appReexports } from './rollup-app-reexports.js';
+import {
+  del,
+  type Options as DelOptions,
+} from '@kineticcafe/rollup-plugin-delete';
+import { default as keepAssets } from './rollup-keep-assets.js';
+import { default as dependencies } from './rollup-addon-dependencies.js';
+import { default as publicAssets } from './rollup-public-assets.js';
 import type { Plugin } from 'rollup';
 
 export class Addon {
@@ -64,7 +66,7 @@ export class Addon {
   // By default rollup does not clear the output directory between builds. This
   // does that.
   clean(options: DelOptions) {
-    return clean({ targets: `${this.#destDir}/*`, ...options });
+    return del({ targets: `${this.#destDir}/*`, ...options });
   }
 
   // V2 Addons are allowed to contain imports of .css files. This tells rollup

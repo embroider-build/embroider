@@ -5,6 +5,11 @@ const todo = makeDebug('embroider:todo');
 const unsupported = makeDebug('embroider:unsupported');
 const debug = makeDebug('embroider:debug');
 
+// this is here to make TS happy :( qunit only defines global types and this is the only way to
+// explicitly import them in this file. It would have been better if we could import NestedHooks
+// from qunit
+import 'qunit';
+
 function realWarn(message: string, params: any[]) {
   if (hardFailMode > 0) {
     throw new Error(`Unexpected warning in test suite: ${format(message, ...params)}`);

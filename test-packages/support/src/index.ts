@@ -1,5 +1,4 @@
 import { join } from 'path';
-import 'jest';
 import type { TransformOptions as Options7 } from '@babel/core';
 import { transform as transform7 } from '@babel/core';
 import { createContext, Script } from 'vm';
@@ -97,7 +96,7 @@ export function allBabelVersions(params: {
 
 export function emberTemplateCompiler() {
   return {
-    path: join(__dirname, 'vendor', 'ember-template-compiler.js'),
+    path: join(__dirname, '..', 'vendor', 'ember-template-compiler.js'),
     version: '4.8.1',
   };
 }

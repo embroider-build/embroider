@@ -8,7 +8,7 @@ import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilat
 
 import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
-import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
+import type { CompatResolverOptions } from '@embroider/compat/resolver-transform';
 import type { PackageRules } from '@embroider/compat';
 
 const { module: Qmodule, test } = QUnit;
@@ -65,7 +65,7 @@ Scenarios.fromProject(() => new Project())
             targetFormat: 'hbs',
             transforms: [
               ...(extraOpts?.astPlugins ?? []),
-              [require.resolve('@embroider/compat/src/resolver-transform'), { appRoot: app.dir }],
+              [require.resolve('@embroider/compat/resolver-transform'), { appRoot: app.dir }],
             ],
           };
 
@@ -106,7 +106,7 @@ Scenarios.fromProject(() => new Project())
             module.exports = {
               plugins: ${JSON.stringify([
                 [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
-                [require.resolve('@embroider/compat/src/babel-plugin-adjust-imports'), { appRoot: app.dir }],
+                [require.resolve('@embroider/compat/babel-plugin-adjust-imports'), { appRoot: app.dir }],
               ])}
             }`,
             '_babel_filter.js': `

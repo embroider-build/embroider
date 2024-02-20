@@ -10,12 +10,13 @@
   "license": "MIT",
   "author": "Edward Faulkner <edward@eaf4.com>",
   "bin": {
-    "addon-dev": "./src/commands.js"
+    "addon-dev": "./build/commands.js"
   },
   "exports": {
-    "./template-colocation-plugin": "./src/template-colocation-plugin.js",
-    "./rollup": "./src/rollup.js"
+    "./template-colocation-plugin": "./build/template-colocation-plugin.js",
+    "./rollup": "./build/rollup.js"
   },
+  "type": "module",
   "files": [
     "sample-rollup.config.js",
     "src/**/*.js",
@@ -27,12 +28,12 @@
   },
   "dependencies": {
     "@embroider/core": "workspace:^",
-    "@rollup/pluginutils": "^4.1.1",
+    "@rollup/pluginutils": "^5.0.0",
     "content-tag": "^2.0.1",
     "fs-extra": "^10.0.0",
     "minimatch": "^3.0.4",
     "rollup-plugin-copy-assets": "^2.0.3",
-    "rollup-plugin-delete": "^2.0.0",
+    "@kineticcafe/rollup-plugin-delete": "3.0.0-beta.0",
     "walk-sync": "^3.0.0",
     "yargs": "^17.0.1"
   },

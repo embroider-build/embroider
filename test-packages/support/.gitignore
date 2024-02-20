@@ -1,6 +1,4 @@
 /node_modules
-*.js
-*.d.ts
-*.map
 
-!vendor/ember-template-compiler.js
+# compiled output
+/build/

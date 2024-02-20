@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "declaration": true,
+    "typeRoots": ["types", "node_modules/@types"],
+    "moduleResolution": "Node16",
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": true,
+    "allowUnreachableCode": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "useUnknownInCatchVariables": false,
+    "paths": {
+      "@embroider/test-support": ["./test-packages/support"]
+    },
+  },
+}

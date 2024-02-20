@@ -3,8 +3,8 @@ import { join } from 'path';
 import type { TransformOptions } from '@babel/core';
 import { transform } from '@babel/core';
 import type { BoundExpectFile } from './file-assertions';
-import type { AppMeta } from '../../packages/core/src/index';
-import { hbsToJS, RewrittenPackageCache } from '../../packages/core/src/index';
+import type { AppMeta } from '@embroider/shared-internals';
+import { hbsToJS, RewrittenPackageCache } from '@embroider/shared-internals';
 import { Memoize } from 'typescript-memoize';
 import { getRewrittenLocation } from './rewritten-path';
 

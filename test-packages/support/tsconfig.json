@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig-base",
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "rootDir": "./src",
+    "moduleResolution": "Node16",
+    "outDir": "./build"
+  }
+}

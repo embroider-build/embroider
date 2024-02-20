@@ -1,12 +1,7 @@
 # See https://help.github.com/ignore-files/ for more about ignoring files.
 
 # compiled output
-/src/**/*.js
-/src/**/*.d.ts
-/src/**/*.map
-/tests/**/*.js
-/tests/**/*.d.ts
-/tests/**/*.map
+/build/
 
 # dependencies
 /node_modules/

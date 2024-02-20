@@ -3,12 +3,13 @@ import { join } from 'path';
 import tmp from 'tmp';
 import { writeFileSync } from 'fs';
 import { writeJSONSync } from 'fs-extra';
-import type { AppMeta } from '../src';
+import type { AppMeta } from '../build';
+import { vi } from 'vitest';
 
 tmp.setGracefulCleanup();
 
 describe('template-colocation-plugin', () => {
-  jest.setTimeout(120000);
+  vi.setConfig({ testTimeout: 5_000 });
 
   let filename: string;
   let plugins: any = [];
@@ -33,7 +34,7 @@ describe('template-colocation-plugin', () => {
         filename = join(name, 'sample.js');
         plugins = [
           [
-            join(__dirname, '../src/template-colocation-plugin.js'),
+            join(__dirname, '../build/template-colocation-plugin.js'),
             {
               templateMode: 'imported',
             },

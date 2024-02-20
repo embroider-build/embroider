@@ -8,24 +8,27 @@ import { join } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
-export function samplePlugin() {
-  return { visitor: {} };
-}
-
 appScenarios
   .map('compat-plugin-hints', app => {
+    app.files['sample-plugin.js'] = `module.exports.samplePlugin = function samplePlugin() {
+      return { visitor: {} };
+    }`;
+
     app.files['ember-cli-build.js'] = `
       'use strict';
 
       const EmberApp = require('ember-cli/lib/broccoli/ember-app');
       const { maybeEmbroider } = require('@embroider/test-setup');
+      const path = require('path');
 
       module.exports = function (defaults) {
+
+        debugger
         let app = new EmberApp(defaults, {
           babel: {
             plugins: [
               // deliberately non-serializable form
-              require("${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}").samplePlugin
+              require(path.join(__dirname, 'sample-plugin.js')).samplePlugin
             ]
           }
         });
@@ -38,7 +41,7 @@ appScenarios
           ],
           pluginHints: [
             {
-              resolve: ["${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}"],
+              resolve: [path.join(__dirname, 'sample-plugin.js')],
               useMethod: 'samplePlugin',
             },
           ],

@@ -1,4 +1,4 @@
-import { optimizeDeps } from '../src/optimize-deps';
+import { optimizeDeps } from '../build/optimize-deps';
 
 describe('optimizeDeps', function () {
   test('should produce default output when invoked without arguments', function () {
@@ -7,14 +7,22 @@ describe('optimizeDeps', function () {
     expect(actual).toMatchInlineSnapshot(
       {
         esbuildOptions: {
-          plugins: [expect.any(Object)],
+          plugins: [
+            {
+              name: 'embroider-esbuild-resolver',
+              setup: expect.any(Function),
+            },
+          ],
         },
       },
       `
       {
         "esbuildOptions": {
           "plugins": [
-            Any<Object>,
+            {
+              "name": "embroider-esbuild-resolver",
+              "setup": Any<Function>,
+            },
           ],
         },
         "exclude": [

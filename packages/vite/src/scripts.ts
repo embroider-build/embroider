@@ -87,7 +87,7 @@ class ScriptOptimizer {
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.minify(inCode, terserOpts);
     let finalFilename = await this.getFingerprintedFilename(script, outCode!);
     let emit: EmittedFile[] = [];
     emit.push({

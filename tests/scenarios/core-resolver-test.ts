@@ -4,7 +4,7 @@ import { resolve, sep } from 'path';
 import QUnit from 'qunit';
 import type { PreparedApp } from 'scenario-tester';
 import { Project, Scenarios } from 'scenario-tester';
-import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
+import type { CompatResolverOptions } from '@embroider/compat/resolver-transform';
 import type { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 import { installAuditAssertions } from '@embroider/test-support/audit-assertions';
 import { baseAddon } from './scenarios';

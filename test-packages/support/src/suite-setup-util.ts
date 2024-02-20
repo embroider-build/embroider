@@ -2,15 +2,25 @@ import { relative, resolve } from 'path';
 import execa from 'execa';
 
 function relativeToEmbroiderRoot(absolutePath: string): string {
-  let embroiderRoot = resolve(__dirname, '../..');
+  let embroiderRoot = resolve(__dirname, '../../..');
   return relative(embroiderRoot, absolutePath);
 }
 
 async function githubMatrix() {
-  let dir = resolve(__dirname, '..', '..', 'tests', 'scenarios');
+  let dir = resolve(__dirname, '..', '..', '..', 'tests', 'scenarios');
+
   let { stdout } = await execa(
-    'scenario-tester',
-    ['list', '--require', 'ts-node/register', '--files', '*-test.ts', '--matrix', 'pnpm run test --filter %s'],
+    'npx',
+    [
+      'scenario-tester',
+      'list',
+      '--require',
+      'ts-node/register',
+      '--files',
+      '*-test.ts',
+      '--matrix',
+      'pnpm run test --filter %s',
+    ],
     {
       cwd: dir,
       preferLocal: true,

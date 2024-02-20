@@ -1,11 +1,15 @@
 import type { Plugin } from 'rollup';
-import { readJsonSync } from 'fs-extra';
-import {
+import fsExtra from 'fs-extra';
+import embroiderCore from '@embroider/core';
+
+const {
   emberVirtualPackages,
   emberVirtualPeerDeps,
   packageName,
   templateCompilationModules,
-} from '@embroider/core';
+} = embroiderCore;
+
+const { readJsonSync } = fsExtra;
 
 const compilationModules = new Set(
   templateCompilationModules.map((m) => m.module)

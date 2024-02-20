@@ -1,6 +1,8 @@
-import { readJsonSync, writeJsonSync } from 'fs-extra';
+import fsExtra from 'fs-extra';
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
+
+const { readJsonSync, writeJsonSync } = fsExtra;
 
 export default function publicAssets(
   path: string,

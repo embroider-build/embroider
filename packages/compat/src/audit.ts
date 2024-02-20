@@ -225,7 +225,9 @@ export class Audit {
     return audit.run();
   }
 
-  constructor(private originAppRoot: string, private options: AuditOptions = {}) {}
+  constructor(private originAppRoot: string, private options: AuditOptions = {}) {
+    this.resolver = new Resolver(this.resolverParams);
+  }
 
   @Memoize()
   private get pkg() {
@@ -257,7 +259,7 @@ export class Audit {
     return readJSONSync(join(locateEmbroiderWorkingDir(this.originAppRoot), 'resolver.json'));
   }
 
-  private resolver = new Resolver(this.resolverParams);
+  private resolver;
 
   private debug(message: string, ...args: any[]) {
     if (this.options.debug) {

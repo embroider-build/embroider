@@ -39,13 +39,13 @@ import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSy
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
-import type { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
-import { makePortable } from '@embroider/core/src/portable-babel-config';
-import type { RouteFiles } from '@embroider/core/src/app-files';
-import { AppFiles } from '@embroider/core/src/app-files';
-import type { PortableHint } from '@embroider/core/src/portable';
-import { maybeNodeModuleVersion } from '@embroider/core/src/portable';
+import { PreparedEmberHTML } from '@embroider/core/ember-html';
+import type { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/asset';
+import { makePortable } from '@embroider/core/portable-babel-config';
+import type { RouteFiles } from '@embroider/core/app-files';
+import { AppFiles } from '@embroider/core/app-files';
+import type { PortableHint } from '@embroider/core/portable';
+import { maybeNodeModuleVersion } from '@embroider/core/portable';
 import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
@@ -843,7 +843,7 @@ export class CompatAppBuilder {
       baseDir: this.root,
     });
     if (process.env.EMBROIDER_CONCAT_STATS) {
-      let MeasureConcat = (await import('@embroider/core/src/measure-concat')).default;
+      let MeasureConcat = (await import('@embroider/core/measure-concat')).default as any;
       concat = new MeasureConcat(asset.relativePath, concat, this.root);
     }
     for (let source of asset.sources) {

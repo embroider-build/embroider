@@ -8,8 +8,8 @@ import {
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
 import { readFileSync, readJSONSync } from 'fs-extra';
-import { EsBuildModuleRequest } from './esbuild-request';
-import assertNever from 'assert-never';
+import { EsBuildModuleRequest } from './esbuild-request.js';
+import { assertNever } from 'assert-never';
 import { dirname, resolve, join } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';

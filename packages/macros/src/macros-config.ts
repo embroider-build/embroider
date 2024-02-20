@@ -358,7 +358,7 @@ export default class MacrosConfig {
     let cacheKey = hash.digest('hex');
 
     return [
-      [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts],
+      [join(__dirname, '..', 'build', 'babel', 'macros-babel-plugin.js'), opts],
       [babelCacheBustingPluginPath, { version: cacheKey }, `@embroider/macros cache buster: ${owningPackageRoot}`],
     ];
   }

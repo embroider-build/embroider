@@ -7,7 +7,7 @@
     "directory": "packages/test-setup"
   },
   "license": "MIT",
-  "main": "src/index.js",
+  "main": "build/index.js",
   "files": [
     "src/index.js"
   ],

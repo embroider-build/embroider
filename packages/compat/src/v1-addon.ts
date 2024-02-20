@@ -6,7 +6,7 @@ import type { Options as FunnelOptions } from 'broccoli-funnel';
 import buildFunnel from 'broccoli-funnel';
 import { UnwatchedDir, WatchedDir } from 'broccoli-source';
 import RewritePackageJSON from './rewrite-package-json';
-import { todo, unsupported } from '@embroider/core/src/messages';
+import { todo, unsupported } from '@embroider/core/messages';
 import type { Node } from 'broccoli-node-api';
 import mergeTrees from 'broccoli-merge-trees';
 import semver from 'semver';

@@ -4,7 +4,7 @@ import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext, ResolvedId } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS } from '@embroider/core';
-import assertNever from 'assert-never';
+import { assertNever } from 'assert-never';
 import { parse as pathParse } from 'path';
 import makeDebug from 'debug';
 

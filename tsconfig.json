@@ -2,17 +2,17 @@
   "files": [],
   "include": [],
   "references": [
+      { "path": "./packages/shared-internals" },
+      { "path": "./packages/reverse-exports"},
+      { "path": "./packages/core" },
       { "path": "./packages/addon-dev" },
       { "path": "./packages/addon-shim" },
       { "path": "./packages/compat" },
-      { "path": "./packages/core" },
       { "path": "./packages/hbs-loader" },
       { "path": "./packages/macros" },
-      { "path": "./packages/shared-internals" },
       { "path": "./packages/webpack" },
       { "path": "./packages/test-setup" },
       { "path": "./packages/vite" },
-      { "path": "./packages/reverse-exports"},
       { "path": "./test-packages/support" },
   ]
 }

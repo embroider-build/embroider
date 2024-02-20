@@ -361,32 +361,6 @@ export class CompatAppBuilder {
       });
     }
 
-    if (type === 'implicit-test-scripts') {
-      // this is the traditional test-support-suffix.js
-      result.push({
-        kind: 'in-memory',
-        relativePath: '_testing_suffix_.js',
-        source: `
-        var runningTests=true;
-        if (typeof Testem !== 'undefined' && (typeof QUnit !== 'undefined' || typeof Mocha !== 'undefined')) {
-          Testem.hookIntoTestFramework();
-        }`,
-      });
-
-      // whether or not anybody was actually using @embroider/macros
-      // explicitly as an addon, we ensure its test-support file is always
-      // present.
-      if (!result.find(s => s.kind === 'on-disk' && s.sourcePath.endsWith('embroider-macros-test-support.js'))) {
-        result.unshift({
-          kind: 'on-disk',
-          sourcePath: require.resolve('@embroider/macros/src/vendor/embroider-macros-test-support'),
-          mtime: 0,
-          size: 0,
-          relativePath: 'embroider-macros-test-support.js',
-        });
-      }
-    }
-
     return result;
   }
 
@@ -556,10 +530,8 @@ export class CompatAppBuilder {
     let testJS = this.testJSEntrypoint(appFiles, prepared);
     html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
 
-    let implicitTestScriptsAsset = this.implicitTestScriptsAsset(prepared, parentEngine);
-    if (implicitTestScriptsAsset) {
-      html.insertScriptTag(html.implicitTestScripts, implicitTestScriptsAsset.relativePath);
-    }
+    // virtual test-support.js
+    html.insertScriptTag(html.implicitTestScripts, '@embroider/core/test-support');
 
     let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);
     if (implicitTestStylesAsset) {
@@ -594,25 +566,6 @@ export class CompatAppBuilder {
       }
     }
     return asset;
-  }
-
-  private implicitTestScriptsAsset(
-    prepared: Map<string, InternalAsset>,
-    application: AppFiles
-  ): InternalAsset | undefined {
-    let testSupportJS = prepared.get('assets/test-support.js');
-    if (!testSupportJS) {
-      let implicitTestScripts = this.impliedAssets('implicit-test-scripts', application);
-      if (implicitTestScripts.length > 0) {
-        testSupportJS = new ConcatenatedAsset(
-          'assets/test-support.js',
-          implicitTestScripts,
-          this.resolvableExtensionsPattern
-        );
-        prepared.set(testSupportJS.relativePath, testSupportJS);
-      }
-    }
-    return testSupportJS;
   }
 
   private implicitTestStylesAsset(

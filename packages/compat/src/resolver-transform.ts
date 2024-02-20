@@ -43,51 +43,73 @@ export interface Options {
   appRoot: string;
 }
 
-export const builtInKeywords = [
-  '-get-dynamic-var',
-  '-in-element',
-  '-with-dynamic-vars',
-  'action',
-  'array',
-  'component',
-  'concat',
-  'debugger',
-  'each-in',
-  'each',
-  'fn',
-  'get',
-  'has-block-params',
-  'has-block',
-  'hasBlock',
-  'hasBlockParams',
-  'hash',
-  'helper',
-  'if',
-  'in-element',
-  'input',
-  'let',
-  'link-to',
-  'loc',
-  'log',
-  'modifier',
-  'mount',
-  'mut',
-  'on',
-  'outlet',
-  'partial',
-  'query-params',
-  'readonly',
-  'textarea',
-  'unbound',
-  'unique-id',
-  'unless',
-  'with',
-  'yield',
-];
+type BuiltIn = {
+  importableHelper?: [string, string];
+  importableComponent?: [string, string];
+  importableModifier?: [string, string];
+};
 
-export const builtInComponentKeywordsWithImports = ['input', 'textarea', 'link-to'];
-export const builtInHelperKeywordsWithImports = ['array', 'concat', 'fn', 'get', 'hash', 'unique-id'];
-export const builtInModifierKeywordsWithImports = ['on'];
+const builtInKeywords: Record<string, BuiltIn | undefined> = {
+  '-get-dynamic-var': {},
+  '-in-element': {},
+  '-with-dynamic-vars': {},
+  action: {},
+  array: {
+    importableHelper: ['array', '@ember/helper'],
+  },
+  component: {},
+  concat: {
+    importableHelper: ['concat', '@ember/helper'],
+  },
+  debugger: {},
+  'each-in': {},
+  each: {},
+  fn: {
+    importableHelper: ['fn', '@ember/helper'],
+  },
+  get: {
+    importableHelper: ['get', '@ember/helper'],
+  },
+  'has-block-params': {},
+  'has-block': {},
+  hasBlock: {},
+  hasBlockParams: {},
+  hash: {
+    importableHelper: ['hash', '@ember/helper'],
+  },
+  helper: {},
+  if: {},
+  'in-element': {},
+  input: {
+    importableComponent: ['Input', '@ember/component'],
+  },
+  let: {},
+  'link-to': {
+    importableComponent: ['LinkTo', '@ember/routing'],
+  },
+  loc: {},
+  log: {},
+  modifier: {},
+  mount: {},
+  mut: {},
+  on: {
+    importableModifier: ['on', '@ember/modifier'],
+  },
+  outlet: {},
+  partial: {},
+  'query-params': {},
+  readonly: {},
+  textarea: {
+    importableComponent: ['Textarea', '@ember/component'],
+  },
+  unbound: {},
+  'unique-id': {
+    importableHelper: ['uniqId', '@ember/helper'],
+  },
+  unless: {},
+  with: {},
+  yield: {},
+};
 
 interface ComponentResolution {
   type: 'component';
@@ -382,34 +404,36 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    const importedBuiltIn = builtInComponentKeywordsWithImports.includes(name);
-    if (builtInKeywords.includes(name) && !importedBuiltIn) {
+    const builtIn = builtInKeywords[name];
+
+    if (builtIn?.importableComponent) {
+      let [namedImport, specifier] = builtIn.importableComponent;
+      return {
+        type: 'component',
+        specifier,
+        yieldsComponents: [],
+        yieldsArguments: [],
+        argumentsAreComponents: [],
+        namedImport,
+      };
+    }
+
+    if (builtIn) {
       return null;
     }
     if (this.isIgnoredComponent(name)) {
       return null;
     }
 
-    if (importedBuiltIn) {
-      return {
-        type: 'component',
-        specifier: name === 'link-to' ? '@ember/routing' : '@ember/component',
-        yieldsComponents: [],
-        yieldsArguments: [],
-        argumentsAreComponents: [],
-        namedImport: capitalize(camelize(name)),
-      };
-    } else {
-      let componentRules = this.rules.components.get(name);
-      return {
-        type: 'component',
-        specifier: `#embroider_compat/components/${name}`,
-        yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
-        yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
-        argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-        nameHint: this.nameHint(name),
-      };
-    }
+    let componentRules = this.rules.components.get(name);
+    return {
+      type: 'component',
+      specifier: `#embroider_compat/components/${name}`,
+      yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
+      yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
+      argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
+      nameHint: this.nameHint(name),
+    };
   }
 
   private targetComponentHelper(
@@ -461,23 +485,26 @@ class TemplateResolver implements ASTPlugin {
     // globally-named helpers. It throws an error. So it's fine for us to
     // prioritize the builtIns here without bothering to resolve a user helper
     // of the same name.
-    const importedBuiltIn = builtInHelperKeywordsWithImports.includes(path);
-    if (builtInKeywords.includes(path) && !importedBuiltIn) {
+    const builtIn = builtInKeywords[path];
+
+    if (builtIn?.importableHelper) {
+      let [namedImport, specifier] = builtIn.importableHelper;
+      return {
+        type: 'helper',
+        specifier,
+        namedImport,
+      };
+    }
+
+    if (builtIn) {
       return null;
     }
-    if (importedBuiltIn) {
-      return {
-        type: 'helper',
-        specifier: `@ember/helper`,
-        namedImport: camelize(path),
-      };
-    } else {
-      return {
-        type: 'helper',
-        specifier: `#embroider_compat/helpers/${path}`,
-        nameHint: this.nameHint(path),
-      };
-    }
+
+    return {
+      type: 'helper',
+      specifier: `#embroider_compat/helpers/${path}`,
+      nameHint: this.nameHint(path),
+    };
   }
 
   private targetHelperOrComponent(
@@ -539,7 +566,7 @@ class TemplateResolver implements ASTPlugin {
     // first, bail out on all the stuff we can obviously ignore
     if (
       (!this.staticHelpersEnabled && !this.staticComponentsEnabled) ||
-      builtInKeywords.includes(path) ||
+      builtInKeywords[path] ||
       this.isIgnoredComponent(path)
     ) {
       return null;
@@ -604,24 +631,25 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    const importedBuiltIn = builtInModifierKeywordsWithImports.includes(path);
-    if (builtInKeywords.includes(path) && !importedBuiltIn) {
+    const builtIn = builtInKeywords[path];
+    if (builtIn?.importableModifier) {
+      let [namedImport, specifier] = builtIn.importableModifier;
+      return {
+        type: 'modifier',
+        specifier,
+        namedImport,
+      };
+    }
+
+    if (builtIn) {
       return null;
     }
 
-    if (importedBuiltIn) {
-      return {
-        type: 'modifier',
-        specifier: `@ember/modifier`,
-        namedImport: path,
-      };
-    } else {
-      return {
-        type: 'modifier',
-        specifier: `#embroider_compat/modifiers/${path}`,
-        nameHint: this.nameHint(path),
-      };
-    }
+    return {
+      type: 'modifier',
+      specifier: `#embroider_compat/modifiers/${path}`,
+      nameHint: this.nameHint(path),
+    };
   }
 
   targetDynamicModifier(modifier: ComponentLocator, loc: Loc): ModifierResolution | ResolutionFail | null {
@@ -1070,12 +1098,6 @@ function extendPath<N extends ASTv1.Node, K extends keyof N>(
 
 function capitalize(word: string): string {
   return word[0].toUpperCase() + word.slice(1);
-}
-
-const STRING_CAMELIZE_REGEXP_1 = /(\-|\_|\.|\s)+(.)?/g;
-
-function camelize(key: string) {
-  return key.replace(STRING_CAMELIZE_REGEXP_1, (_match, _separator, chr) => (chr ? chr.toUpperCase() : ''));
 }
 
 // ElementNodes have both children and attributes and both of those are

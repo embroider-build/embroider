@@ -1177,6 +1177,44 @@ Scenarios.fromProject(() => new Project())
       `);
       });
 
+      test('ambiguous invocation of built-in component', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{input}}`,
+        });
+
+        await configure({ staticComponents: true, staticHelpers: true });
+
+        expectTranspiled('./templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          import { Input } from "@ember/component";
+          export default precompileTemplate("{{Input}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              Input
+            }),
+          });
+        `);
+      });
+
+      test('ambiguous invocation of built-in helper', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{get this "stuff"}}`,
+        });
+
+        await configure({ staticComponents: true, staticHelpers: true });
+
+        expectTranspiled('./templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          import { get } from "@ember/helper";
+          export default precompileTemplate("{{get this \\"stuff\\"}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              get
+            }),
+          });
+        `);
+      });
+
       test('component helper with direct addon package reference', async function () {
         givenFiles({
           'templates/application.hbs': `{{component "my-addon@thing"}}`,

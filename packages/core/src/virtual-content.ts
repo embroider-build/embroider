@@ -4,6 +4,7 @@ import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 
 import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
+import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -26,6 +27,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let entrypoint = decodeEntrypoint(filename);
   if (entrypoint) {
     return renderEntrypoint(resolver, entrypoint);
+  }
+
+  let isImplicitTestScripts = decodeImplicitTestScripts(filename);
+  if (isImplicitTestScripts) {
+    return renderImplicitTestScripts(filename, resolver);
   }
 
   let extern = decodeVirtualExternalESModule(filename);

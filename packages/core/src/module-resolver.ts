@@ -459,10 +459,7 @@ export class Resolver {
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}.hbs`;
-      let resolution = this.nodeResolve(
-        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
-        target.from
-      );
+      let resolution = this.nodeResolve(candidateSpecifier, target.from);
       if (resolution.type === 'real') {
         hbsModule = { requested: candidateSpecifier, found: resolution.filename };
         break;

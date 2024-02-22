@@ -3,7 +3,7 @@ import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
-
+import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
 import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
 
 const externalESPrefix = '/@embroider/ext-es/';
@@ -51,6 +51,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let isVendorStyles = decodeVirtualVendorStyles(filename);
   if (isVendorStyles) {
     return renderVendorStyles(filename, resolver);
+  }
+
+  let isTestSupportStyles = decodeTestSupportStyles(filename);
+  if (isTestSupportStyles) {
+    return renderTestSupportStyles(filename, resolver);
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);

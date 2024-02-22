@@ -463,7 +463,7 @@ export class Resolver {
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await request.alias(candidateSpecifier).rehome(target.from).defaultResolve();
+      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
       if (resolution.type === 'found') {
         hbsModule = resolution;
@@ -475,7 +475,8 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await request.alias(candidateSpecifier).rehome(target.from).defaultResolve();
+      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
+
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
@@ -507,7 +508,8 @@ export class Resolver {
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = await request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile).defaultResolve();
+    let helperMatch = await this.resolve(request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile));
+
     if (helperMatch.type === 'found') {
       return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
     }
@@ -1195,10 +1197,9 @@ export class Resolver {
       case 'fastboot-only':
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
-        let foundAppJS = await request
-          .alias(matched.entry['app-js'].specifier)
-          .rehome(matched.entry['app-js'].fromFile)
-          .defaultResolve();
+        let foundAppJS = await this.resolve(
+          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile)
+        );
         if (foundAppJS.type === 'not_found') {
           throw new Error(
             `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`

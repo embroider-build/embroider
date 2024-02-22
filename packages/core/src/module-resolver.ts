@@ -187,6 +187,7 @@ export class Resolver {
     request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
     request = this.handleEntrypoint(request);
+    request = this.handleTestSupportStyles(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -450,6 +451,32 @@ export class Resolver {
     }
 
     return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
+  }
+
+  private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = [
+      '#embroider/core/test-support-styles',
+      '@embroider/core/test-support-styles',
+      '/@embroider/core/test-support-styles',
+      './@embroider/core/test-support-styles',
+    ];
+
+    if (!candidates.includes(request.specifier)) {
+      return request;
+    }
+
+    // TODO complain if not top-level app
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found test-support import in non-ember package at ${request.fromFile}`);
+    }
+
+    return logTransition(
+      'test-support-styles',
+      request,
+      request.virtualize(resolve(pkg.root, '-embroider-test-support-styles.css'))
+    );
   }
 
   private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {

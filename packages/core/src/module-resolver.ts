@@ -461,7 +461,7 @@ export class Resolver {
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
-      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}.hbs`;
 
       let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 

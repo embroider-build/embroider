@@ -88,6 +88,7 @@ export class RollupModuleRequest implements ModuleRequest {
         type: 'found',
         filename: this.specifier,
         result: { id: this.specifier, resolvedBy: this.fromFile },
+        isVirtual: this.isVirtual,
       };
     }
     if (this.isNotFound) {
@@ -107,7 +108,7 @@ export class RollupModuleRequest implements ModuleRequest {
       },
     });
     if (result) {
-      return { type: 'found', filename: result.id, result };
+      return { type: 'found', filename: result.id, result, isVirtual: this.isVirtual };
     } else {
       return { type: 'not_found', err: undefined };
     }

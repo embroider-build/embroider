@@ -156,7 +156,7 @@ export interface ModuleRequest<Res extends Resolution = Resolution> {
 // This is generic because different build systems have different ways of
 // representing a found module, and we just pass those values through.
 export type Resolution<T = unknown, E = unknown> =
-  | { type: 'found'; filename: string; result: T }
+  | { type: 'found'; filename: string; isVirtual: boolean; result: T }
   | { type: 'not_found'; err: E };
 
 export type ResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
@@ -465,7 +465,7 @@ export class Resolver {
 
       let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
-      if (resolution.type === 'found') {
+      if (resolution.type === 'found' && !resolution.isVirtual) {
         hbsModule = resolution;
         break;
       }

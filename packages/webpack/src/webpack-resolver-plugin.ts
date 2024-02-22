@@ -108,7 +108,12 @@ function getAdaptedResolve(
           // and other unexpected exceptions here.
           resolve({ type: 'not_found', err });
         } else {
-          resolve({ type: 'found', result: value, filename: value ? String(value.id) : value });
+          resolve({
+            type: 'found',
+            result: value,
+            isVirtual: request.isVirtual,
+            filename: value ? String(value.id) : value,
+          });
         }
       }) as CB);
     });

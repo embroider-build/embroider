@@ -159,14 +159,6 @@ export type Resolution<T = unknown, E = unknown> =
   | { type: 'found'; filename: string; isVirtual: boolean; result: T }
   | { type: 'not_found'; err: E };
 
-export type ResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
-  request: R
-) => Promise<Res>;
-
-export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
-  request: R
-) => Res;
-
 export class Resolver {
   constructor(readonly options: Options) {}
 
@@ -480,7 +472,7 @@ export class Resolver {
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
-      if (resolution.type === 'found' && !resolution.filename.endsWith('.hbs')) {
+      if (resolution.type === 'found' && !resolution.isVirtual && !resolution.filename.endsWith('.hbs')) {
         jsModule = resolution;
         break;
       }

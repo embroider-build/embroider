@@ -1005,6 +1005,12 @@ export class Resolver {
   }
 
   private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
+    if (request.isVirtual) {
+      throw new Error(
+        'Build tool bug detected! Fallback resolve should never see a virtual request. It is expected that the defaultResolve for your bundler has already resolved this request'
+      );
+    }
+
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.

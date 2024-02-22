@@ -461,7 +461,7 @@ export class Resolver {
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
-      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}.hbs`;
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
       let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
@@ -550,22 +550,13 @@ export class Resolver {
   }
 
   private *componentJSCandidates(inPackageName: string) {
-    const extensions = ['.ts', '.gjs', '.gts'];
     yield { prefix: '/components/', suffix: '' };
+    yield { prefix: '/components/', suffix: '/index' };
     yield { prefix: '/components/', suffix: '/component' };
-
-    for (const ext of extensions) {
-      yield { prefix: '/components/', suffix: ext };
-      yield { prefix: '/components/', suffix: `/index${ext}` };
-      yield { prefix: '/components/', suffix: `/component${ext}` };
-    }
 
     let pods = this.podPrefix(inPackageName);
     if (pods) {
       yield { prefix: `${pods}/components/`, suffix: '/component' };
-      for (const ext of extensions) {
-        yield { prefix: `${pods}/components/`, suffix: `/component${ext}` };
-      }
     }
   }
 

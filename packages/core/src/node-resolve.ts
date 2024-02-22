@@ -90,36 +90,59 @@ export class NodeModuleRequest implements ModuleRequest {
         err,
       };
     }
-    try {
-      // require.resolve does not like when we resolve from virtual paths.
-      // That is, a request like "../thing.js" from
-      // "/a/real/path/VIRTUAL_SUBDIR/virtual.js" has an unambiguous target of
-      // "/a/real/path/thing.js", but require.resolve won't do that path
-      // adjustment until after checking whether VIRTUAL_SUBDIR actually
-      // exists.
-      //
-      // We can do the path adjustments before doing require.resolve.
-      let { specifier } = request;
-      let fromDir = dirname(request.fromFile);
-      if (!isAbsolute(specifier) && specifier.startsWith('.')) {
-        let targetPath = resolve(fromDir, specifier);
-        let newFromDir = dirname(targetPath);
-        if (fromDir !== newFromDir) {
-          specifier = explicitRelative(newFromDir, targetPath);
-          fromDir = newFromDir;
-        }
-      }
 
-      let filename = require.resolve(specifier, {
-        paths: [fromDir],
-      });
-      return { type: 'found', filename, result: { type: 'real' as 'real', filename } };
-    } catch (err) {
-      if (err.code !== 'MODULE_NOT_FOUND') {
-        throw err;
+    // require.resolve does not like when we resolve from virtual paths.
+    // That is, a request like "../thing.js" from
+    // "/a/real/path/VIRTUAL_SUBDIR/virtual.js" has an unambiguous target of
+    // "/a/real/path/thing.js", but require.resolve won't do that path
+    // adjustment until after checking whether VIRTUAL_SUBDIR actually
+    // exists.
+    //
+    // We can do the path adjustments before doing require.resolve.
+    let { specifier } = request;
+    let fromDir = dirname(request.fromFile);
+    if (!isAbsolute(specifier) && specifier.startsWith('.')) {
+      let targetPath = resolve(fromDir, specifier);
+      let newFromDir = dirname(targetPath);
+      if (fromDir !== newFromDir) {
+        specifier = explicitRelative(newFromDir, targetPath);
+        fromDir = newFromDir;
       }
-      return { type: 'not_found', err };
     }
+
+    let initialError;
+
+    for (let candidate of candidates(specifier)) {
+      let filename;
+      try {
+        filename = require.resolve(candidate, {
+          paths: [fromDir],
+        });
+      } catch (err) {
+        if (err.code !== 'MODULE_NOT_FOUND') {
+          throw err;
+        }
+
+        if (!initialError) {
+          initialError = err;
+        }
+
+        continue;
+      }
+      return { type: 'found', filename, result: { type: 'real' as 'real', filename } };
+    }
+
+    return { type: 'not_found', err: initialError };
+  }
+}
+
+function* candidates(specifier: string) {
+  yield specifier;
+
+  const extensions = ['.hbs.js', '.hbs'];
+
+  for (let ext of extensions) {
+    yield `${specifier}${ext}`;
   }
 }
 

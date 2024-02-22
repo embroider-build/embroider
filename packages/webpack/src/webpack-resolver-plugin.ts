@@ -103,12 +103,12 @@ function getAdaptedResolve(
         resolve({ type: 'not_found', err });
       }
       defaultResolve(request.toWebpackResolveData(), ((err, value) => {
-        if (!value) {
+        if (err) {
           // unfortunately webpack doesn't let us distinguish between Not Found
           // and other unexpected exceptions here.
           resolve({ type: 'not_found', err });
         } else {
-          resolve({ type: 'found', result: value, filename: String(value.id) });
+          resolve({ type: 'found', result: value, filename: value ? String(value.id) : value });
         }
       }) as CB);
     });

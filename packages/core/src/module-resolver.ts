@@ -42,6 +42,8 @@ makeDebug.formatters.p = (s: string) => {
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
   if (after.isVirtual) {
     debug(`[%s:virtualized] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
+  } else if (after.resolvedTo) {
+    debug(`[%s:resolvedTo] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else if (before.specifier !== after.specifier) {
     if (before.fromFile !== after.fromFile) {
       debug(

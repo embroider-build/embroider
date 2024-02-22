@@ -73,6 +73,10 @@ function logTransition<R extends ModuleRequest>(reason: string, before: R, after
   return after;
 }
 
+function isTerminal(request: ModuleRequest): boolean {
+  return request.isVirtual || request.isNotFound || Boolean(request.resolvedTo);
+}
+
 export interface Options {
   renamePackages: {
     [fromName: string]: string;
@@ -271,6 +275,9 @@ export class Resolver {
   }
 
   private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg) {
@@ -313,6 +320,9 @@ export class Resolver {
   }
 
   private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
     let match = decodeFastbootSwitch(request.fromFile);
     if (!match) {
       return request;
@@ -369,6 +379,9 @@ export class Resolver {
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
     let im = decodeImplicitModules(request.specifier);
     if (!im) {
       return request;
@@ -397,6 +410,9 @@ export class Resolver {
   }
 
   private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {
+    if (isTerminal(request)) {
+      return request;
+    }
     let match = compatPattern.exec(request.specifier);
     if (!match) {
       return request;
@@ -693,7 +709,7 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual || request.isNotFound) {
+    if (isTerminal(request)) {
       return request;
     }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -756,7 +772,7 @@ export class Resolver {
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual || request.isNotFound) {
+    if (isTerminal(request)) {
       return request;
     }
     let packageName = getPackageName(request.specifier);
@@ -835,7 +851,7 @@ export class Resolver {
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual || request.isNotFound) {
+    if (isTerminal(request)) {
       return request;
     }
     let { specifier, fromFile } = request;

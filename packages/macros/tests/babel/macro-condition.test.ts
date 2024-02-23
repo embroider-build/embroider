@@ -360,7 +360,7 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/beta/);
       });
 
-      buildTimeTest('can see booleans inside getConfig', () => {
+      test('can see booleans inside getConfig', () => {
         let code = transform(`
       import { macroCondition, getConfig } from '@embroider/macros';
       export default function() {
@@ -371,19 +371,6 @@ describe('macroCondition', function () {
       `);
         expect(run(code, { filename })).toBe('beta');
         expect(code).not.toMatch(/alpha/);
-      });
-
-      runTimeTest('can see booleans inside getConfig', () => {
-        let code = transform(`
-      import { macroCondition, getConfig } from '@embroider/macros';
-      export default function() {
-        // this deliberately chains three kinds of property access syntax: by
-        // identifier, by numeric index, and by string literal.
-        return macroCondition(getConfig('qunit').items[0]["other"]) ? 'alpha' : 'beta';
-      }
-      `);
-        expect(run(code, { filename })).toBe('beta');
-        expect(code).toMatch(/alpha/);
       });
 
       if (transform.babelMajorVersion === 7) {

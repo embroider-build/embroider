@@ -70,7 +70,7 @@
     "ember-composable-helpers": "^4.4.1",
     "ember-data-4.12": "npm:ember-data@~4.12.0",
     "ember-data-beta": "npm:ember-data@beta",
-    "ember-data-latest": "npm:ember-data@5.3.0",
+    "ember-data-latest": "npm:ember-data@latest",
     "ember-engines": "^0.8.23",
     "ember-inline-svg": "^0.2.1",
     "ember-modifier": "^4.0.0",

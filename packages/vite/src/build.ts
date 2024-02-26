@@ -4,7 +4,7 @@ import type { Plugin } from 'vite';
 export function emberBuild(mode: string): Promise<void> {
   if (mode === 'build') {
     return new Promise((resolve, reject) => {
-      const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--production'], { silent: true });
+      const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--production']);
       child.on('exit', code => (code === 0 ? resolve() : reject()));
     });
   }

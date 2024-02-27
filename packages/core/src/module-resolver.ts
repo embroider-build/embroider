@@ -455,9 +455,13 @@ export class Resolver {
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
+      let resolution = await this.resolve(
+        request.alias(candidateSpecifier).rehome(target.from).withMeta({
+          runtimeFallback: false,
+        })
+      );
 
-      if (resolution.type === 'found' && !resolution.isVirtual) {
+      if (resolution.type === 'found') {
         hbsModule = resolution;
         break;
       }
@@ -467,12 +471,16 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
+      let resolution = await this.resolve(
+        request.alias(candidateSpecifier).rehome(target.from).withMeta({
+          runtimeFallback: false,
+        })
+      );
 
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
-      if (resolution.type === 'found' && !resolution.isVirtual && !resolution.filename.endsWith('.hbs')) {
+      if (resolution.type === 'found' && !resolution.filename.endsWith('.hbs')) {
         jsModule = resolution;
         break;
       }
@@ -500,7 +508,11 @@ export class Resolver {
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = await this.resolve(request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile));
+    let helperMatch = await this.resolve(
+      request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile).withMeta({
+        runtimeFallback: false,
+      })
+    );
 
     if (helperMatch.type === 'found') {
       return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
@@ -1122,7 +1134,7 @@ export class Resolver {
       }
     }
 
-    if (pkg.meta['auto-upgraded']) {
+    if (pkg.meta['auto-upgraded'] && (request.meta?.runtimeFallback ?? true)) {
       // auto-upgraded packages can fall back to attempting to find dependencies at
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for
@@ -1181,7 +1193,9 @@ export class Resolver {
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
         let foundAppJS = await this.resolve(
-          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile)
+          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile).withMeta({
+            runtimeFallback: false,
+          })
         );
         if (foundAppJS.type === 'not_found') {
           throw new Error(

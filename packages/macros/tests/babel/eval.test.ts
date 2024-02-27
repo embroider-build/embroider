@@ -200,7 +200,7 @@ describe('hasRuntimeImplementation', function () {
         let code = transform(`
         import { getGlobalConfig } from '@embroider/macros';
         const result = getGlobalConfig().fastboot`);
-        expect(code).toMatch(`result = false`);
+        expect(code).toMatch(`result = true`);
       });
 
       // fastboot.isRunning relies on dynamic evaluation at runtime. For backwards compatibility we keep it working. See https://github.com/embroider-build/embroider/issues/1804

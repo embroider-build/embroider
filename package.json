@@ -33,8 +33,10 @@
     "overrides": {
       "browserslist": "^4.14.0",
       "graceful-fs": "^4.0.0",
+      "@babel/core": "7.23.9",
       "ember-cached-decorator-polyfill": "1.0.2",
       "@ember-data/tracking": "5.3.1",
+      "ember-data": "5.3.1",
       "@types/eslint": "^8.37.0"
     }
   },

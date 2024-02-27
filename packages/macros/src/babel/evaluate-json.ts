@@ -409,25 +409,11 @@ export class Evaluator {
           : assertNever(maybeFastbootMemberExpression);
 
         if (maybeFastbootProperty.isIdentifier() && maybeFastbootProperty.node.name === 'fastboot') {
-          let maybeIsRunningMemberExpression = maybeFastbootMemberExpression.parentPath;
-          if (
-            maybeIsRunningMemberExpression.isMemberExpression() ||
-            maybeIsRunningMemberExpression.isOptionalMemberExpression()
-          ) {
-            let maybeIsRunningProperty = maybeIsRunningMemberExpression.isMemberExpression()
-              ? maybeIsRunningMemberExpression.get('property')
-              : maybeIsRunningMemberExpression.isOptionalMemberExpression()
-              ? maybeIsRunningMemberExpression.get('property')
-              : assertNever(maybeIsRunningMemberExpression);
-
-            if (maybeIsRunningProperty.isIdentifier() && maybeIsRunningProperty.node.name === 'isRunning') {
-              return {
-                confident: true,
-                value: getConfig(path, this.state, 'getGlobalConfig'),
-                hasRuntimeImplementation: true,
-              };
-            }
-          }
+          return {
+            confident: true,
+            value: getConfig(path, this.state, 'getGlobalConfig'),
+            hasRuntimeImplementation: true,
+          };
         }
       }
 

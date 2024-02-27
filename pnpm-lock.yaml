@@ -7,6 +7,7 @@ settings:
 overrides:
   browserslist: ^4.14.0
   graceful-fs: ^4.0.0
+  ember-cached-decorator-polyfill: 1.0.2
   '@types/eslint': ^8.37.0
 
 importers:
@@ -1459,7 +1460,7 @@ importers:
         version: 4.0.2
       ember-data:
         specifier: ~4.4.0
-        version: 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+        version: 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       ember-fetch:
         specifier: ^8.1.1
         version: 8.1.2
@@ -3487,12 +3488,12 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/adapter@4.4.3(@babel/core@7.23.9)(webpack@5.90.3):
+  /@ember-data/adapter@4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3):
     resolution: {integrity: sha512-rwcwzffVHosmKgWEOSwvUy8EFazDV08lZvw8uFDK9CrrhUBWGLG8Ugrc1nu3HEAHA9UWNFbaAPKj/R4PvV2igw==}
     engines: {node: 12.* || >= 14.*}
     dependencies:
       '@ember-data/private-build-infra': 4.4.3(@babel/core@7.23.9)
-      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       '@ember/edition-utils': 1.2.0
       '@ember/string': 3.1.1
       ember-auto-import: 2.7.2(@glint/template@1.3.0)(webpack@5.90.3)
@@ -3502,6 +3503,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
+      - ember-source
       - supports-color
       - webpack
     dev: true
@@ -3911,17 +3913,17 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/model@4.4.3(@babel/core@7.23.9)(webpack@5.90.3):
+  /@ember-data/model@4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3):
     resolution: {integrity: sha512-gHrSGJQUewZ0hqAnDzAehz7DXqBHHT9MKGl/f7/mYMP+QNVQXbPemurc9NAO7nunUJZhDvHYRkMuy0hrdtiT+g==}
     engines: {node: 12.* || >= 14.*}
     dependencies:
       '@ember-data/canary-features': 4.4.3
       '@ember-data/private-build-infra': 4.4.3(@babel/core@7.23.9)
-      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       '@ember/edition-utils': 1.2.0
       '@ember/string': 3.1.1
       ember-auto-import: 2.7.2(@glint/template@1.3.0)(webpack@5.90.3)
-      ember-cached-decorator-polyfill: 0.1.4(@babel/core@7.23.9)
+      ember-cached-decorator-polyfill: 1.0.2(@babel/core@7.23.9)(ember-source@4.6.0)
       ember-cli-babel: 7.26.11
       ember-cli-string-utils: 1.1.0
       ember-cli-test-info: 1.0.0
@@ -3931,6 +3933,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
+      - ember-source
       - supports-color
       - webpack
     dev: true
@@ -4188,13 +4191,13 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/record-data@4.4.3(@babel/core@7.23.9)(webpack@5.90.3):
+  /@ember-data/record-data@4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3):
     resolution: {integrity: sha512-hHGSD23qHR+Zd59/P2AqmcFBOAgb22Imcm7aJbXUfQVSpXx2AlcdcrWL8bA6hMaO9yX/KQRTmBazmS0vqTxFug==}
     engines: {node: 12.* || >= 14.*}
     dependencies:
       '@ember-data/canary-features': 4.4.3
       '@ember-data/private-build-infra': 4.4.3(@babel/core@7.23.9)
-      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       '@ember/edition-utils': 1.2.0
       ember-auto-import: 2.7.2(@glint/template@1.3.0)(webpack@5.90.3)
       ember-cli-babel: 7.26.11
@@ -4203,6 +4206,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
+      - ember-source
       - supports-color
       - webpack
     dev: true
@@ -4307,12 +4311,12 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/serializer@4.4.3(@babel/core@7.23.9)(webpack@5.90.3):
+  /@ember-data/serializer@4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3):
     resolution: {integrity: sha512-rHL3yraqUBHLjw1y5s0sGCD+xjwJaEWsx/wcVxG5FBIBcMtUQTyp/QLoiqqVfI0/1MOnvpYDjy1Fyioy0gGAZA==}
     engines: {node: 12.* || >= 14.*}
     dependencies:
       '@ember-data/private-build-infra': 4.4.3(@babel/core@7.23.9)
-      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       ember-auto-import: 2.7.2(@glint/template@1.3.0)(webpack@5.90.3)
       ember-cli-babel: 7.26.11
       ember-cli-test-info: 1.0.0
@@ -4320,6 +4324,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
+      - ember-source
       - supports-color
       - webpack
     dev: true
@@ -4406,7 +4411,7 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/store@4.4.3(@babel/core@7.23.9)(webpack@5.90.3):
+  /@ember-data/store@4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3):
     resolution: {integrity: sha512-1kvCV/qO7ULD4fJNfr1NTwQwcPAU/fwxIWj46p2JnpRKg1jwzBNz9E6hQNdQ0kLD2pOUiaHB8J/2J6mCqVljKA==}
     engines: {node: 12.* || >= 14.*}
     dependencies:
@@ -4415,13 +4420,14 @@ packages:
       '@ember/string': 3.1.1
       '@glimmer/tracking': 1.1.2
       ember-auto-import: 2.7.2(@glint/template@1.3.0)(webpack@5.90.3)
-      ember-cached-decorator-polyfill: 0.1.4(@babel/core@7.23.9)
+      ember-cached-decorator-polyfill: 1.0.2(@babel/core@7.23.9)(ember-source@4.6.0)
       ember-cli-babel: 7.26.11
       ember-cli-path-utils: 1.0.0
       ember-cli-typescript: 5.2.1
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
+      - ember-source
       - supports-color
       - webpack
     dev: true
@@ -12212,19 +12218,6 @@ packages:
       - supports-color
     dev: true
 
-  /ember-cached-decorator-polyfill@0.1.4(@babel/core@7.23.9):
-    resolution: {integrity: sha512-JOK7kBCWsTVCzmCefK4nr9BACDJk0owt9oIUaVt6Q0UtQ4XeAHmoK5kQ/YtDcxQF1ZevHQFdGhsTR3JLaHNJgA==}
-    engines: {node: 10.* || >= 12}
-    dependencies:
-      '@glimmer/tracking': 1.1.2
-      ember-cache-primitive-polyfill: 1.0.1(@babel/core@7.23.9)
-      ember-cli-babel: 7.26.11
-      ember-cli-babel-plugin-helpers: 1.1.1
-    transitivePeerDependencies:
-      - '@babel/core'
-      - supports-color
-    dev: true
-
   /ember-cached-decorator-polyfill@1.0.2(@babel/core@7.23.9)(ember-source@3.28.12):
     resolution: {integrity: sha512-hUX6OYTKltAPAu8vsVZK02BfMTV0OUXrPqvRahYPhgS7D0I6joLjlskd7mhqJMcaXLywqceIy8/s+x8bxF8bpQ==}
     engines: {node: 14.* || >= 16}
@@ -12238,6 +12231,25 @@ packages:
       ember-cli-babel: 7.26.11
       ember-cli-babel-plugin-helpers: 1.1.1
       ember-source: 3.28.12(@babel/core@7.23.9)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@glint/template'
+      - supports-color
+    dev: true
+
+  /ember-cached-decorator-polyfill@1.0.2(@babel/core@7.23.9)(ember-source@4.6.0):
+    resolution: {integrity: sha512-hUX6OYTKltAPAu8vsVZK02BfMTV0OUXrPqvRahYPhgS7D0I6joLjlskd7mhqJMcaXLywqceIy8/s+x8bxF8bpQ==}
+    engines: {node: 14.* || >= 16}
+    peerDependencies:
+      ember-source: ^3.13.0 || ^4.0.0 || >= 5.0.0
+    dependencies:
+      '@embroider/macros': 1.13.5(@glint/template@1.3.0)
+      '@glimmer/tracking': 1.1.2
+      babel-import-util: 1.4.1
+      ember-cache-primitive-polyfill: 1.0.1(@babel/core@7.23.9)
+      ember-cli-babel: 7.26.11
+      ember-cli-babel-plugin-helpers: 1.1.1
+      ember-source: 4.6.0(@babel/core@7.23.9)(@glint/template@1.3.0)(webpack@5.90.3)
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
@@ -13924,17 +13936,17 @@ packages:
       - webpack
     dev: true
 
-  /ember-data@4.4.3(@babel/core@7.23.9)(webpack@5.90.3):
+  /ember-data@4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3):
     resolution: {integrity: sha512-Z67pYs41LoJ2EKQsTOb2QOmv7A4gn72nv9MORYpQnGk8z8stYGtrgZFwATg+NES4mnJsLShdLIWaZNKze7c1HA==}
     engines: {node: 12.* || >= 14.*}
     dependencies:
-      '@ember-data/adapter': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+      '@ember-data/adapter': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       '@ember-data/debug': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
-      '@ember-data/model': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+      '@ember-data/model': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       '@ember-data/private-build-infra': 4.4.3(@babel/core@7.23.9)
-      '@ember-data/record-data': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
-      '@ember-data/serializer': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
-      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+      '@ember-data/record-data': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
+      '@ember-data/serializer': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
+      '@ember-data/store': 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       '@ember/edition-utils': 1.2.0
       '@ember/string': 3.1.1
       '@glimmer/env': 0.1.7
@@ -13946,6 +13958,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
+      - ember-source
       - supports-color
       - webpack
     dev: true

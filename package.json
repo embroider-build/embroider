@@ -33,6 +33,7 @@
     "overrides": {
       "browserslist": "^4.14.0",
       "graceful-fs": "^4.0.0",
+      "ember-cached-decorator-polyfill": "1.0.2",
       "@types/eslint": "^8.37.0"
     }
   },

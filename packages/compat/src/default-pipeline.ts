@@ -51,6 +51,37 @@ export default function defaultPipeline<PackagerOptions>(
   return new BroccoliPackager(embroiderApp.asStage(addons), variants, options && options.packagerOptions);
 }
 
+export function prebuild<PackagerOptions>(
+  emberApp: EmberAppInstance,
+  options: PipelineOptions<PackagerOptions> = {
+    staticAddonTrees: true,
+    staticAddonTestSupportTrees: true,
+    staticComponents: true,
+    staticHelpers: true,
+    staticModifiers: true,
+    staticEmberSource: true,
+    amdCompatibility: {
+      es: [],
+    },
+  }
+): Node {
+  let outputPath: string;
+  let addons;
+
+  let embroiderApp = new App(emberApp, options);
+
+  addons = new CompatAddons(embroiderApp);
+  addons.ready().then(result => {
+    outputPath = result.outputPath;
+  });
+
+  if (process.env.STAGE1_ONLY) {
+    return mergeTrees([addons.tree, writeFile('.stage1-output', () => outputPath)]);
+  }
+
+  return mergeTrees([embroiderApp.asStage(addons).tree, writeFile('.stage2-output', () => outputPath)]);
+}
+
 function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {
   return emberApp.project.addons.find(a => a.name === 'ember-cli-fastboot');
 }

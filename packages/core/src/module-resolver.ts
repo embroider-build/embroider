@@ -11,6 +11,7 @@ import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-inter
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import reversePackageExports from '@embroider/reverse-exports';
+import { exports as resolveExports } from 'resolve.exports';
 
 import {
   virtualExternalESModule,
@@ -812,21 +813,43 @@ export class Resolver {
       }
     }
 
-    if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
-      // we found a self-import, resolve it for them. Only auto-upgraded
-      // packages get this help, v2 packages are natively supposed to make their
-      // own modules resolvable, and we want to push them all to do that
-      // correctly.
+    if (pkg.name === packageName) {
+      // we found a self-import
+      if (pkg.meta['auto-upgraded']) {
+        // auto-upgraded packages always get automatically adjusted. They never
+        // supported fancy package.json exports features so this direct mapping
+        // to the root is always right.
 
-      // "my-package/foo" -> "./foo"
-      // "my-package" -> "./" (this can't be just "." because node's require.resolve doesn't reliable support that)
-      let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
+        // "my-package/foo" -> "./foo"
+        // "my-package" -> "./" (this can't be just "." because node's require.resolve doesn't reliable support that)
+        let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
 
-      return logTransition(
-        `v1 self-import`,
-        request,
-        request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
-      );
+        return logTransition(
+          `v1 self-import`,
+          request,
+          request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
+        );
+      } else {
+        // v2 packages are supposed to use package.json `exports` to enable
+        // self-imports, but not all build tools actually follow the spec. This
+        // is a workaround for badly behaved packagers.
+        //
+        // Known upstream bugs this works around:
+        // - https://github.com/vitejs/vite/issues/9731
+        if (pkg.packageJSON.exports) {
+          let found = resolveExports(pkg.packageJSON, request.specifier, {
+            browser: true,
+            conditions: ['default', 'imports'],
+          });
+          if (found?.[0]) {
+            return logTransition(
+              `v2 self-import with package.json exports`,
+              request,
+              request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
+            );
+          }
+        }
+      }
     }
 
     return request;

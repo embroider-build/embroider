@@ -425,6 +425,9 @@ importers:
       resolve-package-path:
         specifier: ^4.0.1
         version: 4.0.3
+      resolve.exports:
+        specifier: ^2.0.2
+        version: 2.0.2
       typescript-memoize:
         specifier: ^1.0.1
         version: 1.1.1
@@ -22679,7 +22682,7 @@ packages:
     resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
     hasBin: true
     peerDependencies:
-      browserslist: '>= 4.21.0'
+      browserslist: ^4.14.0
     dependencies:
       browserslist: 4.22.3
       escalade: 3.1.1

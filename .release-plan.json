@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "4.2.0",
-      "newVersion": "4.2.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "4.2.1"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.7"
@@ -19,16 +10,43 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.4.4"
+      "impact": "patch",
+      "oldVersion": "3.4.4",
+      "newVersion": "3.4.5",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.4"
+      "impact": "patch",
+      "oldVersion": "3.4.4",
+      "newVersion": "3.4.5",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.13.5"
+      "impact": "minor",
+      "oldVersion": "1.13.5",
+      "newVersion": "1.14.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -52,5 +70,5 @@
       "oldVersion": "3.2.2"
     }
   },
-  "description": "## Release (2024-02-05)\n\n@embroider/addon-dev 4.2.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#1787](https://github.com/embroider-build/embroider/pull/1787) Fix source map option not being passed to plugin ([@vstefanovic97](https://github.com/vstefanovic97))\n\n#### Committers: 1\n- Vuk ([@vstefanovic97](https://github.com/vstefanovic97))\n"
+  "description": "## Release (2024-02-28)\n\n@embroider/compat 3.4.5 (patch)\n@embroider/core 3.4.5 (patch)\n@embroider/macros 1.14.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/macros`\n  * [#1815](https://github.com/embroider-build/embroider/pull/1815) Make macro configs static ([@simonihmig](https://github.com/simonihmig))\n\n#### :house: Internal\n* Other\n  * [#1824](https://github.com/embroider-build/embroider/pull/1824) update release-plan ([@mansona](https://github.com/mansona))\n* `@embroider/test-scenarios`\n  * [#1820](https://github.com/embroider-build/embroider/pull/1820) [stable] Pin ember-data to fix issue in CI ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
 }

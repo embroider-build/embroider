@@ -1,4 +1,24 @@
 # Embroider Changelog
+
+## Release (2024-02-28)
+
+@embroider/compat 3.4.5 (patch)
+@embroider/core 3.4.5 (patch)
+@embroider/macros 1.14.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/macros`
+  * [#1815](https://github.com/embroider-build/embroider/pull/1815) Make macro configs static ([@simonihmig](https://github.com/simonihmig))
+
+#### :house: Internal
+* Other
+  * [#1824](https://github.com/embroider-build/embroider/pull/1824) update release-plan ([@mansona](https://github.com/mansona))
+* `@embroider/test-scenarios`
+  * [#1820](https://github.com/embroider-build/embroider/pull/1820) [stable] Pin ember-data to fix issue in CI ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
 ## Release (2024-02-05)
 
 @embroider/addon-dev 4.2.1 (patch)

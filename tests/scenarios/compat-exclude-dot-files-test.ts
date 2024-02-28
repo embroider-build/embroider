@@ -45,6 +45,8 @@ appScenarios
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
+      // TODO change this to follow compat-namespace-app-test to go through the index.html and get the entrypoint
+      // we should probably add a utility to the audit to get the entrypoint
       test('dot files are not included as app modules', function () {
         // dot files should exist on disk
         expectFile('./.foobar.js').exists();

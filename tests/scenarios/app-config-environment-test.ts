@@ -13,6 +13,7 @@ appScenarios
         'use strict';
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+        // TODO probably delete compat build export
         const { compatBuild } = require('@embroider/compat');
 
         module.exports = function (defaults) {

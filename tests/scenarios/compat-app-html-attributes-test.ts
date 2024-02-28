@@ -45,6 +45,7 @@ appScenarios
     let expectFile: ExpectFile;
 
     Qmodule(scenario.name, function (hooks) {
+      // TODO make this more like the compat-namespaced-app-test and look at the output of the STAGE_2 only build
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
         let result = await app.execute('npm build');
@@ -60,10 +61,10 @@ appScenarios
         expectFile('./dist/index.html').matches('<script defer');
         expectFile('./dist/index.html').doesNotMatch('<script src');
         // by default, there is no vendor CSS and the tag is omitted entirely
-        expectFile('./index.html').doesNotMatch('data-original-filename="vendor.css">');
-        expectFile('./index.html').matches('" data-original-filename="app-template.css">');
-        expectFile('./index.html').matches('" data-original-filename="vendor.js">');
-        expectFile('./index.html').matches('" data-original-filename="app-template.js">');
+        expectFile('./dist/index.html').doesNotMatch('data-original-filename="vendor.css">');
+        expectFile('./dist/index.html').matches('" data-original-filename="app-template.css">');
+        expectFile('./dist/index.html').matches('" data-original-filename="vendor.js">');
+        expectFile('./dist/index.html').matches('" data-original-filename="app-template.js">');
       });
     });
   });

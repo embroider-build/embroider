@@ -28,9 +28,10 @@ appScenarios
     Qmodule(scenario.name, function () {
       test(`pnpm test`, async function (assert) {
         let app: PreparedApp = await scenario.prepare();
-        let result = await app.execute('node ./node_modules/ember-cli/bin/ember b');
+        let result = await app.execute('npm run build');
         assert.equal(result.exitCode, 0, result.output);
         let expectFile = expectFilesAt(app.dir, { qunit: assert });
+        // TODO find the css in the new output and check its content
         expectFile('./dist/assets/app-template.css').matches('body { background: red; }');
       });
     });

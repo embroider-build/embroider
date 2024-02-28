@@ -1,7 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "4.1.3"
+      "oldVersion": "4.2.1"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.7"
@@ -11,24 +11,42 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.4.2",
-      "newVersion": "3.4.3",
+      "oldVersion": "3.4.4",
+      "newVersion": "3.4.5",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.3"
+      "impact": "patch",
+      "oldVersion": "3.4.4",
+      "newVersion": "3.4.5",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.13.4"
+      "impact": "minor",
+      "oldVersion": "1.13.5",
+      "newVersion": "1.14.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -37,7 +55,7 @@
       "oldVersion": "2.1.6"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.5.1"
+      "oldVersion": "2.5.2"
     },
     "@embroider/test-setup": {
       "oldVersion": "3.0.3"
@@ -49,8 +67,8 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "oldVersion": "3.2.1"
+      "oldVersion": "3.2.2"
     }
   },
-  "description": "## Release (2023-12-23)\n\n@embroider/compat 3.4.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@types/ember-cli`\n  * [#1743](https://github.com/embroider-build/embroider/pull/1743) Don't rely on htmlbars internals ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* [#1724](https://github.com/embroider-build/embroider/pull/1724) fix publish for stable branch ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2024-02-28)\n\n@embroider/compat 3.4.5 (patch)\n@embroider/core 3.4.5 (patch)\n@embroider/macros 1.14.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/macros`\n  * [#1815](https://github.com/embroider-build/embroider/pull/1815) Make macro configs static ([@simonihmig](https://github.com/simonihmig))\n\n#### :house: Internal\n* Other\n  * [#1824](https://github.com/embroider-build/embroider/pull/1824) update release-plan ([@mansona](https://github.com/mansona))\n* `@embroider/test-scenarios`\n  * [#1820](https://github.com/embroider-build/embroider/pull/1820) [stable] Pin ember-data to fix issue in CI ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
 }

@@ -57,8 +57,8 @@ export class Addon {
     return hbs();
   }
 
-  gjs() {
-    return gjs();
+  gjs(options?: { inline_source_map: boolean }) {
+    return gjs(options);
   }
 
   // By default rollup does not clear the output directory between builds. This

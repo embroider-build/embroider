@@ -48,6 +48,7 @@
     "broccoli-plugin": "^4.0.7",
     "broccoli-source": "^3.0.1",
     "chalk": "^4.1.1",
+    "content-tag": "^2.0.1",
     "debug": "^4.3.2",
     "escape-string-regexp": "^4.0.0",
     "fast-sourcemap-concat": "^1.4.0",

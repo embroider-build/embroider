@@ -1,11 +1,9 @@
 import type { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon, renameApp } from './scenarios';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
-import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
@@ -40,23 +38,25 @@ appScenarios
       let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
 
       hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-      });
-      test(`app js location`, function () {
-        expectFile('assets/@ef4/namespaced-app.js').exists();
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       test(`imports within app js`, function () {
         expectAudit
-          .module('assets/@ef4/namespaced-app.js')
+          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .resolves('./assets/@ef4/namespaced-app.js')
+          .toModule()
           .resolves('./-embroider-implicit-modules.js')
           .toModule()
           .resolves('my-addon/my-implicit-module.js')
           .to('./node_modules/my-addon/my-implicit-module.js');
 
-        expectAudit.module('assets/@ef4/namespaced-app.js').codeContains(`
-          d('@ef4/namespaced-app/app', function(){ return i('@ef4/namespaced-app/app.js');});
-        `);
+        expectAudit
+          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .resolves('./assets/@ef4/namespaced-app.js')
+          .toModule().codeContains(`d("@ef4/namespaced-app/templates/application", function () {
+            return i("@ef4/namespaced-app/templates/application.hbs");
+          });`);
       });
 
       test(`app css location`, function () {

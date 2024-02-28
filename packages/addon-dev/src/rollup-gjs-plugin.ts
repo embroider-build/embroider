@@ -9,7 +9,7 @@ const processor = new Preprocessor();
 // import { parse as pathParse } from 'path';
 
 export default function rollupGjsPlugin(
-  { inline_source_map } = { inline_source_map: false }
+  { inline_source_map } = { inline_source_map: true }
 ): Plugin {
   return {
     name: PLUGIN_NAME,

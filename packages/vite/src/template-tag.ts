@@ -8,7 +8,7 @@ export function templateTag({ inline_source_map } = { inline_source_map: false }
   let preprocessor = new Preprocessor();
 
   function candidates(id: string) {
-    return [id + '.gjs', id + '.gts'];
+    return [id + '.gjs', id + '.gts', id + '/index.gjs', id + '/index.gts'];
   }
 
   return {

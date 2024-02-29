@@ -1,4 +1,5 @@
-import type { Options } from '.';
+import type Options from './options';
+import { recommendedOptions } from './options';
 import { App, Addons as CompatAddons } from '.';
 import type { PackagerConstructor, Variant, EmberAppInstance } from '@embroider/core';
 import { toBroccoliPlugin } from '@embroider/core';
@@ -12,7 +13,6 @@ import { sync as pkgUpSync } from 'pkg-up';
 
 export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
-  onOutputPath?: (outputPath: string) => void;
   variants?: Variant[];
 }
 
@@ -49,6 +49,31 @@ export default function defaultPipeline<PackagerOptions>(
   let BroccoliPackager = toBroccoliPlugin(packager);
   let variants = (options && options.variants) || defaultVariants(emberApp);
   return new BroccoliPackager(embroiderApp.asStage(addons), variants, options && options.packagerOptions);
+}
+
+const defaultPrebuildOptions = {
+  ...recommendedOptions.optimized,
+  amdCompatibility: {
+    es: [],
+  },
+};
+
+export function prebuild(emberApp: EmberAppInstance, options: Options = defaultPrebuildOptions): Node {
+  let outputPath: string;
+  let addons;
+
+  let embroiderApp = new App(emberApp, options);
+
+  addons = new CompatAddons(embroiderApp);
+  addons.ready().then(result => {
+    outputPath = result.outputPath;
+  });
+
+  if (process.env.STAGE1_ONLY) {
+    return mergeTrees([addons.tree, writeFile('.stage1-output', () => outputPath)]);
+  }
+
+  return mergeTrees([embroiderApp.asStage(addons).tree, writeFile('.stage2-output', () => outputPath)]);
 }
 
 function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {

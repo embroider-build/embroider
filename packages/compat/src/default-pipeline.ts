@@ -13,7 +13,6 @@ import { sync as pkgUpSync } from 'pkg-up';
 
 export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
-  onOutputPath?: (outputPath: string) => void;
   variants?: Variant[];
 }
 

@@ -24,6 +24,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         let resolution = await resolverLoader.resolver.resolve(request);
         switch (resolution.type) {
           case 'found':
+          case 'ignored':
             return resolution.result;
           case 'not_found':
             return resolution.err;

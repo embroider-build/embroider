@@ -164,6 +164,10 @@ export async function nodeResolve(
       return resolution;
     case 'found':
       return resolution.result;
+    case 'ignored':
+      throw new Error(
+        `bug: this is supposed to be impossible because NodeModuleRequest.prototype.defaultResove does not use "ignored"`
+      );
     default:
       throw assertNever(resolution);
   }

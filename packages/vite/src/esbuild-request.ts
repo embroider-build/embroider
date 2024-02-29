@@ -158,12 +158,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
     if (result.errors.length > 0) {
       return { type: 'not_found', err: result };
     } else if (result.external) {
-      // during depscanning, vite configures esbuild with a very loose plugin
-      // that turns all not_found into external so they're ignored. But that
-      // means when we're doing something like checking for the existence of a
-      // particular component file we will incorrectly see it as existing when
-      // it does not.
-      return { type: 'not_found', err: result };
+      return { type: 'ignored', result };
     } else {
       return { type: 'found', filename: result.path, result, isVirtual: this.isVirtual };
     }

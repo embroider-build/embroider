@@ -42,6 +42,7 @@ export function resolver(): Plugin {
       let resolution = await resolverLoader.resolver.resolve(request);
       switch (resolution.type) {
         case 'found':
+        case 'ignored':
           return resolution.result;
         case 'not_found':
           return null;

@@ -57,6 +57,7 @@ export class EmbroiderPlugin {
                   callback(resolution.err);
                   break;
                 case 'found':
+                case 'ignored':
                   callback(null, undefined);
                   break;
                 default:

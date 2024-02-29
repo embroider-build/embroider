@@ -50,6 +50,10 @@ export function validatePeerDependencies(appPackage: Package): PeerDepViolation[
   for (let [pkg, consumptions] of crawlDeps(appPackage)) {
     for (let dep of pkg.dependencies) {
       if (pkg.categorizeDependency(dep.name) === 'peerDependencies') {
+        if (pkg.packageJSON.peerDependenciesMeta?.[dep.name]?.optional) {
+          continue;
+        }
+
         for (let ancestors of consumptions) {
           for (let ancestor of ancestors.slice().reverse()) {
             if (ancestor.hasDependency(dep.name)) {

@@ -1,6 +1,4 @@
-import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { Plugin, ViteDevServer } from 'vite';
-import type { Resolution, ResolverFunction } from '@embroider/core';
 import { virtualContent, ResolverLoader } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
@@ -36,14 +34,15 @@ export function resolver(): Plugin {
     },
 
     async resolveId(source, importer, options) {
-      let request = RollupModuleRequest.from(source, importer, options.custom);
+      let request = RollupModuleRequest.from(this, source, importer, options.custom);
       if (!request) {
         // fallthrough to other rollup plugins
         return null;
       }
-      let resolution = await resolverLoader.resolver.resolve(request, defaultResolve(this));
+      let resolution = await resolverLoader.resolver.resolve(request);
       switch (resolution.type) {
         case 'found':
+        case 'ignored':
           return resolution.result;
         case 'not_found':
           return null;
@@ -59,37 +58,5 @@ export function resolver(): Plugin {
         return src;
       }
     },
-  };
-}
-
-function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRequest, Resolution<ResolveIdResult>> {
-  return async (request: RollupModuleRequest) => {
-    if (request.isVirtual) {
-      return {
-        type: 'found',
-        result: { id: request.specifier, resolvedBy: request.fromFile },
-      };
-    }
-    if (request.isNotFound) {
-      // TODO: we can make sure this looks correct in rollup & vite output when a
-      // user encounters it
-      let err = new Error(`module not found ${request.specifier}`);
-      (err as any).code = 'MODULE_NOT_FOUND';
-      return { type: 'not_found', err };
-    }
-    let result = await context.resolve(request.specifier, request.fromFile, {
-      skipSelf: true,
-      custom: {
-        embroider: {
-          enableCustomResolver: false,
-          meta: request.meta,
-        },
-      },
-    });
-    if (result) {
-      return { type: 'found', result };
-    } else {
-      return { type: 'not_found', err: undefined };
-    }
   };
 }

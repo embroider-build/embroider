@@ -42,6 +42,7 @@
     "lodash": "^4.17.21",
     "resolve": "^1.20.0",
     "resolve-package-path": "^4.0.1",
+    "resolve.exports": "^2.0.2",
     "@embroider/reverse-exports": "workspace:*",
     "typescript-memoize": "^1.0.1",
     "walk-sync": "^3.0.0"

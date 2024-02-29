@@ -14,14 +14,7 @@ export { default as toBroccoliPlugin } from './to-broccoli-plugin';
 export { default as WaitForTrees, OutputPaths } from './wait-for-trees';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from './messages';
-export {
-  Resolver,
-  Options as ResolverOptions,
-  ModuleRequest,
-  Resolution,
-  ResolverFunction,
-  SyncResolverFunction,
-} from './module-resolver';
+export { Resolver, Options as ResolverOptions, ModuleRequest, Resolution } from './module-resolver';
 export { ResolverLoader } from './resolver-loader';
 export { virtualContent } from './virtual-content';
 export type { Engine } from './app-files';

@@ -1,5 +1,5 @@
 import { dirname, resolve } from 'path';
-import type { ModuleRequest, ResolverFunction, Resolution } from '@embroider/core';
+import type { ModuleRequest, Resolution } from '@embroider/core';
 import { Resolver as EmbroiderResolver, ResolverOptions as EmbroiderResolverOptions } from '@embroider/core';
 import type { Compiler, Module, ResolveData } from 'webpack';
 import assertNever from 'assert-never';
@@ -40,25 +40,25 @@ export class EmbroiderPlugin {
 
     compiler.hooks.normalModuleFactory.tap('@embroider/webpack', nmf => {
       let defaultResolve = getDefaultResolveHook(nmf.hooks.resolve.taps);
-      let adaptedResolve = getAdaptedResolve(defaultResolve);
 
       nmf.hooks.resolve.tapAsync(
         { name: '@embroider/webpack', stage: 50 },
         (state: ExtendedResolveData, callback: CB) => {
-          let request = WebpackModuleRequest.from(state, this.#babelLoaderPrefix, this.#appRoot);
+          let request = WebpackModuleRequest.from(defaultResolve, state, this.#babelLoaderPrefix, this.#appRoot);
           if (!request) {
             defaultResolve(state, callback);
             return;
           }
 
-          this.#resolver.resolve(request, adaptedResolve).then(
+          this.#resolver.resolve(request).then(
             resolution => {
               switch (resolution.type) {
                 case 'not_found':
                   callback(resolution.err);
                   break;
                 case 'found':
-                  callback(null, resolution.result);
+                case 'ignored':
+                  callback(null, undefined);
                   break;
                 default:
                   throw assertNever(resolution);
@@ -72,8 +72,11 @@ export class EmbroiderPlugin {
   }
 }
 
-type CB = (err: null | Error, result?: Module | undefined) => void;
-type DefaultResolve = (state: unknown, callback: CB) => void;
+interface CB {
+  (err: null, result: Module | undefined): void;
+  (err: Error | null): void;
+}
+type DefaultResolve = (state: ResolveData, callback: CB) => void;
 
 // Despite being absolutely riddled with way-too-powerful tap points,
 // webpack still doesn't succeed in making it possible to provide a
@@ -85,39 +88,15 @@ function getDefaultResolveHook(taps: { name: string; fn: Function }[]): DefaultR
   return fn as DefaultResolve;
 }
 
-// This converts the raw function we got out of webpack into the right interface
-// for use by @embroider/core's resolver.
-function getAdaptedResolve(
-  defaultResolve: DefaultResolve
-): ResolverFunction<WebpackModuleRequest, Resolution<Module, null | Error>> {
-  return function (request: WebpackModuleRequest): Promise<Resolution<Module, null | Error>> {
-    return new Promise(resolve => {
-      if (request.isNotFound) {
-        // TODO: we can make sure this looks correct in webpack output when a
-        // user encounters it
-        let err = new Error(`module not found ${request.specifier}`);
-        (err as any).code = 'MODULE_NOT_FOUND';
-        resolve({ type: 'not_found', err });
-      }
-      defaultResolve(request.toWebpackResolveData(), (err, value) => {
-        if (err) {
-          // unfortunately webpack doesn't let us distinguish between Not Found
-          // and other unexpected exceptions here.
-          resolve({ type: 'not_found', err });
-        } else {
-          resolve({ type: 'found', result: value! });
-        }
-      });
-    });
-  };
-}
-
 type ExtendedResolveData = ResolveData & {
   contextInfo: ResolveData['contextInfo'] & { _embroiderMeta?: Record<string, any> };
 };
 
+type WebpackResolution = Resolution<ResolveData['createData'], null | Error>;
+
 class WebpackModuleRequest implements ModuleRequest {
   static from(
+    resolveFunction: DefaultResolve,
     state: ExtendedResolveData,
     babelLoaderPrefix: string,
     appRoot: string
@@ -151,6 +130,7 @@ class WebpackModuleRequest implements ModuleRequest {
     }
 
     return new WebpackModuleRequest(
+      resolveFunction,
       babelLoaderPrefix,
       appRoot,
       specifier,
@@ -158,11 +138,13 @@ class WebpackModuleRequest implements ModuleRequest {
       state.contextInfo._embroiderMeta,
       false,
       false,
+      undefined,
       state
     );
   }
 
   private constructor(
+    private resolveFunction: DefaultResolve,
     private babelLoaderPrefix: string,
     private appRoot: string,
     readonly specifier: string,
@@ -170,6 +152,7 @@ class WebpackModuleRequest implements ModuleRequest {
     readonly meta: Record<string, any> | undefined,
     readonly isVirtual: boolean,
     readonly isNotFound: boolean,
+    readonly resolvedTo: WebpackResolution | undefined,
     private originalState: ExtendedResolveData
   ) {}
 
@@ -204,6 +187,11 @@ class WebpackModuleRequest implements ModuleRequest {
     this.originalState.context = dirname(this.fromFile);
     this.originalState.contextInfo.issuer = this.fromFile;
     this.originalState.contextInfo._embroiderMeta = this.meta;
+    if (this.resolvedTo) {
+      if (this.resolvedTo.type === 'found') {
+        this.originalState.createData = this.resolvedTo.result;
+      }
+    }
     return this.originalState;
   }
 
@@ -212,6 +200,7 @@ class WebpackModuleRequest implements ModuleRequest {
       return this;
     }
     return new WebpackModuleRequest(
+      this.resolveFunction,
       this.babelLoaderPrefix,
       this.appRoot,
       newSpecifier,
@@ -219,6 +208,7 @@ class WebpackModuleRequest implements ModuleRequest {
       this.meta,
       this.isVirtual,
       false,
+      undefined,
       this.originalState
     ) as this;
   }
@@ -227,6 +217,7 @@ class WebpackModuleRequest implements ModuleRequest {
       return this;
     }
     return new WebpackModuleRequest(
+      this.resolveFunction,
       this.babelLoaderPrefix,
       this.appRoot,
       this.specifier,
@@ -234,6 +225,7 @@ class WebpackModuleRequest implements ModuleRequest {
       this.meta,
       this.isVirtual,
       false,
+      undefined,
       this.originalState
     ) as this;
   }
@@ -242,6 +234,7 @@ class WebpackModuleRequest implements ModuleRequest {
     params.set('f', filename);
     params.set('a', this.appRoot);
     return new WebpackModuleRequest(
+      this.resolveFunction,
       this.babelLoaderPrefix,
       this.appRoot,
       `${this.babelLoaderPrefix}${virtualLoaderName}?${params.toString()}!`,
@@ -249,11 +242,13 @@ class WebpackModuleRequest implements ModuleRequest {
       this.meta,
       true,
       false,
+      undefined,
       this.originalState
     ) as this;
   }
   withMeta(meta: Record<string, any> | undefined): this {
     return new WebpackModuleRequest(
+      this.resolveFunction,
       this.babelLoaderPrefix,
       this.appRoot,
       this.specifier,
@@ -261,11 +256,13 @@ class WebpackModuleRequest implements ModuleRequest {
       meta,
       this.isVirtual,
       this.isNotFound,
+      this.resolvedTo,
       this.originalState
     ) as this;
   }
   notFound(): this {
     return new WebpackModuleRequest(
+      this.resolveFunction,
       this.babelLoaderPrefix,
       this.appRoot,
       this.specifier,
@@ -273,7 +270,49 @@ class WebpackModuleRequest implements ModuleRequest {
       this.meta,
       this.isVirtual,
       true,
+      undefined,
       this.originalState
     ) as this;
+  }
+
+  resolveTo(resolution: WebpackResolution): this {
+    return new WebpackModuleRequest(
+      this.resolveFunction,
+      this.babelLoaderPrefix,
+      this.appRoot,
+      this.specifier,
+      this.fromFile,
+      this.meta,
+      this.isVirtual,
+      this.isNotFound,
+      resolution,
+      this.originalState
+    ) as this;
+  }
+
+  async defaultResolve(): Promise<WebpackResolution> {
+    if (this.isNotFound) {
+      // TODO: we can make sure this looks correct in webpack output when a
+      // user encounters it
+      let err = new Error(`module not found ${this.specifier}`);
+      (err as any).code = 'MODULE_NOT_FOUND';
+      return { type: 'not_found', err };
+    }
+    return await new Promise(resolve =>
+      this.resolveFunction(this.toWebpackResolveData(), err => {
+        if (err) {
+          // unfortunately webpack doesn't let us distinguish between Not Found
+          // and other unexpected exceptions here.
+          resolve({ type: 'not_found', err });
+        } else {
+          resolve({
+            type: 'found',
+            result: this.originalState.createData,
+            isVirtual: this.isVirtual,
+            filename: this.originalState.createData.resource!,
+          });
+        }
+      })
+    );
   }
 }

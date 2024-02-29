@@ -11,6 +11,7 @@ import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-inter
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import reversePackageExports from '@embroider/reverse-exports';
+import { exports as resolveExports } from 'resolve.exports';
 
 import {
   virtualExternalESModule,
@@ -42,6 +43,8 @@ makeDebug.formatters.p = (s: string) => {
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
   if (after.isVirtual) {
     debug(`[%s:virtualized] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
+  } else if (after.resolvedTo) {
+    debug(`[%s:resolvedTo] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else if (before.specifier !== after.specifier) {
     if (before.fromFile !== after.fromFile) {
       debug(
@@ -71,6 +74,10 @@ function logTransition<R extends ModuleRequest>(reason: string, before: R, after
     debug(`[%s:unchanged] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   }
   return after;
+}
+
+function isTerminal(request: ModuleRequest): boolean {
+  return request.isVirtual || request.isNotFound || Boolean(request.resolvedTo);
 }
 
 export interface Options {
@@ -130,36 +137,44 @@ type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName 
 
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
-export interface ModuleRequest {
+export interface ModuleRequest<Res extends Resolution = Resolution> {
   readonly specifier: string;
   readonly fromFile: string;
   readonly isVirtual: boolean;
   readonly meta: Record<string, unknown> | undefined;
   readonly debugType: string;
   readonly isNotFound: boolean;
+  readonly resolvedTo: Res | undefined;
   alias(newSpecifier: string): this;
   rehome(newFromFile: string): this;
   virtualize(virtualFilename: string): this;
   withMeta(meta: Record<string, any> | undefined): this;
   notFound(): this;
+  defaultResolve(): Promise<Res>;
+  resolveTo(resolution: Res): this;
 }
 
 // This is generic because different build systems have different ways of
 // representing a found module, and we just pass those values through.
-export type Resolution<T = unknown, E = unknown> = { type: 'found'; result: T } | { type: 'not_found'; err: E };
+export type Resolution<T = unknown, E = unknown> =
+  | { type: 'found'; filename: string; isVirtual: boolean; result: T }
 
-export type ResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
-  request: R
-) => Promise<Res>;
+  // used for requests that are special and don't represent real files that
+  // embroider can possibly do anything custom with.
+  //
+  // the motivating use case for introducing this is Vite's depscan which marks
+  // almost everything as "external" as a way to tell esbuild to stop traversing
+  // once it has been seen the first time.
+  | { type: 'ignored'; result: T }
 
-export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
-  request: R
-) => Res;
+  // the important thing about this Resolution is that embroider should do its
+  // fallback behaviors here.
+  | { type: 'not_found'; err: E };
 
 export class Resolver {
   constructor(readonly options: Options) {}
 
-  beforeResolve<R extends ModuleRequest>(request: R): R {
+  private async beforeResolve<R extends ModuleRequest>(request: R): Promise<R> {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -173,7 +188,7 @@ export class Resolver {
     }
 
     request = this.handleFastbootSwitch(request);
-    request = this.handleGlobalsCompat(request);
+    request = await this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
@@ -191,58 +206,33 @@ export class Resolver {
   // that calls your build system's normal module resolver, this does both pre-
   // and post-resolution adjustments as needed to implement our compatibility
   // rules.
-  //
-  // Depending on the plugin architecture you're working in, it may be easier to
-  // call beforeResolve and fallbackResolve directly, in which case matching the
-  // details of the recursion to what this method does are your responsibility.
-  async resolve<Req extends ModuleRequest, Res extends Resolution>(
-    request: Req,
-    defaultResolve: ResolverFunction<Req, Res>
-  ): Promise<Res> {
-    let gen = this.internalResolve<Req, Res, Promise<Res>>(request, defaultResolve);
-    let out = gen.next();
-    while (!out.done) {
-      out = gen.next(await out.value);
+  async resolve<ResolveResolution extends Resolution>(
+    request: ModuleRequest<ResolveResolution>
+  ): Promise<ResolveResolution> {
+    request = await this.beforeResolve(request);
+    if (request.resolvedTo) {
+      return request.resolvedTo;
     }
-    return out.value;
-  }
 
-  // synchronous alternative to resolve() above. Because our own internals are
-  // all synchronous, you can use this if your defaultResolve function is
-  // synchronous.
-  resolveSync<Req extends ModuleRequest, Res extends Resolution>(
-    request: Req,
-    defaultResolve: SyncResolverFunction<Req, Res>
-  ): Res {
-    let gen = this.internalResolve<Req, Res, Res>(request, defaultResolve);
-    let out = gen.next();
-    while (!out.done) {
-      out = gen.next(out.value);
-    }
-    return out.value;
-  }
-
-  // Our core implementation is a generator so it can power both resolve() and
-  // resolveSync()
-  private *internalResolve<Req extends ModuleRequest, Res extends Resolution, Yielded>(
-    request: Req,
-    defaultResolve: (req: Req) => Yielded
-  ): Generator<Yielded, Res, Res> {
-    request = this.beforeResolve(request);
-    let resolution = yield defaultResolve(request);
+    let resolution = await request.defaultResolve();
 
     switch (resolution.type) {
       case 'found':
+      case 'ignored':
         return resolution;
       case 'not_found':
         break;
       default:
         throw assertNever(resolution);
     }
-    let nextRequest = this.fallbackResolve(request);
+    let nextRequest = await this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
       return resolution;
+    }
+
+    if (nextRequest.resolvedTo) {
+      return nextRequest.resolvedTo;
     }
 
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
@@ -255,21 +245,23 @@ export class Resolver {
       // virtual and NotFound requests are terminal, there is no more
       // beforeResolve or fallbackResolve around them. The defaultResolve is
       // expected to know how to implement them.
-      return yield defaultResolve(nextRequest);
+      return nextRequest.defaultResolve();
     }
-    return yield* this.internalResolve(nextRequest, defaultResolve);
+
+    return this.resolve(nextRequest);
   }
 
   // Use standard NodeJS resolving, with our required compatibility rules on
   // top. This is a convenience method for calling resolveSync with the
   // defaultResolve already configured to be "do the normal node thing".
-  nodeResolve(
+  async nodeResolve(
     specifier: string,
     fromFile: string
-  ):
+  ): Promise<
     | { type: 'virtual'; filename: string; content: string }
     | { type: 'real'; filename: string }
-    | { type: 'not_found'; err: Error } {
+    | { type: 'not_found'; err: Error }
+  > {
     return nodeResolve(this, specifier, fromFile);
   }
 
@@ -290,6 +282,9 @@ export class Resolver {
   }
 
   private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg) {
@@ -332,6 +327,9 @@ export class Resolver {
   }
 
   private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
     let match = decodeFastbootSwitch(request.fromFile);
     if (!match) {
       return request;
@@ -388,6 +386,9 @@ export class Resolver {
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
     let im = decodeImplicitModules(request.specifier);
     if (!im) {
       return request;
@@ -415,7 +416,10 @@ export class Resolver {
     }
   }
 
-  private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
+  private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {
+    if (isTerminal(request)) {
+      return request;
+    }
     let match = compatPattern.exec(request.specifier);
     if (!match) {
       return request;
@@ -450,21 +454,28 @@ export class Resolver {
     );
   }
 
-  private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
+  private async resolveComponent<R extends ModuleRequest>(
+    path: string,
+    inEngine: EngineConfig,
+    request: R
+  ): Promise<R> {
     let target = this.parseGlobalPath(path, inEngine);
 
-    let hbsModule: { requested: string; found: string } | null = null;
-    let jsModule: { requested: string; found: string } | null = null;
+    let hbsModule: Resolution | null = null;
+    let jsModule: Resolution | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
-      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}.hbs`;
-      let resolution = this.nodeResolve(
-        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
-        target.from
+      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
+
+      let resolution = await this.resolve(
+        request.alias(candidateSpecifier).rehome(target.from).withMeta({
+          runtimeFallback: false,
+        })
       );
-      if (resolution.type === 'real') {
-        hbsModule = { requested: candidateSpecifier, found: resolution.filename };
+
+      if (resolution.type === 'found') {
+        hbsModule = resolution;
         break;
       }
     }
@@ -473,12 +484,17 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = this.nodeResolve(candidateSpecifier, target.from);
+      let resolution = await this.resolve(
+        request.alias(candidateSpecifier).rehome(target.from).withMeta({
+          runtimeFallback: false,
+        })
+      );
+
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
-      if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = { requested: candidateSpecifier, found: resolution.filename };
+      if (resolution.type === 'found' && !resolution.filename.endsWith('.hbs')) {
+        jsModule = resolution;
         break;
       }
     }
@@ -487,33 +503,38 @@ export class Resolver {
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize(virtualPairComponent(hbsModule.found, jsModule?.found))
+        request.virtualize(virtualPairComponent(hbsModule.filename, jsModule?.filename))
       );
     } else if (jsModule) {
-      return logTransition(
-        `resolveComponent found only JS`,
-        request,
-        request.alias(jsModule.requested).rehome(target.from)
-      );
+      return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));
     } else {
       return logTransition(`resolveComponent failed`, request);
     }
   }
 
-  private resolveHelperOrComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
+  private async resolveHelperOrComponent<R extends ModuleRequest>(
+    path: string,
+    inEngine: EngineConfig,
+    request: R
+  ): Promise<R> {
     // resolveHelper just rewrites our request to one that should target the
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
-    if (helperMatch.type === 'real') {
-      return logTransition('ambiguous case matched a helper', request, helperCandidate);
+    let helperMatch = await this.resolve(
+      request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile).withMeta({
+        runtimeFallback: false,
+      })
+    );
+
+    if (helperMatch.type === 'found') {
+      return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
     }
 
     // unlike resolveHelper, resolveComponent already does pre-resolution in
     // order to deal with its own internal ambiguity around JS vs HBS vs
     // colocation.≥
-    let componentMatch = this.resolveComponent(path, inEngine, request);
+    let componentMatch = await this.resolveComponent(path, inEngine, request);
     if (componentMatch !== request) {
       return logTransition('ambiguous case matched a cmoponent', request, componentMatch);
     }
@@ -546,22 +567,13 @@ export class Resolver {
   }
 
   private *componentJSCandidates(inPackageName: string) {
-    const extensions = ['.ts', '.gjs', '.gts'];
     yield { prefix: '/components/', suffix: '' };
+    yield { prefix: '/components/', suffix: '/index' };
     yield { prefix: '/components/', suffix: '/component' };
-
-    for (const ext of extensions) {
-      yield { prefix: '/components/', suffix: ext };
-      yield { prefix: '/components/', suffix: `/index${ext}` };
-      yield { prefix: '/components/', suffix: `/component${ext}` };
-    }
 
     let pods = this.podPrefix(inPackageName);
     if (pods) {
       yield { prefix: `${pods}/components/`, suffix: '/component' };
-      for (const ext of extensions) {
-        yield { prefix: `${pods}/components/`, suffix: `/component${ext}` };
-      }
     }
   }
 
@@ -709,7 +721,7 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual || request.isNotFound) {
+    if (isTerminal(request)) {
       return request;
     }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -772,7 +784,7 @@ export class Resolver {
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual || request.isNotFound) {
+    if (isTerminal(request)) {
       return request;
     }
     let packageName = getPackageName(request.specifier);
@@ -813,21 +825,43 @@ export class Resolver {
       }
     }
 
-    if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
-      // we found a self-import, resolve it for them. Only auto-upgraded
-      // packages get this help, v2 packages are natively supposed to make their
-      // own modules resolvable, and we want to push them all to do that
-      // correctly.
+    if (pkg.name === packageName) {
+      // we found a self-import
+      if (pkg.meta['auto-upgraded']) {
+        // auto-upgraded packages always get automatically adjusted. They never
+        // supported fancy package.json exports features so this direct mapping
+        // to the root is always right.
 
-      // "my-package/foo" -> "./foo"
-      // "my-package" -> "./" (this can't be just "." because node's require.resolve doesn't reliable support that)
-      let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
+        // "my-package/foo" -> "./foo"
+        // "my-package" -> "./" (this can't be just "." because node's require.resolve doesn't reliable support that)
+        let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
 
-      return logTransition(
-        `v1 self-import`,
-        request,
-        request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
-      );
+        return logTransition(
+          `v1 self-import`,
+          request,
+          request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
+        );
+      } else {
+        // v2 packages are supposed to use package.json `exports` to enable
+        // self-imports, but not all build tools actually follow the spec. This
+        // is a workaround for badly behaved packagers.
+        //
+        // Known upstream bugs this works around:
+        // - https://github.com/vitejs/vite/issues/9731
+        if (pkg.packageJSON.exports) {
+          let found = resolveExports(pkg.packageJSON, request.specifier, {
+            browser: true,
+            conditions: ['default', 'imports'],
+          });
+          if (found?.[0]) {
+            return logTransition(
+              `v2 self-import with package.json exports`,
+              request,
+              request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
+            );
+          }
+        }
+      }
     }
 
     return request;
@@ -851,7 +885,7 @@ export class Resolver {
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
-    if (request.isVirtual || request.isNotFound) {
+    if (isTerminal(request)) {
       return request;
     }
     let { specifier, fromFile } = request;
@@ -1020,7 +1054,13 @@ export class Resolver {
     }
   }
 
-  fallbackResolve<R extends ModuleRequest>(request: R): R {
+  private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
+    if (request.isVirtual) {
+      throw new Error(
+        'Build tool bug detected! Fallback resolve should never see a virtual request. It is expected that the defaultResolve for your bundler has already resolved this request'
+      );
+    }
+
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -1076,7 +1116,7 @@ export class Resolver {
       if (withinEngine) {
         // it's a relative import inside an engine (which also means app), which
         // means we may need to satisfy the request via app tree merging.
-        let appJSMatch = this.searchAppTree(
+        let appJSMatch = await this.searchAppTree(
           request,
           withinEngine,
           explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier))
@@ -1123,13 +1163,13 @@ export class Resolver {
 
     let targetingEngine = this.engineConfig(packageName);
     if (targetingEngine) {
-      let appJSMatch = this.searchAppTree(request, targetingEngine, request.specifier.replace(packageName, '.'));
+      let appJSMatch = await this.searchAppTree(request, targetingEngine, request.specifier.replace(packageName, '.'));
       if (appJSMatch) {
         return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
       }
     }
 
-    if (pkg.meta['auto-upgraded']) {
+    if (pkg.meta['auto-upgraded'] && (request.meta?.runtimeFallback ?? true)) {
       // auto-upgraded packages can fall back to attempting to find dependencies at
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for
@@ -1172,11 +1212,11 @@ export class Resolver {
     }
   }
 
-  private searchAppTree<R extends ModuleRequest>(
+  private async searchAppTree<R extends ModuleRequest>(
     request: R,
     engine: EngineConfig,
     inEngineSpecifier: string
-  ): R | undefined {
+  ): Promise<R | undefined> {
     let matched = this.getEntryFromMergeMap(inEngineSpecifier, engine.root);
 
     switch (matched?.entry.type) {
@@ -1187,8 +1227,12 @@ export class Resolver {
       case 'fastboot-only':
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
-        let foundAppJS = this.nodeResolve(matched.entry['app-js'].specifier, matched.entry['app-js'].fromFile);
-        if (foundAppJS.type !== 'real') {
+        let foundAppJS = await this.resolve(
+          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile).withMeta({
+            runtimeFallback: false,
+          })
+        );
+        if (foundAppJS.type !== 'found') {
           throw new Error(
             `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
           );

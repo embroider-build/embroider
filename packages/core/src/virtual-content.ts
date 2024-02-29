@@ -1,5 +1,5 @@
 import { dirname, basename, resolve, posix, sep, join } from 'path';
-import type { Resolver, AddonPackage, Package } from '.';
+import { Resolver, AddonPackage, Package, cleanUrl } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 import { cleanUrl } from '.';

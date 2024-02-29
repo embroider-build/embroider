@@ -1,4 +1,5 @@
-import type { Options } from '.';
+import type Options from './options';
+import { recommendedOptions } from './options';
 import { App, Addons as CompatAddons } from '.';
 import type { PackagerConstructor, Variant, EmberAppInstance } from '@embroider/core';
 import { toBroccoliPlugin } from '@embroider/core';
@@ -51,20 +52,14 @@ export default function defaultPipeline<PackagerOptions>(
   return new BroccoliPackager(embroiderApp.asStage(addons), variants, options && options.packagerOptions);
 }
 
-export function prebuild<PackagerOptions>(
-  emberApp: EmberAppInstance,
-  options: PipelineOptions<PackagerOptions> = {
-    staticAddonTrees: true,
-    staticAddonTestSupportTrees: true,
-    staticComponents: true,
-    staticHelpers: true,
-    staticModifiers: true,
-    staticEmberSource: true,
-    amdCompatibility: {
-      es: [],
-    },
-  }
-): Node {
+const defaultPrebuildOptions = {
+  ...recommendedOptions.optimized,
+  amdCompatibility: {
+    es: [],
+  },
+};
+
+export function prebuild(emberApp: EmberAppInstance, options: Options = defaultPrebuildOptions): Node {
   let outputPath: string;
   let addons;
 

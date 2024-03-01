@@ -5,6 +5,7 @@ import { join } from 'path';
 import { Transpiler } from '@embroider/test-support';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
@@ -68,10 +69,11 @@ scenarios
       'ember-cli-build.js': `
         'use strict';
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+        const { prebuild } = require('@embroider/compat');
+
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {});
-          return maybeEmbroider(app, {
+          return prebuild(app, {
             staticComponents: false,
           });
         };
@@ -91,6 +93,8 @@ scenarios
         let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
+
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
 
       hooks.beforeEach(assert => {
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
@@ -126,13 +130,24 @@ scenarios
       });
 
       test(`app's colocated components are implicitly included correctly`, function () {
-        let assertFile = expectFile('assets/my-app.js');
-        assertFile.matches(
-          /d\(["']my-app\/components\/has-colocated-template["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/has-colocated-template\.js['"]\);\s*\}/
-        );
-        assertFile.matches(
-          /d\(["']my-app\/components\/template-only-component["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/template-only-component\.js['"]\);\s*\}/
-        );
+        expectAudit
+          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .resolves('./@embroider/core/entrypoint')
+          .toModule()
+          .withContents(content => {
+            console.log(content);
+            const importMatches =
+              /import \* as (amdModule\d+) from "@embroider-dep\/my-app\/components\/has-colocated-template\.js"/.exec(
+                content
+              );
+
+            const defineMatch =
+              /d\("my-app\/components\/has-colocated-template", function\s*\(\)\s*\{\s*return (amdModule\d+);\s*\}/.exec(
+                content
+              );
+
+            return Boolean(importMatches && defineMatch && importMatches[1] === defineMatch[1]);
+          });
       });
 
       test(`addon's colocated template is associated with JS`, function () {
@@ -172,13 +187,10 @@ scenarios
       'ember-cli-build.js': `
         'use strict';
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+        const { prebuild } = require('@embroider/test-setup');
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {});
-          return maybeEmbroider(app, {
-            staticComponents: true,
-            staticAddonTrees: true,
-          });
+          return prebuild(app);
         };
       `,
     });
@@ -224,10 +236,10 @@ appScenarios
       'ember-cli-build.js': `
         'use strict';
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+        const { prebuild } = require('@embroider/compat');
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {});
-          return maybeEmbroider(app, {
+          return prebuild(app, {
             staticComponents: false,
           });
         };

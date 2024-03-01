@@ -40,6 +40,11 @@
         "peerDependencies": {
           "ember-source": ">= 3.28.0"
         }
+      },
+      "@ember-data/tracking": {
+        "peerDependencies": {
+          "ember-source": ">= 3.28.0"
+        }
       }
     }
   },

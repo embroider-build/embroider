@@ -34,6 +34,13 @@
       "browserslist": "^4.14.0",
       "graceful-fs": "^4.0.0",
       "@types/eslint": "^8.37.0"
+    },
+    "packageExtensions": {
+      "ember-data": {
+        "peerDependencies": {
+          "ember-source": ">= 3.28.0"
+        }
+      }
     }
   },
   "devDependencies": {

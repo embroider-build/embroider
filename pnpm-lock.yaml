@@ -9,6 +9,8 @@ overrides:
   graceful-fs: ^4.0.0
   '@types/eslint': ^8.37.0
 
+packageExtensionsChecksum: eef224bd81724939ff4a3f1ef48de127
+
 importers:
 
   .:
@@ -1462,7 +1464,7 @@ importers:
         version: 4.0.2
       ember-data:
         specifier: ~4.4.0
-        version: 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
+        version: 4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3)
       ember-fetch:
         specifier: ^8.1.1
         version: 8.1.2
@@ -13895,6 +13897,7 @@ packages:
     engines: {node: 16.* || >= 18.*}
     peerDependencies:
       '@ember/string': ^3.0.1
+      ember-source: '>= 3.28.0'
     dependencies:
       '@ember-data/adapter': 4.12.5(@ember-data/store@4.12.5)(@ember/string@3.1.1)(ember-inflector@4.0.2)
       '@ember-data/debug': 4.12.5(@ember-data/store@4.12.5)(@ember/string@3.1.1)
@@ -13915,18 +13918,20 @@ packages:
       ember-auto-import: 2.7.2
       ember-cli-babel: 7.26.11
       ember-inflector: 4.0.2
+      ember-source: 3.28.12(@babel/core@7.23.9)
     transitivePeerDependencies:
       - '@babel/core'
       - '@glimmer/tracking'
       - '@glint/template'
-      - ember-source
       - supports-color
       - webpack
     dev: true
 
-  /ember-data@4.4.3(@babel/core@7.23.9)(webpack@5.90.3):
+  /ember-data@4.4.3(@babel/core@7.23.9)(ember-source@4.6.0)(webpack@5.90.3):
     resolution: {integrity: sha512-Z67pYs41LoJ2EKQsTOb2QOmv7A4gn72nv9MORYpQnGk8z8stYGtrgZFwATg+NES4mnJsLShdLIWaZNKze7c1HA==}
     engines: {node: 12.* || >= 14.*}
+    peerDependencies:
+      ember-source: '>= 3.28.0'
     dependencies:
       '@ember-data/adapter': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
       '@ember-data/debug': 4.4.3(@babel/core@7.23.9)(webpack@5.90.3)
@@ -13943,6 +13948,7 @@ packages:
       ember-cli-babel: 7.26.11
       ember-cli-typescript: 5.2.1
       ember-inflector: 4.0.2
+      ember-source: 4.6.0(@babel/core@7.23.9)(@glint/template@1.3.0)(webpack@5.90.3)
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
@@ -13955,6 +13961,7 @@ packages:
     engines: {node: '>= 18.19.1'}
     peerDependencies:
       '@ember/string': ^3.1.1
+      ember-source: '>= 3.28.0'
     dependencies:
       '@ember-data/adapter': 5.3.1(@babel/core@7.23.9)(@ember-data/legacy-compat@5.3.1)(@ember-data/store@5.3.1)(@ember/string@3.1.1)(ember-inflector@4.0.2)
       '@ember-data/debug': 5.3.1(@ember-data/store@5.3.1)(@ember/string@3.1.1)
@@ -13976,6 +13983,7 @@ packages:
       ember-auto-import: 2.7.2(@glint/template@1.3.0)(webpack@5.90.3)
       ember-cli-babel: 8.2.0(@babel/core@7.23.9)
       ember-inflector: 4.0.2
+      ember-source: 3.28.12(@babel/core@7.23.9)
       pnpm-sync-dependencies-meta-injected: 0.0.10
       typescript: 5.3.3
       webpack: 5.90.3
@@ -13983,7 +13991,6 @@ packages:
       - '@babel/core'
       - '@glint/template'
       - '@swc/core'
-      - ember-source
       - esbuild
       - supports-color
       - uglify-js
@@ -13995,6 +14002,7 @@ packages:
     engines: {node: '>= 18.19.1'}
     peerDependencies:
       '@ember/string': ^3.1.1
+      ember-source: '>= 3.28.0'
     dependencies:
       '@ember-data/adapter': 5.4.0-beta.2(@babel/core@7.23.9)(@ember-data/legacy-compat@5.4.0-beta.2)(@ember-data/store@5.4.0-beta.2)(@ember/string@3.1.1)(ember-inflector@4.0.2)
       '@ember-data/debug': 5.4.0-beta.2(@ember-data/store@5.4.0-beta.2)(@ember/string@3.1.1)
@@ -14016,6 +14024,7 @@ packages:
       ember-auto-import: 2.7.2(@glint/template@1.3.0)(webpack@5.90.3)
       ember-cli-babel: 8.2.0(@babel/core@7.23.9)
       ember-inflector: 4.0.2
+      ember-source: 3.28.12(@babel/core@7.23.9)
       pnpm-sync-dependencies-meta-injected: 0.0.10
       typescript: 5.3.3
       webpack: 5.90.3
@@ -14023,7 +14032,6 @@ packages:
       - '@babel/core'
       - '@glint/template'
       - '@swc/core'
-      - ember-source
       - esbuild
       - supports-color
       - uglify-js

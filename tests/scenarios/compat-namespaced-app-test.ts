@@ -59,7 +59,7 @@ appScenarios
           .toModule()
           .withContents(contents => {
             const [, amdModuleVariable] =
-              /import (amdModule\d+) from "@embroider-dep\/@ef4\/namespaced-app\/templates\/application.hbs"/.exec(
+              /import * as (amdModule\d+) from "@embroider-dep\/@ef4\/namespaced-app\/templates\/application.hbs"/.exec(
                 contents
               ) ?? [];
 

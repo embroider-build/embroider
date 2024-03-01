@@ -203,7 +203,7 @@ let d = w.define;
 {{/each}}
 
 {{#each amdModules as |amdModule index| ~}}
-  import amdModule{{index}} from "{{js-string-escape amdModule.buildtime}}"
+  import * as amdModule{{index}} from "{{js-string-escape amdModule.buildtime}}"
   d("{{js-string-escape amdModule.runtime}}", function(){ return amdModule{{index}}; });
 {{/each}}
 

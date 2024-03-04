@@ -23,17 +23,17 @@
     "test": "jest"
   },
   "dependencies": {
+    "@babel/core": "^7.24.0",
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
     "babel-import-util": "^2.0.0",
-    "ember-cli-babel": "^7.26.6",
+    "ember-cli-babel": "^8.2.0",
     "find-up": "^5.0.0",
     "lodash": "^4.17.21",
     "resolve": "^1.20.0",
     "semver": "^7.3.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.5",
     "@babel/plugin-transform-modules-amd": "^7.19.6",
     "@babel/traverse": "^7.14.5",
     "@embroider/core": "workspace:*",

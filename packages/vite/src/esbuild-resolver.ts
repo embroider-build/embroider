@@ -8,6 +8,13 @@ import { resolve, join } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
+function* candidates(path: string) {
+  yield path;
+  yield path + '.hbs';
+  yield path + '.gjs';
+  yield path + '.gts';
+}
+
 export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let macrosConfig: PluginItem | undefined;
@@ -16,6 +23,34 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   return {
     name: 'embroider-esbuild-resolver',
     setup(build) {
+      // This resolver plugin is designed to test candidates for extensions and interoperates with our other embroider specific plugin
+      build.onResolve({ filter: /./ }, async ({ path, importer, namespace, resolveDir, pluginData, kind }) => {
+        if (pluginData?.embroiderExtensionSearch) {
+          return null;
+        }
+
+        let firstFailure;
+
+        for (let candidate of candidates(path)) {
+          let result = await build.resolve(candidate, {
+            namespace,
+            resolveDir,
+            importer,
+            kind,
+            pluginData: { ...pluginData, embroiderExtensionSearch: true },
+          });
+
+          if (result.errors.length === 0) {
+            return result;
+          }
+
+          if (!firstFailure) {
+            firstFailure = result;
+          }
+        }
+
+        return firstFailure;
+      });
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
         let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
         if (!request) {

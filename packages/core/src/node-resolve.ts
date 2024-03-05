@@ -140,7 +140,7 @@ export class NodeModuleRequest implements ModuleRequest {
 function* candidates(specifier: string) {
   yield specifier;
 
-  const extensions = ['.hbs.js', '.hbs'];
+  const extensions = ['.hbs.js', '.hbs', '.gjs', '.gts'];
 
   for (let ext of extensions) {
     yield `${specifier}${ext}`;

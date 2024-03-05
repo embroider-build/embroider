@@ -35,6 +35,9 @@ export default defineConfig({
     }),
   ],
   optimizeDeps: optimizeDeps(),
+  resolve: {
+    extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
+  },    
   server: {
     port: 4200,
     watch: {

@@ -1,5 +1,7 @@
 import Plugin from 'broccoli-plugin';
 import type { Node } from 'broccoli-node-api';
+import { readFileSync } from 'fs-extra';
+import { join } from 'path';
 
 export default class ContentForConfig extends Plugin {
   // The object keys are the content types and each value is the HTML
@@ -41,9 +43,16 @@ export default class ContentForConfig extends Plugin {
     const extendedContentTypes = new Set([...this.defaultContentForTypes, ...availableContentForTypes]);
 
     extendedContentTypes.forEach(contentType => {
+      const matchExp = this.options.pattern.match;
       if (!this.contentFor[contentType]) {
-        this.contentFor[contentType] = `<p>Placeholder for "${contentType}" in the app index.html</p>`;
+        let contents = this.options.pattern.replacement.call(null, this.getAppConfig(), matchExp, contentType);
+        this.contentFor[contentType] = contents;
       }
     });
+  }
+
+  getAppConfig() {
+    let config = readFileSync(join(this.inputPaths[0], this.options.configPath), { encoding: 'utf8' });
+    return JSON.parse(config);
   }
 }

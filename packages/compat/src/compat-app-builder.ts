@@ -49,6 +49,7 @@ import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import resolve from 'resolve';
+import type ContentForConfig from './content-for-config';
 import type { V1Config } from './v1-config';
 import type { AddonMeta, Package, PackageInfo } from '@embroider/core';
 import { ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
@@ -74,6 +75,7 @@ export class CompatAppBuilder {
     private options: Required<Options>,
     private compatApp: CompatApp,
     private configTree: V1Config,
+    private contentForTree: ContentForConfig,
     private synthVendor: Package,
     private synthStyles: Package
   ) {}
@@ -896,6 +898,7 @@ export class CompatAppBuilder {
 
     let resolverConfig = this.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
+    this.addContentForConfig(this.contentForTree.readContents());
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
@@ -991,6 +994,12 @@ export class CompatAppBuilder {
 
   private addResolverConfig(config: CompatResolverOptions) {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config, { spaces: 2 });
+  }
+
+  private addContentForConfig(contentForConfig: any) {
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'content-for.json'), contentForConfig, {
+      spaces: 2,
+    });
   }
 
   private shouldSplitRoute(routeName: string) {

@@ -180,6 +180,14 @@ export default class CompatApp {
     });
   }
 
+  private get filteredPatternsByContentFor() {
+    const filter = '/{{content-for [\'"](.+?)["\']}}/g';
+    return {
+      contentFor: this.configReplacePatterns.find((pattern: any) => filter.includes(pattern.match.toString())),
+      others: this.configReplacePatterns.filter((pattern: any) => !filter.includes(pattern.match.toString())),
+    };
+  }
+
   private get htmlTree() {
     if (this.legacyEmberAppInstance.tests) {
       return mergeTrees([this.indexTree, this.testIndexTree]);
@@ -199,7 +207,7 @@ export default class CompatApp {
     return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),
       files: [indexFilePath],
-      patterns: this.configReplacePatterns,
+      patterns: this.filteredPatternsByContentFor.others,
       annotation: 'ConfigReplace/indexTree',
     });
   }
@@ -214,7 +222,7 @@ export default class CompatApp {
     return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `test.json`),
       files: ['tests/index.html'],
-      patterns: this.configReplacePatterns,
+      patterns: this.filteredPatternsByContentFor.others,
       annotation: 'ConfigReplace/testIndexTree',
     });
   }

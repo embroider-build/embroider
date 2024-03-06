@@ -95,6 +95,13 @@ export default interface Options extends CoreOptions {
   // it on in production. But it can be helpful when testing how much of your
   // app is able to work with staticComponents enabled.
   allowUnsafeDynamicComponents?: boolean;
+
+  // Allows you to customize the list of content types addons use to provide HTML
+  // to {{content-for}}. By default, the following content types are expected:
+  // 'head', 'test-head', 'head-footer', 'test-head-footer', 'body', 'test-body',
+  // 'body-footer', 'test-body-footer'. You need to use this config only to extend
+  // this list.
+  availableContentForTypes?: string[];
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -106,6 +113,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   workspaceDir: null,
   packageRules: [],
   allowUnsafeDynamicComponents: false,
+  availableContentForTypes: [],
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

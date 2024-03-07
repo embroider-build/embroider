@@ -1,5 +1,24 @@
 # Embroider Changelog
 
+## Release (2024-03-07)
+
+@embroider/compat 3.4.6 (patch)
+@embroider/core 3.4.6 (patch)
+@embroider/macros 1.15.0 (minor)
+@embroider/util 1.13.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/macros`, `@embroider/util`
+  * [#1832](https://github.com/embroider-build/embroider/pull/1832) Update to `ember-cli-babel` v8 ([@bertdeblock](https://github.com/bertdeblock))
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1838](https://github.com/embroider-build/embroider/pull/1838) make sure @embroider/macros doesn't try to load a babel config ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-02-28)
 
 @embroider/compat 3.4.5 (patch)

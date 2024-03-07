@@ -319,11 +319,9 @@ appScenarios
             return app.toTree();
           }
 
-          const { compatBuild, recommendedOptions } = require('@embroider/compat');
+          const { prebuild, recommendedOptions } = require('@embroider/compat');
 
-          const Webpack = require('@embroider/webpack').Webpack;
-          return compatBuild(app, Webpack, {
-            ...recommendedOptions.optimized,
+          return prebuild(app, {
             packageRules: [
               {
                 package: 'app-template',

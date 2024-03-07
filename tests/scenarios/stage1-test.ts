@@ -10,6 +10,7 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .only('canary')
+  // TODO set all compat options to false for these tests
   .map('stage-1-max-compat', project => {
     let addon = baseAddon();
 

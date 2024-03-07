@@ -11,4 +11,9 @@ module.exports = function (defaults) {
   });
 
   return maybeEmbroider(app);
+
+  // TODO provide a build from vite that almost does maybeEmbroider
+  // note: this is to handle ember build and NOT ember serve
+  // TODO figure out a way to error on ember serve
+  // return emberBuild(app);
 };

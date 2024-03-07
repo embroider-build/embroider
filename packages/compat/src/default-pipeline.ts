@@ -58,11 +58,11 @@ const defaultPrebuildOptions = {
   },
 };
 
-export function prebuild(emberApp: EmberAppInstance, options: Options = defaultPrebuildOptions): Node {
+export function prebuild(emberApp: EmberAppInstance, options?: Options): Node {
   let outputPath: string;
   let addons;
 
-  let embroiderApp = new App(emberApp, options);
+  let embroiderApp = new App(emberApp, { ...defaultPrebuildOptions, ...options });
 
   addons = new CompatAddons(embroiderApp);
   addons.ready().then(result => {

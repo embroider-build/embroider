@@ -6,6 +6,7 @@ import {
   templateTag,
   optimizeDeps,
   compatPrebuild,
+  publicAssets,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -23,6 +24,7 @@ export default defineConfig({
     scripts(),
     resolver(),
     compatPrebuild(),
+    publicAssets(),
 
     babel({
       babelHelpers: "runtime",

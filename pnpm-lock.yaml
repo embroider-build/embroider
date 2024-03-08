@@ -938,6 +938,9 @@ importers:
       jsdom:
         specifier: ^16.6.0
         version: 16.7.0
+      send:
+        specifier: ^0.18.0
+        version: 0.18.0
       source-map-url:
         specifier: ^0.4.1
         version: 0.4.1
@@ -960,6 +963,9 @@ importers:
       '@types/jsdom':
         specifier: ^16.2.11
         version: 16.2.15
+      '@types/send':
+        specifier: ^0.17.4
+        version: 0.17.4
       rollup:
         specifier: ^3.23.0
         version: 3.29.4
@@ -8374,6 +8380,9 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
     dependencies:
       ajv: 8.12.0
 

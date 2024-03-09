@@ -591,6 +591,10 @@ class TemplateResolver implements ASTPlugin {
       };
     }
 
+    if (builtIn) {
+      return null;
+    }
+
     let ownComponentRules = this.findRules(this.env.filename);
     if (ownComponentRules?.disambiguate[path]) {
       switch (ownComponentRules.disambiguate[path]) {

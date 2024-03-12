@@ -1,7 +1,6 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
 import { Preprocessor } from 'content-tag';
-import { RollupModuleRequest } from './request';
 
 const gjsFilter = createFilter('**/*.{gjs,gts}?(\\?)*');
 

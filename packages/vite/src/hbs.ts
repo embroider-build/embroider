@@ -97,6 +97,18 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
   if (!templateResolution) {
     return null;
   }
+
+  if (templateResolution.id.endsWith('/template.hbs' || templateResolution.id.includes('/templates/'))) {
+    return {
+      ...templateResolution,
+      meta: {
+        'rollup-hbs-plugin': {
+          type: 'template',
+        },
+      },
+    };
+  }
+
   debug(`emitting template only component: %s`, templateResolution.id);
 
   // we're trying to resolve a JS module but only the corresponding HBS

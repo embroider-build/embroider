@@ -2,6 +2,7 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
+import { cleanUrl } from '.';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -138,11 +139,12 @@ const pairComponentMarker = '-embroider-pair-component';
 const pairComponentPattern = /^(?<hbsModule>.*)\/(?<jsModule>[^\/]*)-embroider-pair-component$/;
 
 export function virtualPairComponent(hbsModule: string, jsModule: string | undefined): string {
+  let clearHbsModule = cleanUrl(hbsModule);
   let relativeJSModule = '';
   if (jsModule) {
-    relativeJSModule = explicitRelative(hbsModule, jsModule);
+    relativeJSModule = explicitRelative(clearHbsModule, jsModule);
   }
-  return `${hbsModule}/${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
+  return `${clearHbsModule}/${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
 }
 
 function decodeVirtualPairComponent(

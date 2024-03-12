@@ -27,8 +27,6 @@ import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
-import flatten from 'lodash/flatten';
-import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import { sync as resolveSync } from 'resolve';
@@ -40,7 +38,6 @@ import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-impo
 import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
 import type { InMemoryAsset, OnDiskAsset } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
-import type { RouteFiles } from '@embroider/core/src/app-files';
 import { AppFiles } from '@embroider/core/src/app-files';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion } from '@embroider/core/src/portable';
@@ -50,12 +47,11 @@ import { join, dirname } from 'path';
 import resolve from 'resolve';
 import type ContentForConfig from './content-for-config';
 import type { V1Config } from './v1-config';
-import type { AddonMeta, Package, PackageInfo } from '@embroider/core';
+import type { Package, PackageInfo } from '@embroider/core';
 import { ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import SourceMapConcat from 'fast-sourcemap-concat';
-import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
@@ -872,244 +868,12 @@ export class CompatAppBuilder {
     });
   }
 
-  private shouldSplitRoute(routeName: string) {
-    return (
-      !this.options.splitAtRoutes ||
-      this.options.splitAtRoutes.find(pattern => {
-        if (typeof pattern === 'string') {
-          return pattern === routeName;
-        } else {
-          return pattern.test(routeName);
-        }
-      })
-    );
-  }
-
-  private splitRoute(
-    routeName: string,
-    files: RouteFiles,
-    addToParent: (routeName: string, filename: string) => void,
-    addLazyBundle: (routeNames: string[], files: string[]) => void
-  ) {
-    let shouldSplit = routeName && this.shouldSplitRoute(routeName);
-    let ownFiles = [];
-    let ownNames = new Set() as Set<string>;
-
-    if (files.template) {
-      if (shouldSplit) {
-        ownFiles.push(files.template);
-        ownNames.add(routeName);
-      } else {
-        addToParent(routeName, files.template);
-      }
-    }
-
-    if (files.controller) {
-      if (shouldSplit) {
-        ownFiles.push(files.controller);
-        ownNames.add(routeName);
-      } else {
-        addToParent(routeName, files.controller);
-      }
-    }
-
-    if (files.route) {
-      if (shouldSplit) {
-        ownFiles.push(files.route);
-        ownNames.add(routeName);
-      } else {
-        addToParent(routeName, files.route);
-      }
-    }
-
-    for (let [childName, childFiles] of files.children) {
-      this.splitRoute(
-        `${routeName}.${childName}`,
-        childFiles,
-
-        (childRouteName: string, childFile: string) => {
-          // this is our child calling "addToParent"
-          if (shouldSplit) {
-            ownFiles.push(childFile);
-            ownNames.add(childRouteName);
-          } else {
-            addToParent(childRouteName, childFile);
-          }
-        },
-        (routeNames: string[], files: string[]) => {
-          addLazyBundle(routeNames, files);
-        }
-      );
-    }
-
-    if (ownFiles.length > 0) {
-      addLazyBundle([...ownNames], ownFiles);
-    }
-  }
-
-  private topAppJSAsset(engines: AppFiles[], prepared: Map<string, InternalAsset>): InternalAsset {
-    let [app, ...childEngines] = engines;
-    let relativePath = `assets/${this.origAppPackage.name}.js`;
-    return this.appJSAsset(relativePath, app, childEngines, prepared, {
-      autoRun: this.compatApp.autoRun,
-      appBoot: !this.compatApp.autoRun ? this.compatApp.appBoot.readAppBoot() : '',
-      mainModule: explicitRelative(dirname(relativePath), 'app'),
-      appConfig: this.configTree.readConfig().APP,
-    });
-  }
-
-  @Memoize()
-  private get staticAppPathsPattern(): RegExp | undefined {
-    if (this.options.staticAppPaths.length > 0) {
-      return new RegExp(
-        '^(?:' + this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath)).join('|') + ')(?:$|/)'
-      );
-    }
-  }
-
-  private requiredOtherFiles(appFiles: AppFiles): readonly string[] {
-    let pattern = this.staticAppPathsPattern;
-    if (pattern) {
-      return appFiles.otherAppFiles.filter(f => {
-        return !pattern!.test(f);
-      });
-    } else {
-      return appFiles.otherAppFiles;
-    }
-  }
-
-  private appJSAsset(
-    relativePath: string,
-    appFiles: AppFiles,
-    childEngines: AppFiles[],
-    prepared: Map<string, InternalAsset>,
-    entryParams?: Partial<Parameters<typeof entryTemplate>[0]>
-  ): InternalAsset {
-    let cached = prepared.get(relativePath);
-    if (cached) {
-      return cached;
-    }
-
-    let eagerModules: string[] = [];
-
-    let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
-    if (!this.options.staticComponents) {
-      requiredAppFiles.push(appFiles.components);
-    }
-    if (!this.options.staticHelpers) {
-      requiredAppFiles.push(appFiles.helpers);
-    }
-    if (!this.options.staticModifiers) {
-      requiredAppFiles.push(appFiles.modifiers);
-    }
-
-    let styles = [];
-    // only import styles from engines with a parent (this excludeds the parent application) as their styles
-    // will be inserted via a direct <link> tag.
-    if (!appFiles.engine.isApp && appFiles.engine.package.isLazyEngine()) {
-      styles.push({
-        path: '@embroider/core/vendor.css',
-      });
-
-      let engineMeta = appFiles.engine.package.meta as AddonMeta;
-      if (engineMeta && engineMeta['implicit-styles']) {
-        for (let style of engineMeta['implicit-styles']) {
-          styles.push({
-            path: explicitRelative(dirname(relativePath), join(appFiles.engine.appRelativePath, style)),
-          });
-        }
-      }
-    }
-
-    let lazyEngines: { names: string[]; path: string }[] = [];
-    for (let childEngine of childEngines) {
-      let asset = this.appJSAsset(
-        `assets/_engine_/${encodeURIComponent(childEngine.engine.package.name)}.js`,
-        childEngine,
-        [],
-        prepared
-      );
-      if (childEngine.engine.package.isLazyEngine()) {
-        lazyEngines.push({
-          names: [childEngine.engine.package.name],
-          path: explicitRelative(dirname(relativePath), asset.relativePath),
-        });
-      } else {
-        eagerModules.push(explicitRelative(dirname(relativePath), asset.relativePath));
-      }
-    }
-    let lazyRoutes: { names: string[]; path: string }[] = [];
-    for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
-      this.splitRoute(
-        routeName,
-        routeFiles,
-        (_: string, filename: string) => {
-          requiredAppFiles.push([filename]);
-        },
-        (routeNames: string[], files: string[]) => {
-          let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
-          if (!prepared.has(routeEntrypoint)) {
-            prepared.set(routeEntrypoint, this.routeEntrypoint(appFiles, routeEntrypoint, files));
-          }
-          lazyRoutes.push({
-            names: routeNames,
-            path: this.importPaths(appFiles, routeEntrypoint).buildtime,
-          });
-        }
-      );
-    }
-
-    let [fastboot, nonFastboot] = partition(excludeDotFiles(flatten(requiredAppFiles)), file =>
-      appFiles.isFastbootOnly.get(file)
-    );
-    let amdModules = nonFastboot.map(file => this.importPaths(appFiles, file));
-    let fastbootOnlyAmdModules = fastboot.map(file => this.importPaths(appFiles, file));
-
-    let params = {
-      amdModules,
-      fastbootOnlyAmdModules,
-      lazyRoutes,
-      lazyEngines,
-      eagerModules,
-      styles,
-      // this is a backward-compatibility feature: addons can force inclusion of modules.
-      defineModulesFrom: './-embroider-implicit-modules.js',
-    };
-    if (entryParams) {
-      Object.assign(params, entryParams);
-    }
-
-    let source = entryTemplate(params);
-
-    let asset: InternalAsset = {
-      kind: 'in-memory',
-      source,
-      relativePath,
-    };
-    prepared.set(relativePath, asset);
-    return asset;
-  }
-
   private importPaths({ engine }: AppFiles, engineRelativePath: string) {
     let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
     return {
       runtime: `${engine.modulePrefix}/${noHBS}`,
       buildtime: posix.join(engine.package.name, engineRelativePath),
     };
-  }
-
-  private routeEntrypoint(appFiles: AppFiles, relativePath: string, files: string[]) {
-    let [fastboot, nonFastboot] = partition(files, file => appFiles.isFastbootOnly.get(file));
-
-    let asset: InternalAsset = {
-      kind: 'in-memory',
-      source: routeEntryTemplate({
-        files: nonFastboot.map(f => this.importPaths(appFiles, f)),
-        fastbootOnlyFiles: fastboot.map(f => this.importPaths(appFiles, f)),
-      }),
-      relativePath,
-    };
-    return asset;
   }
 
   private testJSEntrypoint(appFiles: AppFiles[], prepared: Map<string, InternalAsset>): InternalAsset {
@@ -1125,13 +889,6 @@ export class CompatAppBuilder {
 
     const myName = 'assets/test.js';
 
-    // tests necessarily also include the app. This is where we account for
-    // that. The classic solution was to always include the app's separate
-    // script tag in the tests HTML, but that isn't as easy for final stage
-    // packagers to understand. It's better to express it here as a direct
-    // module dependency.
-    let eagerModules: string[] = ['ember-testing', explicitRelative(dirname(myName), '-embroider-entrypoint.js')];
-
     let amdModules: { runtime: string; buildtime: string }[] = [];
 
     for (let relativePath of engine.tests) {
@@ -1140,7 +897,6 @@ export class CompatAppBuilder {
 
     let source = entryTemplate({
       amdModules,
-      eagerModules,
       testSuffix: true,
       // this is a backward-compatibility feature: addons can force inclusion of test support modules.
       defineModulesFrom: './-embroider-implicit-test-modules.js',
@@ -1190,9 +946,8 @@ let d = w.define;
 {{/if}}
 
 
-{{#each eagerModules as |eagerModule| ~}}
-  i("{{js-string-escape eagerModule}}");
-{{/each}}
+import "ember-testing";
+import "#embroider/core/entrypoint";
 
 {{#each amdModules as |amdModule| ~}}
   d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
@@ -1273,25 +1028,6 @@ if (!runningTests) {
   styles?: { path: string }[];
 }) => string;
 
-const routeEntryTemplate = jsHandlebarsCompile(`
-import { importSync as i } from '@embroider/macros';
-let d = window.define;
-{{#each files as |amdModule| ~}}
-d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
-{{/each}}
-{{#if fastbootOnlyFiles}}
-  import { macroCondition, getGlobalConfig } from '@embroider/macros';
-  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    {{#each fastbootOnlyFiles as |amdModule| ~}}
-    d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
-    {{/each}}
-  }
-{{/if}}
-`) as (params: {
-  files: { runtime: string; buildtime: string }[];
-  fastbootOnlyFiles: { runtime: string; buildtime: string }[];
-}) => string;
-
 function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
   if (typeof a === 'string' && typeof b === 'string') {
     return a === b;
@@ -1343,10 +1079,6 @@ function addCachablePlugin(babelConfig: TransformOptions) {
       },
     ]);
   }
-}
-
-function excludeDotFiles(files: string[]) {
-  return files.filter(file => !file.startsWith('.') && !file.includes('/.'));
 }
 
 interface TreeNames {

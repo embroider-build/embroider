@@ -2,11 +2,9 @@ import { AppFiles, type RouteFiles } from './app-files';
 import { compile } from './js-handlebars';
 import type { Resolver } from './module-resolver';
 import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
-import { flatten, partition, sortBy } from 'lodash';
-import { posix, join, dirname } from 'path';
-import { type AddonMeta, explicitRelative, type Package, extensionsPattern } from '@embroider/shared-internals';
-import type { ImplicitAssetPaths } from './asset';
-import { sync as resolveSync } from 'resolve';
+import { flatten, partition } from 'lodash';
+import { posix, join } from 'path';
+import { extensionsPattern } from '@embroider/shared-internals';
 import { type default as Options, optionsWithDefaults } from './options';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
@@ -79,21 +77,9 @@ export function renderEntrypoint(
   // only import styles from engines with a parent (this excludeds the parent application) as their styles
   // will be inserted via a direct <link> tag.
   if (!appFiles.engine.isApp && appFiles.engine.package.isLazyEngine()) {
-    let implicitStyles = impliedAddonAssets('implicit-styles', appFiles);
-    for (let style of implicitStyles) {
-      styles.push({
-        path: explicitRelative(dirname(fromFile), style),
-      });
-    }
-
-    let engineMeta = appFiles.engine.package.meta as AddonMeta;
-    if (engineMeta && engineMeta['implicit-styles']) {
-      for (let style of engineMeta['implicit-styles']) {
-        styles.push({
-          path: explicitRelative(dirname(fromFile), style),
-        });
-      }
-    }
+    styles.push({
+      path: '@embroider/core/vendor.css',
+    });
   }
 
   let lazyEngines: { names: string[]; path: string }[] = [];
@@ -293,42 +279,6 @@ function importPaths(resolver: Resolver, { engine }: AppFiles, engineRelativePat
     runtime: `${engine.modulePrefix}/${noHBS}`,
     buildtime: `@embroider-dep/${posix.join(engine.package.name, engineRelativePath)}`,
   };
-}
-
-function impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
-  let result: Array<string> = [];
-  for (let addon of sortBy(Array.from(engine.addons.keys()), scriptPriority)) {
-    let implicitScripts = addon.meta[type];
-    if (implicitScripts) {
-      let styles = [];
-      let options = { basedir: addon.root };
-      for (let mod of implicitScripts) {
-        if (type === 'implicit-styles') {
-          // exclude engines because they will handle their own css importation
-          if (!addon.isLazyEngine()) {
-            styles.push(resolveSync(mod, options));
-          }
-        } else {
-          result.push(resolveSync(mod, options));
-        }
-      }
-      if (styles.length) {
-        result = [...styles, ...result];
-      }
-    }
-  }
-  return result;
-}
-
-function scriptPriority(pkg: Package) {
-  switch (pkg.name) {
-    case 'loader.js':
-      return 0;
-    case 'ember-source':
-      return 10;
-    default:
-      return 1000;
-  }
 }
 
 function splitRoute(

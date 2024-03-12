@@ -1,6 +1,8 @@
 import type { PipelineOptions } from '@embroider/compat';
 import type { PackagerConstructor } from '@embroider/core';
 import type { Webpack } from '@embroider/webpack';
+import Plugin from 'broccoli-plugin';
+import { spawn } from 'child_process';
 
 type EmberWebpackOptions = typeof Webpack extends PackagerConstructor<infer Options> ? Options : never;
 
@@ -30,10 +32,6 @@ export function maybeEmbroider(app: any, opts: PipelineOptions<EmberWebpackOptio
   //  - we don't want to load any of these things until they're actually needed;
   //  - we can't use `await import()` because this function needs to be synchronous to go inside ember-cli-build.js
   /* eslint-disable @typescript-eslint/no-require-imports */
-  let { Webpack } = require(require.resolve('@embroider/webpack', {
-    paths: [app.project.root],
-    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
-  })) as typeof import('@embroider/webpack');
   let Compat = require(require.resolve('@embroider/compat', {
     paths: [app.project.root],
     // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -52,7 +50,25 @@ export function maybeEmbroider(app: any, opts: PipelineOptions<EmberWebpackOptio
     }
   }
 
-  return Compat.compatBuild(app, Webpack, opts);
+  if (process.env.EMBROIDER_PREBUILD) {
+    return Compat.prebuild(app, opts);
+  }
+
+  return new BuildWithVite([]);
+}
+
+class BuildWithVite extends Plugin {
+  build(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const child = spawn(`npx vite build --outDir ${this.outputPath}`, {
+        cwd: process.cwd(),
+        shell: true,
+        stdio: 'inherit',
+        env: { ...process.env },
+      });
+      child.on('exit', code => (code === 0 ? resolve() : reject(new Error('vite build failed'))));
+    });
+  }
 }
 
 export function embroiderSafe(extension?: object) {

@@ -12,6 +12,7 @@
     "src/index.js"
   ],
   "dependencies": {
+    "broccoli-plugin": "^4.0.7",
     "lodash": "^4.17.21",
     "resolve": "^1.20.0"
   },

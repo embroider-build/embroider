@@ -165,7 +165,7 @@ export function renderEntrypoint(
     Object.assign(params, {
       autoRun: true,
       appBoot: '',
-      mainModule: './app.js',
+      mainModule: './app',
       appConfig: {},
     });
   }

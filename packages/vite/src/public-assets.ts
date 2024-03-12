@@ -4,13 +4,32 @@ import { join } from 'path';
 import send from 'send';
 import type { Plugin } from 'vite';
 
-// This Vite middleware relies on the ResolverLoader to locate the public assets in app and addons
+// This Vite plugin relies on the ResolverLoader to locate the public assets in app and addons
 export function publicAssets(): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
   const resolverOptions = resolverLoader.resolver.options;
   const excludedUrls = ['/@fs', '/@id/embroider_virtual:', '/@vite/client'];
+
+  let publicAssetsMap = new Map();
+
   return {
     name: 'embroider-public-assets',
+
+    buildStart() {
+      // We build a map of all public assets referenced in the active addons,
+      // regardless they are actively used in the app. The key is the requested
+      // URL when the asset is used, and the value is the full path to locate it.
+      let appActiveAddons = resolverOptions.engines[0].activeAddons;
+      for (const addon of appActiveAddons) {
+        let addonConfig = readFileSync(`${addon.root}/package.json`);
+        let addonAssets = JSON.parse(addonConfig.toString())['ember-addon']['public-assets'];
+        if (addonAssets) {
+          for (const [leftPath, rightPath] of Object.entries(addonAssets)) {
+            publicAssetsMap.set(join('.', `${rightPath}`), join(addon.root, leftPath));
+          }
+        }
+      }
+    },
 
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
@@ -24,22 +43,12 @@ export function publicAssets(): Plugin {
           return send(req, maybePublic).pipe(res);
         }
 
-        // TODO: Is it the right thing to look at?
-        let appActiveAddons = resolverOptions.engines[0].activeAddons;
-        let maybeAddonName = req.originalUrl.split('/')[1];
-        let ownerAddon = appActiveAddons.find(({ name }) => name === maybeAddonName);
-        if (!ownerAddon) return next();
-
-        let ownerAddonConfig = readFileSync(`${ownerAddon.root}/package.json`);
-        let ownerAddonAssets = JSON.parse(ownerAddonConfig.toString())['ember-addon']['public-assets'];
-        let pathInAddon = Object.keys(ownerAddonAssets).find(leftPath =>
-          // public-assets can contain "./my-url" for "/my-url" request, so we can't use === operator
-          ownerAddonAssets[leftPath].includes(req.originalUrl)
-        );
-        if (!pathInAddon) return next();
-
+        // TODO: the map contains an entry '/assets/vite-app.css' from package '/@embroider/synthesized-styles'
+        // Not sure we want this?
+        let maybeAddonAsset = publicAssetsMap.get(join('.', req.originalUrl));
+        if (!maybeAddonAsset) return next();
         // @ts-ignore TODO: how to handle the types properly?
-        send(req, join(ownerAddon.root, pathInAddon)).pipe(res);
+        send(req, maybeAddonAsset).pipe(res);
       });
     },
   };

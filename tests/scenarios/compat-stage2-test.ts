@@ -102,7 +102,7 @@ stage2Scenarios
 
       hooks.before(async assert => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
+        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -201,7 +201,7 @@ stage2Scenarios
 
       hooks.before(async assert => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
+        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -500,7 +500,7 @@ stage2Scenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        builder = await Rebuilder.create(app.dir, { STAGE2_ONLY: 'true' });
+        builder = await Rebuilder.create(app.dir, { EMBROIDER_PREBUILD: 'true' });
       });
 
       hooks.after(async () => {
@@ -799,7 +799,7 @@ dummyAppScenarios
 
       hooks.before(async assert => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
+        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
 

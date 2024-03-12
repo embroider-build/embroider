@@ -42,7 +42,7 @@ appScenarios
 
       hooks.before(async assert => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { STAGE1_ONLY: 'true' } });
+        let result = await app.execute('ember build', { env: { STAGE1_ONLY: 'true', EMBROIDER_PREBUILD: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
 

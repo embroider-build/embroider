@@ -49,7 +49,7 @@ appScenarios
     Qmodule(scenario.name, function (hooks) {
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
+        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
         expectFile = expectFilesAt(join(app.dir, 'node_modules', '.embroider', 'rewritten-app'), { qunit: assert });
       });

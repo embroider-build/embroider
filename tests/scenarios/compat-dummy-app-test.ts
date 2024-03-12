@@ -41,7 +41,7 @@ dummyAppScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        builder = await Rebuilder.create(app.dir, { STAGE2_ONLY: 'true' });
+        builder = await Rebuilder.create(app.dir, { EMBROIDER_PREBUILD: 'true' });
       });
       hooks.after(async () => {
         await builder?.shutdown();

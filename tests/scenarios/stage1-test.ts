@@ -32,7 +32,9 @@ appScenarios
       hooks.before(async assert => {
         process.env.THROW_UNLESS_PARALLELIZABLE = '1'; // see https://github.com/embroider-build/embroider/pull/924
         app = await scenario.prepare();
-        let result = await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        let result = await app.execute(
+          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
+        );
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -172,7 +174,9 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        await app.execute(
+          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
+        );
       });
 
       hooks.beforeEach(assert => {
@@ -418,7 +422,9 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        await app.execute(
+          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
+        );
       });
 
       hooks.beforeEach(assert => {

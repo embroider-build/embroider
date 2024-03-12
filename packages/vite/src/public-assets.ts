@@ -1,11 +1,13 @@
 import { ResolverLoader } from '@embroider/core';
-import { readFileSync } from 'fs-extra';
+import { existsSync, readFileSync } from 'fs-extra';
 import { join } from 'path';
 import send from 'send';
 import type { Plugin } from 'vite';
 
+// This Vite middleware relies on the ResolverLoader to locate the public assets in app and addons
 export function publicAssets(): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
+  const resolverOptions = resolverLoader.resolver.options;
   const excludedUrls = ['/@fs', '/@id/embroider_virtual:', '/@vite/client'];
   return {
     name: 'embroider-public-assets',
@@ -16,8 +18,14 @@ export function publicAssets(): Plugin {
         if (!req.originalUrl || req.originalUrl === '/' || excludedUrls.find(url => req.originalUrl.includes(url)))
           return next();
 
+        let maybePublic = `${resolverOptions.appRoot}/public${req.originalUrl}`;
+        if (existsSync(maybePublic)) {
+          // @ts-ignore TODO: how to handle the types properly?
+          return send(req, maybePublic).pipe(res);
+        }
+
         // TODO: Is it the right thing to look at?
-        let appActiveAddons = resolverLoader.resolver.options.engines[0].activeAddons;
+        let appActiveAddons = resolverOptions.engines[0].activeAddons;
         let maybeAddonName = req.originalUrl.split('/')[1];
         let ownerAddon = appActiveAddons.find(({ name }) => name === maybeAddonName);
         if (!ownerAddon) return next();

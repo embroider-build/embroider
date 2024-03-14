@@ -1062,28 +1062,80 @@ Scenarios.fromProject(() => new Project())
         `);
       });
 
-      test('built-in components are ignored when used with the component helper', async function () {
+      test('built-in components are imported when used with the component helper', async function () {
         givenFiles({
           'templates/application.hbs': `{{component "input"}}{{component "link-to"}}{{component "textarea"}}`,
         });
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        export default precompileTemplate("{{component \\"input\\"}}{{component \\"link-to\\"}}{{component \\"textarea\\"}}", {
-          moduleName: "my-app/templates/application.hbs"
+        import { Input, Textarea } from "@ember/component";
+        import { LinkTo } from "@ember/routing";
+        export default precompileTemplate("{{component Input}}{{component LinkTo}}{{component Textarea}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            Input,
+            LinkTo,
+            Textarea
+          }),
         });
       `);
       });
 
-      test('built-in helpers are ignored when used with the helper keyword', async function () {
+      test('built-in components are imported when used directly', async function () {
+        givenFiles({
+          'templates/application.hbs': `<Input/><LinkTo/><Textarea/>`,
+        });
+        await configure({ staticComponents: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        import { Input, Textarea } from "@ember/component";
+        import { LinkTo } from "@ember/routing";
+        export default precompileTemplate("<Input /><LinkTo /><Textarea />", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            Input,
+            LinkTo,
+            Textarea
+          }),
+        });
+      `);
+      });
+
+      test('built-in helpers are imported when used with the helper keyword', async function () {
         givenFiles({
           'templates/application.hbs': `{{helper "fn"}}{{helper "array"}}{{helper "concat"}}`,
         });
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        export default precompileTemplate("{{helper \\"fn\\"}}{{helper \\"array\\"}}{{helper \\"concat\\"}}", {
-          moduleName: "my-app/templates/application.hbs"
+        import { fn, array, concat } from "@ember/helper";
+        export default precompileTemplate("{{helper fn}}{{helper array}}{{helper concat}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            fn,
+            array,
+            concat
+          }),
+        });
+      `);
+      });
+
+      test('built-in helpers are imported when used directly', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(fn)}}{{(array)}}{{(concat)}}`,
+        });
+        await configure({ staticHelpers: true });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        import { fn, array, concat } from "@ember/helper";
+        export default precompileTemplate("{{(fn)}}{{(array)}}{{(concat)}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            fn,
+            array,
+            concat
+          }),
         });
       `);
       });
@@ -1115,10 +1167,52 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
+        import { on } from "@ember/modifier";
         export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
-          moduleName: "my-app/templates/application.hbs"
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            on,
+          }),
         });
       `);
+      });
+
+      test('ambiguous invocation of built-in component', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{input}}`,
+        });
+
+        await configure({ staticComponents: true, staticHelpers: true });
+
+        expectTranspiled('./templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          import { Input } from "@ember/component";
+          export default precompileTemplate("{{Input}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              Input
+            }),
+          });
+        `);
+      });
+
+      test('ambiguous invocation of built-in helper', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{get this "stuff"}}`,
+        });
+
+        await configure({ staticComponents: true, staticHelpers: true });
+
+        expectTranspiled('./templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          import { get } from "@ember/helper";
+          export default precompileTemplate("{{get this \\"stuff\\"}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              get
+            }),
+          });
+        `);
       });
 
       test('component helper with direct addon package reference', async function () {

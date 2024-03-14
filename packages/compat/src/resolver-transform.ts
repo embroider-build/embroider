@@ -43,47 +43,73 @@ export interface Options {
   appRoot: string;
 }
 
-export const builtInKeywords = [
-  '-get-dynamic-var',
-  '-in-element',
-  '-with-dynamic-vars',
-  'action',
-  'array',
-  'component',
-  'concat',
-  'debugger',
-  'each-in',
-  'each',
-  'fn',
-  'get',
-  'has-block-params',
-  'has-block',
-  'hasBlock',
-  'hasBlockParams',
-  'hash',
-  'helper',
-  'if',
-  'in-element',
-  'input',
-  'let',
-  'link-to',
-  'loc',
-  'log',
-  'modifier',
-  'mount',
-  'mut',
-  'on',
-  'outlet',
-  'partial',
-  'query-params',
-  'readonly',
-  'textarea',
-  'unbound',
-  'unique-id',
-  'unless',
-  'with',
-  'yield',
-];
+type BuiltIn = {
+  importableHelper?: [string, string];
+  importableComponent?: [string, string];
+  importableModifier?: [string, string];
+};
+
+const builtInKeywords: Record<string, BuiltIn | undefined> = {
+  '-get-dynamic-var': {},
+  '-in-element': {},
+  '-with-dynamic-vars': {},
+  action: {},
+  array: {
+    importableHelper: ['array', '@ember/helper'],
+  },
+  component: {},
+  concat: {
+    importableHelper: ['concat', '@ember/helper'],
+  },
+  debugger: {},
+  'each-in': {},
+  each: {},
+  fn: {
+    importableHelper: ['fn', '@ember/helper'],
+  },
+  get: {
+    importableHelper: ['get', '@ember/helper'],
+  },
+  'has-block-params': {},
+  'has-block': {},
+  hasBlock: {},
+  hasBlockParams: {},
+  hash: {
+    importableHelper: ['hash', '@ember/helper'],
+  },
+  helper: {},
+  if: {},
+  'in-element': {},
+  input: {
+    importableComponent: ['Input', '@ember/component'],
+  },
+  let: {},
+  'link-to': {
+    importableComponent: ['LinkTo', '@ember/routing'],
+  },
+  loc: {},
+  log: {},
+  modifier: {},
+  mount: {},
+  mut: {},
+  on: {
+    importableModifier: ['on', '@ember/modifier'],
+  },
+  outlet: {},
+  partial: {},
+  'query-params': {},
+  readonly: {},
+  textarea: {
+    importableComponent: ['Textarea', '@ember/component'],
+  },
+  unbound: {},
+  'unique-id': {
+    importableHelper: ['uniqueId', '@ember/helper'],
+  },
+  unless: {},
+  with: {},
+  yield: {},
+};
 
 interface ComponentResolution {
   type: 'component';
@@ -91,19 +117,22 @@ interface ComponentResolution {
   yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
-  nameHint: string;
+  nameHint?: string;
+  namedImport?: string;
 }
 
 type HelperResolution = {
   type: 'helper';
-  nameHint: string;
+  nameHint?: string;
+  namedImport?: string;
   specifier: string;
 };
 
 type ModifierResolution = {
   type: 'modifier';
   specifier: string;
-  nameHint: string;
+  nameHint?: string;
+  namedImport?: string;
 };
 
 type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
@@ -157,9 +186,14 @@ class TemplateResolver implements ASTPlugin {
       case 'component':
       case 'modifier':
       case 'helper': {
-        let name = this.env.meta.jsutils.bindImport(resolution.specifier, 'default', parentPath, {
-          nameHint: resolution.nameHint,
-        });
+        let name = this.env.meta.jsutils.bindImport(
+          resolution.specifier,
+          resolution.namedImport ?? 'default',
+          parentPath,
+          {
+            nameHint: resolution.nameHint,
+          }
+        );
         setter(parentPath.node, this.env.syntax.builders.path(name));
         return;
       }
@@ -370,7 +404,21 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    if (builtInKeywords.includes(name)) {
+    const builtIn = builtInKeywords[name];
+
+    if (builtIn?.importableComponent) {
+      let [namedImport, specifier] = builtIn.importableComponent;
+      return {
+        type: 'component',
+        specifier,
+        yieldsComponents: [],
+        yieldsArguments: [],
+        argumentsAreComponents: [],
+        namedImport,
+      };
+    }
+
+    if (builtIn) {
       return null;
     }
     if (this.isIgnoredComponent(name)) {
@@ -437,7 +485,18 @@ class TemplateResolver implements ASTPlugin {
     // globally-named helpers. It throws an error. So it's fine for us to
     // prioritize the builtIns here without bothering to resolve a user helper
     // of the same name.
-    if (builtInKeywords.includes(path)) {
+    const builtIn = builtInKeywords[path];
+
+    if (builtIn?.importableHelper) {
+      let [namedImport, specifier] = builtIn.importableHelper;
+      return {
+        type: 'helper',
+        specifier,
+        namedImport,
+      };
+    }
+
+    if (builtIn) {
       return null;
     }
 
@@ -505,11 +564,34 @@ class TemplateResolver implements ASTPlugin {
     */
 
     // first, bail out on all the stuff we can obviously ignore
-    if (
-      (!this.staticHelpersEnabled && !this.staticComponentsEnabled) ||
-      builtInKeywords.includes(path) ||
-      this.isIgnoredComponent(path)
-    ) {
+    if ((!this.staticHelpersEnabled && !this.staticComponentsEnabled) || this.isIgnoredComponent(path)) {
+      return null;
+    }
+
+    let builtIn = builtInKeywords[path];
+
+    if (builtIn?.importableComponent) {
+      let [namedImport, specifier] = builtIn.importableComponent;
+      return {
+        type: 'component',
+        specifier,
+        yieldsComponents: [],
+        yieldsArguments: [],
+        argumentsAreComponents: [],
+        namedImport,
+      };
+    }
+
+    if (builtIn?.importableHelper) {
+      let [namedImport, specifier] = builtIn.importableHelper;
+      return {
+        type: 'helper',
+        specifier,
+        namedImport,
+      };
+    }
+
+    if (builtIn) {
       return null;
     }
 
@@ -571,7 +653,18 @@ class TemplateResolver implements ASTPlugin {
     if (!this.staticModifiersEnabled) {
       return null;
     }
-    if (builtInKeywords.includes(path)) {
+
+    const builtIn = builtInKeywords[path];
+    if (builtIn?.importableModifier) {
+      let [namedImport, specifier] = builtIn.importableModifier;
+      return {
+        type: 'modifier',
+        specifier,
+        namedImport,
+      };
+    }
+
+    if (builtIn) {
       return null;
     }
 

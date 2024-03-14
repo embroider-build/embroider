@@ -75,6 +75,7 @@ scenarios
           let app = new EmberApp(defaults, {});
           return prebuild(app, {
             staticComponents: false,
+            staticAddonTrees: false,
           });
         };
       `,
@@ -132,22 +133,10 @@ scenarios
       test(`app's colocated components are implicitly included correctly`, function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./@embroider/core/entrypoint')
-          .toModule()
-          .withContents(content => {
-            console.log(content);
-            const importMatches =
-              /import \* as (amdModule\d+) from "@embroider-dep\/my-app\/components\/has-colocated-template\.js"/.exec(
-                content
-              );
-
-            const defineMatch =
-              /d\("my-app\/components\/has-colocated-template", function\s*\(\)\s*\{\s*return (amdModule\d+);\s*\}/.exec(
-                content
-              );
-
-            return Boolean(importMatches && defineMatch && importMatches[1] === defineMatch[1]);
-          });
+          .resolves('./assets/my-app.js')
+          .toModule().codeContains(`d("my-app/components/has-colocated-template", function () {
+            return i("my-app/components/has-colocated-template.js");
+          });`);
       });
 
       test(`addon's colocated template is associated with JS`, function () {
@@ -182,19 +171,7 @@ scenarios
   });
 
 scenarios
-  .map('staticComponents-true', app => {
-    merge(app.files, {
-      'ember-cli-build.js': `
-        'use strict';
-        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { prebuild } = require('@embroider/test-setup');
-        module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {});
-          return prebuild(app);
-        };
-      `,
-    });
-  })
+  .map('staticComponents-true', () => {})
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);

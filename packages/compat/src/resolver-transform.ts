@@ -104,7 +104,7 @@ const builtInKeywords: Record<string, BuiltIn | undefined> = {
   },
   unbound: {},
   'unique-id': {
-    importableHelper: ['uniqId', '@ember/helper'],
+    importableHelper: ['uniqueId', '@ember/helper'],
   },
   unless: {},
   with: {},

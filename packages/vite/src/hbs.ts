@@ -1,12 +1,13 @@
 // TODO: I copied this from @embroider/addon-dev, it needs to be its own package
 import type { PluginContext, ResolvedId } from 'rollup';
 import type { Plugin } from 'vite';
-import { hbsToJS } from '@embroider/core';
+import { hbsToJS, ResolverLoader } from '@embroider/core';
 import assertNever from 'assert-never';
 import { parse as pathParse } from 'path';
 import makeDebug from 'debug';
 
 const debug = makeDebug('embroider:hbs-plugin');
+const resolverLoader = new ResolverLoader(process.cwd());
 
 export function hbs(): Plugin {
   return {
@@ -98,7 +99,10 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
     return null;
   }
 
-  if (templateResolution.id.endsWith('/template.hbs' || templateResolution.id.includes('/templates/'))) {
+  const pkg = resolverLoader.resolver.packageCache.ownerOfFile(templateResolution.id);
+  const isInComponents = pkg?.isV2App() && templateResolution.id.slice(pkg?.root.length).startsWith('/components');
+
+  if (templateResolution.id.endsWith('/template.hbs' || !isInComponents)) {
     return {
       ...templateResolution,
       meta: {

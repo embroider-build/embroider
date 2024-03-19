@@ -38,18 +38,15 @@ export function assets(): Plugin {
       publicDir = server.config.publicDir;
       return () => {
         server.middlewares.use((req, res, next) => {
-          if (req.originalUrl?.includes('?')) {
-            return next();
-          }
           if (req.originalUrl && req.originalUrl.length > 1) {
-            const assetUrl = findPublicAsset(req.originalUrl, resolverLoader.resolver);
+            const assetUrl = findPublicAsset(req.originalUrl.split('?')[0], resolverLoader.resolver);
             if (assetUrl) {
               return send(req as Readable, assetUrl).pipe(res);
             }
           }
           return next();
         });
-      }
+      };
     },
     async buildStart() {
       if (mode !== 'build') return;

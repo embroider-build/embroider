@@ -11,6 +11,8 @@ import error from './error';
 import failBuild from './fail-build';
 import { Evaluator, buildLiterals } from './evaluate-json';
 import type * as Babel from '@babel/core';
+import { existsSync, readdirSync } from 'fs';
+import { resolve, dirname, join } from 'path';
 
 export default function main(context: typeof Babel): unknown {
   let t = context.types;
@@ -123,7 +125,44 @@ export default function main(context: typeof Babel): unknown {
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
           let specifier = path.node.arguments[0];
           if (specifier?.type !== 'StringLiteral') {
-            throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
+            let relativePath;
+            let property;
+            if (
+              specifier.type === 'BinaryExpression' &&
+              specifier.left.type === 'StringLiteral' &&
+              specifier.right.type === 'Identifier'
+            ) {
+              relativePath = specifier.left.value;
+              property = specifier.right;
+            }
+            if (specifier.type === 'TemplateLiteral' && specifier.expressions[0].type === 'Identifier') {
+              relativePath = specifier.quasis[0].value.cooked;
+              property = specifier.expressions[0];
+            }
+            if (property && relativePath && relativePath.startsWith('.')) {
+              const resolvedPath = resolve(dirname((state as any).filename), relativePath);
+              let entries: string[] = [];
+              if (existsSync(resolvedPath)) {
+                entries = readdirSync(resolvedPath);
+              }
+              const obj = t.objectExpression(
+                entries.map(e => {
+                  const id = t.callExpression(
+                    state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
+                    [state.importUtil.import(path, join(resolvedPath, e).replace(/\\/g, '/'), '*')]
+                  );
+                  return t.objectProperty(t.stringLiteral(e), id);
+                })
+              );
+              const memberExpr = t.memberExpression(obj, property, true);
+              path.replaceWith(memberExpr);
+              state.calledIdentifiers.add(callee.node);
+              return;
+            } else {
+              throw new Error(
+                `importSync eager mode only supports dynamic paths which are relative, must start with a '.'`
+              );
+            }
           }
           path.replaceWith(
             t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [

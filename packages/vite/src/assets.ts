@@ -4,7 +4,6 @@ import type { Plugin } from 'vite';
 import * as process from 'process';
 import { join } from 'path';
 import { existsSync, readFileSync } from 'fs-extra';
-import glob from 'fast-glob';
 import send from 'send';
 import type { Readable } from 'stream';
 
@@ -52,8 +51,8 @@ export function assets(): Plugin {
       if (mode !== 'build') return;
       const engines = resolverLoader.resolver.options.engines;
       for (const engine of engines) {
-        engine.activeAddons.forEach(addon => {
-          const pkg = resolverLoader.resolver.packageCache.ownerOfFile(addon.root);
+        const packages = engine.activeAddons.map(a => resolverLoader.resolver.packageCache.ownerOfFile(a.root));
+        packages.forEach(pkg => {
           if (!pkg || !pkg.isV2Addon()) return;
           const assets = pkg.meta['public-assets'] || {};
           Object.entries(assets).forEach(([path, dest]) => {

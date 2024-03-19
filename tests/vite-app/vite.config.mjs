@@ -43,6 +43,7 @@ export default defineConfig({
       ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
     },
   },
+  publicDir: resolve(process.cwd(), "public"),
   build: {
     outDir: resolve(process.cwd(), "dist"),
     rollupOptions: {

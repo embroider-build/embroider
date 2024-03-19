@@ -2,7 +2,7 @@ import type { Resolver } from '@embroider/core';
 import { ResolverLoader } from '@embroider/core';
 import type { Plugin } from 'vite';
 import * as process from 'process';
-import { join } from 'path';
+import { join, posix } from 'path';
 import { existsSync, readFileSync } from 'fs-extra';
 import send from 'send';
 import type { Readable } from 'stream';
@@ -15,7 +15,9 @@ function findPublicAsset(relativePath: string, resolver: Resolver) {
     for (const addon of engine.activeAddons) {
       pkg = packageCache.ownerOfFile(addon.root);
       if (pkg && pkg.meta && pkg.isV2Addon() && pkg.meta['public-assets']) {
-        const asset = Object.entries(pkg.meta['public-assets']).find(([_key, a]) => a === relativePath)?.[0];
+        const asset = Object.entries(pkg.meta['public-assets']).find(
+          ([_key, a]) => posix.resolve('/', a) === relativePath
+        )?.[0];
         let local = asset ? join(addon.root, asset) : null;
         if (local && existsSync(local)) {
           return local;
@@ -66,7 +68,7 @@ export function assets(): Plugin {
             this.emitFile({
               type: 'asset',
               source: readFileSync(join(pkg.root, path)),
-              fileName: dest.slice(1),
+              fileName: posix.resolve('/', dest).slice(1),
             });
           });
         });

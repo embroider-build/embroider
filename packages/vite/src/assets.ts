@@ -29,11 +29,13 @@ export function assets(): Plugin {
   const cwd = process.cwd();
   const resolverLoader = new ResolverLoader(cwd);
   let mode: 'build' | 'serve' = 'build';
+  let publicDir = 'public';
   return {
     name: 'assets',
     enforce: 'post',
     configureServer(server) {
       mode = server.config.command;
+      publicDir = server.config.publicDir;
       server.middlewares.use((req, res, next) => {
         if (req.originalUrl?.includes('?')) {
           return next();
@@ -56,6 +58,10 @@ export function assets(): Plugin {
           if (!pkg || !pkg.isV2Addon()) return;
           const assets = pkg.meta['public-assets'] || {};
           Object.entries(assets).forEach(([path, dest]) => {
+            // do not override app public assets
+            if (existsSync(join(publicDir, dest))) {
+              return;
+            }
             this.emitFile({
               type: 'asset',
               source: readFileSync(join(pkg.root, path)),

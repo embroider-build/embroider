@@ -99,10 +99,13 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
     return null;
   }
 
-  const pkg = resolverLoader.resolver.packageCache.ownerOfFile(templateResolution.id);
-  const isInComponents = pkg?.isV2App() && templateResolution.id.slice(pkg?.root.length).startsWith('/components');
+  const resolvedId = templateResolution.id.split('?')[0];
+  templateResolution.id = resolvedId;
 
-  if (templateResolution.id.endsWith('/template.hbs' || !isInComponents)) {
+  const pkg = resolverLoader.resolver.packageCache.ownerOfFile(resolvedId);
+  const isInComponents = pkg?.isV2App() && resolvedId.slice(pkg?.root.length).startsWith('/components');
+
+  if (resolvedId.endsWith('/template.hbs' || !isInComponents)) {
     return {
       ...templateResolution,
       meta: {

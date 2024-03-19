@@ -36,18 +36,20 @@ export function assets(): Plugin {
     configureServer(server) {
       mode = server.config.command;
       publicDir = server.config.publicDir;
-      server.middlewares.use((req, res, next) => {
-        if (req.originalUrl?.includes('?')) {
-          return next();
-        }
-        if (req.originalUrl && req.originalUrl.length > 1) {
-          const assetUrl = findPublicAsset(req.originalUrl, resolverLoader.resolver);
-          if (assetUrl) {
-            return send(req as Readable, assetUrl).pipe(res);
+      return () => {
+        server.middlewares.use((req, res, next) => {
+          if (req.originalUrl?.includes('?')) {
+            return next();
           }
-        }
-        return next();
-      });
+          if (req.originalUrl && req.originalUrl.length > 1) {
+            const assetUrl = findPublicAsset(req.originalUrl, resolverLoader.resolver);
+            if (assetUrl) {
+              return send(req as Readable, assetUrl).pipe(res);
+            }
+          }
+          return next();
+        });
+      }
     },
     async buildStart() {
       if (mode !== 'build') return;

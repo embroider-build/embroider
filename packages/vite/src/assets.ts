@@ -33,9 +33,11 @@ export function assets(): Plugin {
   return {
     name: 'assets',
     enforce: 'post',
+    configResolved(options) {
+      mode = options.command;
+      publicDir = options.publicDir;
+    },
     configureServer(server) {
-      mode = server.config.command;
-      publicDir = server.config.publicDir;
       return () => {
         server.middlewares.use((req, res, next) => {
           if (req.originalUrl && req.originalUrl.length > 1) {

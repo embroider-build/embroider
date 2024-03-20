@@ -13,6 +13,33 @@ appScenarios
   .map('stage-1-max-compat', project => {
     let addon = baseAddon();
 
+    merge(project.files, {
+      'ember-cli-build.js': `
+        'use strict';
+
+        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+        const { maybeEmbroider } = require('@embroider/test-setup');
+
+        module.exports = function (defaults) {
+          let app = new EmberApp(defaults, {
+          });
+
+          return maybeEmbroider(app, {
+            staticAddonTestSupportTrees: false,
+            staticAddonTrees: false,
+            staticComponents: false,
+            staticHelpers: false,
+            staticModifiers: false,
+            skipBabel: [
+              {
+                package: 'qunit',
+              },
+            ],
+          });
+        };
+      `,
+    });
+
     merge(addon.files, loadFromFixtureData('hello-world-addon'));
     addon.pkg.name = 'my-addon';
 

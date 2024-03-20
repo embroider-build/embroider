@@ -1,5 +1,5 @@
 import type { Plugin, ViteDevServer } from 'vite';
-import { virtualContent, ResolverLoader } from '@embroider/core';
+import { cleanUrlQueryParams, virtualContent, ResolverLoader } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 import makeDebug from 'debug';
@@ -52,7 +52,10 @@ export function resolver(): Plugin {
     },
     load(id) {
       if (id.startsWith(virtualPrefix)) {
-        let { src, watches } = virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
+        let { src, watches } = virtualContent(
+          cleanUrlQueryParams(id.slice(virtualPrefix.length)),
+          resolverLoader.resolver
+        );
         virtualDeps.set(id, watches);
         server?.watcher.add(watches);
         return src;

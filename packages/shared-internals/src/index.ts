@@ -1,5 +1,12 @@
 export { AppMeta, AddonMeta, PackageInfo } from './metadata';
-export { explicitRelative, extensionsPattern, unrelativize, cleanUrl } from './paths';
+export {
+  explicitRelative,
+  extensionsPattern,
+  unrelativize,
+  cleanUrl,
+  cleanUrlQueryParams,
+  getUrlQueryParams,
+} from './paths';
 export { getOrCreate } from './get-or-create';
 export { default as Package, V2AddonPackage as AddonPackage, V2AppPackage as AppPackage, V2Package } from './package';
 export { default as PackageCache } from './package-cache';

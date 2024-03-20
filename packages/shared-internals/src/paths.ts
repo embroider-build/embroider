@@ -49,3 +49,15 @@ const postfixRE = /[?#].*$/s;
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '');
 }
+
+// this pattern includes URL query params (ex: ?direct)
+// but excludes specifiers starting with # (ex: #embroider_compats/components/fancy)
+const postfixQueryParams = /[?].*$/s;
+
+export function cleanUrlQueryParams(url: string): string {
+  return url.replace(postfixQueryParams, '');
+}
+
+export function getUrlQueryParams(url: string): string {
+  return url.match(postfixQueryParams)?.[0] ?? '';
+}

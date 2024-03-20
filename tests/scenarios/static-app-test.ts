@@ -302,6 +302,7 @@ appScenarios
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
         const { MacrosConfig } = require('@embroider/macros/src/node');
+        const { maybeEmbroider } = require('@embroider/test-setup');
 
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
@@ -311,19 +312,7 @@ appScenarios
             }
           });
 
-          MacrosConfig.for(app).setOwnConfig(__filename, {
-            isClassic: Boolean(process.env.CLASSIC),
-          });
-
-          if (process.env.CLASSIC) {
-            return app.toTree();
-          }
-
-          const { compatBuild, recommendedOptions } = require('@embroider/compat');
-
-          const Webpack = require('@embroider/webpack').Webpack;
-          return compatBuild(app, Webpack, {
-            ...recommendedOptions.optimized,
+          return maybeEmbroider(app, {
             packageRules: [
               {
                 package: 'app-template',

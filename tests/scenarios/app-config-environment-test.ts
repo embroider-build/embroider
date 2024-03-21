@@ -13,21 +13,22 @@ appScenarios
         'use strict';
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+        const { prebuild } = require('@embroider/compat');
 
         module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {
+          const app = new EmberApp(defaults, {
             tests: true,
             storeConfigInMeta: false,
           });
-          return maybeEmbroider(app, {});
+
+          return prebuild(app);
         };
       `,
       config: {
         'environment.js': `module.exports = function(environment) {
           // DEFAULT config/environment.js
           let ENV = {
-            modulePrefix: 'my-app',
+            modulePrefix: 'app-template',
             environment,
             rootURL: '/',
             locationType: 'history',
@@ -80,7 +81,7 @@ appScenarios
         // later. This difference in environment is important because it's the
         // only way for us to test ember-cli-build.js' `tests: true` behavior,
         // and is equivalent to visiting the app's /tests page
-        let devBuildResult = await app.execute(`pnpm build --environment=development`);
+        let devBuildResult = await app.execute(`pnpm build`);
         assert.equal(devBuildResult.exitCode, 0, devBuildResult.output);
         let testRunResult = await app.execute(`pnpm test:ember --path dist`);
         assert.equal(testRunResult.exitCode, 0, testRunResult.output);

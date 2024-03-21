@@ -42,21 +42,39 @@ appScenarios
       hooks.beforeEach(assert => {
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
-      test(`app js location`, function () {
-        expectFile('assets/@ef4/namespaced-app.js').exists();
-      });
 
-      test(`imports within app js`, function () {
+      test(`imports within app js`, function (assert) {
         expectAudit
-          .module('assets/@ef4/namespaced-app.js')
+          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .resolves('./@embroider/core/entrypoint')
+          .toModule()
           .resolves('./-embroider-implicit-modules.js')
           .toModule()
           .resolves('my-addon/my-implicit-module.js')
           .to('./node_modules/my-addon/my-implicit-module.js');
 
-        expectAudit.module('assets/@ef4/namespaced-app.js').codeContains(`
-          d('@ef4/namespaced-app/app', function(){ return i('@ef4/namespaced-app/app.js');});
-        `);
+        expectAudit
+          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .resolves('./@embroider/core/entrypoint')
+          .toModule()
+          .withContents(contents => {
+            const [, amdModuleVariable] =
+              /import * as (amdModule\d+) from "@embroider-dep\/@ef4\/namespaced-app\/templates\/application.hbs"/.exec(
+                contents
+              ) ?? [];
+
+            if (!amdModuleVariable) {
+              throw new Error('could not find the application.hbs import in entrypoint');
+            }
+
+            assert.codeContains(
+              contents,
+              `d("@ef4/namespaced-app/templates/application", function () {
+              return ${amdModuleVariable};
+            });`
+            );
+            return true;
+          }, 'module imports from the correct place and exports object with the right key');
       });
 
       test(`app css location`, function () {

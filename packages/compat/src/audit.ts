@@ -11,6 +11,7 @@ import type { ExportAll, InternalImport, NamespaceMarker } from './audit/babel-v
 import { auditJS, CodeFrameStorage, isNamespaceMarker } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
+import { Preprocessor } from 'content-tag';
 
 const { JSDOM } = jsdom;
 
@@ -238,6 +239,11 @@ export class Audit {
     return cache.maybeMoved(cache.get(this.originAppRoot)).root;
   }
 
+  @Memoize()
+  private get preprocessor() {
+    return new Preprocessor();
+  }
+
   private get meta() {
     return this.pkg['ember-addon'] as AppMeta;
   }
@@ -276,8 +282,12 @@ export class Audit {
       return this.visitHTML;
     } else if (filename.endsWith('.hbs')) {
       return this.visitHBS;
+    } else if (filename.endsWith('.gjs') || filename.endsWith('.gts')) {
+      return this.visitGJS;
     } else if (filename.endsWith('.json')) {
       return this.visitJSON;
+    } else if (filename.endsWith('.css')) {
+      return this.visitCSS;
     } else {
       return this.visitJS;
     }
@@ -509,6 +519,22 @@ export class Audit {
     let rawSource = content.toString('utf8');
     let js = hbsToJS(rawSource);
     return this.visitJS(filename, js);
+  }
+
+  private async visitGJS(
+    filename: string,
+    content: Buffer | string
+  ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
+    let rawSource = content.toString('utf8');
+
+    const result = this.preprocessor.process(rawSource, { filename });
+
+    return this.visitJS(filename, result);
+  }
+
+  // TODO I don't know exactly how to just ignore CSS or if that's what we want here
+  private async visitCSS(): Promise<ParsedInternalModule['parsed'] | Finding[]> {
+    return [];
   }
 
   private async visitJSON(

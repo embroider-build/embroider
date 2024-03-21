@@ -15,6 +15,19 @@ appScenarios
   .map('compat-renaming', app => {
     app.addDependency('a-library', { files: { 'index.js': '' } });
     merge(app.files, {
+      'ember-cli-build.js': `'use strict';
+
+      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+      const { prebuild } = require('@embroider/compat');
+
+      module.exports = function (defaults) {
+        const app = new EmberApp(defaults, {
+          // Add options here
+        });
+
+        return prebuild(app, { staticAddonTrees: false, staticComponents: false });
+      };
+      `,
       app: {
         components: {
           'import-lodash.js': `
@@ -226,7 +239,9 @@ appScenarios
       });
       test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
         expectAudit
-          .module('assets/app-template.js')
+          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .resolves('./@embroider/core/entrypoint')
+          .toModule()
           .resolves('./-embroider-implicit-modules.js')
           .toModule()
           .withContents(contents => {

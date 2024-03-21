@@ -473,7 +473,7 @@ export function buildLiterals(
   if (typeof value === 'undefined') {
     return babelContext.types.identifier('undefined');
   }
-  let statement = babelContext.parse(`a(${JSON.stringify(value)})`) as t.File;
+  let statement = babelContext.parse(`a(${JSON.stringify(value)})`, { configFile: false }) as t.File;
   let expression = (statement.program.body[0] as t.ExpressionStatement).expression as t.CallExpression;
   return expression.arguments[0] as t.ObjectExpression;
 }

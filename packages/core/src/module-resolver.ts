@@ -95,11 +95,14 @@ export interface Options {
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
 }
 
-interface EngineConfig {
+// TODO: once we can remove the stage2 entrypoint this type can get streamlined
+// to the parts we actually need
+export interface EngineConfig {
   packageName: string;
   activeAddons: { name: string; root: string; canResolveFromFile: string }[];
   fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
   root: string;
+  isLazy: boolean;
 }
 
 type MergeEntry =
@@ -187,9 +190,18 @@ export class Resolver {
       return this.external('early require', request, request.specifier);
     }
 
+    if (request.specifier.startsWith('@embroider-dep')) {
+      return logTransition(
+        'Embroider direct dependency lookup',
+        request,
+        request.alias(request.specifier.replace(/^@embroider-dep\//, ''))
+      );
+    }
+
     request = this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
+    request = this.handleEntrypoint(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -414,6 +426,34 @@ export class Resolver {
         request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
       );
     }
+  }
+
+  private handleEntrypoint<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+    // TODO: also handle targeting from the outside (for engines) like:
+    // request.specifier === 'my-package-name/-embroider-entrypoint.js'
+    // just like implicit-modules does.
+
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = [
+      '#embroider/core/entrypoint',
+      '@embroider/core/entrypoint',
+      '/@embroider/core/entrypoint',
+      './@embroider/core/entrypoint',
+    ];
+
+    if (!candidates.includes(request.specifier)) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
   }
 
   private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {

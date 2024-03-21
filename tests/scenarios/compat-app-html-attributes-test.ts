@@ -2,6 +2,8 @@ import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { appScenarios } from './scenarios';
 import QUnit from 'qunit';
+import { join } from 'path';
+
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -47,21 +49,32 @@ appScenarios
     Qmodule(scenario.name, function (hooks) {
       hooks.beforeEach(async assert => {
         let app = await scenario.prepare();
-        let result = await app.execute('ember build');
+        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
-        expectFile = expectFilesAt(app.dir, { qunit: assert });
+        expectFile = expectFilesAt(join(app.dir, 'node_modules', '.embroider', 'rewritten-app'), { qunit: assert });
       });
 
       test('custom HTML attributes are passed through', () => {
-        expectFile('./dist/index.html').matches('<link integrity="" rel="stylesheet prefetch"');
-        expectFile('./dist/index.html').doesNotMatch('rel="stylesheet"');
-        expectFile('./dist/index.html').matches('<script defer');
-        expectFile('./dist/index.html').doesNotMatch('<script src');
-        // by default, there is no vendor CSS and the tag is omitted entirely
-        expectFile('./dist/index.html').doesNotMatch('data-original-filename="vendor.css">');
-        expectFile('./dist/index.html').matches('" data-original-filename="app-template.css">');
-        expectFile('./dist/index.html').matches('" data-original-filename="vendor.js">');
-        expectFile('./dist/index.html').matches('" data-original-filename="app-template.js">');
+        expectFile('./index.html').matches('<link integrity="" rel="stylesheet prefetch"', 'has the prefetch script');
+        expectFile('./index.html').doesNotMatch('rel="stylesheet"', 'does not have rel=stylesheet');
+        expectFile('./index.html').matches('<script defer', 'has script defer');
+        expectFile('./index.html').doesNotMatch('<script src', 'does not have script src');
+        expectFile('./index.html').doesNotMatch(
+          'data-original-filename="vendor.css">',
+          'does not have data-original-filename vendor.css'
+        );
+        expectFile('./index.html').matches(
+          '" data-original-filename="app-template.css">',
+          'has data-original-filename app-template.css'
+        );
+        expectFile('./index.html').matches(
+          '" data-original-filename="vendor.js">',
+          'has data-original-filename vendor.js'
+        );
+        expectFile('./index.html').matches(
+          '" data-original-filename="app-template.js" type="module">',
+          'has data-original-filename app-template.js'
+        );
       });
     });
   });

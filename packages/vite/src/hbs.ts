@@ -3,12 +3,13 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext, ResolvedId } from 'rollup';
 import type { Plugin } from 'vite';
-import { hbsToJS } from '@embroider/core';
+import { hbsToJS, ResolverLoader } from '@embroider/core';
 import assertNever from 'assert-never';
 import { parse as pathParse } from 'path';
 import makeDebug from 'debug';
 
 const debug = makeDebug('embroider:hbs-plugin');
+const resolverLoader = new ResolverLoader(process.cwd());
 
 export function hbs(): Plugin {
   return {
@@ -99,6 +100,24 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
   if (!templateResolution) {
     return null;
   }
+
+  const resolvedId = templateResolution.id.split('?')[0];
+  templateResolution.id = resolvedId;
+
+  const pkg = resolverLoader.resolver.packageCache.ownerOfFile(resolvedId);
+  const isInComponents = pkg?.isV2App() && resolvedId.slice(pkg?.root.length).startsWith('/components');
+
+  if (resolvedId.endsWith('/template.hbs') || !isInComponents) {
+    return {
+      ...templateResolution,
+      meta: {
+        'rollup-hbs-plugin': {
+          type: 'template',
+        },
+      },
+    };
+  }
+
   debug(`emitting template only component: %s`, templateResolution.id);
 
   // we're trying to resolve a JS module but only the corresponding HBS

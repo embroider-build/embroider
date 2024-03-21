@@ -5,9 +5,10 @@ export interface OptimizeDeps {
   [key: string]: unknown;
 }
 
-export function optimizeDeps(): OptimizeDeps {
+export function optimizeDeps(options: OptimizeDeps): OptimizeDeps {
   return {
-    exclude: ['@embroider/macros'],
+    ...options,
+    exclude: ['@embroider/macros', ...options.exclude],
     extensions: ['.hbs', '.gjs', '.gts'],
     esbuildOptions: {
       plugins: [esBuildResolver()],

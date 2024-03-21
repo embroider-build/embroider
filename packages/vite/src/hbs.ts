@@ -105,7 +105,7 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
   const pkg = resolverLoader.resolver.packageCache.ownerOfFile(resolvedId);
   const isInComponents = pkg?.isV2App() && resolvedId.slice(pkg?.root.length).startsWith('/components');
 
-  if (resolvedId.endsWith('/template.hbs' || !isInComponents)) {
+  if (resolvedId.endsWith('/template.hbs') || !isInComponents) {
     return {
       ...templateResolution,
       meta: {

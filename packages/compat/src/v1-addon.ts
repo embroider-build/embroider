@@ -384,8 +384,12 @@ export default class V1Addon {
     );
   }
 
+  hasCustomizedTree(): boolean {
+    return this.customizes(...dynamicTreeHooks);
+  }
+
   hasAnyTrees(): boolean {
-    return Boolean(stockTreeNames.find(name => this.hasStockTree(name))) || this.customizes(...dynamicTreeHooks);
+    return Boolean(stockTreeNames.find(name => this.hasStockTree(name))) || this.hasCustomizedTree();
   }
 
   // we keep all these here to ensure that we always apply the same options to
@@ -557,6 +561,7 @@ export default class V1Addon {
         version: 2,
         'auto-upgraded': true,
         type: 'addon',
+        'is-dynamic': this.hasCustomizedTree()
       },
       built.staticMeta,
       ...built.dynamicMeta.map(d => d())

@@ -1,4 +1,6 @@
 // TODO: I copied this from @embroider/addon-dev, it needs to be its own package
+// (or be in shared-internals or core)
+import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext, ResolvedId } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS, ResolverLoader } from '@embroider/core';
@@ -130,8 +132,10 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
   };
 }
 
+const hbsFilter = createFilter('**/*.hbs?(\\?)*');
+
 function maybeRewriteHBS(resolution: ResolvedId) {
-  if (!resolution.id.split('?')[0].endsWith('.hbs')) {
+  if (!hbsFilter(resolution.id)) {
     return null;
   }
   debug('emitting hbs rewrite: %s', resolution.id);

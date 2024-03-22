@@ -147,7 +147,7 @@ export default function main(context: typeof Babel): unknown {
               }
               const obj = t.objectExpression(
                 entries.map(e => {
-                  const key = e.split('.').slice(-1).join('.');
+                  const key = e.split('.').slice(0, -1).join('.');
                   const id = t.callExpression(
                     state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
                     [state.importUtil.import(path, join(resolvedPath, key).replace(/\\/g, '/'), '*')]

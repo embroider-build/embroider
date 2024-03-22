@@ -53,5 +53,56 @@ describe('importSync', function () {
       `);
       expect(code).toMatch(/import \* as _importSync\d from "my-plugin"/);
     });
+    test('importSync accepts template argument with dynamic part', () => {
+      let code = transform(`
+      import { importSync } from '@embroider/macros';
+      function getFile(file) {
+        return importSync(\`../../\${file}\`).default;
+      }
+      `);
+      expect(code).toEqual(`import esc from "../../src/addon/es-compat2";
+import * as _importSync0 from "../../README";
+import * as _importSync20 from "../../jest.config";
+import * as _importSync30 from "../../node_modules";
+import * as _importSync40 from "../../package";
+import * as _importSync50 from "../../src";
+import * as _importSync60 from "../../tests";
+function getFile(file) {
+  return {
+    "README": esc(_importSync0),
+    "jest.config": esc(_importSync20),
+    "node_modules": esc(_importSync30),
+    "package": esc(_importSync40),
+    "src": esc(_importSync50),
+    "tests": esc(_importSync60)
+  }[file].default;
+}`);
+    });
+
+    test('importSync accepts template argument with string binary expression', () => {
+      let code = transform(`
+      import { importSync } from '@embroider/macros';
+      function getFile(file) {
+        return importSync('../../' + file).default;
+      }
+      `);
+      expect(code).toEqual(`import esc from "../../src/addon/es-compat2";
+import * as _importSync0 from "../../README";
+import * as _importSync20 from "../../jest.config";
+import * as _importSync30 from "../../node_modules";
+import * as _importSync40 from "../../package";
+import * as _importSync50 from "../../src";
+import * as _importSync60 from "../../tests";
+function getFile(file) {
+  return {
+    "README": esc(_importSync0),
+    "jest.config": esc(_importSync20),
+    "node_modules": esc(_importSync30),
+    "package": esc(_importSync40),
+    "src": esc(_importSync50),
+    "tests": esc(_importSync60)
+  }[file].default;
+}`);
+    });
   });
 });

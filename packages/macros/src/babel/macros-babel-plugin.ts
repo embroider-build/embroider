@@ -147,11 +147,12 @@ export default function main(context: typeof Babel): unknown {
               }
               const obj = t.objectExpression(
                 entries.map(e => {
+                  const key = e.split('.')[0];
                   const id = t.callExpression(
                     state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
                     [state.importUtil.import(path, join(resolvedPath, e).replace(/\\/g, '/'), '*')]
                   );
-                  return t.objectProperty(t.stringLiteral(e), id);
+                  return t.objectProperty(t.stringLiteral(key), id);
                 })
               );
               const memberExpr = t.memberExpression(obj, property, true);

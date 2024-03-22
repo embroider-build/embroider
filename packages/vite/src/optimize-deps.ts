@@ -30,6 +30,6 @@ export function optimizeDeps(): OptimizeDeps {
       return ['@embroider/macros', ...addons];
     },
   });
-  
+
   return res;
 }

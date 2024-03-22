@@ -125,7 +125,7 @@ export default function main(context: typeof Babel): unknown {
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
           let specifier = path.node.arguments[0];
           if (specifier?.type !== 'StringLiteral') {
-            let relativePath;
+            let relativePath = '';
             let property;
             if (
               specifier.type === 'BinaryExpression' &&
@@ -136,21 +136,37 @@ export default function main(context: typeof Babel): unknown {
               property = specifier.right;
             }
             if (specifier.type === 'TemplateLiteral' && specifier.expressions[0].type === 'Identifier') {
-              relativePath = specifier.quasis[0].value.cooked;
+              relativePath = specifier.quasis[0].value.cooked!;
               property = specifier.expressions[0];
+            }
+            // babel might transform template form `../my-path/${id}` to '../my-path/'.concat(id)
+            if (
+              specifier.type === 'CallExpression' &&
+              specifier.callee.type === 'MemberExpression' &&
+              specifier.callee.property.type === 'Identifier' &&
+              specifier.callee.property.name === 'concat' &&
+              specifier.callee.object.type === 'StringLiteral' &&
+              specifier.arguments[0]?.type === 'Identifier'
+            ) {
+              relativePath = specifier.callee.object.value;
+              property = specifier.arguments[0];
             }
             if (property && relativePath && relativePath.startsWith('.')) {
               const resolvedPath = resolve(dirname((state as any).filename), relativePath);
               let entries: string[] = [];
               if (existsSync(resolvedPath)) {
-                entries = readdirSync(resolvedPath);
+                entries = readdirSync(resolvedPath).filter(e => !e.startsWith('.'));
               }
               const obj = t.objectExpression(
                 entries.map(e => {
-                  const key = e.split('.').slice(0, -1).join('.');
+                  let key = e.split('.')[0];
+                  const rest = e.split('.').slice(1, -1);
+                  if (rest.length) {
+                    key += `.${rest}`;
+                  }
                   const id = t.callExpression(
                     state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
-                    [state.importUtil.import(path, join(resolvedPath, key).replace(/\\/g, '/'), '*')]
+                    [state.importUtil.import(path, join(relativePath, key).replace(/\\/g, '/'), '*')]
                   );
                   return t.objectProperty(t.stringLiteral(key), id);
                 })
@@ -161,7 +177,7 @@ export default function main(context: typeof Babel): unknown {
               return;
             } else {
               throw new Error(
-                `importSync eager mode only supports dynamic paths which are relative, must start with a '.'`
+                `importSync eager mode only supports dynamic paths which are relative, must start with a '.', had ${specifier.type}`
               );
             }
           }

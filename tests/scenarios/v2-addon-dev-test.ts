@@ -113,6 +113,7 @@ appScenarios
                 flip
               </button>
             `,
+            'just-a-template.hbs': `<p>I am not a component but a template.</p>`,
             'out.hbs': `
               <out>{{yield}}</out>
             `,
@@ -124,10 +125,12 @@ appScenarios
                 import { tracked } from '@glimmer/tracking';
 
                 import FlipButton from './button';
+                import JustATemplate from './just-a-template';
                 import Out from './out';
 
                 export default class ExampleComponent extends Component {
                   Button = FlipButton;
+                  JustATemplate = JustATemplate;
                   Out = Out;
 
                   @tracked active = false;
@@ -136,6 +139,8 @@ appScenarios
                 }
               `,
             'index.hbs': `Hello there!
+
+              <this.JustATemplate />
 
               <this.Out>{{this.active}}</this.Out>
 
@@ -244,6 +249,7 @@ appScenarios
             './components/demo/button.js': './dist/_app_/components/demo/button.js',
             './components/single-file-component.js': './dist/_app_/components/single-file-component.js',
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
+            './components/demo/just-a-template.js': './dist/_app_/components/demo/just-a-template.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
             './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
           });
@@ -251,6 +257,7 @@ appScenarios
 
         test('the addon has expected public entrypoints', async function () {
           expectFile('dist/components/demo/index.js').exists();
+          expectFile('dist/components/demo/just-a-template.js').exists();
           expectFile('dist/components/demo/out.js').exists();
           expectFile('dist/components/demo/namespace-me.js').exists();
           expectFile('dist/components/-excluded/never-import-this.js').doesNotExist();
@@ -259,6 +266,9 @@ appScenarios
         test('the addon has expected app-reexports', async function () {
           expectFile('dist/_app_/components/demo/index.js').matches(
             'export { default } from "v2-addon/components/demo/index"'
+          );
+          expectFile('dist/_app_/components/demo/just-a-template.js').matches(
+            'export { default } from "v2-addon/components/demo/just-a-template"'
           );
           expectFile('dist/_app_/components/demo/out.js').matches(
             'export { default } from "v2-addon/components/demo/out"'
@@ -274,6 +284,16 @@ appScenarios
             /TEMPLATE = precompileTemplate\("Hello there/,
             'template is still in hbs format'
           );
+
+          expectFile(
+            'dist/components/demo/just-a-template.js'
+          ).equalsCode(`import templateOnly from '@ember/component/template-only';
+import { precompileTemplate } from '@ember/template-compilation';
+import { setComponentTemplate } from '@ember/component';
+var TEMPLATE = precompileTemplate("<p>I am not a component but a template.</p>");
+var JustATemplate = setComponentTemplate(TEMPLATE, templateOnly());
+export { JustATemplate as default };
+//# sourceMappingURL=just-a-template.js.map`);
         });
 
         test('gjs components compiled correctly', async function () {

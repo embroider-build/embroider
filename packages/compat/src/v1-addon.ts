@@ -561,7 +561,7 @@ export default class V1Addon {
         version: 2,
         'auto-upgraded': true,
         type: 'addon',
-        'is-dynamic': this.hasCustomizedTree()
+        'is-dynamic': this.hasCustomizedTree(),
       },
       built.staticMeta,
       ...built.dynamicMeta.map(d => d())

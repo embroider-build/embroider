@@ -1,9 +1,10 @@
-import { viteAppScenarios } from './scenarios';
+import { baseAddon, viteAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import { exec } from 'child_process';
 import { readdirSync } from 'fs-extra';
 import { join } from 'path';
+import { merge } from 'lodash';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -24,7 +25,88 @@ function execPromise(command: string): Promise<string> {
 
 viteAppScenarios
   .map('vite-app-basics', project => {
+    let addon = baseAddon();
+    addon.pkg.name = 'my-addon';
+    // setup addon that triggers packages/compat/src/hbs-to-js-broccoli-plugin.ts
+    merge(addon.files, {
+      'index.js': `
+        module.exports = {
+          name: 'my-addon',
+          setupPreprocessorRegistry(type, registry) {
+              // we want custom ast transforms for own addon
+              if (type === 'parent') {
+                return;
+              }
+              const plugin = this._buildPlugin();
+              plugin.parallelBabel = {
+                requireFile: __filename,
+                buildUsing: '_buildPlugin',
+                params: {},
+              };
+
+              registry.add('htmlbars-ast-plugin', plugin);
+            },
+
+            _buildPlugin(options) {
+              return {
+                name: 'test-transform',
+                plugin: () => {
+                  return {
+                    name: "test-transform",
+                    visitor: {
+                      Template() {}
+                    },
+                  };
+                },
+                baseDir() {
+                  return __dirname;
+                },
+              };
+            },
+        }
+      `,
+      app: {
+        components: {
+          'component-one.js': `export { default } from 'my-addon/components/component-one';`,
+        },
+      },
+      addon: {
+        components: {
+          'component-one.js': `
+          import Component from '@glimmer/component';
+          export default class ComponentOne extends Component {}
+        `,
+          'component-one.hbs': `component one template`,
+        },
+      },
+    });
+
+    project.addDevDependency(addon);
     project.mergeFiles({
+      tests: {
+        integration: {
+          'test-colocated-addon-component.js': `
+            import { module, test } from 'qunit';
+            import { setupRenderingTest } from 'ember-qunit';
+            import { render, rerender } from '@ember/test-helpers';
+            import { hbs } from 'ember-cli-htmlbars';
+
+            module('Integration | Component | component one template from addon', (hooks) => {
+              setupRenderingTest(hooks);
+
+              test('should have component one template from addon', async function (assert) {
+                await render(hbs\`
+                <ComponentOne></ComponentOne>
+                \`);
+                await rerender();
+                assert.dom().includesText('component one template');
+                assert.dom().doesNotIncludeText('export default precompileTemplate');
+              });
+            });
+
+          `,
+        },
+      },
       app: {
         adapters: {
           'post.js': `

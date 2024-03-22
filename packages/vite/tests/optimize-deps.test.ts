@@ -17,9 +17,6 @@ describe('optimizeDeps', function () {
             Any<Object>,
           ],
         },
-        "exclude": [
-          "@embroider/macros",
-        ],
         "extensions": [
           ".hbs",
           ".gjs",

@@ -82,6 +82,23 @@ viteAppScenarios
     });
 
     project.addDevDependency(addon);
+
+    let addon2 = baseAddon();
+    addon2.pkg.name = 'my-addon2';
+    merge(addon2.files, {
+      app: {
+        components: {
+          'component-two.js': `export { default } from 'my-addon2/components/component-two';`,
+        },
+      },
+      addon: {
+        components: {
+          'component-two.hbs': `component two template: "{{this}}"`,
+        },
+      },
+    });
+
+    project.addDevDependency(addon2);
     project.mergeFiles({
       tests: {
         integration: {
@@ -97,9 +114,11 @@ viteAppScenarios
               test('should have component one template from addon', async function (assert) {
                 await render(hbs\`
                 <ComponentOne></ComponentOne>
+                <ComponentTwo />
                 \`);
                 await rerender();
                 assert.dom().includesText('component one template');
+                assert.dom().includesText('component two template: ""');
                 assert.dom().doesNotIncludeText('export default precompileTemplate');
               });
             });

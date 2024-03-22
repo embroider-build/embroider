@@ -18,11 +18,18 @@ export function optimizeDeps(): OptimizeDeps {
     }
   }
 
-  return {
-    exclude: ['@embroider/macros', ...addons],
+  const res = {
     extensions: ['.hbs', '.gjs', '.gts'],
     esbuildOptions: {
       plugins: [esBuildResolver()],
     },
   };
+
+  Object.defineProperty(res, 'exclude', {
+    get() {
+      return ['@embroider/macros', ...addons];
+    }
+  });
+  
+  return res;
 }

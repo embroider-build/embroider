@@ -30,7 +30,7 @@ export = {
       }
     }
 
-    if (appInstance.env !== 'production') {
+    if (!appInstance.isProduction) {
       // tell the macros our app is under development
       macrosConfig.enablePackageDevelopment(getAppRoot(appInstance));
       // also tell them our root project is under development. This can be

@@ -53,8 +53,8 @@ export class Addon {
   // This wraps standalone .hbs files as Javascript files using inline
   // templates. This means special resolving rules for .hbs files aren't
   // required for javascript tooling to understand your package.
-  hbs() {
-    return hbs();
+  hbs(options = {}) {
+    return hbs(options);
   }
 
   gjs(options?: { inline_source_map: boolean }) {

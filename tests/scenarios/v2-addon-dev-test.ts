@@ -71,7 +71,9 @@ appScenarios
               exclude: ['**/-excluded/**/*'],
             }),
 
-            addon.hbs(),
+            addon.hbs({
+              templates: ['**/just-a-template.js'],
+            }),
             addon.gjs(),
             addon.dependencies(),
 
@@ -125,12 +127,10 @@ appScenarios
                 import { tracked } from '@glimmer/tracking';
 
                 import FlipButton from './button';
-                import JustATemplate from './just-a-template';
                 import Out from './out';
 
                 export default class ExampleComponent extends Component {
                   Button = FlipButton;
-                  JustATemplate = JustATemplate;
                   Out = Out;
 
                   @tracked active = false;
@@ -139,8 +139,6 @@ appScenarios
                 }
               `,
             'index.hbs': `Hello there!
-
-              <this.JustATemplate />
 
               <this.Out>{{this.active}}</this.Out>
 
@@ -287,12 +285,11 @@ appScenarios
 
           expectFile(
             'dist/components/demo/just-a-template.js'
-          ).equalsCode(`import templateOnly from '@ember/component/template-only';
-import { precompileTemplate } from '@ember/template-compilation';
+          ).equalsCode(`import { precompileTemplate } from '@ember/template-compilation';
 import { setComponentTemplate } from '@ember/component';
 var TEMPLATE = precompileTemplate("<p>I am not a component but a template.</p>");
-var JustATemplate = setComponentTemplate(TEMPLATE, templateOnly());
-export { JustATemplate as default };
+var justATemplate = setComponentTemplate(TEMPLATE, precompileTemplate("<p>I am not a component but a template.</p>"));
+export { justATemplate as default };
 //# sourceMappingURL=just-a-template.js.map`);
         });
 

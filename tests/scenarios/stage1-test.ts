@@ -13,6 +13,33 @@ appScenarios
   .map('stage-1-max-compat', project => {
     let addon = baseAddon();
 
+    merge(project.files, {
+      'ember-cli-build.js': `
+        'use strict';
+
+        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+        const { maybeEmbroider } = require('@embroider/test-setup');
+
+        module.exports = function (defaults) {
+          let app = new EmberApp(defaults, {
+          });
+
+          return maybeEmbroider(app, {
+            staticAddonTestSupportTrees: false,
+            staticAddonTrees: false,
+            staticComponents: false,
+            staticHelpers: false,
+            staticModifiers: false,
+            skipBabel: [
+              {
+                package: 'qunit',
+              },
+            ],
+          });
+        };
+      `,
+    });
+
     merge(addon.files, loadFromFixtureData('hello-world-addon'));
     addon.pkg.name = 'my-addon';
 
@@ -32,7 +59,9 @@ appScenarios
       hooks.before(async assert => {
         process.env.THROW_UNLESS_PARALLELIZABLE = '1'; // see https://github.com/embroider-build/embroider/pull/924
         app = await scenario.prepare();
-        let result = await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        let result = await app.execute(
+          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
+        );
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -172,7 +201,9 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        await app.execute(
+          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
+        );
       });
 
       hooks.beforeEach(assert => {
@@ -418,7 +449,9 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        await app.execute('cross-env STAGE1_ONLY=true node ./node_modules/ember-cli/bin/ember b');
+        await app.execute(
+          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
+        );
       });
 
       hooks.beforeEach(assert => {

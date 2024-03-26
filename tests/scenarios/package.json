@@ -83,6 +83,7 @@
     "ember-truth-helpers": "^3.0.0",
     "execa": "^5.1.1",
     "tslib": "^2.6.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "webpack": "^5.90.3"
   }
 }

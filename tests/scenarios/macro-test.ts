@@ -35,6 +35,7 @@ function scenarioSetup(project: Project) {
   macroSampleAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
   project.addDevDependency('version-changer', '4.0.0');
+  project.linkDevDependency('webpack', { baseDir: __dirname });
 
   project.addDevDependency(macroSampleAddon);
   project.addDevDependency(funkySampleAddon);
@@ -96,9 +97,11 @@ appScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`CLASSIC=true pnpm test`, async function (assert) {
+      test(`EMBROIDER_TEST_SETUP_FORCE=classic pnpm test`, async function (assert) {
         // throw_unless_parallelizable is enabled to ensure that @embroider/macros is parallelizable
-        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 CLASSIC=true pnpm test`);
+        let result = await app.execute(
+          `cross-env THROW_UNLESS_PARALLELIZABLE=1 EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test`
+        );
         assert.equal(result.exitCode, 0, result.output);
       });
     });
@@ -128,16 +131,18 @@ appScenarios
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
 
-      test(`CLASSIC=true @embroider/macros babel caching plugin works`, async function (assert) {
+      test(`EMBROIDER_TEST_SETUP_FORCE=classic @embroider/macros babel caching plugin works`, async function (assert) {
         updateVersionChanger(app, '4.0.1');
 
-        let lodashFourRun = await app.execute(`cross-env CLASSIC=true pnpm test`);
+        let lodashFourRun = await app.execute(`cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test`);
         assert.equal(lodashFourRun.exitCode, 0, lodashFourRun.output);
 
         // simulate a different version being installed
         updateVersionChanger(app, '3.0.0');
 
-        let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three CLASSIC=true pnpm test`);
+        let lodashThreeRun = await app.execute(
+          `cross-env EXPECTED_VERSION=three EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test`
+        );
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
     });
@@ -211,7 +216,7 @@ dummyAppScenarios
       });
 
       test(`pnpm test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
-        let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm test');
+        let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

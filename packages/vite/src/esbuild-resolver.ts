@@ -4,7 +4,7 @@ import { ResolverLoader, virtualContent, locateEmbroiderWorkingDir } from '@embr
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { resolve, join } from 'path';
+import { resolve } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
@@ -82,7 +82,6 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         const code = readFileSync(filename, 'utf8');
 
         const result = transform(preprocessor.process(code, { filename }), {
-          configFile: join(process.cwd(), 'babel.config.js'),
           filename,
         });
 
@@ -98,7 +97,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       build.onLoad({ filter: /\.hbs$/ }, async ({ path: filename }) => {
         const code = readFileSync(filename, 'utf8');
 
-        const result = transform(hbsToJS(code), { configFile: join(process.cwd(), 'babel.config.js'), filename });
+        const result = transform(hbsToJS(code), { filename });
 
         if (!result || !result.code) {
           throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);

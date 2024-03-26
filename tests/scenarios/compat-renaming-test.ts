@@ -15,6 +15,35 @@ appScenarios
   .map('compat-renaming', app => {
     app.addDependency('a-library', { files: { 'index.js': '' } });
     merge(app.files, {
+      'ember-cli-build.js': `'use strict';
+
+      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+      const { maybeEmbroider } = require('@embroider/test-setup');
+
+      module.exports = function (defaults) {
+        let app = new EmberApp(defaults, {});
+
+        return maybeEmbroider(app, {
+          staticAddonTrees: false,
+          staticComponents: false,
+          skipBabel: [
+            {
+              package: 'qunit',
+            },
+          ],
+          // TODO remove this when we virtualise the entrypoint
+          amdCompatibility: {
+            es: [
+              ["somebody-elses-package", ["default"]],
+              ["somebody-elses-package/deeper", ["default"]],
+              ["somebody-elses-package/environment", ["default"]],
+              ["somebody-elses-package/utils", ["default"]],
+              ["somebody-elses-package/utils/index", ["default"]],
+            ]
+          }
+        });
+      };
+      `,
       app: {
         components: {
           'import-lodash.js': `
@@ -226,7 +255,9 @@ appScenarios
       });
       test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
         expectAudit
-          .module('assets/app-template.js')
+          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .resolves('./assets/app-template.js')
+          .toModule()
           .resolves('./-embroider-implicit-modules.js')
           .toModule()
           .withContents(contents => {
@@ -241,12 +272,12 @@ appScenarios
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package')
-          .to(resolve('/@embroider/ext-cjs/somebody-elses-package').split(sep).join('/'));
+          .to(resolve('/@embroider/ext-es/somebody-elses-package?exports=default').split(sep).join('/'));
 
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package/deeper')
-          .to(resolve('/@embroider/ext-cjs/somebody-elses-package/deeper').split(sep).join('/'));
+          .to(resolve('/@embroider/ext-es/somebody-elses-package/deeper?exports=default').split(sep).join('/'));
       });
       test('single file package gets captured and renamed', function () {
         expectAudit

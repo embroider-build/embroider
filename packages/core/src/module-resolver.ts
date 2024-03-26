@@ -305,7 +305,9 @@ export class Resolver {
         let fastbootFile = engineConfig.fastbootFiles[candidate];
         if (fastbootFile) {
           if (fastbootFile.shadowedFilename) {
-            let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {});
+            let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {
+              configFile: false,
+            });
             let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
             if (switchFile === request.fromFile) {
               return logTransition('internal lookup from fastbootSwitch', request);
@@ -1237,7 +1239,7 @@ export class Resolver {
             `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
           );
         }
-        let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), {});
+        let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), { configFile: false });
         return request.virtualize(fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names));
     }
   }

@@ -4,8 +4,11 @@ import { existsSync } from 'fs';
 
 export function compatScss() {
   const resolverLoader = new ResolverLoader(process.cwd());
-
+  const weakMap = new WeakMap();
   function getAddons() {
+    if (weakMap.has(resolverLoader.resolver)) {
+      return weakMap.get(resolverLoader.resolver);
+    }
     const addons: string[] = [];
     for (const engine of resolverLoader.resolver.options.engines) {
       for (const activeAddon of engine.activeAddons) {
@@ -17,6 +20,7 @@ export function compatScss() {
         }
       }
     }
+    weakMap.set(resolverLoader.resolver, addons);
     return addons;
   }
 

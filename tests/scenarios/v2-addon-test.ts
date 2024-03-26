@@ -32,9 +32,9 @@ appScenarios
         'example-component.css': '/* not empty */ h1 { color: red }',
       },
       'import-from-npm.js': `
-        export default async function() { 
+        export default async function() {
           let { message } = await import('third-party');
-          return message() 
+          return message()
         }
         `,
     });
@@ -154,6 +154,7 @@ appScenarios
       let app: PreparedApp;
       hooks.before(async () => {
         app = await scenario.prepare();
+        console.log(app.dir);
       });
 
       test(`pnpm test`, async function (assert) {

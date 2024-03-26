@@ -1,6 +1,7 @@
 import type { ModuleRequest, Resolution } from '@embroider/core';
 import { cleanUrl, getUrlQueryParams } from '@embroider/core';
 import type { PluginContext, ResolveIdResult } from 'rollup';
+import { join } from 'path';
 
 export const virtualPrefix = 'embroider_virtual:';
 
@@ -12,9 +13,6 @@ export class RollupModuleRequest implements ModuleRequest {
     custom: Record<string, any> | undefined
   ): RollupModuleRequest | undefined {
     if (!(custom?.embroider?.enableCustomResolver ?? true)) {
-      return;
-    }
-    if (custom?.depScan) {
       return;
     }
 
@@ -156,7 +154,11 @@ export class RollupModuleRequest implements ModuleRequest {
       (err as any).code = 'MODULE_NOT_FOUND';
       return { type: 'not_found', err };
     }
-    let result = await this.context.resolve(this.specifierWithQueryParams, this.fromFileWithQueryParams, {
+    let from = this.fromFileWithQueryParams;
+    if (from.includes('rewritten-app') && !this.specifier.startsWith('.')) {
+      from = join(process.cwd(), 'package.json');
+    }
+    let result = await this.context.resolve(this.specifierWithQueryParams, from, {
       skipSelf: true,
       custom: {
         embroider: {

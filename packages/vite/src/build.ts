@@ -47,7 +47,7 @@ export function compatPrebuild(): Plugin {
       viteCommand = command;
       viteMode = mode;
     },
-    async buildStart() {
+    async configResolved() {
       if (!viteCommand) {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's command`);
       }

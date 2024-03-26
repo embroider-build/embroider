@@ -42,14 +42,14 @@ appScenarios
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
         const { maybeEmbroider } = require('@embroider/test-setup');
-        
+
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
             ...(process.env.FORCE_BUILD_TESTS ? {
               tests: true,
             } : undefined),
           });
-        
+
           return maybeEmbroider(app, {
             availableContentForTypes: ['custom'],
             skipBabel: [
@@ -69,21 +69,21 @@ appScenarios
               <title>AppTemplate</title>
               <meta name="description" content="">
               <meta name="viewport" content="width=device-width, initial-scale=1">
-          
+
               {{content-for "head"}}
-          
+
               <link integrity="" rel="stylesheet" href="/@embroider/core/vendor.css">
               <link integrity="" rel="stylesheet" href="/assets/app-template.css">
-          
+
               {{content-for "head-footer"}}
             </head>
             <body>
               {{content-for "body"}}
               {{content-for "custom"}}
-          
+
               <script src="/@embroider/core/vendor.js"></script>
               <script src="/@embroider/core/entrypoint" type="module"></script>
-          
+
               {{content-for "body-footer"}}
             </body>
           </html>
@@ -217,7 +217,7 @@ appScenarios
       });
 
       test('virtual styles are included in the CSS of the test build', async function (assert) {
-        let result = await app.execute('pnpm test');
+        let result = await app.execute('pnpm test:dist');
         assert.equal(result.exitCode, 0, result.output);
 
         // TODO: replace with an Audit when it's ready to take any given dist

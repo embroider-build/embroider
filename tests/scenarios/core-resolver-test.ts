@@ -1,5 +1,5 @@
 import type { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
-import { outputFileSync, readJsonSync, writeJSONSync } from 'fs-extra';
+import { ensureSymlinkSync, existsSync, outputFileSync, readJsonSync, writeFileSync, writeJSONSync } from 'fs-extra';
 import { resolve, sep } from 'path';
 import QUnit from 'qunit';
 import type { PreparedApp } from 'scenario-tester';
@@ -89,6 +89,22 @@ Scenarios.fromProject(() => new Project())
         givenFiles = function (files: Record<string, string>) {
           for (let [filename, contents] of Object.entries(files)) {
             outputFileSync(resolve(app.dir, filename), contents, 'utf8');
+          }
+          let embroiderDir = resolve(app.dir, 'node_modules', '.embroider', 'rewritten-packages');
+          let resolveableDir = resolve(app.dir, 'node_modules', '@embroider', 'rewritten-packages');
+          if (existsSync(embroiderDir)) {
+            ensureSymlinkSync(embroiderDir, resolveableDir);
+            writeFileSync(
+              resolve(resolveableDir, 'package.json'),
+              JSON.stringify(
+                {
+                  name: '@embroider/rewritten-packages',
+                  main: 'moved-package-target.js',
+                },
+                null,
+                2
+              )
+            );
           }
         };
         configure = async function (opts?: ConfigureOpts) {

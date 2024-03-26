@@ -25,7 +25,7 @@
     "ts-node": "^10.9.1"
   },
   "scripts": {
-    "test": "qunit --require ts-node/register *-test.ts",
+    "test": "qunit --require ts-node/register *-test.ts --filter=vite-dep-optimizer",
     "test:list": "scenario-tester list --require ts-node/register --files=*-test.ts",
     "test:output": "scenario-tester output --require ts-node/register --files=*-test.ts"
   },
@@ -82,6 +82,7 @@
     "ember-source-5.8": "npm:ember-source@~5.8.0",
     "ember-source-latest": "npm:ember-source@latest",
     "ember-truth-helpers": "^3.0.0",
+    "@ember/test-waiters": "^3.1.0",
     "execa": "^5.1.1",
     "node-fetch": "2.7.0",
     "strip-ansi": "^6.0.0",

@@ -21,10 +21,13 @@
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
     "start": "vite",
-    "test": "vite build --mode test && ember test --path dist",
-    "test:ember": "vite build --mode test && ember test --path dist"
+    "test": "node ./scripts/run-tests.mjs",
+    "test:dist": "vite build --mode test && ember test --path dist",
+    "test:ember": "node ./scripts/run-tests.mjs"
   },
   "devDependencies": {
+    "puppeteer-chromium-resolver": "^21.0.0",
+    "js-reporters": "^2.1.0",
     "@babel/core": "^7.19.3",
     "@babel/eslint-parser": "^7.22.5",
     "@babel/plugin-proposal-decorators": "^7.22.5",

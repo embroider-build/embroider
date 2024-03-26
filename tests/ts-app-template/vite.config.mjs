@@ -28,7 +28,12 @@ export default defineConfig({
       extensions: ['.gjs', '.js', '.hbs', '.ts', '.gts'],
     }),
   ],
-  optimizeDeps: optimizeDeps(),
+  optimizeDeps: optimizeDeps(
+    { force: true },
+    {
+      excludeLegacyAddons: ['ember-source/ember/index.js'],
+    }
+  ),
   server: {
     port: 4200,
     watch: {

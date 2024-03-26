@@ -1,5 +1,28 @@
-import { Scenarios, Project } from 'scenario-tester';
+import { Project, Scenario, Scenarios } from 'scenario-tester';
 import { dirname } from 'path';
+import { exec } from 'child_process';
+
+let prepare = Scenario.prototype.prepare;
+Scenario.prototype.prepare = async function (...args) {
+  function execPromise(command: string): Promise<string> {
+    return new Promise(function (resolve, reject) {
+      exec(command, (error, stdout) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve(stdout.trim());
+      });
+    });
+  }
+  let app = await prepare.call(this, ...args);
+  if (process.platform === 'win32') {
+    const command = `powershell.exe -command "(Get-Item -LiteralPath '${app.dir}').FullName"`;
+    app.dir = await execPromise(command);
+  }
+  console.log(app.dir);
+  return app;
+};
 
 export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
@@ -19,6 +42,7 @@ async function release(project: Project) {
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
   project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: '@ember/test-helpers-3' });
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
 }
 
 async function lts_5_8(project: Project) {
@@ -35,6 +59,7 @@ async function canary(project: Project) {
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
   project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: '@ember/test-helpers-3' });
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
 }
 
 export function supportMatrix(scenarios: Scenarios) {

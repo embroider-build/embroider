@@ -3,7 +3,8 @@ import { virtualContent, ResolverLoader } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 import makeDebug from 'debug';
-import { resolve } from 'path';
+import { resolve, join } from 'path';
+import type { PartialResolvedId } from 'rollup';
 
 const debug = makeDebug('embroider:vite');
 
@@ -11,6 +12,7 @@ export function resolver(): Plugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let server: ViteDevServer;
   let virtualDeps: Map<string, string[]> = new Map();
+  let optimizedDeps: Map<string, string> = new Map();
 
   return {
     name: 'embroider-resolver',
@@ -40,10 +42,24 @@ export function resolver(): Plugin {
         // fallthrough to other rollup plugins
         return null;
       }
+      let alias = await resolverLoader.resolver.resolveAlias(request, source);
+      if (request.fromFile && optimizedDeps.has(request.fromFile)) {
+        request = request.rehome(join(optimizedDeps.get(request.fromFile)!, 'package.json'));
+      }
       let resolution = await resolverLoader.resolver.resolve(request);
       switch (resolution.type) {
         case 'found':
         case 'ignored':
+          let res = resolution.result as PartialResolvedId;
+          if (res.id.includes('.vite/deps')) {
+            let pkg = resolverLoader.resolver.packageCache.ownerOfFile(
+              resolve('node_modules', alias.path.replace('@embroider', '.embroider'))
+            );
+            if (pkg) {
+              pkg = resolverLoader.resolver.packageCache.maybeMoved(pkg) || pkg;
+              optimizedDeps.set(res.id, pkg.root);
+            }
+          }
           return resolution.result;
         case 'not_found':
           return null;

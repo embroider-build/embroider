@@ -312,6 +312,10 @@ appScenarios
             }
           });
 
+          MacrosConfig.for(app).setOwnConfig(__filename, {
+            isClassic: Boolean(process.env.CLASSIC),
+          });
+
           return maybeEmbroider(app, {
             packageRules: [
               {

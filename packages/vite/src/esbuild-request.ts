@@ -142,9 +142,9 @@ export class EsBuildModuleRequest implements ModuleRequest {
         filename: request.specifier,
         result: {
           external: true,
-          namespace: 'file'
+          namespace: 'file',
         },
-      }
+      };
     }
 
     let result = await this.context.resolve(request.specifier, {

@@ -1,4 +1,4 @@
-import { viteAppScenarios } from './scenarios';
+import { baseAddon, viteAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import { exec } from 'child_process';
@@ -24,6 +24,24 @@ function execPromise(command: string): Promise<string> {
 
 viteAppScenarios
   .map('vite-app-basics', project => {
+    let addon = baseAddon();
+    addon.pkg.name = 'my-addon';
+    // setup addon that triggers packages/compat/src/hbs-to-js-broccoli-plugin.ts
+    addon.mergeFiles({
+      app: {
+        styles: {
+          'my-addon.scss': `
+            .my-style {
+              color: blue
+            }
+          `,
+        },
+      },
+    });
+
+    project.addDevDependency(addon);
+    project.addDevDependency('sass', 'latest');
+
     project.mergeFiles({
       app: {
         adapters: {
@@ -45,7 +63,9 @@ viteAppScenarios
           `,
         },
         routes: {
+          'application.module.scss': `@import 'my-addon'`,
           'application.ts': `
+            import './application.module.scss';
             import Route from '@ember/routing/route';
             import { service } from '@ember/service';
             export default class extends Route {

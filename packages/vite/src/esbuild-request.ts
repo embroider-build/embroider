@@ -134,14 +134,17 @@ export class EsBuildModuleRequest implements ModuleRequest {
         isVirtual: this.isVirtual,
       };
     }
+
     if (request.isNotFound) {
-      // todo: make sure this looks correct to users
       return {
-        type: 'not_found',
-        err: {
-          errors: [{ text: `module not found ${request.specifier}` }],
+        type: 'found',
+        isVirtual: false,
+        filename: request.specifier,
+        result: {
+          external: true,
+          namespace: 'file'
         },
-      };
+      }
     }
 
     let result = await this.context.resolve(request.specifier, {

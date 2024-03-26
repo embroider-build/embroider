@@ -73,7 +73,7 @@ viteAppScenarios
             .my-style {
               color: blue
             }
-          `
+          `,
         },
       },
       addon: {

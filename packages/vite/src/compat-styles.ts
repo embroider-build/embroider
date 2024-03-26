@@ -3,7 +3,6 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 
 export function compatScss() {
-
   const resolverLoader = new ResolverLoader(process.cwd());
 
   const pathsImporter = () => {
@@ -29,23 +28,22 @@ export function compatScss() {
         }
         if (existsSync(newPath)) {
           return {
-            file: newPath
+            file: newPath,
           };
         }
       }
-      return null
+      return null;
     }
     return (url: string, _prev: any, done: any) => {
-      search(url).then(done).catch(() => done(null));
+      search(url)
+        .then(done)
+        .catch(() => done(null));
     };
   };
 
   return {
     alias: [],
     importer: [pathsImporter()],
-    includePaths: [
-      process.cwd(),
-      join(process.cwd(), 'node_modules'),
-    ],
-  }
+    includePaths: [process.cwd(), join(process.cwd(), 'node_modules')],
+  };
 }

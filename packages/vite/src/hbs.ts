@@ -132,7 +132,7 @@ async function maybeSynthesizeComponentJS(context: PluginContext, source: string
   };
 }
 
-const hbsFilter = createFilter('**/*.hbs?(\\?)*');
+const hbsFilter = createFilter('**/*.hbs?([?]*)');
 
 function maybeRewriteHBS(resolution: ResolvedId) {
   if (!hbsFilter(resolution.id)) {

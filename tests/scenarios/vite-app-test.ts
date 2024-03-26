@@ -68,6 +68,13 @@ viteAppScenarios
         components: {
           'component-one.js': `export { default } from 'my-addon/components/component-one';`,
         },
+        styles: {
+          'my-addon.scss': `
+            .my-style {
+              color: blue
+            }
+          `
+        },
       },
       addon: {
         components: {
@@ -145,7 +152,9 @@ viteAppScenarios
           `,
         },
         routes: {
+          'application.module.scss': `@import 'my-addon'`,
           'application.ts': `
+            import './application.module.scss';
             import Route from '@ember/routing/route';
             import { service } from '@ember/service';
             export default class extends Route {

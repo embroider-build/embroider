@@ -34,7 +34,7 @@ viteAppScenarios
             .my-style {
               color: blue
             }
-          `
+          `,
         },
       },
     });

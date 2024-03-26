@@ -4,7 +4,6 @@ import QUnit from 'qunit';
 import { exec } from 'child_process';
 import { readdirSync } from 'fs-extra';
 import { join } from 'path';
-import { merge } from 'lodash';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -28,7 +27,7 @@ viteAppScenarios
     let addon = baseAddon();
     addon.pkg.name = 'my-addon';
     // setup addon that triggers packages/compat/src/hbs-to-js-broccoli-plugin.ts
-    merge(addon.files, {
+    addon.mergeFiles({
       'index.js': `
         module.exports = {
           name: 'my-addon',
@@ -85,7 +84,7 @@ viteAppScenarios
 
     let addon2 = baseAddon();
     addon2.pkg.name = 'my-addon2';
-    merge(addon2.files, {
+    addon2.mergeFiles({
       app: {
         components: {
           'component-two.js': `export { default } from 'my-addon2/components/component-two';`,

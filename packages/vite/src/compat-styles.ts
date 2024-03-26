@@ -5,7 +5,7 @@ import { existsSync } from 'fs';
 export function compatScss() {
   const resolverLoader = new ResolverLoader(process.cwd());
 
-  const pathsImporter = () => {
+  function getAddons() {
     const addons: string[] = [];
     for (const engine of resolverLoader.resolver.options.engines) {
       for (const activeAddon of engine.activeAddons) {
@@ -17,10 +17,15 @@ export function compatScss() {
         }
       }
     }
+    return addons;
+  }
+
+  const pathsImporter = () => {
     async function search(url: string) {
       if (existsSync(url)) {
         return null;
       }
+      const addons = getAddons();
       for (const p of addons) {
         let newPath = join(p, url);
         if (!newPath.endsWith('.scss') && !newPath.endsWith('.sass') && !newPath.endsWith('.css')) {

@@ -683,6 +683,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      minimatch:
+        specifier: ^3.0.4
+        version: 3.1.2
       resolve-package-path:
         specifier: ^4.0.1
         version: 4.0.3
@@ -714,6 +717,9 @@ importers:
       '@types/lodash':
         specifier: ^4.14.170
         version: 4.14.202
+      '@types/minimatch':
+        specifier: ^3.0.4
+        version: 3.0.5
       '@types/semver':
         specifier: ^7.3.6
         version: 7.5.8
@@ -8374,6 +8380,9 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
     dependencies:
       ajv: 8.12.0
 

@@ -29,7 +29,9 @@ appScenarios
       'babel.config.json': `
         {
           "plugins": [
-            "@embroider/addon-dev/template-colocation-plugin",
+            ["@embroider/addon-dev/template-colocation-plugin", {
+              exclude: ['**/just-a-template.js'],
+            }],
             "@babel/plugin-transform-class-static-block",
             ["babel-plugin-ember-template-compilation", {
               targetFormat: 'hbs',
@@ -286,9 +288,7 @@ appScenarios
           expectFile(
             'dist/components/demo/just-a-template.js'
           ).equalsCode(`import { precompileTemplate } from '@ember/template-compilation';
-import { setComponentTemplate } from '@ember/component';
-var TEMPLATE = precompileTemplate("<p>I am not a component but a template.</p>");
-var justATemplate = setComponentTemplate(TEMPLATE, precompileTemplate("<p>I am not a component but a template.</p>"));
+var justATemplate = precompileTemplate("<p>I am not a component but a template.</p>");
 export { justATemplate as default };
 //# sourceMappingURL=just-a-template.js.map`);
         });

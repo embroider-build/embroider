@@ -4,7 +4,7 @@
   "main": "index.mjs",
   "peerDependencies": {
     "@embroider/core": "workspace:^",
-    "vite": "^4.3.9"
+    "vite": "^4.3.9 || ^5.0.0"
   },
   "scripts": {
     "test": "jest"

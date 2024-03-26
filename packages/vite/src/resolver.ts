@@ -42,7 +42,13 @@ export function resolver(): Plugin {
         return await observeDepScan(this, source, importer, options);
       }
 
-      let request = RollupModuleRequest.from(this, source, importer, options.custom);
+      let request = RollupModuleRequest.from(
+        resolverLoader.resolver.packageCache,
+        this,
+        source,
+        importer,
+        options.custom
+      );
       if (!request) {
         // fallthrough to other rollup plugins
         return null;

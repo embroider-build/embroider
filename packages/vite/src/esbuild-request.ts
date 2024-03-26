@@ -5,6 +5,7 @@ import { dirname } from 'path';
 
 import type { PackageCache as _PackageCache, Resolution, ModuleRequest } from '@embroider/core';
 import { externalName } from '@embroider/reverse-exports';
+import { makeResolvable } from './request.js';
 
 type PublicAPI<T> = { [K in keyof T]: T[K] };
 type PackageCache = PublicAPI<_PackageCache>;
@@ -169,9 +170,13 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
     requestStatus(request.specifier);
 
-    let result = await this.context.resolve(request.specifier, {
-      importer: request.fromFile,
-      resolveDir: dirname(request.fromFile),
+    // we must make this also resolvable so that esbuild generates optimized deps for the same IDs
+    // that the vite resolver uses
+    let resolvable = makeResolvable(this.packageCache, this.fromFile, this.specifier);
+    let r = this.alias(resolvable.specifier).rehome(resolvable.fromFile);
+    let result = await this.context.resolve(r.specifier, {
+      importer: r.fromFile,
+      resolveDir: dirname(r.fromFile),
       kind: this.kind,
       pluginData: {
         embroider: {

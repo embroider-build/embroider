@@ -40,6 +40,7 @@ viteAppScenarios
     });
 
     project.addDevDependency(addon);
+    project.addDevDependency('sass');
 
     project.mergeFiles({
       app: {

@@ -1,6 +1,6 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
 import { transform } from '@babel/core';
-import { ResolverLoader, virtualContent, needsSyntheticComponentJS } from '@embroider/core';
+import { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } from '@embroider/core';
 import { readFileSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
@@ -91,8 +91,8 @@ export function esBuildResolver(): EsBuildPlugin {
         });
 
         if (result.errors.length === 0 && !result.external) {
-          let syntheticPath = needsSyntheticComponentJS(path, result.path, resolverLoader.resolver.packageCache);
-          if (syntheticPath) {
+          let syntheticPath = needsSyntheticComponentJS(path, result.path);
+          if (syntheticPath && isInComponents(result.path, resolverLoader.resolver.packageCache)) {
             return { path: syntheticPath, namespace: 'embroider-template-only-component' };
           }
         }

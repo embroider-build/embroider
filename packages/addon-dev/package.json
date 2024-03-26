@@ -40,7 +40,6 @@
     "fs-extra": "^10.0.0",
     "minimatch": "^3.0.4",
     "rollup-plugin-copy-assets": "^2.0.3",
-    "rollup-plugin-delete": "^2.0.0",
     "walk-sync": "^3.0.0",
     "yargs": "^17.0.1"
   },

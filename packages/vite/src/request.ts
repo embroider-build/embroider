@@ -2,7 +2,7 @@ import type { ModuleRequest, Resolution } from '@embroider/core';
 import { cleanUrl } from '@embroider/core';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
-export const virtualPrefix = '-embroider_virtual';
+export const virtualPrefix = '-embroider_virtual.js';
 
 export class RollupModuleRequest implements ModuleRequest {
   static from(

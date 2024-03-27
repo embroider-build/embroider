@@ -52,7 +52,8 @@ export function resolver(): Plugin {
     },
     load(id) {
       if (id.startsWith(virtualPrefix)) {
-        let { src, watches } = virtualContent(id.slice(virtualPrefix.length), resolverLoader.resolver);
+        let { pathname } = new URL(id, 'http://example.com');
+        let { src, watches } = virtualContent(pathname.slice(virtualPrefix.length + 1), resolverLoader.resolver);
         virtualDeps.set(id, watches);
         server?.watcher.add(watches);
         return src;

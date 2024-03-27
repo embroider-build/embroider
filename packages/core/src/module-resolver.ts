@@ -872,7 +872,7 @@ export class Resolver {
     if (pkg.name.startsWith('@')) {
       levels.push('..');
     }
-    let root = resolve(process.cwd(), 'package.json');
+    let root = resolve(process.cwd());
     let originalFromFile = request.fromFile;
     let moved = resolve(pkg.root, ...levels, 'moved-package-target.js', '..', request.specifier);
     let relative = './node_modules' + moved.split('.embroider')[1];

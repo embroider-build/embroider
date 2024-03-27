@@ -2,7 +2,7 @@ import type { ModuleRequest, Resolution } from '@embroider/core';
 import { cleanUrl } from '@embroider/core';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
-export const virtualPrefix = 'embroider_virtual:';
+export const virtualPrefix = '-embroider_virtual';
 
 export class RollupModuleRequest implements ModuleRequest {
   static from(
@@ -62,7 +62,7 @@ export class RollupModuleRequest implements ModuleRequest {
   virtualize(filename: string) {
     return new RollupModuleRequest(
       this.context,
-      virtualPrefix + filename,
+      filename + virtualPrefix,
       this.fromFile,
       this.meta,
       false,

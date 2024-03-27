@@ -20,8 +20,8 @@ export class RollupModuleRequest implements ModuleRequest {
 
     if (source && importer && source[0] !== '\0') {
       let nonVirtual: string;
-      if (importer.startsWith(virtualPrefix)) {
-        nonVirtual = importer.slice(virtualPrefix.length);
+      if (importer.endsWith(virtualPrefix)) {
+        nonVirtual = importer.slice(0, -virtualPrefix.length);
       } else {
         nonVirtual = importer;
       }
@@ -46,7 +46,7 @@ export class RollupModuleRequest implements ModuleRequest {
   }
 
   get isVirtual(): boolean {
-    return this.specifier.startsWith(virtualPrefix);
+    return this.specifier.endsWith(virtualPrefix);
   }
 
   alias(newSpecifier: string) {

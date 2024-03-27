@@ -30,6 +30,8 @@ export class RollupModuleRequest implements ModuleRequest {
       let fromFile = cleanUrl(nonVirtual);
 
       // strip query params off the source but keep track of them
+      // we use regexp-based methods over a URL object because the
+      // source can be a relative path.
       let cleanSource = cleanUrlQueryParams(source);
       let queryParams = getUrlQueryParams(source);
 
@@ -130,7 +132,7 @@ export class RollupModuleRequest implements ModuleRequest {
     if (this.isVirtual) {
       return {
         type: 'found',
-        filename: this.specifierWithQueryParams,
+        filename: this.specifier,
         result: { id: this.specifierWithQueryParams, resolvedBy: this.fromFile },
         isVirtual: this.isVirtual,
       };
@@ -152,7 +154,8 @@ export class RollupModuleRequest implements ModuleRequest {
       },
     });
     if (result) {
-      return { type: 'found', filename: result.id, result, isVirtual: this.isVirtual };
+      let { pathname } = new URL(result.id, 'http://example.com');
+      return { type: 'found', filename: pathname, result, isVirtual: this.isVirtual };
     } else {
       return { type: 'not_found', err: undefined };
     }

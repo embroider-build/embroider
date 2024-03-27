@@ -1,5 +1,5 @@
 import type { ModuleRequest, Resolution } from '@embroider/core';
-import { cleanUrl, cleanUrlQueryParams, getUrlQueryParams } from '@embroider/core';
+import { cleanUrl, getUrlQueryParams } from '@embroider/core';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
 export const virtualPrefix = 'embroider_virtual:';
@@ -28,12 +28,13 @@ export class RollupModuleRequest implements ModuleRequest {
 
       // strip query params off the importer
       let fromFile = cleanUrl(nonVirtual);
+      let importerQueryParams = getUrlQueryParams(nonVirtual);
 
       // strip query params off the source but keep track of them
       // we use regexp-based methods over a URL object because the
       // source can be a relative path.
-      let cleanSource = cleanUrlQueryParams(source);
-      let queryParams = getUrlQueryParams(source);
+      let cleanSource = cleanUrl(source, true);
+      let queryParams = getUrlQueryParams(source, true);
 
       return new RollupModuleRequest(
         context,
@@ -42,7 +43,8 @@ export class RollupModuleRequest implements ModuleRequest {
         custom?.embroider?.meta,
         false,
         undefined,
-        queryParams
+        queryParams,
+        importerQueryParams
       );
     }
   }
@@ -54,7 +56,8 @@ export class RollupModuleRequest implements ModuleRequest {
     readonly meta: Record<string, any> | undefined,
     readonly isNotFound: boolean,
     readonly resolvedTo: Resolution<ResolveIdResult> | undefined,
-    private queryParams: string
+    private queryParams: string,
+    private importerQueryParams: string
   ) {}
 
   get debugType() {
@@ -69,6 +72,10 @@ export class RollupModuleRequest implements ModuleRequest {
     return `${this.specifier}${this.queryParams}`;
   }
 
+  private get fromFileWithQueryParams(): string {
+    return `${this.fromFile}${this.importerQueryParams}`;
+  }
+
   alias(newSpecifier: string) {
     return new RollupModuleRequest(
       this.context,
@@ -77,7 +84,8 @@ export class RollupModuleRequest implements ModuleRequest {
       this.meta,
       false,
       undefined,
-      this.queryParams
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
   rehome(newFromFile: string) {
@@ -91,7 +99,8 @@ export class RollupModuleRequest implements ModuleRequest {
         this.meta,
         false,
         undefined,
-        this.queryParams
+        this.queryParams,
+        this.importerQueryParams
       ) as this;
     }
   }
@@ -103,7 +112,8 @@ export class RollupModuleRequest implements ModuleRequest {
       this.meta,
       false,
       undefined,
-      this.queryParams
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
   withMeta(meta: Record<string, any> | undefined): this {
@@ -114,7 +124,8 @@ export class RollupModuleRequest implements ModuleRequest {
       meta,
       this.isNotFound,
       this.resolvedTo,
-      this.queryParams
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
   notFound(): this {
@@ -125,7 +136,8 @@ export class RollupModuleRequest implements ModuleRequest {
       this.meta,
       true,
       undefined,
-      this.queryParams
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
   async defaultResolve(): Promise<Resolution<ResolveIdResult>> {
@@ -133,7 +145,7 @@ export class RollupModuleRequest implements ModuleRequest {
       return {
         type: 'found',
         filename: this.specifier,
-        result: { id: this.specifierWithQueryParams, resolvedBy: this.fromFile },
+        result: { id: this.specifierWithQueryParams, resolvedBy: this.fromFileWithQueryParams },
         isVirtual: this.isVirtual,
       };
     }
@@ -144,7 +156,7 @@ export class RollupModuleRequest implements ModuleRequest {
       (err as any).code = 'MODULE_NOT_FOUND';
       return { type: 'not_found', err };
     }
-    let result = await this.context.resolve(this.specifierWithQueryParams, this.fromFile, {
+    let result = await this.context.resolve(this.specifierWithQueryParams, this.fromFileWithQueryParams, {
       skipSelf: true,
       custom: {
         embroider: {
@@ -169,7 +181,8 @@ export class RollupModuleRequest implements ModuleRequest {
       this.meta,
       this.isNotFound,
       resolution,
-      this.queryParams
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
 }

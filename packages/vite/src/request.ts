@@ -2,7 +2,7 @@ import type { ModuleRequest, Resolution } from '@embroider/core';
 import { cleanUrl } from '@embroider/core';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
-export const virtualPrefix = 'embroider_virtual:';
+export const virtualPrefix = '-embroider_virtual.js';
 
 export class RollupModuleRequest implements ModuleRequest {
   static from(
@@ -20,8 +20,8 @@ export class RollupModuleRequest implements ModuleRequest {
 
     if (source && importer && source[0] !== '\0') {
       let nonVirtual: string;
-      if (importer.startsWith(virtualPrefix)) {
-        nonVirtual = importer.slice(virtualPrefix.length);
+      if (importer.endsWith(virtualPrefix)) {
+        nonVirtual = importer.slice(0, -virtualPrefix.length);
       } else {
         nonVirtual = importer;
       }
@@ -46,7 +46,7 @@ export class RollupModuleRequest implements ModuleRequest {
   }
 
   get isVirtual(): boolean {
-    return this.specifier.startsWith(virtualPrefix);
+    return this.specifier.endsWith(virtualPrefix);
   }
 
   alias(newSpecifier: string) {
@@ -62,7 +62,7 @@ export class RollupModuleRequest implements ModuleRequest {
   virtualize(filename: string) {
     return new RollupModuleRequest(
       this.context,
-      virtualPrefix + filename,
+      filename + virtualPrefix,
       this.fromFile,
       this.meta,
       false,

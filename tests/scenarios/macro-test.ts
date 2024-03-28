@@ -88,20 +88,31 @@ appScenarios
       });
 
       test(`pnpm test`, async function (assert) {
-        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 pnpm test`);
+        let result = await app.execute(`pnpm test`, {
+          env: {
+            THROW_UNLESS_PARALLELIZABLE: '1',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
 
       test(`pnpm build production`, async function (assert) {
-        let result = await app.execute(`cross-env THROW_UNLESS_PARALLELIZABLE=1 pnpm build:production`);
+        let result = await app.execute(`pnpm build`, {
+          env: {
+            THROW_UNLESS_PARALLELIZABLE: '1',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
 
       test(`EMBROIDER_TEST_SETUP_FORCE=classic pnpm test`, async function (assert) {
         // throw_unless_parallelizable is enabled to ensure that @embroider/macros is parallelizable
-        let result = await app.execute(
-          `cross-env THROW_UNLESS_PARALLELIZABLE=1 EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test`
-        );
+        let result = await app.execute(`pnpm ember test`, {
+          env: {
+            THROW_UNLESS_PARALLELIZABLE: '1',
+            EMBROIDER_TEST_SETUP_FORCE: 'classic',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
     });

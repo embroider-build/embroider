@@ -12,7 +12,6 @@
   },
   "scripts": {
     "build": "vite build",
-    "build:production": "ember build -prod",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",
     "lint:css": "stylelint \"**/*.css\"",
     "lint:css:fix": "concurrently \"npm:lint:css -- --fix\"",

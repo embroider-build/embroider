@@ -14,7 +14,7 @@ import { join, sep } from 'path';
 import { readJSONSync } from 'fs-extra';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import type { ResolverOptions as CoreResolverOptions } from '@embroider/core';
-import { Resolver, locateEmbroiderWorkingDir } from '@embroider/core';
+import { Resolver, cleanUrl, locateEmbroiderWorkingDir } from '@embroider/core';
 import type CompatOptions from './options';
 import type { AuditMessage, Loc } from './audit';
 import { camelCase, mergeWith } from 'lodash';
@@ -342,6 +342,10 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private findRules(absPath: string): PreprocessedComponentRule | undefined {
+    // when babel is invoked by vite our filenames can have query params still
+    // hanging off them. That would break rule matching.
+    absPath = cleanUrl(absPath, true);
+
     let fileRules = this.rules.files.get(absPath);
     let componentRules: PreprocessedComponentRule | undefined;
 

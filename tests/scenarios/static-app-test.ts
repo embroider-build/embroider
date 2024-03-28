@@ -348,11 +348,20 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      ['production', 'development'].forEach(env => {
-        test(`pnpm test: ${env}`, async function (assert) {
-          let result = await app.execute(`cross-env EMBER_ENV=${env} pnpm test`);
-          assert.equal(result.exitCode, 0, result.output);
+      test(`pnpm test: development`, async function (assert) {
+        let result = await app.execute(`pnpm test`);
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`pnpm test: production`, async function (assert) {
+        let result = await app.execute(`pnpm vite build --mode production`, {
+          env: {
+            FORCE_BUILD_TESTS: 'true',
+          },
         });
+        assert.equal(result.exitCode, 0, result.output);
+        result = await app.execute(`pnpm ember test --path dist`);
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

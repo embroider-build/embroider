@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite';
 import type { EmittedFile } from 'rollup';
 import { JSDOM } from 'jsdom';
-import { readFileSync, readJSONSync } from 'fs-extra';
+import { readFileSync, readJSONSync, existsSync } from 'fs-extra';
 import { dirname, posix, resolve } from 'path';
 
 // This is a type-only import, so it gets compiled away. At runtime, we load
@@ -65,11 +65,17 @@ class ScriptOptimizer {
   constructor(private rootDir: string) {}
 
   async optimizedScript(script: string): Promise<EmittedFile[]> {
+    let fullName = resolve(this.rootDir, script.slice(1));
+    if (!existsSync(fullName)) {
+      // in prod builds, test-support.js isn't going to exist (for example)
+      return [];
+    }
+
     // loading these lazily here so they never load in non-production builds.
     // The node cache will ensures we only load them once.
     const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
 
-    let inCode = readFileSync(resolve(this.rootDir, script.slice(1)), 'utf8');
+    let inCode = readFileSync(fullName, 'utf8');
     let terserOpts: MinifyOptions = {};
     let fileRelativeSourceMapURL;
     let appRelativeSourceMapURL;

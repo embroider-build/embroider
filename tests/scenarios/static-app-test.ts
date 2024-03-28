@@ -306,6 +306,7 @@ appScenarios
 
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
+            tests: process.env.FORCE_BUILD_TESTS ? true : undefined,
             'ember-bootstrap': {
               bootstrapVersion: 4,
               importBootstrapCSS: true

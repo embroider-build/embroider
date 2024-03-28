@@ -1,5 +1,5 @@
 import type { ModuleRequest, Resolution } from '@embroider/core';
-import { cleanUrl } from '@embroider/core';
+import { cleanUrl, getUrlQueryParams } from '@embroider/core';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
 export const virtualPrefix = 'embroider_virtual:';
@@ -28,7 +28,24 @@ export class RollupModuleRequest implements ModuleRequest {
 
       // strip query params off the importer
       let fromFile = cleanUrl(nonVirtual);
-      return new RollupModuleRequest(context, source, fromFile, custom?.embroider?.meta, false, undefined);
+      let importerQueryParams = getUrlQueryParams(nonVirtual);
+
+      // strip query params off the source but keep track of them
+      // we use regexp-based methods over a URL object because the
+      // source can be a relative path.
+      let cleanSource = cleanUrl(source, true);
+      let queryParams = getUrlQueryParams(source, true);
+
+      return new RollupModuleRequest(
+        context,
+        cleanSource,
+        fromFile,
+        custom?.embroider?.meta,
+        false,
+        undefined,
+        queryParams,
+        importerQueryParams
+      );
     }
   }
 
@@ -38,7 +55,9 @@ export class RollupModuleRequest implements ModuleRequest {
     readonly fromFile: string,
     readonly meta: Record<string, any> | undefined,
     readonly isNotFound: boolean,
-    readonly resolvedTo: Resolution<ResolveIdResult> | undefined
+    readonly resolvedTo: Resolution<ResolveIdResult> | undefined,
+    private queryParams: string,
+    private importerQueryParams: string
   ) {}
 
   get debugType() {
@@ -49,14 +68,40 @@ export class RollupModuleRequest implements ModuleRequest {
     return this.specifier.startsWith(virtualPrefix);
   }
 
+  private get specifierWithQueryParams(): string {
+    return `${this.specifier}${this.queryParams}`;
+  }
+
+  private get fromFileWithQueryParams(): string {
+    return `${this.fromFile}${this.importerQueryParams}`;
+  }
+
   alias(newSpecifier: string) {
-    return new RollupModuleRequest(this.context, newSpecifier, this.fromFile, this.meta, false, undefined) as this;
+    return new RollupModuleRequest(
+      this.context,
+      newSpecifier,
+      this.fromFile,
+      this.meta,
+      false,
+      undefined,
+      this.queryParams,
+      this.importerQueryParams
+    ) as this;
   }
   rehome(newFromFile: string) {
     if (this.fromFile === newFromFile) {
       return this;
     } else {
-      return new RollupModuleRequest(this.context, this.specifier, newFromFile, this.meta, false, undefined) as this;
+      return new RollupModuleRequest(
+        this.context,
+        this.specifier,
+        newFromFile,
+        this.meta,
+        false,
+        undefined,
+        this.queryParams,
+        this.importerQueryParams
+      ) as this;
     }
   }
   virtualize(filename: string) {
@@ -66,7 +111,9 @@ export class RollupModuleRequest implements ModuleRequest {
       this.fromFile,
       this.meta,
       false,
-      undefined
+      undefined,
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
   withMeta(meta: Record<string, any> | undefined): this {
@@ -76,29 +123,40 @@ export class RollupModuleRequest implements ModuleRequest {
       this.fromFile,
       meta,
       this.isNotFound,
-      this.resolvedTo
+      this.resolvedTo,
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
   notFound(): this {
-    return new RollupModuleRequest(this.context, this.specifier, this.fromFile, this.meta, true, undefined) as this;
+    return new RollupModuleRequest(
+      this.context,
+      this.specifier,
+      this.fromFile,
+      this.meta,
+      true,
+      undefined,
+      this.queryParams,
+      this.importerQueryParams
+    ) as this;
   }
   async defaultResolve(): Promise<Resolution<ResolveIdResult>> {
     if (this.isVirtual) {
       return {
         type: 'found',
         filename: this.specifier,
-        result: { id: this.specifier, resolvedBy: this.fromFile },
+        result: { id: this.specifierWithQueryParams, resolvedBy: this.fromFileWithQueryParams },
         isVirtual: this.isVirtual,
       };
     }
     if (this.isNotFound) {
       // TODO: we can make sure this looks correct in rollup & vite output when a
       // user encounters it
-      let err = new Error(`module not found ${this.specifier}`);
+      let err = new Error(`module not found ${this.specifierWithQueryParams}`);
       (err as any).code = 'MODULE_NOT_FOUND';
       return { type: 'not_found', err };
     }
-    let result = await this.context.resolve(this.specifier, this.fromFile, {
+    let result = await this.context.resolve(this.specifierWithQueryParams, this.fromFileWithQueryParams, {
       skipSelf: true,
       custom: {
         embroider: {
@@ -108,7 +166,8 @@ export class RollupModuleRequest implements ModuleRequest {
       },
     });
     if (result) {
-      return { type: 'found', filename: result.id, result, isVirtual: this.isVirtual };
+      let { pathname } = new URL(result.id, 'http://example.com');
+      return { type: 'found', filename: pathname, result, isVirtual: this.isVirtual };
     } else {
       return { type: 'not_found', err: undefined };
     }
@@ -121,7 +180,9 @@ export class RollupModuleRequest implements ModuleRequest {
       this.fromFile,
       this.meta,
       this.isNotFound,
-      resolution
+      resolution,
+      this.queryParams,
+      this.importerQueryParams
     ) as this;
   }
 }

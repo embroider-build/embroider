@@ -822,21 +822,6 @@ export class CompatAppBuilder {
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
     // first gather all the assets out of addons
     let assets: Asset[] = [];
-    for (let pkg of this.allActiveAddons) {
-      if (pkg.meta['public-assets']) {
-        for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
-          let sourcePath = resolvePath(pkg.root, filename);
-          let stats = statSync(sourcePath);
-          assets.push({
-            kind: 'on-disk',
-            sourcePath,
-            relativePath: appRelativeURL,
-            mtime: stats.mtimeMs,
-            size: stats.size,
-          });
-        }
-      }
-    }
 
     if (this.activeFastboot) {
       const source = `

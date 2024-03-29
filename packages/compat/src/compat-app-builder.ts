@@ -20,7 +20,6 @@ import {
   Resolver,
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
-import walkSync from 'walk-sync';
 import { resolve as resolvePath, posix } from 'path';
 import type { JSDOM } from 'jsdom';
 import type Options from './options';
@@ -89,23 +88,6 @@ export class CompatAppBuilder {
 
   private extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
     let assets: Asset[] = [];
-
-    // Everything in our traditional public tree is an on-disk asset
-    if (treePaths.publicTree) {
-      walkSync
-        .entries(treePaths.publicTree, {
-          directories: false,
-        })
-        .forEach(entry => {
-          assets.push({
-            kind: 'on-disk',
-            relativePath: entry.relativePath,
-            sourcePath: entry.fullPath,
-            mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
-            size: entry.size,
-          });
-        });
-    }
 
     // ember-cli traditionally outputs a dummy testem.js file to prevent
     // spurious errors when running tests under "ember s".

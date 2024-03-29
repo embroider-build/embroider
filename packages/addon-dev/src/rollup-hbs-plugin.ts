@@ -1,14 +1,13 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin, PluginContext, CustomPluginOptions } from 'rollup';
 import { readFileSync } from 'fs';
-import { hbsToJS } from '@embroider/core';
+import { correspondingTemplate, hbsToJS } from '@embroider/core';
 import minimatch from 'minimatch';
-import { parse as pathParse } from 'path';
 
 export default function rollupHbsPlugin({
-  templates,
+  excludeColocation,
 }: {
-  templates?: string[];
+  excludeColocation?: string[];
 }): Plugin {
   return {
     name: 'rollup-hbs-plugin',
@@ -26,7 +25,7 @@ export default function rollupHbsPlugin({
           source,
           importer,
           options,
-          templates
+          excludeColocation
         );
       }
     },
@@ -74,30 +73,22 @@ function getHbsToJSCode(file: string): { code: string } {
   };
 }
 
-function correspondingTemplate(filename: string): string {
-  let { ext } = pathParse(filename);
-  return filename.slice(0, filename.length - ext.length) + '.hbs';
-}
-
 async function maybeSynthesizeComponentJS(
   context: PluginContext,
   source: string,
   importer: string | undefined,
   options: { custom?: CustomPluginOptions; isEntry: boolean },
-  templates: string[] | undefined
+  excludeColocation: string[] | undefined
 ) {
-  let templateResolution = await context.resolve(
-    correspondingTemplate(source),
-    importer,
-    {
-      skipSelf: true,
-      ...options,
-    }
-  );
+  let hbsFilename = correspondingTemplate(source);
+  let templateResolution = await context.resolve(hbsFilename, importer, {
+    skipSelf: true,
+    ...options,
+  });
   if (!templateResolution) {
     return null;
   }
-  let type = templates?.some((glob) => minimatch(source, glob))
+  let type = excludeColocation?.some((glob) => minimatch(hbsFilename, glob))
     ? 'template-js'
     : 'template-only-component-js';
   // we're trying to resolve a JS module but only the corresponding HBS

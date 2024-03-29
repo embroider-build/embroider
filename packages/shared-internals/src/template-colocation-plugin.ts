@@ -7,7 +7,7 @@ import { explicitRelative, PackageCache } from '.';
 import { ImportUtil } from 'babel-import-util';
 import makeDebug from 'debug';
 import minimatch from 'minimatch';
-import { cleanUrl } from './paths';
+import { cleanUrl, correspondingTemplate } from './paths';
 
 const debug = makeDebug('embroider:template-colocation-plugin');
 
@@ -75,7 +75,7 @@ export default function main(babel: typeof Babel) {
             }
           }
 
-          if (state.opts.exclude?.some(glob => minimatch(filename, glob))) {
+          if (state.opts.exclude?.some(glob => minimatch(correspondingTemplate(filename), glob))) {
             debug('not handling colocation for %s', filename);
             return;
           }

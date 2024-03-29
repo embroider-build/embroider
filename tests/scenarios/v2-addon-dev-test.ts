@@ -30,7 +30,7 @@ appScenarios
         {
           "plugins": [
             ["@embroider/addon-dev/template-colocation-plugin", {
-              exclude: ['**/just-a-template.js'],
+              exclude: ['**/just-a-template.hbs'],
             }],
             "@babel/plugin-transform-class-static-block",
             ["babel-plugin-ember-template-compilation", {
@@ -74,7 +74,7 @@ appScenarios
             }),
 
             addon.hbs({
-              templates: ['**/just-a-template.js'],
+              excludeColocation: ['**/just-a-template.hbs'],
             }),
             addon.gjs(),
             addon.dependencies(),

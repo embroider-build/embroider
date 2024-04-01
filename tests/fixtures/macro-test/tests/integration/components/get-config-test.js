@@ -2,7 +2,7 @@ import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { render } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
-import { helper } from '@ember/component/helper';
+import { precompileTemplate } from "@ember/template-compilation";
 
 module('Integration | Macro | getConfig', function(hooks) {
   setupRenderingTest(hooks);
@@ -29,39 +29,47 @@ module('Integration | Macro | getConfig', function(hooks) {
 
   test('macroGetOwnConfig emits number', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
+    function myAssertion(value) {
       assert.equal(value, 42);
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetOwnConfig "count") }}`, {
+      scope: () => ({ myAssertion })
     }));
-    await render(hbs`{{my-assertion (macroGetOwnConfig "count") }}`);
   });
 
   test('macroGetOwnConfig emits boolean', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
+    function myAssertion(value) {
       assert.equal(value, true);
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetOwnConfig "inner" "items" "0" "awesome") }}`, {
+      scope: () => ({ myAssertion })
     }));
-    await render(hbs`{{my-assertion (macroGetOwnConfig "inner" "items" "0" "awesome") }}`);
   });
 
   test('macroGetOwnConfig emits string', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
+    function myAssertion(value) {
       assert.strictEqual(value, 'amazing');
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetOwnConfig "mode") }}`, {
+      scope: () => ({ myAssertion })
     }));
-    await render(hbs`{{my-assertion (macroGetOwnConfig "mode") }}`);
   });
 
   test('macroGetOwnConfig emits null', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
+    function myAssertion(value) {
       assert.strictEqual(value, null);
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetOwnConfig "inner" "description") }}`, {
+      scope: () => ({ myAssertion })
     }));
-    await render(hbs`{{my-assertion (macroGetOwnConfig "inner" "description") }}`);
   });
 
   test('macroGetOwnConfig emits complex pojo', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
+    function myAssertion(value) {
       assert.deepEqual(value, {
         mode: 'amazing',
         count: 42,
@@ -72,23 +80,29 @@ module('Integration | Macro | getConfig', function(hooks) {
           description: null
         }
       });
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetOwnConfig) }}`, {
+      scope: () => ({ myAssertion })
     }));
-    await render(hbs`{{my-assertion (macroGetOwnConfig) }}`);
   });
 
   test('macroGetOwnConfig emits undefined for missing key', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
+    function myAssertion(value) {
       assert.strictEqual(value, undefined);
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetOwnConfig "inner" "notAThing") }}`, {
+      scope: () => ({ myAssertion })
     }));
-    await render(hbs`{{my-assertion (macroGetOwnConfig "inner" "notAThing") }}`);
   });
 
   test('macroGetConfig emits undefined for missing config', async function(assert) {
     assert.expect(1);
-    this.owner.register('helper:my-assertion', helper(function([value]) {
+    function myAssertion(value) {
       assert.strictEqual(value, undefined);
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetConfig "ember-cli") }}`, {
+      scope: () => ({ myAssertion })
     }));
-    await render(hbs`{{my-assertion (macroGetConfig "ember-cli") }}`);
   });
 });

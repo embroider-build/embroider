@@ -42,15 +42,5 @@ module.exports = function (defaults) {
   app.import('vendor/prepend/four.js', { prepend: true });
   app.import('vendor/prepend/order.js', { prepend: true });
 
-  return maybeEmbroider(app, {
-    staticHelpers: false,
-    staticComponents: false,
-    staticAddonTrees: false,
-    staticModifiers: false,
-    skipBabel: [
-      {
-        package: 'qunit',
-      },
-    ],
-  });
+  return maybeEmbroider(app);
 };

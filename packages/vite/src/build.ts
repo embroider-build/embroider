@@ -1,15 +1,26 @@
 import { fork } from 'child_process';
 import type { Plugin } from 'vite';
 
-export function emberBuild(mode: string): Promise<void> {
-  if (mode === 'build') {
+export function emberBuild(command: string, mode: string): Promise<void> {
+  if (command === 'build') {
     return new Promise((resolve, reject) => {
-      const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--production']);
+      const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--environment', mode], {
+        env: {
+          ...process.env,
+          EMBROIDER_PREBUILD: 'true',
+        },
+      });
       child.on('exit', code => (code === 0 ? resolve() : reject()));
     });
   }
   return new Promise((resolve, reject) => {
-    const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--watch'], { silent: true });
+    const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--watch', '--environment', mode], {
+      silent: true,
+      env: {
+        ...process.env,
+        EMBROIDER_PREBUILD: 'true',
+      },
+    });
     child.on('exit', code => (code === 0 ? resolve() : reject(new Error('ember build --watch failed'))));
     child.on('spawn', () => {
       child.stderr?.on('data', data => {
@@ -26,15 +37,24 @@ export function emberBuild(mode: string): Promise<void> {
 }
 
 export function compatPrebuild(): Plugin {
-  let mode = 'build';
+  let viteCommand: string | undefined;
+  let viteMode: string | undefined;
+
   return {
     name: 'embroider-builder',
     enforce: 'pre',
-    configureServer() {
-      mode = 'development';
+    config(_config, { mode, command }) {
+      viteCommand = command;
+      viteMode = mode;
     },
     async buildStart() {
-      await emberBuild(mode);
+      if (!viteCommand) {
+        throw new Error(`bug: embroider compatPrebuild did not detect Vite's command`);
+      }
+      if (!viteMode) {
+        throw new Error(`bug: embroider compatPrebuild did not detect Vite's mode`);
+      }
+      await emberBuild(viteCommand, viteMode);
     },
   };
 }

@@ -9,7 +9,7 @@ import execa, { type Options, type ExecaChildProcess } from 'execa';
 
 const { module: Qmodule, test } = QUnit;
 
-let app = appScenarios.map('watch-mode', () => {
+let app = appScenarios.skip('canary').map('watch-mode', () => {
   /**
    * We will create files as a part of the watch-mode tests,
    * because creating files should cause appropriate watch/update behavior

@@ -1,6 +1,7 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const { maybeEmbroider } = require('@embroider/test-setup');
 
 module.exports = function (defaults) {
   let app = new EmberApp(defaults, {
@@ -41,10 +42,5 @@ module.exports = function (defaults) {
   app.import('vendor/prepend/four.js', { prepend: true });
   app.import('vendor/prepend/order.js', { prepend: true });
 
-  if (process.env.CLASSIC) {
-    return app.toTree();
-  }
-
-  const Webpack = require('@embroider/webpack').Webpack;
-  return require('@embroider/compat').compatBuild(app, Webpack);
+  return maybeEmbroider(app);
 };

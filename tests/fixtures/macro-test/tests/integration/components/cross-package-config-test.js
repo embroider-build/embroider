@@ -1,26 +1,24 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { render } from '@ember/test-helpers';
-import hbs from 'htmlbars-inline-precompile';
-import { helper } from '@ember/component/helper';
 import { reflectAddonConfig } from 'app-template/helpers/reflect-addon-config';
+import { precompileTemplate } from "@ember/template-compilation";
 
 module('Integration | cross-package-config', function (hooks) {
   setupRenderingTest(hooks);
 
   test(`addon's JS can see addon's merged config`, async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
-        assert.deepEqual(value, {
-          shouldBeOverwritten: 'overwritten',
-          configFromAddonItself: 'this is the addon',
-          configFromMacrosTests: 'exists',
-        });
-      })
-    );
-    await render(hbs`{{my-assertion (reflect-config)}}`);
+    function myAssertion(value) {
+      assert.deepEqual(value, {
+        shouldBeOverwritten: 'overwritten',
+        configFromAddonItself: 'this is the addon',
+        configFromMacrosTests: 'exists',
+      });
+    }
+    await render(precompileTemplate('{{myAssertion (reflect-config)}}', {
+      scope: () => ({ myAssertion })
+    }));
   });
 
   test(`app's JS can see addon's merged config`, async function (assert) {
@@ -33,31 +31,29 @@ module('Integration | cross-package-config', function (hooks) {
 
   test(`addon's HBS can see addon's merged config`, async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
-        assert.deepEqual(value, {
-          shouldBeOverwritten: 'overwritten',
-          configFromAddonItself: 'this is the addon',
-          configFromMacrosTests: 'exists',
-        });
-      })
-    );
-    await render(hbs`{{#reflect-hbs-config as |config|}} {{my-assertion config}} {{/reflect-hbs-config}}`);
+    function myAssertion(value) {
+      assert.deepEqual(value, {
+        shouldBeOverwritten: 'overwritten',
+        configFromAddonItself: 'this is the addon',
+        configFromMacrosTests: 'exists',
+      });
+    }
+    await render(precompileTemplate(`{{#reflect-hbs-config as |config|}} {{myAssertion config}} {{/reflect-hbs-config}}`, {
+      scope: () => ({ myAssertion })
+    }));
   });
 
   test(`app's HBS can see addon's merged config`, async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
-        assert.deepEqual(value, {
-          shouldBeOverwritten: 'overwritten',
-          configFromAddonItself: 'this is the addon',
-          configFromMacrosTests: 'exists',
-        });
-      })
-    );
-    await render(hbs`{{my-assertion (macroGetConfig "macro-sample-addon" )}}`);
+    function myAssertion(value) {
+      assert.deepEqual(value, {
+        shouldBeOverwritten: 'overwritten',
+        configFromAddonItself: 'this is the addon',
+        configFromMacrosTests: 'exists',
+      });
+    }
+    await render(precompileTemplate(`{{myAssertion (macroGetConfig "macro-sample-addon" )}}`, {
+      scope: () => ({ myAssertion })
+    }));
   });
 });

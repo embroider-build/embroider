@@ -6,7 +6,6 @@ import {
   templateTag,
   optimizeDeps,
   compatPrebuild,
-  assets,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -25,7 +24,6 @@ export default defineConfig(({ mode }) => {
       scripts(),
       resolver(),
       compatPrebuild(),
-      assets(),
 
       babel({
         babelHelpers: "runtime",
@@ -44,7 +42,6 @@ export default defineConfig(({ mode }) => {
         ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
       },
     },
-    publicDir: resolve(process.cwd(), "public"),
     build: {
       outDir: resolve(process.cwd(), "dist"),
       rollupOptions: {

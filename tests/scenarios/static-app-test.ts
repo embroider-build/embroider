@@ -1,4 +1,4 @@
-import { appScenarios } from './scenarios';
+import { appScenarios, baseAddon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
@@ -11,8 +11,69 @@ appScenarios
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
     project.addDevDependency(emberBootstrap());
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
-    project.linkDevDependency('ember-composable-helpers', { baseDir: __dirname });
     project.linkDevDependency('ember-modifier', { baseDir: __dirname });
+
+    let myHelpersAddon = baseAddon();
+    myHelpersAddon.pkg.name = 'my-helpers-addon';
+    myHelpersAddon.mergeFiles({
+      app: {
+        helpers: {
+          'reverse.js': `export { default } from 'my-helpers-addon/helpers/reverse'`,
+          'intersect.js': `export { default } from 'my-helpers-addon/helpers/intersect'`,
+        },
+      },
+      addon: {
+        helpers: {
+          'reverse.js': `
+            import { helper } from '@ember/component/helper';
+            import { A as emberArray, isArray as isEmberArray } from '@ember/array';
+
+            export function reverse([array]) {
+              if (!isEmberArray(array)) {
+                return [array];
+              }
+
+              return emberArray(array).slice(0).reverse();
+            }
+
+            export default helper(reverse);
+          `,
+          'intersect.js': `
+            import { helper } from '@ember/component/helper';
+            import { isArray as isEmberArray } from '@ember/array';
+
+            export function intersect([...arrays]) {
+              let confirmedArrays = arrays.map(array => {
+                return isEmberArray(array) ? array : [];
+              });
+              let results = confirmedArrays.pop().filter(candidate => {
+                for (let i = 0; i < confirmedArrays.length; i++) {
+                  let found = false;
+                  let array = confirmedArrays[i];
+                  for (let j = 0; j < array.length; j++) {
+                    if (array[j] === candidate) {
+                      found = true;
+                      break;
+                    }
+                  }
+
+                  if (found === false) {
+                    return false;
+                  }
+                }
+
+                return true;
+              });
+
+              return results;
+            }
+
+            export default helper(intersect);
+          `,
+        },
+      },
+    });
+    project.addDevDependency(myHelpersAddon);
 
     merge(project.files, {
       app: {
@@ -128,13 +189,13 @@ appScenarios
             {{/each}}
           `,
           'helpers-example.hbs': `
-            {{! this uses two helpers from ember-composable-helpers }}
+            {{! this uses reverse helpers from my-helpers-addon }}
             {{#each (reverse (array "alpha" "beta")) as |word| }}
               <div data-word={{word}}>{{word}}</div>
             {{/each}}
 
-            {{! then this lists all the helpers loaded into our app. It should have the two
-            above, but none of the other stuff from composable-helpers }}
+            {{! then this lists all the helpers loaded into our app. It should have reverse from
+            above, but none of the other stuff in the addon }}
             {{#each (loaded-helpers) as |name|}}
               <div data-helper-name={{name}}>{{name}}</div>
             {{/each}}
@@ -302,9 +363,13 @@ appScenarios
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
         const { MacrosConfig } = require('@embroider/macros/src/node');
+        const { maybeEmbroider } = require('@embroider/test-setup');
 
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
+            ...(process.env.FORCE_BUILD_TESTS ? {
+              tests: true,
+            } : undefined),
             'ember-bootstrap': {
               bootstrapVersion: 4,
               importBootstrapCSS: true
@@ -315,15 +380,7 @@ appScenarios
             isClassic: Boolean(process.env.CLASSIC),
           });
 
-          if (process.env.CLASSIC) {
-            return app.toTree();
-          }
-
-          const { compatBuild, recommendedOptions } = require('@embroider/compat');
-
-          const Webpack = require('@embroider/webpack').Webpack;
-          return compatBuild(app, Webpack, {
-            ...recommendedOptions.optimized,
+          return maybeEmbroider(app, {
             packageRules: [
               {
                 package: 'app-template',
@@ -355,11 +412,20 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      ['production', 'development'].forEach(env => {
-        test(`pnpm test: ${env}`, async function (assert) {
-          let result = await app.execute(`cross-env EMBER_ENV=${env} pnpm test`);
-          assert.equal(result.exitCode, 0, result.output);
+      test(`pnpm test: development`, async function (assert) {
+        let result = await app.execute(`pnpm test`);
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`pnpm test: production`, async function (assert) {
+        let result = await app.execute(`pnpm vite build --mode production`, {
+          env: {
+            FORCE_BUILD_TESTS: 'true',
+          },
         });
+        assert.equal(result.exitCode, 0, result.output);
+        result = await app.execute(`pnpm ember test --path dist`);
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

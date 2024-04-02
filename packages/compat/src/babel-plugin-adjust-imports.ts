@@ -6,7 +6,7 @@ import { ImportUtil } from 'babel-import-util';
 import { readJSONSync } from 'fs-extra';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { Package } from '@embroider/core';
-import { locateEmbroiderWorkingDir, packageName, Resolver, unrelativize } from '@embroider/core';
+import { cleanUrl, locateEmbroiderWorkingDir, packageName, Resolver, unrelativize } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
 import type { ActivePackageRules, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
 import { appTreeRulesDir } from './dependency-rules';
@@ -73,7 +73,7 @@ export default function main(babel: typeof Babel) {
 };
 
 function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: InternalConfig) {
-  let filename: string = (path.hub as any).file.opts.filename;
+  let filename: string = cleanUrl((path.hub as any).file.opts.filename);
   let entry = config.extraImports[filename];
   let adder = new ImportUtil(t, path);
   if (entry) {

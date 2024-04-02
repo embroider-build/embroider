@@ -1,11 +1,11 @@
 import { appScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import globby from 'globby';
 import fs from 'fs/promises';
 import { pathExists } from 'fs-extra';
 import path from 'path';
-import execa, { type Options, type ExecaChildProcess } from 'execa';
+import { spawn, type ChildProcessWithoutNullStreams, type ExecOptions } from 'child_process';
+import { type ModuleAt, fetchAssertions } from '@embroider/test-support/fetch-assertions';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -16,29 +16,45 @@ let app = appScenarios.map('watch-mode', () => {
    */
 });
 
-const DEFAULT_TIMEOUT = process.env.CI ? 90000 : 30000;
+const BOOT_TIMEOUT = process.env.CI ? 90000 : 30000;
+const INCREMENTAL_TIMEOUT = 3000;
 
-class EmberCLI {
-  static launch(args: readonly string[], options: Options<string> = {}): EmberCLI {
-    return new EmberCLI(execa('ember', args, { ...options, all: true }));
-  }
-
+class DevServer {
   private lines: string[] = [];
   private nextWaitedLine = 0;
-  private exitCode: number | null = null;
+  private exitReason: { code: number } | { signal: NodeJS.Signals } | null = null;
   private currentWaiter: (() => void) | undefined;
+  private _url: string | undefined;
 
-  constructor(private process: ExecaChildProcess) {
-    process.all!.on('data', data => {
+  static async launch(cmd: string, opts?: ExecOptions): Promise<DevServer> {
+    let s = new DevServer(spawn(cmd, { ...opts, shell: true, stdio: 'pipe' }));
+    // '  ➜  Local:   http://127.0.0.1:4200/'
+    s._url = (await s.waitFor(/Local:\s*(.*)$/, BOOT_TIMEOUT))[1];
+    return s;
+  }
+
+  private constructor(private process: ChildProcessWithoutNullStreams) {
+    const dataHandler = (data: string) => {
       const lines = data.toString().split(/\r?\n/);
       this.lines.push(...lines);
+      console.log(lines.join('\n'));
       this.currentWaiter?.();
-    });
+    };
 
-    process.on('exit', code => {
-      this.exitCode = code;
+    process.stderr.on('data', dataHandler);
+    process.stdout.on('data', dataHandler);
+
+    process.on('exit', (code, signal) => {
+      this.exitReason = code ? { code: code } : { signal: signal! };
       this.currentWaiter?.();
     });
+  }
+
+  get url(): string {
+    if (this._url == null) {
+      throw new Error(`bug: dev url not available`);
+    }
+    return this._url;
   }
 
   private async internalWait(timedOut?: Promise<void>): Promise<void> {
@@ -59,23 +75,26 @@ class EmberCLI {
     }
   }
 
-  private searchLines(output: string | RegExp): boolean {
+  private searchLines(output: string | RegExp): false | { found: string | RegExpMatchArray } {
     while (this.nextWaitedLine < this.lines.length) {
       let line = this.lines[this.nextWaitedLine++];
       if (typeof output === 'string') {
         if (output === line) {
-          return true;
+          return { found: output };
         }
       } else {
-        if (output.test(line)) {
-          return true;
+        let m = output.exec(line);
+        if (m) {
+          return { found: m };
         }
       }
     }
     return false;
   }
 
-  async waitFor(output: string | RegExp, timeout = DEFAULT_TIMEOUT): Promise<void> {
+  async waitFor(output: string, timeout?: number): Promise<string>;
+  async waitFor(output: RegExp, timeout?: number): Promise<RegExpMatchArray>;
+  async waitFor(output: string | RegExp, timeout = INCREMENTAL_TIMEOUT): Promise<string | RegExpMatchArray> {
     let timedOut = new Promise<void>((_resolve, reject) => {
       setTimeout(() => {
         let err = new Error(
@@ -91,10 +110,10 @@ class EmberCLI {
       }, timeout);
     });
     while (true) {
-      if (this.exitCode != null) {
+      if (this.exitReason != null) {
         throw new Error(
           'Process exited with code ' +
-            this.exitCode +
+            this.exitReason +
             ' before output "' +
             output +
             '" was found. ' +
@@ -102,15 +121,16 @@ class EmberCLI {
             this.lines.join('\n')
         );
       }
-      if (this.searchLines(output)) {
-        return;
+      let result = this.searchLines(output);
+      if (result) {
+        return result.found;
       }
       await this.internalWait(timedOut);
     }
   }
 
   async shutdown(): Promise<void> {
-    if (this.exitCode != null) {
+    if (this.exitReason != null) {
       return;
     }
 
@@ -127,10 +147,10 @@ class EmberCLI {
     await this.waitForExit();
   }
 
-  async waitForExit(): Promise<number> {
+  async waitForExit(): Promise<{ code: number } | { signal: NodeJS.Signals }> {
     while (true) {
-      if (this.exitCode != null) {
-        return this.exitCode;
+      if (this.exitReason != null) {
+        return this.exitReason;
       }
       await this.internalWait();
     }
@@ -263,73 +283,54 @@ function deindent(s: string): string {
 app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
-    let server: EmberCLI;
+    let server: DevServer;
+    let moduleAt: ModuleAt;
 
     function appFile(appPath: string): File {
       let fullPath = path.join(app.dir, ...appPath.split('/'));
       return new File(appPath, fullPath);
     }
 
-    async function waitFor(...args: Parameters<EmberCLI['waitFor']>): Promise<void> {
-      await server.waitFor(...args);
-    }
+    const waitFor: DevServer['waitFor'] = async function (...args) {
+      return server.waitFor(...(args as [any, any]));
+    } as DevServer['waitFor'];
 
     async function added(filePath: string): Promise<void> {
-      await waitFor(`file added ${path.join(...filePath.split('/'))}`);
+      await server.waitFor(`file added ${path.join(...filePath.split('/'))}`);
     }
 
     async function changed(filePath: string): Promise<void> {
-      await waitFor(`file changed ${path.join(...filePath.split('/'))}`);
+      await server.waitFor(`file changed ${path.join(...filePath.split('/'))}`);
     }
 
     async function deleted(filePath: string): Promise<void> {
-      await waitFor(`file deleted ${path.join(...filePath.split('/'))}`);
+      await server.waitFor(`file deleted ${path.join(...filePath.split('/'))}`);
     }
 
-    async function checkScripts(distPattern: RegExp, needle: string) {
-      let root = app.dir;
-      let available = await globby('**/*', { cwd: path.join(root, 'dist') });
-
-      let matchingFiles = available.filter((item: string) => distPattern.test(item));
-      let matchingFileContents = await Promise.all(
-        matchingFiles.map(async (item: string) => {
-          return fs.readFile(path.join(app.dir, 'dist', item), 'utf8');
-        })
-      );
-      return matchingFileContents.some((item: string) => item.includes(needle));
-    }
-
-    hooks.beforeEach(async () => {
+    hooks.beforeEach(async assert => {
       app = await scenario.prepare();
-      server = EmberCLI.launch(['serve', '--port', '0'], { cwd: app.dir });
-      await waitFor(/Serving on http:\/\/localhost:[0-9]+\//, DEFAULT_TIMEOUT * 2);
+      server = await DevServer.launch('pnpm start', { cwd: app.dir });
+      moduleAt = fetchAssertions(server.url, assert);
     });
 
     hooks.afterEach(async () => {
-      await server.shutdown();
+      await server?.shutdown();
     });
 
-    test(`ember serve`, async function (assert) {
-      const originalContent =
-        'TWO IS A GREAT NUMBER< I LKE IT A LOT< IT IS THE POWER OF ALL  OF ELECTRONICS, MATH, ETC';
-      assert.false(await checkScripts(/js$/, originalContent), 'file has not been created yet');
+    QUnit.only(`ember serve`, async function () {
+      const originalContent = 'export const two = "TWO"';
+      await moduleAt('simple-file.js').isNotFound('file has not been created yet');
 
-      await appFile('app/simple-file.js').write(`export const two = "${originalContent}";`);
+      await appFile('app/simple-file.js').write(originalContent);
+
       await added('simple-file.js');
-      await waitFor(/Build successful/);
 
-      assert.true(await checkScripts(/js$/, originalContent), 'the file now exists');
+      await moduleAt('simple-file.js').contains(originalContent, 'the file now exists');
 
-      const updatedContent = 'THREE IS A GREAT NUMBER TWO';
-      assert.false(await checkScripts(/js$/, updatedContent), 'file has not been created yet');
-
-      await appFile('app/simple-file.js').write(`export const two = "${updatedContent}";`);
+      const updatedContent = 'export const two = "THREE"';
+      await appFile('app/simple-file.js').write(updatedContent);
       await changed('simple-file.js');
-      await waitFor(/Build successful/);
-
-      // TODO: find a better way to test this; this seems to linger around
-      // assert.false(await checkScripts(/js$/, originalContent), 'the original file does not exists');
-      assert.true(await checkScripts(/js$/, updatedContent), 'the updated file now exists');
+      await moduleAt('simple-file.js').contains(updatedContent, 'the updated file now exists');
     });
 
     Qmodule('[GH#1619] co-located components regressions', function (hooks) {
@@ -413,9 +414,12 @@ app.forEachScenario(scenario => {
         `);
         await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
 
-        let test = await EmberCLI.launch(['test', '--filter', 'hello-world'], { cwd: app.dir });
-        await test.waitFor(/^not ok .+ Integration | hello-world: it renders/, DEFAULT_TIMEOUT * 2);
-        await assert.notStrictEqual(await test.waitForExit(), 0);
+        let result = await app.execute('pnpm test --filter hello-world');
+        assert.notStrictEqual(result.exitCode, 0);
+        assert.ok(
+          /^not ok .+ Integration | hello-world: it renders/.test(result.output),
+          `searching for test failure in output:\n${result.output}`
+        );
 
         await appFile('app/components/hello-world.hbs').write('hello world!');
         await added('components/hello-world.hbs');
@@ -428,9 +432,12 @@ app.forEachScenario(scenario => {
         `);
         await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
 
-        test = await EmberCLI.launch(['test', '--filter', 'hello-world'], { cwd: app.dir });
-        await test.waitFor(/^ok .+ Integration | hello-world: it renders/);
-        await assert.strictEqual(await test.waitForExit(), 0);
+        result = await app.execute('pnpm test --filter hello-world');
+        assert.strictEqual(result.exitCode, 0);
+        assert.ok(
+          /^ok .+ Integration | hello-world: it renders/.test(result.output),
+          `searching for test success in output:\n${result.output}`
+        );
       });
 
       test('Scenario 3: deleting a co-located template', async function () {

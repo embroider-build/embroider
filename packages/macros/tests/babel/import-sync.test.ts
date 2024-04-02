@@ -78,4 +78,5 @@ function getFile(file) {
   }[file].default;
 }`);
     });
+  });
 });

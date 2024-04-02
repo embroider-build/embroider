@@ -127,14 +127,6 @@ export default function main(context: typeof Babel): unknown {
           if (specifier?.type !== 'StringLiteral') {
             let relativePath = '';
             let property;
-            if (
-              specifier.type === 'BinaryExpression' &&
-              specifier.left.type === 'StringLiteral' &&
-              specifier.right.type === 'Identifier'
-            ) {
-              relativePath = specifier.left.value;
-              property = specifier.right;
-            }
             if (specifier.type === 'TemplateLiteral' && specifier.expressions[0].type === 'Identifier') {
               relativePath = specifier.quasis[0].value.cooked!;
               property = specifier.expressions[0];

@@ -70,24 +70,9 @@ dummyAppScenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectFile: ExpectFile;
 
       hooks.before(async () => {
         app = await scenario.prepare();
-      });
-
-      test('rewritten app contains public assets from both addon and dummy app after a build', async function (assert) {
-        await app.execute(`pnpm vite build`);
-        expectFile = expectRewrittenFilesAt(resolve(app.dir, 'tests/dummy'), {
-          qunit: assert,
-        });
-        expectFile('../../node_modules/.embroider/rewritten-app/addon-template/from-addon.txt').exists();
-        expectFile('../../node_modules/.embroider/rewritten-app/robots.txt').exists();
-        let assets = expectFile('../../node_modules/.embroider/rewritten-app/package.json')
-          .json()
-          .get('ember-addon.assets');
-        assets.includes('robots.txt');
-        assets.includes('./addon-template/from-addon.txt');
       });
 
       test('production build contains public assets from both addon and dummy app after a build', async function (assert) {

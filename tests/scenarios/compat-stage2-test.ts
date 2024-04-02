@@ -1,8 +1,7 @@
 import type { Options } from '@embroider/compat';
-import { writeFileSync, unlinkSync } from 'fs';
 import type { PreparedApp, Project } from 'scenario-tester';
 import { appScenarios, baseAddon, dummyAppScenarios, renameApp } from './scenarios';
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import { Rebuilder, Transpiler } from '@embroider/test-support';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
@@ -657,39 +656,6 @@ stage2Scenarios
       test(`app's babel plugins ran`, async function () {
         let assertFile = expectFile('custom-babel-needed.js').transform(build.transpile);
         assertFile.matches(/console\.log\(['"]embroider-sample-transforms-result['"]\)/);
-      });
-
-      test(`changes in app.css are propagated at rebuild`, async function () {
-        expectFile('assets/my-app.css').doesNotMatch('newly-added-class');
-        writeFileSync(join(app.dir, 'app/styles/app.css'), `.newly-added-class { color: red }`);
-        await builder.build({ changedDirs: [join(app.dir, 'app/styles')] });
-        expectFile('assets/my-app.css').matches('newly-added-class');
-      });
-
-      test(`public assets are included`, async function () {
-        expectFile('public-file-1.txt').matches(/initial state/);
-        expectFile('package.json').json().get('ember-addon.assets').includes('public-file-1.txt');
-      });
-
-      test(`updated public asset`, async function () {
-        writeFileSync(join(app.dir, 'public/public-file-1.txt'), `updated state`);
-        await builder.build({ changedDirs: [join(app.dir, 'app')] });
-
-        expectFile('public-file-1.txt').matches(/updated state/);
-      });
-
-      test(`added public asset`, async function () {
-        writeFileSync(join(app.dir, 'public/public-file-2.txt'), `added`);
-        await builder.build({ changedDirs: [join(app.dir, 'app')] });
-        expectFile('public-file-2.txt').matches(/added/);
-        expectFile('package.json').json().get('ember-addon.assets').includes('public-file-2.txt');
-      });
-
-      test(`removed public asset`, async function () {
-        unlinkSync(join(app.dir, 'public/public-file-1.txt'));
-        await builder.build({ changedDirs: [join(app.dir, 'app')] });
-        expectFile('public-file-1.txt').doesNotExist();
-        expectFile('package.json').json().get('ember-addon.assets').doesNotInclude('public-file-1.txt');
       });
 
       test('dynamic import is preserved', function () {

@@ -95,11 +95,14 @@ export interface Options {
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
 }
 
-interface EngineConfig {
+// TODO: once we can remove the stage2 entrypoint this type can get streamlined
+// to the parts we actually need
+export interface EngineConfig {
   packageName: string;
   activeAddons: { name: string; root: string; canResolveFromFile: string }[];
   fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
   root: string;
+  isLazy: boolean;
 }
 
 type MergeEntry =

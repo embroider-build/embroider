@@ -101,6 +101,7 @@ Scenarios.fromProject(() => new Project())
             engines: [
               {
                 packageName: 'my-app',
+                isLazy: false,
                 root: app.dir,
                 fastbootFiles: opts?.fastbootFiles ?? {},
                 activeAddons: [

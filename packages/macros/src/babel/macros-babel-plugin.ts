@@ -129,7 +129,7 @@ export default function main(context: typeof Babel): unknown {
             let property;
             if (specifier.type === 'TemplateLiteral') {
               relativePath = specifier.quasis[0].value.cooked!;
-              property = specifier.expressions[0];
+              property = specifier.expressions[0] as Expression;
             }
             // babel might transform template form `../my-path/${id}` to '../my-path/'.concat(id)
             if (
@@ -140,7 +140,7 @@ export default function main(context: typeof Babel): unknown {
               specifier.callee.object.type === 'StringLiteral'
             ) {
               relativePath = specifier.callee.object.value;
-              property = specifier.arguments[0];
+              property = specifier.arguments[0] as Expression;
             }
             if (property && relativePath && relativePath.startsWith('.')) {
               const resolvedPath = resolve(dirname((state as any).filename), relativePath);

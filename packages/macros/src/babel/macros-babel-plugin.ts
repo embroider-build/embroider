@@ -127,7 +127,7 @@ export default function main(context: typeof Babel): unknown {
           if (specifier?.type !== 'StringLiteral') {
             let relativePath = '';
             let property;
-            if (specifier.type === 'TemplateLiteral' && specifier.expressions[0].type === 'Identifier') {
+            if (specifier.type === 'TemplateLiteral') {
               relativePath = specifier.quasis[0].value.cooked!;
               property = specifier.expressions[0];
             }
@@ -137,8 +137,7 @@ export default function main(context: typeof Babel): unknown {
               specifier.callee.type === 'MemberExpression' &&
               specifier.callee.property.type === 'Identifier' &&
               specifier.callee.property.name === 'concat' &&
-              specifier.callee.object.type === 'StringLiteral' &&
-              specifier.arguments[0]?.type === 'Identifier'
+              specifier.callee.object.type === 'StringLiteral'
             ) {
               relativePath = specifier.callee.object.value;
               property = specifier.arguments[0];

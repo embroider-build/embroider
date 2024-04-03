@@ -425,10 +425,9 @@ export class Resolver {
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
     const candidates = [
-      '#embroider/core/test-support',
-      '@embroider/core/test-support',
-      '/@embroider/core/test-support',
-      './@embroider/core/test-support',
+      '@embroider/core/test-support.js',
+      '/@embroider/core/test-support.js',
+      './@embroider/core/test-support.js',
     ];
 
     if (!candidates.includes(request.specifier)) {

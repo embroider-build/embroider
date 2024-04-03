@@ -531,7 +531,7 @@ export class CompatAppBuilder {
     html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
 
     // virtual test-support.js
-    html.insertScriptTag(html.implicitTestScripts, '@embroider/core/test-support');
+    html.insertScriptTag(html.implicitTestScripts, '@embroider/core/test-support.js');
 
     let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);
     if (implicitTestStylesAsset) {

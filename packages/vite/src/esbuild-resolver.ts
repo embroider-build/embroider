@@ -69,6 +69,10 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       });
 
       build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
+        // We don't want esbuild to try loading virtual CSS files
+        if (path.endsWith('.css')) {
+          return { contents: '' };
+        }
         let { src } = virtualContent(path, resolverLoader.resolver);
         if (!macrosConfig) {
           macrosConfig = readJSONSync(

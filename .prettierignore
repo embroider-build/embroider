@@ -27,6 +27,7 @@
 /test-packages/release/src/*.d.ts
 /tests/scenarios/**/*.js
 /tests/scenarios/**/*.d.ts
+/tests/scenarios/output/
 /packages/test-setup/**/*.js
 /packages/test-setup/**/*.d.ts
 /packages/addon-shim/**/*.js
@@ -34,6 +35,7 @@
 /packages/addon-dev/**/*.js
 /packages/addon-dev/**/*.d.ts
 /tests/fixtures/
+/tests/addon-template/
 /packages/vite/index.mjs
 /packages/vite/**/*.js
 /packages/vite/**/*.d.ts

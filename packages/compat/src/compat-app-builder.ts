@@ -531,10 +531,7 @@ export class CompatAppBuilder {
     // virtual test-support.js
     html.insertScriptTag(html.implicitTestScripts, '@embroider/core/test-support.js');
 
-    let implicitTestStylesAsset = this.implicitTestStylesAsset(prepared, parentEngine);
-    if (implicitTestStylesAsset) {
-      html.insertStyleLink(html.implicitTestStyles, implicitTestStylesAsset.relativePath);
-    }
+    html.insertStyleLink(html.implicitTestStyles, '@embroider/core/test-support.css');
   }
 
   private implicitScriptsAsset(
@@ -547,21 +544,6 @@ export class CompatAppBuilder {
       let implicitScripts = this.impliedAssets('implicit-scripts', application, emberENV);
       if (implicitScripts.length > 0) {
         asset = new ConcatenatedAsset('assets/vendor.js', implicitScripts, this.resolvableExtensionsPattern);
-        prepared.set(asset.relativePath, asset);
-      }
-    }
-    return asset;
-  }
-
-  private implicitTestStylesAsset(
-    prepared: Map<string, InternalAsset>,
-    application: AppFiles
-  ): InternalAsset | undefined {
-    let asset = prepared.get('assets/test-support.css');
-    if (!asset) {
-      let implicitTestStyles = this.impliedAssets('implicit-test-styles', application);
-      if (implicitTestStyles.length > 0) {
-        asset = new ConcatenatedAsset('assets/test-support.css', implicitTestStyles, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }

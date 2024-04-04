@@ -3,6 +3,7 @@ import { virtualContent, ResolverLoader } from '@embroider/core';
 import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 import makeDebug from 'debug';
+import { resolve } from 'path';
 
 const debug = makeDebug('embroider:vite');
 
@@ -58,6 +59,16 @@ export function resolver(): Plugin {
         server?.watcher.add(watches);
         return src;
       }
+    },
+    buildEnd() {
+      this.emitFile({
+        type: 'asset',
+        fileName: '@embroider/core/test-support.js',
+        source: virtualContent(
+          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
+          resolverLoader.resolver
+        ).src,
+      });
     },
   };
 }

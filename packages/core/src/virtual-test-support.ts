@@ -1,7 +1,6 @@
 import type { Package } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { readFileSync } from 'fs';
-import { sortBy } from 'lodash';
 import resolve from 'resolve';
 import type { Engine } from './app-files';
 import type { Resolver } from './module-resolver';
@@ -66,16 +65,7 @@ if (typeof Testem !== 'undefined' && (typeof QUnit !== 'undefined' || typeof Moc
 
 function impliedAddonTestSupport(engine: Engine): string[] {
   let result: Array<string> = [];
-  for (let addon of sortBy(Array.from(engine.addons.keys()), pkg => {
-    switch (pkg.name) {
-      case 'loader.js':
-        return 0;
-      case 'ember-source':
-        return 10;
-      default:
-        return 1000;
-    }
-  })) {
+  for (let addon of Array.from(engine.addons.keys())) {
     let implicitScripts = addon.meta['implicit-test-scripts'];
     if (implicitScripts) {
       let options = { basedir: addon.root };

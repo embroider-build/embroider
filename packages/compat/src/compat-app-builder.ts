@@ -365,8 +365,22 @@ export class CompatAppBuilder {
   }
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
+    const addonKeys = Array.from(engine.addons.keys());
     let result: Array<string> = [];
-    for (let addon of sortBy(Array.from(engine.addons.keys()), this.scriptPriority.bind(this))) {
+
+    // Sort styles by package name, and scripts by scriptPriority
+    let sortedAddons;
+    switch (type) {
+      case 'implicit-styles':
+      case 'implicit-test-styles':
+        sortedAddons = sortBy(addonKeys, (pkg: Package) => pkg.name);
+        break;
+      case 'implicit-scripts':
+      case 'implicit-test-scripts':
+        sortedAddons = sortBy(addonKeys, this.scriptPriority.bind(this));
+    }
+
+    for (let addon of sortedAddons) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         let styles = [];

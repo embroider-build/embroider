@@ -390,20 +390,16 @@ export class CompatAppBuilder {
     for (let addon of sortedAddons) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
-        let styles = [];
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
           if (type === 'implicit-styles') {
             // exclude engines because they will handle their own css importation
             if (!addon.isLazyEngine()) {
-              styles.push(resolve.sync(mod, options));
+              result.push(resolve.sync(mod, options));
             }
           } else {
             result.push(resolve.sync(mod, options));
           }
-        }
-        if (styles.length) {
-          result = [...styles, ...result];
         }
       }
     }
@@ -581,8 +577,7 @@ export class CompatAppBuilder {
     if (!asset) {
       let implicitStyles = this.impliedAssets('implicit-styles', application);
       if (implicitStyles.length > 0) {
-        // we reverse because we want the synthetic vendor style at the top
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
+        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }

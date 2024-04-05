@@ -373,7 +373,14 @@ export class CompatAppBuilder {
     switch (type) {
       case 'implicit-styles':
       case 'implicit-test-styles':
-        sortedAddons = sortBy(addonKeys, (pkg: Package) => pkg.name);
+        sortedAddons = sortBy(addonKeys, pkg => pkg.name);
+
+        // The synthesized-vendor styles must come first
+        const synthesizedVendor = sortedAddons.find(pkg => pkg.name === '@embroider/synthesized-vendor');
+        if (synthesizedVendor) {
+          sortedAddons = sortedAddons.filter(pkg => pkg !== synthesizedVendor);
+          sortedAddons.unshift(synthesizedVendor);
+        }
         break;
       case 'implicit-scripts':
       case 'implicit-test-scripts':

@@ -581,7 +581,8 @@ export class CompatAppBuilder {
     if (!asset) {
       let implicitStyles = this.impliedAssets('implicit-styles', application);
       if (implicitStyles.length > 0) {
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
+        // we reverse because we want the synthetic vendor style at the top
+        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }

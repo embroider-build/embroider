@@ -365,24 +365,41 @@ export class CompatAppBuilder {
   }
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
+    const addonKeys = Array.from(engine.addons.keys());
     let result: Array<string> = [];
-    for (let addon of sortBy(Array.from(engine.addons.keys()), this.scriptPriority.bind(this))) {
+
+    // Sort styles by package name, and scripts by scriptPriority
+    let sortedAddons;
+    switch (type) {
+      case 'implicit-styles':
+      case 'implicit-test-styles':
+        sortedAddons = sortBy(addonKeys, pkg => pkg.name);
+
+        // The synthesized-vendor styles must come first
+        const synthesizedVendor = sortedAddons.find(pkg => pkg.name === '@embroider/synthesized-vendor');
+        if (synthesizedVendor) {
+          sortedAddons = sortedAddons.filter(pkg => pkg !== synthesizedVendor);
+          sortedAddons.unshift(synthesizedVendor);
+        }
+        break;
+      case 'implicit-scripts':
+      case 'implicit-test-scripts':
+        sortedAddons = sortBy(addonKeys, this.scriptPriority.bind(this));
+    }
+
+    for (let addon of sortedAddons) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
-        let styles = [];
         let options = { basedir: addon.root };
         for (let mod of implicitScripts) {
           if (type === 'implicit-styles') {
             // exclude engines because they will handle their own css importation
             if (!addon.isLazyEngine()) {
-              styles.push(resolve.sync(mod, options));
+              result.push(resolve.sync(mod, options));
             }
           } else {
             result.push(resolve.sync(mod, options));
           }
-        }
-        if (styles.length) {
-          result = [...styles, ...result];
         }
       }
     }
@@ -560,8 +577,7 @@ export class CompatAppBuilder {
     if (!asset) {
       let implicitStyles = this.impliedAssets('implicit-styles', application);
       if (implicitStyles.length > 0) {
-        // we reverse because we want the synthetic vendor style at the top
-        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles.reverse(), this.resolvableExtensionsPattern);
+        asset = new ConcatenatedAsset('assets/vendor.css', implicitStyles, this.resolvableExtensionsPattern);
         prepared.set(asset.relativePath, asset);
       }
     }

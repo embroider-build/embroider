@@ -160,8 +160,8 @@ scenarios
         );
       });
 
-      test(`addon's colocated components are correct in implicit-modules`, function () {
-        let assertFile = expectFile('./node_modules/my-addon/package.json').json();
+      test(`addon's colocated components are correct in implicit-modules`, async function () {
+        let assertFile = await expectFile('./node_modules/my-addon/package.json').json();
         assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-one');
         assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-two');
         assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-one.hbs');
@@ -199,8 +199,8 @@ scenarios
         );
       });
 
-      test(`addon's colocated components are not in implicit-modules`, function () {
-        let assertFile = expectFile('./node_modules/my-addon/package.json').json();
+      test(`addon's colocated components are not in implicit-modules`, async function () {
+        let assertFile = await expectFile('./node_modules/my-addon/package.json').json();
         assertFile.get(['ember-addon', 'implicit-modules']).equals(undefined);
       });
     });

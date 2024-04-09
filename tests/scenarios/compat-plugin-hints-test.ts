@@ -64,8 +64,8 @@ appScenarios
         expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
       });
 
-      test('is parallel safe', function () {
-        expectFile('./package.json').json().get('ember-addon.babel.isParallelSafe').equals(true);
+      test('is parallel safe', async function () {
+        (await expectFile('./package.json').json()).get('ember-addon.babel.isParallelSafe').equals(true);
       });
     });
   });

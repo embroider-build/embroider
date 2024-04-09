@@ -67,8 +67,7 @@ dummyAppScenarios
         // containing addon. By writing out the rewritten paths ourselves we
         // sidestep that problem≥
         expectFile('../../node_modules/.embroider/rewritten-app/robots.txt').exists();
-        expectFile('../../node_modules/.embroider/rewritten-app/package.json')
-          .json()
+        (await expectFile('../../node_modules/.embroider/rewritten-app/package.json').json())
           .get('ember-addon.assets')
           .includes('robots.txt');
       });

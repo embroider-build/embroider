@@ -68,3 +68,6 @@ package.json.ember-try
 #types added
 /types/**
 
+# scenario tester output
+/tests/scenarios/output/
+

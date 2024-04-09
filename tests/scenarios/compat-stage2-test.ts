@@ -112,11 +112,11 @@ stage2Scenarios
 
       let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
 
-      test('in repo addons are symlinked correctly', function () {
+      test('in repo addons are symlinked correctly', async function () {
         // check that package json contains in repo dep
-        expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
+        (await expectFile('./node_modules/dep-a/package.json').json()).get('dependencies.in-repo-a').equals('0.0.0');
+        (await expectFile('./node_modules/dep-b/package.json').json()).get('dependencies.in-repo-c').equals('0.0.0');
+        (await expectFile('./node_modules/dep-b/package.json').json()).get('dependencies.in-repo-b').equals('0.0.0');
 
         // check that in-repo addons are resolvable
         expectAudit
@@ -125,9 +125,15 @@ stage2Scenarios
           .to('./node_modules/dep-a/lib/in-repo-a/check-resolution-target.js');
 
         // check that the in repo addons are correctly upgraded
-        expectFile('./node_modules/dep-a/lib/in-repo-a/package.json').json().get('ember-addon.version').equals(2);
-        expectFile('./node_modules/dep-b/lib/in-repo-b/package.json').json().get('ember-addon.version').equals(2);
-        expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
+        (await expectFile('./node_modules/dep-a/lib/in-repo-a/package.json').json())
+          .get('ember-addon.version')
+          .equals(2);
+        (await expectFile('./node_modules/dep-b/lib/in-repo-b/package.json').json())
+          .get('ember-addon.version')
+          .equals(2);
+        (await expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json())
+          .get('ember-addon.version')
+          .equals(2);
 
         // check that the app trees with in repo addon are combined correctly
         expectAudit
@@ -668,7 +674,7 @@ stage2Scenarios
 
       test(`public assets are included`, async function () {
         expectFile('public-file-1.txt').matches(/initial state/);
-        expectFile('package.json').json().get('ember-addon.assets').includes('public-file-1.txt');
+        (await expectFile('package.json').json()).get('ember-addon.assets').includes('public-file-1.txt');
       });
 
       test(`updated public asset`, async function () {
@@ -682,14 +688,14 @@ stage2Scenarios
         writeFileSync(join(app.dir, 'public/public-file-2.txt'), `added`);
         await builder.build({ changedDirs: [join(app.dir, 'app')] });
         expectFile('public-file-2.txt').matches(/added/);
-        expectFile('package.json').json().get('ember-addon.assets').includes('public-file-2.txt');
+        (await expectFile('package.json').json()).get('ember-addon.assets').includes('public-file-2.txt');
       });
 
       test(`removed public asset`, async function () {
         unlinkSync(join(app.dir, 'public/public-file-1.txt'));
         await builder.build({ changedDirs: [join(app.dir, 'app')] });
         expectFile('public-file-1.txt').doesNotExist();
-        expectFile('package.json').json().get('ember-addon.assets').doesNotInclude('public-file-1.txt');
+        (await expectFile('package.json').json()).get('ember-addon.assets').doesNotInclude('public-file-1.txt');
       });
 
       test('dynamic import is preserved', function () {

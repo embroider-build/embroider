@@ -1,15 +1,13 @@
 import { appScenarios, baseAddon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
-import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { dirname } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('static-app', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
-    project.addDevDependency(emberBootstrap());
+    project.linkDevDependency('ember-bootstrap', { baseDir: __dirname });
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
     project.linkDevDependency('ember-modifier', { baseDir: __dirname });
 
@@ -429,12 +427,3 @@ appScenarios
       });
     });
   });
-
-function emberBootstrap() {
-  // https://github.com/kaliber5/ember-bootstrap/pull/1750
-  let modifiers = Project.fromDir(dirname(require.resolve('@ember/render-modifiers')), { linkDeps: true });
-  modifiers.removeDependency('ember-source');
-  let eb = Project.fromDir(dirname(require.resolve('ember-bootstrap')), { linkDeps: true });
-  eb.addDependency(modifiers);
-  return eb;
-}

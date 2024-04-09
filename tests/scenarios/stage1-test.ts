@@ -77,8 +77,8 @@ appScenarios
         expectFile('node_modules/my-addon/_app_/components/hello-world.js').exists();
       });
 
-      test('addon metadata', function () {
-        let myAddonPkg = expectFile('node_modules/my-addon/package.json').json();
+      test('addon metadata', async function () {
+        let myAddonPkg = await expectFile('node_modules/my-addon/package.json').json();
         myAddonPkg
           .get('ember-addon.app-js')
           .deepEquals({ './components/hello-world.js': './_app_/components/hello-world.js' });
@@ -466,8 +466,10 @@ appScenarios
         expectFile('node_modules/has-custom-base/file.js').matches(/weird-addon-path\/file\.js/);
       });
 
-      test('no fastboot-js is emitted', function () {
-        expectFile('node_modules/undefined-fastboot/package.json').json().get('ember-addon.fastboot-js').equals(null);
+      test('no fastboot-js is emitted', async function () {
+        (await expectFile('node_modules/undefined-fastboot/package.json').json())
+          .get('ember-addon.fastboot-js')
+          .equals(null);
       });
 
       test('custom tree hooks are detected when they have been patched into the addon instance', function () {

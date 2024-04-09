@@ -55,7 +55,8 @@ appScenarios
       });
 
       test(`pnpm test`, async function (assert) {
-        let result = await app.execute('pnpm test');
+        await app.execute('pnpm build');
+        let result = await app.execute('pnpm test --dir dist');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

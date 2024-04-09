@@ -50,9 +50,12 @@ appScenarios
           qunit: assert,
         });
       });
-      test('destDir puts vendor files into public assets', function () {
-        expectFile('./node_modules/.embroider/rewritten-packages/@embroider/synthesized-vendor/package.json')
-          .json()
+      test('destDir puts vendor files into public assets', async function () {
+        (
+          await expectFile(
+            './node_modules/.embroider/rewritten-packages/@embroider/synthesized-vendor/package.json'
+          ).json()
+        )
           .get(['ember-addon', 'public-assets', './vendor/some-font.ttf'])
           .equals('fonts/some-font.ttf');
         expectFile(
@@ -60,9 +63,12 @@ appScenarios
         ).exists();
       });
 
-      test('handle non-transformed node_module with explicit outputFile', function () {
-        expectFile('./node_modules/.embroider/rewritten-packages/@embroider/synthesized-vendor/package.json')
-          .json()
+      test('handle non-transformed node_module with explicit outputFile', async function () {
+        (
+          await expectFile(
+            './node_modules/.embroider/rewritten-packages/@embroider/synthesized-vendor/package.json'
+          ).json()
+        )
           .get([
             'ember-addon',
             'public-assets',

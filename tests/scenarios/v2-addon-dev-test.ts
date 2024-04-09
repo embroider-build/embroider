@@ -239,7 +239,7 @@ appScenarios
         });
 
         test('package.json is modified appropriately', async function () {
-          expectFile('package.json').json('ember-addon.app-js').deepEquals({
+          (await expectFile('package.json').json('ember-addon.app-js')).deepEquals({
             './components/another.js': './dist/_app_/components/another.js',
             './components/demo/button.js': './dist/_app_/components/demo/button.js',
             './components/single-file-component.js': './dist/_app_/components/single-file-component.js',

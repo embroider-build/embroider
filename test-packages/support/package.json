@@ -23,6 +23,7 @@
     "fs-extra": "^7.0.0",
     "loader.js": "^4.7.0",
     "lodash": "^4.17.10",
+    "node-fetch": "^2.0.0",
     "qunit": "^2.16.0",
     "typescript-memoize": "^1.0.1",
     "webpack": "^5"
@@ -33,6 +34,7 @@
     "@types/babel__traverse": "^7.18.5",
     "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
-    "@types/node": "^10.5.2"
+    "@types/node": "^10.5.2",
+    "@types/node-fetch": "2.x"
   }
 }

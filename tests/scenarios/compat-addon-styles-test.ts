@@ -119,10 +119,10 @@ appScenarios
         ).matches('.success { color: green }');
       });
 
-      test(`all addon CSS gets convert to implicit-styles`, function () {
-        let implicitStyles = expectRewrittenFile('./node_modules/my-addon3/package.json')
-          .json()
-          .get('ember-addon.implicit-styles');
+      test(`all addon CSS gets convert to implicit-styles`, async function () {
+        let implicitStyles = (await expectRewrittenFile('./node_modules/my-addon3/package.json').json()).get(
+          'ember-addon.implicit-styles'
+        );
         implicitStyles.includes('./my-addon3.css');
         implicitStyles.includes('./outer.css');
         implicitStyles.includes('./nested/inner.css');

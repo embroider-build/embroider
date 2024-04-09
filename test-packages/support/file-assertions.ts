@@ -1,7 +1,8 @@
 import { pathExistsSync, readFileSync } from 'fs-extra';
-import { resolve } from 'path';
+import { resolve, posix } from 'path';
 import get from 'lodash/get';
 import { Memoize } from 'typescript-memoize';
+import fetch from 'node-fetch';
 
 type ContentsResult = { result: true; data: string } | { result: false; actual: any; expected: any; message: string };
 type JSONResult = { result: true; data: any } | { result: false; actual: any; expected: any; message: string };
@@ -29,7 +30,7 @@ export class BoundExpectFile {
   }
 
   @Memoize()
-  protected get contents(): ContentsResult {
+  protected async getContents(): Promise<ContentsResult> {
     this.consumed = true;
     try {
       return {
@@ -66,56 +67,60 @@ export class BoundExpectFile {
     });
   }
 
-  private doMatch(pattern: string | RegExp, message: string | undefined, invert: boolean) {
-    if (!this.contents.result) {
-      this.adapter.assert(this.contents);
+  private async doMatch(pattern: string | RegExp, message: string | undefined, invert: boolean) {
+    const contents = await this.getContents();
+    console.log('in do match', contents);
+    if (!contents.result) {
+      this.adapter.assert(contents);
     } else {
       let result;
       if (typeof pattern === 'string') {
-        result = this.contents.data.indexOf(pattern) !== -1;
+        result = contents.data.indexOf(pattern) !== -1;
       } else {
-        result = pattern.test(this.contents.data);
+        result = pattern.test(contents.data);
       }
       if (invert) {
         result = !result;
       }
       this.adapter.assert({
         result,
-        actual: this.contents.data,
+        actual: contents.data,
         expected: pattern.toString(),
         message: message || `${this.path} contents unexpected`,
       });
     }
   }
 
-  matches(pattern: string | RegExp, message?: string): void {
-    this.doMatch(pattern, message, false);
+  async matches(pattern: string | RegExp, message?: string): Promise<void> {
+    return this.doMatch(pattern, message, false);
   }
-  doesNotMatch(pattern: string | RegExp, message?: string): void {
-    this.doMatch(pattern, message, true);
+  async doesNotMatch(pattern: string | RegExp, message?: string): Promise<void> {
+    return this.doMatch(pattern, message, true);
   }
-  equalsCode(expectedSource: string): void {
-    if (!this.contents.result) {
-      this.adapter.assert(this.contents);
+  async equalsCode(expectedSource: string): Promise<void> {
+    const contents = await this.getContents();
+    if (!contents.result) {
+      this.adapter.assert(contents);
     } else {
-      this.adapter.codeEqual(this.contents.data, expectedSource);
+      this.adapter.codeEqual(contents.data, expectedSource);
     }
   }
-  json(propertyPath?: string): JSONExpect {
+  async json(propertyPath?: string): Promise<JSONExpect> {
+    const contents = await this.getContents();
     return new JSONExpect(
       this.adapter,
       this.path,
       () => {
-        if (!this.contents.result) {
-          return this.contents;
+        if (!contents.result) {
+          return contents;
         }
         let parsed;
         try {
-          parsed = JSON.parse(this.contents.data);
+          parsed = JSON.parse(contents.data);
         } catch (err) {
           return {
             result: false,
-            actual: this.contents.data,
+            actual: contents.data,
             expected: 'valid json file',
             message: `${this.path} had invalid json`,
           };
@@ -144,8 +149,8 @@ export class TransformedFileExpect extends BoundExpectFile {
     super(basePath, path, adapter);
   }
   @Memoize()
-  protected get contents(): ContentsResult {
-    let raw = super.contents;
+  protected async getContents(): Promise<ContentsResult> {
+    let raw = await super.getContents();
     if (!raw.result) {
       return raw;
     }
@@ -163,22 +168,50 @@ export class TransformedFileExpect extends BoundExpectFile {
       };
     }
   }
-  failsToTransform(message: string) {
-    if (this.contents.result) {
+  async failsToTransform(message: string) {
+    const contents = await this.getContents();
+    if (contents.result) {
       this.adapter.assert({
         result: false,
-        actual: this.contents.data,
+        actual: contents.data,
         expected: `a transform error`,
         message: `expected to catch a transform error but none was thrown`,
       });
     } else {
       this.adapter.assert({
-        result: this.contents.actual.message.includes(message),
-        actual: this.contents.actual.message,
+        result: contents.actual.message.includes(message),
+        actual: contents.actual.message,
         expected: message,
         message: `contents of transform exception`,
       });
     }
+  }
+}
+
+export class RemoteExpectFile extends BoundExpectFile {
+  @Memoize()
+  protected async getContents(): Promise<ContentsResult> {
+    try {
+      const result = await fetch(this.fullPath);
+
+      return {
+        result: true,
+        data: await result.text(),
+      };
+    } catch (err) {
+      console.log('got err', err, this.fullPath);
+      return {
+        result: false,
+        actual: 'file missing',
+        expected: 'file present',
+        message: `${this.path} should exist`,
+      };
+    }
+  }
+
+  @Memoize()
+  get fullPath() {
+    return posix.join(this.basePath, this.path);
   }
 }
 

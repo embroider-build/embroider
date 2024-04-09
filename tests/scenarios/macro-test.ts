@@ -226,6 +226,9 @@ dummyAppScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
+      // TODO make the vite-app template still work with a classic build
+      // alternatively instead of polluting the vite app on disk you have scenario-tester change things
+      // we could consider this as a script that moves things around
       test(`pnpm test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
         let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test');
         assert.equal(result.exitCode, 0, result.output);

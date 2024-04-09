@@ -66,7 +66,35 @@ class BuildWithVite extends Plugin {
         stdio: 'inherit',
         env: { ...process.env },
       });
-      child.on('exit', code => (code === 0 ? resolve() : reject(new Error('vite build failed'))));
+
+      process.on('exit', function () {
+        console.log('killing vite process on exit');
+        child.kill();
+      });
+
+      process.on('SIGINT', function () {
+        console.log('killing vite process on sigint');
+        child.kill();
+      });
+
+      // catches "kill pid" (for example: nodemon restart)
+      process.on('SIGUSR1', function () {
+        console.log('killing vite process on sigusr1');
+        child.kill();
+      });
+      process.on('SIGUSR2', function () {
+        console.log('killing vite process on sigusr2');
+        child.kill();
+      });
+
+      child.on('exit', code => {
+        console.log('child has exited', code);
+        if (code === 0) {
+          return resolve();
+        } else {
+          reject(new Error('vite build failed'));
+        }
+      });
     });
   }
 }

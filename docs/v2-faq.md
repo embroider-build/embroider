@@ -141,7 +141,8 @@ This is done by adding some meta data to the addon's `package.json`, specifying 
 }
 ```
  
-If you have many files you want to expose this way, you can instead add the `addon.publicAssets()` plugin from `@embroider/addon-dev` to your Rollup config to automate the generation of this mapping data.
+If you have many files you want to expose this way, you can instead add the `addon.publicAssets()` plugin from `@embroider/addon-dev` to your Rollup config to automate the generation of this mapping data. This rollup plugin will automatically prefix your public assets with a folder name that matches your addon packages name, this is to prevent any name clashes between addons. You can read more about it in the docs for the addon-dev rollup plugin utilities https://github.com/embroider-build/embroider/tree/main/packages/addon-dev#rollup-utilities
+
 
 ## Build setup
 

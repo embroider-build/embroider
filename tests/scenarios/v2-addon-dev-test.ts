@@ -1,6 +1,6 @@
 import path from 'path';
 import { appScenarios, baseV2Addon } from './scenarios';
-import { PreparedApp } from 'scenario-tester';
+import { PreparedApp, type Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
@@ -74,6 +74,7 @@ appScenarios
             addon.hbs(),
             addon.gjs(),
             addon.dependencies(),
+            addon.publicAssets('public'),
 
             babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
 
@@ -151,19 +152,87 @@ appScenarios
           },
         },
       },
+      public: {
+        'thing.txt': 'hello there',
+      },
     });
 
-    addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
-    addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
-    addon.linkDependency('babel-plugin-ember-template-compilation', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/core', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/plugin-transform-class-static-block', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/plugin-transform-class-properties', { baseDir: __dirname });
-    addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
-    addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });
-    addon.linkDevDependency('rollup', { baseDir: __dirname });
+    let addonNoNamespace = baseV2Addon();
+    addonNoNamespace.pkg.name = 'v2-addon-no-namespace';
+    addonNoNamespace.pkg.scripts = {
+      build: 'node ./node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
+    };
+
+    merge(addonNoNamespace.files, {
+      src: {
+        components: {
+          'hello.hbs': '<h1>hello</h1>',
+        },
+      },
+      public: {
+        'other.txt': 'we meet again',
+      },
+      'babel.config.json': `
+        {
+          "plugins": [
+            "@embroider/addon-dev/template-colocation-plugin",
+            "@babel/plugin-transform-class-static-block",
+            ["babel-plugin-ember-template-compilation", {
+              targetFormat: 'hbs',
+              compilerPath: 'ember-source/dist/ember-template-compiler',
+            }],
+            ["@babel/plugin-proposal-decorators", { "legacy": true }],
+            [ "@babel/plugin-transform-class-properties" ]
+          ]
+        }
+      `,
+      'rollup.config.mjs': `
+        import { babel } from '@rollup/plugin-babel';
+        import { Addon } from '@embroider/addon-dev/rollup';
+
+        const addon = new Addon({
+          srcDir: 'src',
+          destDir: 'dist',
+        });
+
+        export default {
+          output: addon.output(),
+
+          plugins: [
+            addon.publicEntrypoints([
+              'components/**/*.js',
+            ], {
+              exclude: ['**/-excluded/**/*'],
+            }),
+
+            addon.hbs(),
+            addon.publicAssets('public', { namespace: '' }),
+
+            babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
+
+            addon.clean(),
+          ],
+        };
+      `,
+    });
+
+    function linkDependencies(addon: Project) {
+      addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
+      addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
+      addon.linkDependency('babel-plugin-ember-template-compilation', { baseDir: __dirname });
+      addon.linkDevDependency('@babel/core', { baseDir: __dirname });
+      addon.linkDevDependency('@babel/plugin-transform-class-static-block', { baseDir: __dirname });
+      addon.linkDevDependency('@babel/plugin-transform-class-properties', { baseDir: __dirname });
+      addon.linkDevDependency('@babel/plugin-proposal-decorators', { baseDir: __dirname });
+      addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });
+      addon.linkDevDependency('rollup', { baseDir: __dirname });
+    }
+
+    linkDependencies(addon);
+    linkDependencies(addonNoNamespace);
 
     project.addDevDependency(addon);
+    project.addDependency(addonNoNamespace);
 
     merge(project.files, {
       tests: {
@@ -226,6 +295,7 @@ appScenarios
         if (result.exitCode !== 0) {
           throw new Error(result.output);
         }
+        await inDependency(app, 'v2-addon-no-namespace').execute('pnpm build');
       });
 
       hooks.beforeEach(assert => {
@@ -300,6 +370,17 @@ setComponentTemplate(
 
 export { SingleFileComponent as default };
 //# sourceMappingURL=single-file-component.js.map`);
+        });
+
+        test('publicAssets are namespaced correctly', async function (assert) {
+          let expectNoNamespaceFile = expectFilesAt(inDependency(app, 'v2-addon-no-namespace').dir, { qunit: assert });
+
+          expectFile('package.json').json('ember-addon.public-assets').deepEquals({
+            './public/thing.txt': '/v2-addon/public/thing.txt',
+          });
+          expectNoNamespaceFile('package.json').json('ember-addon.public-assets').deepEquals({
+            './public/other.txt': '/public/other.txt',
+          });
         });
       });
 

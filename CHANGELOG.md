@@ -2,6 +2,17 @@
 
 ## Release (2024-04-10)
 
+@embroider/addon-dev 4.3.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#1874](https://github.com/embroider-build/embroider/pull/1874) with namespace in publicAssets don't include path ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2024-04-10)
+
 @embroider/addon-dev 4.3.0 (minor)
 @embroider/compat 3.4.7 (patch)
 @embroider/core 3.4.7 (patch)

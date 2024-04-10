@@ -5,7 +5,7 @@ import globby from 'globby';
 import fs from 'fs/promises';
 import { pathExists } from 'fs-extra';
 import path from 'path';
-import execa, { type Options, type ExecaChildProcess } from 'execa';
+import CommandWatcher, { DEFAULT_TIMEOUT } from './helpers/command-watcher';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -15,127 +15,6 @@ let app = appScenarios.skip('canary').map('watch-mode', () => {
    * because creating files should cause appropriate watch/update behavior
    */
 });
-
-const DEFAULT_TIMEOUT = process.env.CI ? 90000 : 30000;
-
-class EmberCLI {
-  static launch(args: readonly string[], options: Options<string> = {}): EmberCLI {
-    return new EmberCLI(execa('ember', args, { ...options, all: true }));
-  }
-
-  private lines: string[] = [];
-  private nextWaitedLine = 0;
-  private exitCode: number | null = null;
-  private currentWaiter: (() => void) | undefined;
-
-  constructor(private process: ExecaChildProcess) {
-    process.all!.on('data', data => {
-      const lines = data.toString().split(/\r?\n/);
-      this.lines.push(...lines);
-      this.currentWaiter?.();
-    });
-
-    process.on('exit', code => {
-      this.exitCode = code;
-      this.currentWaiter?.();
-    });
-  }
-
-  private async internalWait(timedOut?: Promise<void>): Promise<void> {
-    if (this.currentWaiter) {
-      throw new Error(`bug: only one wait at a time`);
-    }
-    try {
-      await Promise.race(
-        [
-          timedOut,
-          new Promise<void>(resolve => {
-            this.currentWaiter = resolve;
-          }),
-        ].filter(Boolean)
-      );
-    } finally {
-      this.currentWaiter = undefined;
-    }
-  }
-
-  private searchLines(output: string | RegExp): boolean {
-    while (this.nextWaitedLine < this.lines.length) {
-      let line = this.lines[this.nextWaitedLine++];
-      if (typeof output === 'string') {
-        if (output === line) {
-          return true;
-        }
-      } else {
-        if (output.test(line)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  async waitFor(output: string | RegExp, timeout = DEFAULT_TIMEOUT): Promise<void> {
-    let timedOut = new Promise<void>((_resolve, reject) => {
-      setTimeout(() => {
-        let err = new Error(
-          'Timed out after ' +
-            timeout +
-            'ms before output "' +
-            output +
-            '" was found. ' +
-            'Output:\n\n' +
-            this.lines.join('\n')
-        );
-        reject(err);
-      }, timeout);
-    });
-    while (true) {
-      if (this.exitCode != null) {
-        throw new Error(
-          'Process exited with code ' +
-            this.exitCode +
-            ' before output "' +
-            output +
-            '" was found. ' +
-            'Output:\n\n' +
-            this.lines.join('\n')
-        );
-      }
-      if (this.searchLines(output)) {
-        return;
-      }
-      await this.internalWait(timedOut);
-    }
-  }
-
-  async shutdown(): Promise<void> {
-    if (this.exitCode != null) {
-      return;
-    }
-
-    this.process.kill();
-
-    // on windows the subprocess won't close if you don't end all the sockets
-    // we don't just end stdout because when you register a listener for stdout it auto registers stdin and stderr... for some reason :(
-    this.process.stdio.forEach((socket: any) => {
-      if (socket) {
-        socket.end();
-      }
-    });
-
-    await this.waitForExit();
-  }
-
-  async waitForExit(): Promise<number> {
-    while (true) {
-      if (this.exitCode != null) {
-        return this.exitCode;
-      }
-      await this.internalWait();
-    }
-  }
-}
 
 class File {
   constructor(readonly label: string, readonly fullPath: string) {}
@@ -263,14 +142,14 @@ function deindent(s: string): string {
 app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
-    let server: EmberCLI;
+    let server: CommandWatcher;
 
     function appFile(appPath: string): File {
       let fullPath = path.join(app.dir, ...appPath.split('/'));
       return new File(appPath, fullPath);
     }
 
-    async function waitFor(...args: Parameters<EmberCLI['waitFor']>): Promise<void> {
+    async function waitFor(...args: Parameters<CommandWatcher['waitFor']>): Promise<void> {
       await server.waitFor(...args);
     }
 
@@ -301,7 +180,7 @@ app.forEachScenario(scenario => {
 
     hooks.beforeEach(async () => {
       app = await scenario.prepare();
-      server = EmberCLI.launch(['serve', '--port', '0'], { cwd: app.dir });
+      server = CommandWatcher.launch('ember', ['serve', '--port', '0'], { cwd: app.dir });
       await waitFor(/Serving on http:\/\/localhost:[0-9]+\//, DEFAULT_TIMEOUT * 2);
     });
 
@@ -413,7 +292,7 @@ app.forEachScenario(scenario => {
         `);
         await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
 
-        let test = await EmberCLI.launch(['test', '--filter', 'hello-world'], { cwd: app.dir });
+        let test = await CommandWatcher.launch('ember', ['test', '--filter', 'hello-world'], { cwd: app.dir });
         await test.waitFor(/^not ok .+ Integration | hello-world: it renders/, DEFAULT_TIMEOUT * 2);
         await assert.notStrictEqual(await test.waitForExit(), 0);
 
@@ -428,7 +307,7 @@ app.forEachScenario(scenario => {
         `);
         await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
 
-        test = await EmberCLI.launch(['test', '--filter', 'hello-world'], { cwd: app.dir });
+        test = await CommandWatcher.launch('ember', ['test', '--filter', 'hello-world'], { cwd: app.dir });
         await test.waitFor(/^ok .+ Integration | hello-world: it renders/);
         await assert.strictEqual(await test.waitForExit(), 0);
       });

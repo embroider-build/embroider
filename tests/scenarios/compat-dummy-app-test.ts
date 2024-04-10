@@ -10,6 +10,7 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 import { dummyAppScenarios } from './scenarios';
+import CommandWatcher from './helpers/command-watcher';
 
 dummyAppScenarios
   .map('compat-dummy-app-tests', project => {
@@ -32,7 +33,7 @@ dummyAppScenarios
     project.linkDevDependency('@embroider/webpack', { baseDir: __dirname });
   })
   .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
+    Qmodule(`${scenario.name} - rebuild`, function (hooks) {
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
@@ -59,18 +60,39 @@ dummyAppScenarios
         await builder.build({ changedDirs: [app.dir] });
         expectFile('../../components/example.hbs').matches(/goodbye/);
       });
+    });
 
-      test('contains public assets from dummy app', async function () {
-        // expectRewrittenFilesAt doesn't understand dummy apps, so even though
-        // we initialized it on app.dir/tests/dummy, we can't just say
-        // "robots.txt" here because it thinks that file belongs to the
-        // containing addon. By writing out the rewritten paths ourselves we
-        // sidestep that problem≥
+    Qmodule(`${scenario.name} - public assets`, function (hooks) {
+      throwOnWarnings(hooks);
+
+      let app: PreparedApp;
+      let expectFile: ExpectFile;
+
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test('contains public assets from dummy app after a build', async function (assert) {
+        await app.execute(`pnpm vite build`);
+        expectFile = expectRewrittenFilesAt(resolve(app.dir, 'tests/dummy'), {
+          qunit: assert,
+        });
+
         expectFile('../../node_modules/.embroider/rewritten-app/robots.txt').exists();
         expectFile('../../node_modules/.embroider/rewritten-app/package.json')
           .json()
           .get('ember-addon.assets')
           .includes('robots.txt');
+      });
+
+      QUnit.skip('contains public assets from dummy app in dev mode', async function () {
+        const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        const [, url] = await server.waitFor(/Local:\s+(http:\/\/127.0.0.1:\d+)\//);
+
+        console.log(url);
+        // TODO fetch `${url}/robots.txt: make sure it contains the right contents
+
+        await server.shutdown();
       });
     });
   });

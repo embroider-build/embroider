@@ -48,6 +48,7 @@ jobs:
         # github-changelog can discover what's changed since the last release
         with:
           fetch-depth: 0
+          ref: 'stable'
       - uses: ./.github/actions/setup
         with:
           use_pinned_node: true

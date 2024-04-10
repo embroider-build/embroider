@@ -6,7 +6,10 @@ import type { Options as DelOptions } from 'rollup-plugin-delete';
 import { default as clean } from 'rollup-plugin-delete';
 import { default as keepAssets } from './rollup-keep-assets';
 import { default as dependencies } from './rollup-addon-dependencies';
-import { default as publicAssets } from './rollup-public-assets';
+import {
+  default as publicAssets,
+  type PublicAssetsOptions,
+} from './rollup-public-assets';
 import type { Plugin } from 'rollup';
 
 export class Addon {
@@ -53,8 +56,8 @@ export class Addon {
   // This wraps standalone .hbs files as Javascript files using inline
   // templates. This means special resolving rules for .hbs files aren't
   // required for javascript tooling to understand your package.
-  hbs() {
-    return hbs();
+  hbs(options = {}) {
+    return hbs(options);
   }
 
   gjs(options?: { inline_source_map: boolean }) {
@@ -102,7 +105,7 @@ export class Addon {
     return dependencies();
   }
 
-  publicAssets(path: string, opts: { include: string[]; exclude: string[] }) {
+  publicAssets(path: string, opts?: PublicAssetsOptions) {
     return publicAssets(path, opts);
   }
 }

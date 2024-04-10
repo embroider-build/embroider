@@ -1,5 +1,51 @@
 # Embroider Changelog
 
+## Release (2024-04-10)
+
+@embroider/addon-dev 4.3.0 (minor)
+@embroider/compat 3.4.7 (patch)
+@embroider/core 3.4.7 (patch)
+@embroider/macros 1.15.1 (patch)
+@embroider/shared-internals 2.6.0 (minor)
+@embroider/webpack 3.2.3 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`, `@embroider/shared-internals`, `@embroider/test-scenarios`
+  * [#1856](https://github.com/embroider-build/embroider/pull/1856) Compile Hbs route templates correctly ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#1867](https://github.com/embroider-build/embroider/pull/1867) add a namespace option for public-assets plugin ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* Other
+  * [#1871](https://github.com/embroider-build/embroider/pull/1871) fix release-plan unlabelled changes PR ([@mansona](https://github.com/mansona))
+  * [#1869](https://github.com/embroider-build/embroider/pull/1869) update release plan ([@mansona](https://github.com/mansona))
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#1806](https://github.com/embroider-build/embroider/pull/1806) resolver transform to emit imports for helper and modifiers that need… ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 3
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+## Release (2024-03-07)
+
+@embroider/compat 3.4.6 (patch)
+@embroider/core 3.4.6 (patch)
+@embroider/macros 1.15.0 (minor)
+@embroider/util 1.13.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/macros`, `@embroider/util`
+  * [#1832](https://github.com/embroider-build/embroider/pull/1832) Update to `ember-cli-babel` v8 ([@bertdeblock](https://github.com/bertdeblock))
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1838](https://github.com/embroider-build/embroider/pull/1838) make sure @embroider/macros doesn't try to load a babel config ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-02-28)
 
 @embroider/compat 3.4.5 (patch)

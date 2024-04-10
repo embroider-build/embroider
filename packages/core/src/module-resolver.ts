@@ -195,6 +195,7 @@ export class Resolver {
     request = this.handleImplicitModules(request);
     request = this.handleImplicitTestScripts(request);
     request = this.handleVendorStyles(request);
+    request = this.handleTestSupportStyles(request);
     request = this.handleRenaming(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -443,6 +444,32 @@ export class Resolver {
     }
 
     return logTransition('test-support', request, request.virtualize(resolve(pkg.root, '-embroider-test-support.js')));
+  }
+
+  private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = [
+      '@embroider/core/test-support.css',
+      '/@embroider/core/test-support.css',
+      './@embroider/core/test-support.css',
+    ];
+
+    if (!candidates.includes(request.specifier)) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (pkg?.root !== this.options.engines[0].root) {
+      throw new Error(
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/test-support.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+      );
+    }
+
+    return logTransition(
+      'test-support-styles',
+      request,
+      request.virtualize(resolve(pkg.root, '-embroider-test-support-styles.css'))
+    );
   }
 
   private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {

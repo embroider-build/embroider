@@ -51,9 +51,9 @@ export default function publicAssets(
       });
       const publicAssets: Record<string, string> = filenames.reduce(
         (acc: Record<string, string>, v): Record<string, string> => {
-          acc[`./${path}/${v}`] = resolve(
-            '/' + join(opts?.namespace ?? pkg.name, path, v)
-          );
+          const namespace = opts?.namespace ?? join(pkg.name, path);
+
+          acc[`./${path}/${v}`] = resolve('/' + join(namespace, v));
           return acc;
         },
         {}

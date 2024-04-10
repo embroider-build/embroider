@@ -396,7 +396,7 @@ export { SingleFileComponent as default };
             './public/thing.txt': '/v2-addon/public/thing.txt',
           });
           expectNoNamespaceFile('package.json').json('ember-addon.public-assets').deepEquals({
-            './public/other.txt': '/public/other.txt',
+            './public/other.txt': '/other.txt',
           });
         });
       });

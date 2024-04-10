@@ -6,7 +6,8 @@ import { dirname } from 'path';
 import { explicitRelative, PackageCache } from '.';
 import { ImportUtil } from 'babel-import-util';
 import makeDebug from 'debug';
-import { cleanUrl } from './paths';
+import minimatch from 'minimatch';
+import { cleanUrl, correspondingTemplate } from './paths';
 
 const debug = makeDebug('embroider:template-colocation-plugin');
 
@@ -36,6 +37,14 @@ export interface Options {
   // This option is used by Embroider itself to help with v1 addon
   // compatibility, other users should probably not use it.
   templateExtensions?: string[];
+
+  // Default to []
+  //
+  // Skip the plugin for files that match the specified globs.
+  //
+  // This option is used to prevent the plugin to transform the
+  // compiled output of hbs files that are not colocated components.
+  exclude?: string[];
 }
 
 interface State {
@@ -64,6 +73,11 @@ export default function main(babel: typeof Babel) {
               debug('not handling colocation for %s', filename);
               return;
             }
+          }
+
+          if (state.opts.exclude?.some(glob => minimatch(correspondingTemplate(filename), glob))) {
+            debug('not handling colocation for %s', filename);
+            return;
           }
 
           debug('handling colocation for %s', filename);

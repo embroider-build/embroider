@@ -29,7 +29,9 @@ appScenarios
       'babel.config.json': `
         {
           "plugins": [
-            "@embroider/addon-dev/template-colocation-plugin",
+            ["@embroider/addon-dev/template-colocation-plugin", {
+              exclude: ['**/just-a-template.hbs'],
+            }],
             "@babel/plugin-transform-class-static-block",
             ["babel-plugin-ember-template-compilation", {
               targetFormat: 'hbs',
@@ -71,7 +73,9 @@ appScenarios
               exclude: ['**/-excluded/**/*'],
             }),
 
-            addon.hbs(),
+            addon.hbs({
+              excludeColocation: ['**/just-a-template.hbs'],
+            }),
             addon.gjs(),
             addon.dependencies(),
             addon.publicAssets('public'),
@@ -114,6 +118,7 @@ appScenarios
                 flip
               </button>
             `,
+            'just-a-template.hbs': `<p>I am not a component but a template.</p>`,
             'out.hbs': `
               <out>{{yield}}</out>
             `,
@@ -314,6 +319,7 @@ appScenarios
             './components/demo/button.js': './dist/_app_/components/demo/button.js',
             './components/single-file-component.js': './dist/_app_/components/single-file-component.js',
             './components/demo/index.js': './dist/_app_/components/demo/index.js',
+            './components/demo/just-a-template.js': './dist/_app_/components/demo/just-a-template.js',
             './components/demo/out.js': './dist/_app_/components/demo/out.js',
             './components/demo/namespace/namespace-me.js': './dist/_app_/components/demo/namespace/namespace-me.js',
           });
@@ -321,6 +327,7 @@ appScenarios
 
         test('the addon has expected public entrypoints', async function () {
           expectFile('dist/components/demo/index.js').exists();
+          expectFile('dist/components/demo/just-a-template.js').exists();
           expectFile('dist/components/demo/out.js').exists();
           expectFile('dist/components/demo/namespace-me.js').exists();
           expectFile('dist/components/-excluded/never-import-this.js').doesNotExist();
@@ -329,6 +336,9 @@ appScenarios
         test('the addon has expected app-reexports', async function () {
           expectFile('dist/_app_/components/demo/index.js').matches(
             'export { default } from "v2-addon/components/demo/index"'
+          );
+          expectFile('dist/_app_/components/demo/just-a-template.js').matches(
+            'export { default } from "v2-addon/components/demo/just-a-template"'
           );
           expectFile('dist/_app_/components/demo/out.js').matches(
             'export { default } from "v2-addon/components/demo/out"'
@@ -344,6 +354,13 @@ appScenarios
             /TEMPLATE = precompileTemplate\("Hello there/,
             'template is still in hbs format'
           );
+
+          expectFile(
+            'dist/components/demo/just-a-template.js'
+          ).equalsCode(`import { precompileTemplate } from '@ember/template-compilation';
+var justATemplate = precompileTemplate("<p>I am not a component but a template.</p>");
+export { justATemplate as default };
+//# sourceMappingURL=just-a-template.js.map`);
         });
 
         test('gjs components compiled correctly', async function () {

@@ -1,4 +1,4 @@
-import { relative, isAbsolute, dirname, join, basename, resolve, sep } from 'path';
+import { relative, isAbsolute, dirname, join, basename, resolve, sep, parse as pathParse } from 'path';
 import type Package from './package';
 
 // by "explicit", I mean that we want "./local/thing" instead of "local/thing"
@@ -62,4 +62,11 @@ export function cleanUrl(url: string, includeHashSign = false): string {
 export function getUrlQueryParams(url: string, includeHashSign = false): string {
   const regexp = includeHashSign ? postfixREQueryParams : postfixRE;
   return url.match(regexp)?.[0] ?? '';
+}
+
+// given a filename, returns it with the hbs extension
+// for instance, passing filename.js returns filename.hbs
+export function correspondingTemplate(filename: string): string {
+  let { ext } = pathParse(filename);
+  return filename.slice(0, filename.length - ext.length) + '.hbs';
 }

@@ -11,7 +11,7 @@ on:
       - main
 
 concurrency:
-  group: publish-stable-${{ github.head_ref || github.ref }}
+  group: publish-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: npm publish
-        run: pnpm release-plan publish --publish-branch=stable
+        run: pnpm release-plan publish
 
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}

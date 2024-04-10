@@ -1,7 +1,16 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "4.2.1"
+      "impact": "minor",
+      "oldVersion": "4.2.1",
+      "newVersion": "4.3.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.7"
@@ -11,21 +20,29 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.4.4",
-      "newVersion": "3.4.5",
+      "oldVersion": "3.4.6",
+      "newVersion": "3.4.7",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.4.4",
-      "newVersion": "3.4.5",
+      "oldVersion": "3.4.6",
+      "newVersion": "3.4.7",
       "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -37,13 +54,13 @@
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.13.5",
-      "newVersion": "1.14.0",
+      "impact": "patch",
+      "oldVersion": "1.15.0",
+      "newVersion": "1.15.1",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
@@ -55,20 +72,38 @@
       "oldVersion": "2.1.6"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.5.2"
+      "impact": "minor",
+      "oldVersion": "2.5.2",
+      "newVersion": "2.6.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "3.0.3"
     },
     "@embroider/util": {
-      "oldVersion": "1.12.1"
+      "oldVersion": "1.13.0"
     },
     "@embroider/vite": {
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "oldVersion": "3.2.2"
+      "impact": "patch",
+      "oldVersion": "3.2.2",
+      "newVersion": "3.2.3",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2024-02-28)\n\n@embroider/compat 3.4.5 (patch)\n@embroider/core 3.4.5 (patch)\n@embroider/macros 1.14.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/macros`\n  * [#1815](https://github.com/embroider-build/embroider/pull/1815) Make macro configs static ([@simonihmig](https://github.com/simonihmig))\n\n#### :house: Internal\n* Other\n  * [#1824](https://github.com/embroider-build/embroider/pull/1824) update release-plan ([@mansona](https://github.com/mansona))\n* `@embroider/test-scenarios`\n  * [#1820](https://github.com/embroider-build/embroider/pull/1820) [stable] Pin ember-data to fix issue in CI ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2024-04-10)\n\n@embroider/addon-dev 4.3.0 (minor)\n@embroider/compat 3.4.7 (patch)\n@embroider/core 3.4.7 (patch)\n@embroider/macros 1.15.1 (patch)\n@embroider/shared-internals 2.6.0 (minor)\n@embroider/webpack 3.2.3 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`, `@embroider/shared-internals`, `@embroider/test-scenarios`\n  * [#1856](https://github.com/embroider-build/embroider/pull/1856) Compile Hbs route templates correctly ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n* `@embroider/addon-dev`, `@embroider/test-scenarios`\n  * [#1867](https://github.com/embroider-build/embroider/pull/1867) add a namespace option for public-assets plugin ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* Other\n  * [#1871](https://github.com/embroider-build/embroider/pull/1871) fix release-plan unlabelled changes PR ([@mansona](https://github.com/mansona))\n  * [#1869](https://github.com/embroider-build/embroider/pull/1869) update release plan ([@mansona](https://github.com/mansona))\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#1806](https://github.com/embroider-build/embroider/pull/1806) resolver transform to emit imports for helper and modifiers that need… ([@void-mAlex](https://github.com/void-mAlex))\n\n#### Committers: 3\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
 }

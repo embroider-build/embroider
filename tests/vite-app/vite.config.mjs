@@ -39,9 +39,9 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     css: {
-    preprocessorOptions: {
-      scss: compatScss(),
-    },
+      preprocessorOptions: {
+        scss: compatScss(),
+      },
     },
     optimizeDeps: optimizeDeps(),
     server: {

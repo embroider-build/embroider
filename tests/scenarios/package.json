@@ -54,6 +54,7 @@
     "@types/fs-extra": "^9.0.12",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.170",
+    "@types/node-fetch": "^2.6.11",
     "@types/semver": "^7.3.6",
     "babel-plugin-ember-template-compilation": "^2.1.1",
     "bootstrap": "^4.3.1",
@@ -81,6 +82,7 @@
     "ember-source-latest": "npm:ember-source@latest",
     "ember-truth-helpers": "^3.0.0",
     "execa": "^5.1.1",
+    "node-fetch": "2.7.0",
     "tslib": "^2.6.0",
     "typescript": "^5.1.6",
     "webpack": "^5.90.3"

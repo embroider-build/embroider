@@ -8,6 +8,7 @@ import { writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
+import fetch from 'node-fetch';
 
 import { dummyAppScenarios } from './scenarios';
 import CommandWatcher from './helpers/command-watcher';
@@ -77,7 +78,6 @@ dummyAppScenarios
         expectFile = expectRewrittenFilesAt(resolve(app.dir, 'tests/dummy'), {
           qunit: assert,
         });
-
         expectFile('../../node_modules/.embroider/rewritten-app/robots.txt').exists();
         expectFile('../../node_modules/.embroider/rewritten-app/package.json')
           .json()
@@ -85,14 +85,16 @@ dummyAppScenarios
           .includes('robots.txt');
       });
 
-      QUnit.skip('contains public assets from dummy app in dev mode', async function () {
+      test('contains public assets from dummy app in dev mode', async function (assert) {
         const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        const [, url] = await server.waitFor(/Local:\s+(http:\/\/127.0.0.1:\d+)\//);
-
-        console.log(url);
-        // TODO fetch `${url}/robots.txt: make sure it contains the right contents
-
-        await server.shutdown();
+        try {
+          const [, url] = await server.waitFor(/Local:\s+(http:\/\/127.0.0.1:\d+)\//);
+          let response = await fetch(`${url}/robots.txt`);
+          let text = await response.text();
+          assert.strictEqual(text, 'go away bots');
+        } finally {
+          await server.shutdown();
+        }
       });
     });
   });

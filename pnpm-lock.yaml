@@ -1706,6 +1706,9 @@ importers:
       '@types/lodash':
         specifier: ^4.14.170
         version: 4.14.202
+      '@types/node-fetch':
+        specifier: ^2.6.11
+        version: 2.6.11
       '@types/semver':
         specifier: ^7.3.6
         version: 7.5.8
@@ -1787,6 +1790,9 @@ importers:
       execa:
         specifier: ^5.1.1
         version: 5.1.1
+      node-fetch:
+        specifier: 2.7.0
+        version: 2.7.0
       tslib:
         specifier: ^2.6.0
         version: 2.6.2
@@ -9185,6 +9191,13 @@ packages:
     resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
     dev: true
 
+  /@types/node-fetch@2.6.11:
+    resolution: {integrity: sha512-24xFj9R5+rfQJLRyM56qh+wnVSYhyXC2tkoBndtY0U+vubqNsYXGjufB2nn8Q6gt0LrARwL6UBtMCSVCwl4B1g==}
+    dependencies:
+      '@types/node': 15.14.9
+      form-data: 4.0.0
+    dev: true
+
   /@types/node@10.17.60:
     resolution: {integrity: sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==}
     dev: true
@@ -9768,6 +9781,9 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
     dependencies:
       ajv: 8.12.0
 

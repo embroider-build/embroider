@@ -9,7 +9,7 @@ import groupBy from 'lodash/groupBy';
 import fromPairs from 'lodash/fromPairs';
 import type { ExportAll, InternalImport, NamespaceMarker } from './audit/babel-visitor';
 import { auditJS, CodeFrameStorage, isNamespaceMarker } from './audit/babel-visitor';
-import { AuditBuildOptions, AuditOptions } from './audit/options';
+import { AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
 
 const { JSDOM } = jsdom;
@@ -27,7 +27,7 @@ export interface Loc {
   end: { line: number; column: number };
 }
 
-export { AuditOptions, AuditBuildOptions, BuildError, isBuildError };
+export { AuditOptions, BuildError, isBuildError };
 
 export interface Finding {
   message: string;
@@ -207,13 +207,13 @@ export class Audit {
 
   private frames = new CodeFrameStorage();
 
-  static async run(options: AuditBuildOptions): Promise<AuditResults> {
-    if (!options['reuse-build']) {
+  static async run(options: AuditOptions): Promise<AuditResults> {
+    if (options.mode === 'file' && !options['reuse-build']) {
       await buildApp(options);
     }
 
-    let audit = new this(options.app, options);
-    if (options['reuse-build']) {
+    let audit = new this(options);
+    if (options.mode === 'file' && options['reuse-build']) {
       if (!audit.meta.babel.isParallelSafe) {
         throw new BuildError(
           `You can't use the ${chalk.red(
@@ -225,7 +225,7 @@ export class Audit {
     return audit.run();
   }
 
-  constructor(private originAppRoot: string, private options: AuditOptions = {}) {}
+  constructor(private options: AuditOptions) {}
 
   @Memoize()
   private get pkg() {
@@ -234,8 +234,11 @@ export class Audit {
 
   @Memoize()
   private get movedAppRoot() {
-    let cache = RewrittenPackageCache.shared('embroider', this.originAppRoot);
-    return cache.maybeMoved(cache.get(this.originAppRoot)).root;
+    if (this.options.mode === 'http') {
+      throw new Error(`bug: http mode`);
+    }
+    let cache = RewrittenPackageCache.shared('embroider', this.options.app);
+    return cache.maybeMoved(cache.get(this.options.app)).root;
   }
 
   private get meta() {
@@ -254,7 +257,10 @@ export class Audit {
   }
 
   private get resolverParams(): ResolverOptions {
-    return readJSONSync(join(locateEmbroiderWorkingDir(this.originAppRoot), 'resolver.json'));
+    if (this.options.mode === 'http') {
+      throw new Error(`bug: http mode`);
+    }
+    return readJSONSync(join(locateEmbroiderWorkingDir(this.options.app), 'resolver.json'));
   }
 
   private resolver = new Resolver(this.resolverParams);
@@ -317,17 +323,23 @@ export class Audit {
     (globalThis as any).embroider_audit = this.handleResolverError.bind(this);
 
     try {
-      this.debug(`meta`, this.meta);
-      for (let asset of this.meta.assets) {
-        if (asset.endsWith('.html')) {
-          this.scheduleVisit(resolvePath(this.movedAppRoot, asset), { isRoot: true });
+      if (this.options.mode === 'file') {
+        this.debug(`meta`, this.meta);
+        for (let asset of this.meta.assets) {
+          if (asset.endsWith('.html')) {
+            this.scheduleVisit(resolvePath(this.movedAppRoot, asset), { isRoot: true });
+          }
+        }
+      } else {
+        for (let start of this.options.startingFrom) {
+          this.scheduleVisit(new URL(start, this.options.app).href, { isRoot: true });
         }
       }
       await this.drainQueue();
       this.linkModules();
       this.inspectModules();
 
-      return AuditResults.create(this.originAppRoot, this.findings, this.modules);
+      return AuditResults.create(this.options.app, this.findings, this.modules);
     } finally {
       delete (globalThis as any).embroider_audit;
     }
@@ -493,7 +505,7 @@ export class Audit {
           {
             filename,
             message: `failed to parse`,
-            detail: err.toString().replace(filename, explicitRelative(this.originAppRoot, filename)),
+            detail: err.toString().replace(filename, explicitRelative(this.options.app, filename)),
           },
         ];
       } else {
@@ -524,7 +536,7 @@ export class Audit {
         {
           filename,
           message: `failed to parse JSON`,
-          detail: err.toString().replace(filename, explicitRelative(this.originAppRoot, filename)),
+          detail: err.toString().replace(filename, explicitRelative(this.options.app, filename)),
         },
       ];
     }

@@ -1,4 +1,4 @@
-import type { AuditBuildOptions, AuditResults, Module } from '../../packages/compat/src/audit';
+import type { AuditBuildOptions, AuditResults, Import, Module } from '../../packages/compat/src/audit';
 import { Audit } from '../../packages/compat/src/audit';
 import { explicitRelative } from '../../packages/shared-internals';
 import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
@@ -109,12 +109,12 @@ export class ExpectModule {
     });
   }
 
-  withContents(fn: (src: string) => boolean, message?: string) {
+  withContents(fn: (src: string, imports: Import[]) => boolean, message?: string) {
     if (!this.module) {
       this.emitMissingModule();
       return;
     }
-    const result = fn(this.module.content);
+    const result = fn(this.module.content, this.module.imports);
     this.expectAudit.assert.pushResult({
       result,
       actual: result,
@@ -139,12 +139,25 @@ export class ExpectModule {
     this.expectAudit.assert.codeContains(this.module.content, expectedSource);
   }
 
-  resolves(specifier: string): PublicAPI<ExpectResolution> {
+  resolves(specifier: string | RegExp): PublicAPI<ExpectResolution> {
     if (!this.module) {
       this.emitMissingModule();
       return new EmptyExpectResolution();
     }
-    if (!(specifier in this.module.resolutions)) {
+
+    let resolution: string | undefined | null;
+    if (typeof specifier === 'string') {
+      resolution = this.module.resolutions[specifier];
+    } else {
+      for (let [source, module] of Object.entries(this.module.resolutions)) {
+        if (specifier.test(source)) {
+          resolution = module;
+          break;
+        }
+      }
+    }
+
+    if (resolution === undefined) {
       this.expectAudit.assert.pushResult({
         result: false,
         expected: `${this.module.appRelativePath} does not refer to ${specifier}`,
@@ -152,8 +165,8 @@ export class ExpectModule {
       });
       return new EmptyExpectResolution();
     }
-    let resolution = this.module.resolutions[specifier];
-    if (!resolution) {
+
+    if (resolution === null) {
       this.expectAudit.assert.pushResult({
         result: false,
         expected: `${specifier} fails to resolve in ${this.module.appRelativePath}`,

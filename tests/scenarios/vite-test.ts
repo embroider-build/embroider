@@ -14,6 +14,7 @@ let app = appScenarios.map('vite-specific', () => {
 });
 
 import CommandWatcher from './helpers/command-watcher';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
@@ -21,37 +22,33 @@ app.forEachScenario(scenario => {
     let server: CommandWatcher;
     let serverPort: string;
 
-    async function waitFor(...args: Parameters<CommandWatcher['waitFor']>): Promise<any> {
-      return server.waitFor(...args);
-    }
-
-    hooks.beforeEach(async () => {
+    hooks.before(async () => {
       app = await scenario.prepare();
       server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-      const [, port] = await waitFor(/Local:\s+http:\/\/127.0.0.1:(\d+)\//);
+      const [, port] = await server.waitFor(/Local:\s+http:\/\/127.0.0.1:(\d+)\//);
 
       serverPort = port;
     });
 
-    hooks.afterEach(async () => {
+    let expectAudit = setupAuditTest(hooks, () => ({
+      appURL: `http://localhost:${serverPort}/`,
+      startingFrom: ['index.html'],
+    }));
+
+    hooks.after(async () => {
       console.log('shutting down');
       await server.shutdown();
       console.log('done shutting down');
     });
 
-    function getRemoteFile(assert: Assert, path: string) {
-      return expectRemoteFile(`http://localhost:${serverPort}`, { qunit: assert })(path);
-    }
-
-    test(`vite`, async function (assert) {
-      await getRemoteFile(assert, '/assets/app-template.js').doesNotMatch(
-        /import \* as .* from.*rewritten_packages.*ember-page-title/
-      );
-
-      // TODO write the correct one
-      await getRemoteFile(assert, '/assets/app-template.js').matches(
-        /import \* as .* from.*.vite\/deps\/app-template_services_page-title/
-      );
+    test(`vite`, async function () {
+      expectAudit
+        .module('index.html')
+        .resolves(/app-template\.js/)
+        .toModule()
+        .withContents((_src, imports) => {
+          return imports.filter(imp => /page-title/.test(imp.source)).every(imp => /\.vite\/deps/.test(imp.source));
+        });
     });
   });
 });

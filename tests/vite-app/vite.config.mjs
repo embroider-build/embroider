@@ -7,6 +7,7 @@ import {
   optimizeDeps,
   compatPrebuild,
   assets,
+  compatScss,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -37,6 +38,11 @@ export default defineConfig(({ mode }) => {
         extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
       }),
     ],
+    css: {
+      preprocessorOptions: {
+        scss: compatScss(),
+      },
+    },
     optimizeDeps: optimizeDeps(),
     server: {
       port: 4200,

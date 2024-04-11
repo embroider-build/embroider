@@ -88,7 +88,7 @@ viteAppScenarios
     });
 
     project.addDevDependency(addon);
-    project.addDevDependency('sass', 'latest');
+    project.linkDevDependency('sass', { baseDir: __dirname, resolveName: 'sass' });
 
     let addon2 = baseAddon();
     addon2.pkg.name = 'my-addon2';

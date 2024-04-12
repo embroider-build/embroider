@@ -4,7 +4,7 @@ import { Rebuilder } from '@embroider/test-support';
 import type { PreparedApp } from 'scenario-tester';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
-import { writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
@@ -76,7 +76,7 @@ dummyAppScenarios
         app = await scenario.prepare();
       });
 
-      test('contains public assets from both addon and dummy app after a build', async function (assert) {
+      test('rewritten app contains public assets from both addon and dummy app after a build', async function (assert) {
         await app.execute(`pnpm vite build`);
         expectFile = expectRewrittenFilesAt(resolve(app.dir, 'tests/dummy'), {
           qunit: assert,
@@ -90,7 +90,15 @@ dummyAppScenarios
         assets.includes('./addon-template/from-addon.txt');
       });
 
-      test('contains public assets from both addon and dummy app in dev mode', async function (assert) {
+      test('production build contains public assets from both addon and dummy app after a build', async function (assert) {
+        await app.execute(`pnpm vite build`);
+        let content = readFileSync(`${app.dir}/dist/robots.txt`).toString();
+        assert.strictEqual(content, 'go away bots');
+        content = readFileSync(`${app.dir}/dist/addon-template/from-addon.txt`).toString();
+        assert.strictEqual(content, 'a public asset provided by the classic addon');
+      });
+
+      test('dev mode serves public assets from both addon and dummy app', async function (assert) {
         const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
         try {
           const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);

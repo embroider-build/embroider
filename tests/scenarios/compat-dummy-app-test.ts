@@ -88,7 +88,7 @@ dummyAppScenarios
       test('contains public assets from dummy app in dev mode', async function (assert) {
         const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
         try {
-          const [, url] = await server.waitFor(/Local:\s+(http:\/\/127.0.0.1:\d+)\//);
+          const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
           let response = await fetch(`${url}/robots.txt`);
           let text = await response.text();
           assert.strictEqual(text, 'go away bots');

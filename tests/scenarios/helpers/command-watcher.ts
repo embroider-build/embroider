@@ -1,5 +1,6 @@
 import execa, { type Options, type ExecaChildProcess } from 'execa';
 import path from 'path';
+import stripAnsi from 'strip-ansi';
 
 export const DEFAULT_TIMEOUT = process.env.CI ? 90000 : 30000;
 
@@ -52,7 +53,7 @@ export default class CommandWatcher {
 
   private searchLines(output: string | RegExp): boolean | RegExpExecArray {
     while (this.nextWaitedLine < this.lines.length) {
-      let line = this.lines[this.nextWaitedLine++];
+      let line = stripAnsi(this.lines[this.nextWaitedLine++]);
       if (typeof output === 'string') {
         if (output === line) {
           return true;

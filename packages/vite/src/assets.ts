@@ -52,27 +52,33 @@ export function assets(): Plugin {
         });
       };
     },
-    async buildStart() {
-      if (mode !== 'build') return;
-      const engines = resolverLoader.resolver.options.engines;
-      for (const engine of engines) {
-        const packages = engine.activeAddons.map(a => resolverLoader.resolver.packageCache.ownerOfFile(a.root));
-        packages.forEach(pkg => {
-          if (!pkg || !pkg.isV2Addon()) return;
-          const assets = pkg.meta['public-assets'] || {};
-          Object.entries(assets).forEach(([path, dest]) => {
-            // do not override app public assets
-            if (existsSync(join(publicDir, dest))) {
-              return;
-            }
-            this.emitFile({
-              type: 'asset',
-              source: readFileSync(join(pkg.root, path)),
-              fileName: posix.resolve('/', dest).slice(1),
+    buildStart: {
+      // we need to wait for the compatBuild plugin's buildStart hook to finish
+      // so that the resolver config exists before we try to read it.
+      sequential: true,
+      order: 'post',
+      async handler() {
+        if (mode !== 'build') return;
+        const engines = resolverLoader.resolver.options.engines;
+        for (const engine of engines) {
+          const packages = engine.activeAddons.map(a => resolverLoader.resolver.packageCache.ownerOfFile(a.root));
+          packages.forEach(pkg => {
+            if (!pkg || !pkg.isV2Addon()) return;
+            const assets = pkg.meta['public-assets'] || {};
+            Object.entries(assets).forEach(([path, dest]) => {
+              // do not override app public assets
+              if (existsSync(join(publicDir, dest))) {
+                return;
+              }
+              this.emitFile({
+                type: 'asset',
+                source: readFileSync(join(pkg.root, path)),
+                fileName: posix.resolve('/', dest).slice(1),
+              });
             });
           });
-        });
-      }
+        }
+      },
     },
   };
 }

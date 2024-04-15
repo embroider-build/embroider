@@ -6,6 +6,7 @@ import {
   templateTag,
   optimizeDeps,
   compatPrebuild,
+  assets,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => {
       scripts(),
       resolver(),
       compatPrebuild(),
+      assets(),
 
       babel({
         babelHelpers: "runtime",
@@ -42,6 +44,10 @@ export default defineConfig(({ mode }) => {
         ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
       },
     },
+    // If the "app" is a classic addon dummy app, the public directory is tests/dummy/public,
+    // any public directory at the root would rather contain the assets provided by the addon,
+    // which are managed by the assets plugin.
+    publicDir: resolve(process.cwd(), "tests/dummy/public"),
     build: {
       outDir: resolve(process.cwd(), "dist"),
       rollupOptions: {

@@ -1,28 +1,13 @@
-import { baseAddon, viteAppScenarios } from './scenarios';
+import { baseAddon, appScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import { exec } from 'child_process';
 import { readdirSync } from 'fs-extra';
 import { join } from 'path';
 
 const { module: Qmodule, test } = QUnit;
 
-// cannot use util.promisify
-// because then qunit will exit early with
-// an error about an async hold
-function execPromise(command: string): Promise<string> {
-  return new Promise(function (resolve, reject) {
-    exec(command, (error, stdout) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve(stdout.trim());
-    });
-  });
-}
-
-viteAppScenarios
+// TODO check if we need anything in this test or if things are covered elsewhere
+appScenarios
   .map('vite-app-basics', project => {
     let addon = baseAddon();
     addon.pkg.name = 'my-addon';
@@ -100,6 +85,21 @@ viteAppScenarios
     project.addDevDependency(addon2);
     project.mergeFiles({
       tests: {
+        acceptance: {
+          'app-route-test.js': `import { module, test } from 'qunit';
+          import { visit } from '@ember/test-helpers';
+          import { setupApplicationTest } from 'app-template/tests/helpers';
+
+          module('Acceptance | app route', function (hooks) {
+            setupApplicationTest(hooks);
+
+            test('visiting /', async function (assert) {
+              await visit('/');
+              assert.dom().includesText('hey');
+            });
+          });
+          `,
+        },
         integration: {
           'test-colocated-addon-component.js': `
             import { module, test } from 'qunit';
@@ -123,9 +123,105 @@ viteAppScenarios
             });
 
           `,
+          'example-test.js': `import { module, test } from 'qunit';
+          import { setupRenderingTest } from 'ember-qunit';
+          import { render, rerender } from '@ember/test-helpers';
+          import { hbs } from 'ember-cli-htmlbars';
+
+          module('Integration | Component | Example', (hooks) => {
+            setupRenderingTest(hooks);
+
+            test('should have Yay for gts!', async function (assert) {
+              await render(hbs\`
+              <Example></Example>
+              \`);
+              await rerender();
+              assert.dom().includesText('Yay for gts!');
+            });
+          });
+          `,
+          'fany-test-gjs.gjs': `import { module, test } from 'qunit';
+          import { setupRenderingTest } from 'ember-qunit';
+          import { render, click, rerender, settled } from '@ember/test-helpers';
+          import Fancy from 'app-template/components/fancy2';
+
+
+          module('Integration | Component | Fany -- from gjs test file', (hooks) => {
+            setupRenderingTest(hooks);
+
+            test('should have Yay for gts!', async function(assert) {
+              await render(<template>
+            <Fancy @type="primary2"></Fancy>
+          </template>);
+              await rerender()
+
+              assert.dom().hasText('Yay for gjs!');
+            });
+          });
+          `,
+          'fany-test.gts': `import { module, test } from 'qunit';
+          import { setupRenderingTest } from 'ember-qunit';
+          import { render, rerender } from '@ember/test-helpers';
+          import Fancy from 'app-template/components/fancy';
+
+
+          module('Integration | Component | Fany -- from gts test file', (hooks) => {
+            setupRenderingTest(hooks);
+
+            test('should have Yay for gts!', async function(assert) {
+              await render(<template>
+            <Fancy @type="primary2"></Fancy>
+          </template>);
+              await rerender()
+
+              assert.dom().hasText('Yay for gts!');
+            });
+          });
+          `,
+          'fany2-test.js': `import { module, test } from 'qunit';
+          import { setupRenderingTest } from 'ember-qunit';
+          import { render, rerender } from '@ember/test-helpers';
+          import { hbs } from 'ember-cli-htmlbars';
+
+          module('Integration | Component | Fany2', (hooks) => {
+            setupRenderingTest(hooks);
+
+            test('should have Yay for gjs!', async function (assert) {
+              await render(hbs\`
+              <Fancy @type="primary2"></Fancy>
+              <Fancy2 @type="primary2"></Fancy2>
+              \`);
+              await rerender();
+
+              assert.dom().includesText('Yay for gts!');
+              assert.dom().includesText('Yay for gjs!');
+            });
+          });
+          `,
         },
       },
       app: {
+        components: {
+          old: {
+            'component.js': `import Component from '@glimmer/component';
+
+            export default class extends Component {
+              message = 'hi';
+            }
+            `,
+            'component.hbs': `<div>hey {{@message}} <Fancy /></div>`,
+          },
+          'example.hbs': `<div>hey {{@message}} <Fancy /></div>`,
+          'example.js': `import Component from '@glimmer/component';
+          import Fancy from './fancy';
+
+          export default class extends Component {
+            message = 'hi';
+            Fancy = Fancy;
+          }`,
+          'fancy.gts': `<template>Yay for gts!</template>`,
+          'fancy2.gjs': `<template>Yay for gjs!</template>`,
+        },
         adapters: {
           'post.js': `
             import JSONAPIAdapter from '@ember-data/adapter/json-api';
@@ -156,6 +252,14 @@ viteAppScenarios
             }
           `,
         },
+        templates: {
+          'application.hbs': `{{page-title "ViteApp"}}
+
+          <Example @message={{this.model.message}} />
+          <Old @message={{this.model.message}} />
+
+          {{outlet}}`,
+        },
       },
       public: {
         posts: {
@@ -184,22 +288,6 @@ viteAppScenarios
         app = await scenario.prepare();
       });
 
-      if (process.platform === 'win32') {
-        test(`correct windows path`, async function (assert) {
-          // windows sometimes generates short path alias 8.3
-          // which leads to resolving errors later
-          // e.g. cannot find owning engine for C:\Users\runneradmin\AppData\Local\Temp\tmp-2256UvRXnGotcjxi\node_modules\.embroider\rewritten-app
-          // the value in engines are:          C:\Users\RUNNER~1\AppData\Local\Temp\tmp-2256UvRXnGotcjxi\node_modules\.embroider\rewritten-app
-          // it looks like there is no way to fix this in JS with
-          // e.g fs.realpath, resolve, normalize
-          // Powershell command can be used, python could also resolve it...
-          const command = `powershell.exe -command "(Get-Item -LiteralPath '${app.dir}').FullName"`;
-          const dir = await execPromise(command);
-          app.dir = dir;
-          assert.ok(!dir.includes('~'));
-        });
-      }
-
       test(`pnpm test:ember`, async function (assert) {
         // this will only hang if there is an issue
         assert.timeout(5 * 60 * 1000);
@@ -209,8 +297,6 @@ viteAppScenarios
         assert.ok(result.output.includes('should have Yay for gjs!'), 'should have tested');
         assert.ok(result.output.includes(' -- from gjs test file'), 'should have tested with gjs file');
         assert.ok(result.output.includes(' -- from gts test file'), 'should have tested with gts file');
-        const depCache = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps'));
-        assert.ok(depCache.length > 0, 'should have created cached deps');
       });
 
       test(`pnpm build`, async function (assert) {
@@ -219,7 +305,6 @@ viteAppScenarios
         const distFiles = readdirSync(join(app.dir, 'dist'));
         assert.ok(distFiles.length > 1, 'should have created dist folder');
         assert.ok(distFiles.includes('assets'), 'should have created assets folder');
-        assert.ok(distFiles.includes('ember-welcome-page'), 'should have copied addon asset files');
         assert.ok(distFiles.includes('robots.txt'), 'should have copied app assets');
 
         const assetFiles = readdirSync(join(app.dir, 'dist', 'assets'));

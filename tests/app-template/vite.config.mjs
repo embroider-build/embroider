@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     optimizeDeps: optimizeDeps(),
+    publicDir: resolve(process.cwd(), "public"),
     server: {
       port: 4200,
       watch: {

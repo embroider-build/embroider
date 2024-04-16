@@ -805,21 +805,6 @@ export class CompatAppBuilder {
     // first gather all the assets out of addons
     let assets: Asset[] = [];
 
-    let pkg = this.allActiveAddons.find(pkg => pkg.name === '@embroider/synthesized-styles');
-    if (pkg?.meta['public-assets']) {
-      for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
-        let sourcePath = resolvePath(pkg.root, filename);
-        let stats = statSync(sourcePath);
-        assets.push({
-          kind: 'on-disk',
-          sourcePath,
-          relativePath: appRelativeURL,
-          mtime: stats.mtimeMs,
-          size: stats.size,
-        });
-      }
-    }
-
     if (this.activeFastboot) {
       const source = `
       (function(){

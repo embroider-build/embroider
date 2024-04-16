@@ -2,10 +2,12 @@ import { appScenarios, baseAddon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { readFileSync } from 'fs-extra';
-import { join } from 'path';
 import { loadFromFixtureData } from './helpers';
-import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import CommandWatcher from './helpers/command-watcher';
+import fetch from 'node-fetch';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -27,13 +29,30 @@ appScenarios
     });
   })
   .forEachScenario(scenario => {
-    Qmodule(scenario.name, function () {
-      test(`pnpm test`, async function (assert) {
-        let app: PreparedApp = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
-        let expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
-        expectFile('./assets/app-template.css').matches('body { background: red; }');
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+
+      hooks.before(async function () {
+        app = await scenario.prepare();
+      });
+
+      test(`css is transformed: build mode`, async function (assert) {
+        let result = await app.execute(`pnpm build`);
+        assert.strictEqual(result.exitCode, 0, result.output);
+        let text = readFileSync(join(app.dir, `dist/assets/app-template.css`), 'utf8');
+        assert.strictEqual(text, 'body { background: red; }');
+      });
+
+      test(`css is transformed: dev mode`, async function (assert) {
+        const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        try {
+          const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+          let response = await fetch(`${url}/assets/app-template.css`);
+          let text = await response.text();
+          assert.strictEqual(text, 'body { background: red; }');
+        } finally {
+          await server.shutdown();
+        }
       });
     });
   });

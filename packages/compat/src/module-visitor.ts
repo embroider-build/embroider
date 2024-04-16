@@ -24,6 +24,8 @@ export interface Module {
   exports: string[];
   resolutions: { [source: string]: string | null };
   content: string;
+  isCJS: boolean;
+  isAMD: boolean;
 }
 
 interface InternalModule {
@@ -354,6 +356,8 @@ class ModuleVisitor {
         content: module.parsed?.transpiledContent
           ? module.parsed?.transpiledContent.toString()
           : 'module failed to transpile',
+        isAMD: Boolean(module.parsed?.isAMD),
+        isCJS: Boolean(module.parsed?.isCJS),
       };
       publicModules[explicitRelative(this.base, filename)] = publicModule;
     }

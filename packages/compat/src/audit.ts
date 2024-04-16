@@ -9,7 +9,7 @@ import type { NamespaceMarker } from './audit/babel-visitor';
 import { CodeFrameStorage, isNamespaceMarker } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
-import { type ContentType, type Module, visitModules, isLinked } from './module-visitor';
+import { type ContentType, type Module, visitModules, isLinked, type RootMarker, isRootMarker } from './module-visitor';
 
 export interface AuditMessage {
   message: string;
@@ -279,20 +279,11 @@ export class Audit {
     }
   }
 
-  private moduleProvidesName(target: LinkedInternalModule, name: string | NamespaceMarker) {
+  private moduleProvidesName(target: Module, name: string | NamespaceMarker) {
     // any module can provide a namespace.
     // CJS and AMD are too dynamic to be sure exactly what names are available,
     // so they always get a pass
-    return isNamespaceMarker(name) || target.parsed.isCJS || target.parsed.isAMD || target.linked.exports.has(name);
-  }
-
-  private async visitHBS(
-    filename: string,
-    content: Buffer | string
-  ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
-    let rawSource = content.toString('utf8');
-    let js = hbsToJS(rawSource);
-    return this.visitJS(filename, js);
+    return isNamespaceMarker(name) || target.isCJS || target.isAMD || target.exports.includes(name);
   }
 
   private handleJSON(filename: string, content: Buffer | string): { content: string; type: ContentType } | Finding[] {
@@ -312,50 +303,8 @@ export class Audit {
     return { content: js, type: 'javascript' };
   }
 
-  private async resolveDeps(deps: string[], fromFile: string): Promise<InternalModule['resolved']> {
-    let resolved = new Map() as NonNullable<InternalModule['resolved']>;
-    for (let dep of deps) {
-      if (['@embroider/macros'].includes(dep)) {
-        // the audit process deliberately removes the @embroider/macros babel
-        // plugins, so the imports are still present and should be left alone.
-        continue;
-      }
-
-      let resolution = await this.resolver.nodeResolve(dep, fromFile);
-      switch (resolution.type) {
-        case 'virtual':
-          this.virtualModules.set(resolution.filename, resolution.content);
-          resolved.set(dep, resolution.filename);
-          this.scheduleVisit(resolution.filename, fromFile);
-          break;
-        case 'not_found':
-          resolved.set(dep, { isResolutionFailure: true as true });
-          break;
-        case 'real':
-          resolved.set(dep, resolution.filename);
-          this.scheduleVisit(resolution.filename, fromFile);
-          break;
-      }
-    }
-    return resolved;
-  }
-
   private pushFinding(finding: Finding) {
     this.findings.push(finding);
-  }
-
-  private scheduleVisit(filename: string, parent: string | RootMarker) {
-    let record = this.modules.get(filename);
-    if (!record) {
-      this.debug(`discovered`, filename);
-      record = {
-        consumedFrom: [parent],
-      };
-      this.modules.set(filename, record);
-      this.moduleQueue.add(filename);
-    } else {
-      record.consumedFrom.push(parent);
-    }
   }
 }
 
@@ -375,3 +324,5 @@ function indent(str: string, level: number) {
     .map(line => spaces + line)
     .join('\n');
 }
+
+export { Module };

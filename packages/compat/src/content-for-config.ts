@@ -42,17 +42,26 @@ export default class ContentForConfig extends Plugin {
     const availableContentForTypes = this.options.availableContentForTypes ?? [];
     const extendedContentTypes = new Set([...this.defaultContentForTypes, ...availableContentForTypes]);
 
-    extendedContentTypes.forEach(contentType => {
-      const matchExp = this.options.pattern.match;
-      if (!this.contentFor[contentType]) {
-        let contents = this.options.pattern.replacement.call(null, this.getAppConfig(), matchExp, contentType);
-        this.contentFor[contentType] = contents;
-      }
+    let appConfig = this.getAppConfig();
+    appConfig.forEach((configPath: { file: string; json: any }) => {
+      extendedContentTypes.forEach(contentType => {
+        const matchExp = this.options.pattern.match;
+        if (!this.contentFor[configPath.file]) this.contentFor[configPath.file] = {};
+        if (!this.contentFor[configPath.file][contentType]) {
+          let contents = this.options.pattern.replacement.call(null, configPath.json, matchExp, contentType);
+          this.contentFor[configPath.file][contentType] = contents;
+        }
+      });
     });
   }
 
   getAppConfig() {
-    let config = readFileSync(join(this.inputPaths[0], this.options.configPath), { encoding: 'utf8' });
-    return JSON.parse(config);
+    return this.options.configPaths.map((configPath: { file: string; path: string }) => {
+      let config = readFileSync(join(this.inputPaths[0], configPath.path), { encoding: 'utf8' });
+      return {
+        file: configPath.file,
+        json: JSON.parse(config),
+      };
+    });
   }
 }

@@ -7,9 +7,10 @@ export function contentFor(): Plugin {
   return {
     name: 'embroider-content-for',
 
-    transformIndexHtml(html) {
+    transformIndexHtml(html, { path }) {
       let config: any = readJSONSync(join(locateEmbroiderWorkingDir(process.cwd()), 'content-for.json'));
-      for (const [contentType, htmlContent] of Object.entries(config)) {
+      let contentsForConfig = config[path];
+      for (const [contentType, htmlContent] of Object.entries(contentsForConfig)) {
         html = html.replace(`{{content-for "${contentType}"}}`, `${htmlContent}`);
       }
       return html;

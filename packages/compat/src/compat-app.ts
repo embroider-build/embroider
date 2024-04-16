@@ -150,10 +150,13 @@ export default class CompatApp {
 
   @Memoize()
   private get contentFor(): ContentForConfig {
-    const configPath = join('environments', `${this.legacyEmberAppInstance.env}.json`);
+    const configPaths = [
+      { file: '/index.html', path: join('environments', `${this.legacyEmberAppInstance.env}.json`) },
+    ];
+    if (this.shouldBuildTests) configPaths.push({ file: '/tests/index.html', path: join('environments', `test.json`) });
     return new ContentForConfig(this.configTree, {
       availableContentForTypes: this.options.availableContentForTypes,
-      configPath,
+      configPaths,
       pattern: this.filteredPatternsByContentFor.contentFor,
     });
   }

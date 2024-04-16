@@ -3,7 +3,7 @@ import { ResolverLoader } from '@embroider/core';
 import type { Plugin } from 'vite';
 import * as process from 'process';
 import { join, posix } from 'path';
-import { existsSync, readFileSync } from 'fs-extra';
+import { existsSync, readFileSync, lstatSync } from 'fs-extra';
 import send from 'send';
 import type { Readable } from 'stream';
 
@@ -70,9 +70,16 @@ export function assets(): Plugin {
               if (existsSync(join(publicDir, dest))) {
                 return;
               }
+
+              const filePath = join(pkg.root, path);
+              if (!lstatSync(filePath).isFile()) {
+                console.log(`Invalid package definition, ${pkg.name} has defined a file "${path}" that is not a file`);
+                return;
+              }
+
               this.emitFile({
                 type: 'asset',
-                source: readFileSync(join(pkg.root, path)),
+                source: readFileSync(filePath),
                 fileName: posix.resolve('/', dest).slice(1),
               });
             });

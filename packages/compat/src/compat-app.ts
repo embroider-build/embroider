@@ -13,7 +13,7 @@ import resolve from 'resolve';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo } from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, readdirSync, pathExistsSync, existsSync } from 'fs-extra';
+import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import type { TransformOptions } from '@babel/core';
@@ -28,6 +28,7 @@ import { readFileSync } from 'fs';
 import semver from 'semver';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import { CompatAppBuilder } from './compat-app-builder';
+import walkSync from 'walk-sync';
 
 interface Group {
   outputFiles: OutputFileToInputFileMap;
@@ -501,7 +502,7 @@ export default class CompatApp {
       };
       let assetPath = join(outputPath, 'assets');
       if (pathExistsSync(assetPath)) {
-        for (let file of readdirSync(assetPath)) {
+        for (let file of walkSync(assetPath, { directories: false })) {
           addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
         }
       }

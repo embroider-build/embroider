@@ -20,7 +20,6 @@ import {
   Resolver,
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
-import walkSync from 'walk-sync';
 import { resolve as resolvePath, posix } from 'path';
 import type { JSDOM } from 'jsdom';
 import type Options from './options';
@@ -89,23 +88,6 @@ export class CompatAppBuilder {
 
   private extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
     let assets: Asset[] = [];
-
-    // Everything in our traditional public tree is an on-disk asset
-    if (treePaths.publicTree) {
-      walkSync
-        .entries(treePaths.publicTree, {
-          directories: false,
-        })
-        .forEach(entry => {
-          assets.push({
-            kind: 'on-disk',
-            relativePath: entry.relativePath,
-            sourcePath: entry.fullPath,
-            mtime: entry.mtime as unknown as number, // https://github.com/joliss/node-walk-sync/pull/38
-            size: entry.size,
-          });
-        });
-    }
 
     // ember-cli traditionally outputs a dummy testem.js file to prevent
     // spurious errors when running tests under "ember s".
@@ -822,19 +804,19 @@ export class CompatAppBuilder {
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
     // first gather all the assets out of addons
     let assets: Asset[] = [];
-    for (let pkg of this.allActiveAddons) {
-      if (pkg.meta['public-assets']) {
-        for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
-          let sourcePath = resolvePath(pkg.root, filename);
-          let stats = statSync(sourcePath);
-          assets.push({
-            kind: 'on-disk',
-            sourcePath,
-            relativePath: appRelativeURL,
-            mtime: stats.mtimeMs,
-            size: stats.size,
-          });
-        }
+
+    let pkg = this.allActiveAddons.find(pkg => pkg.name === '@embroider/synthesized-styles');
+    if (pkg?.meta['public-assets']) {
+      for (let [filename, appRelativeURL] of Object.entries(pkg.meta['public-assets'] || {})) {
+        let sourcePath = resolvePath(pkg.root, filename);
+        let stats = statSync(sourcePath);
+        assets.push({
+          kind: 'on-disk',
+          sourcePath,
+          relativePath: appRelativeURL,
+          mtime: stats.mtimeMs,
+          size: stats.size,
+        });
       }
     }
 

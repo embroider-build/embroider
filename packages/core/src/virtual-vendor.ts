@@ -1,7 +1,8 @@
-import { type Package } from '@embroider/shared-internals';
+import { type Package, locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
-import { readFileSync } from 'fs';
+import { lstatSync, readFileSync, readJSONSync } from 'fs-extra';
 import { sortBy } from 'lodash';
+import { join } from 'path';
 import resolve from 'resolve';
 import type { Engine } from './app-files';
 import type { Resolver } from './module-resolver';
@@ -16,10 +17,10 @@ export function renderVendor(filename: string, resolver: Resolver): VirtualConte
   if (!owner) {
     throw new Error(`Failed to find a valid owner for ${filename}`);
   }
-  return { src: getVendor(owner, resolver), watches: [] };
+  return { src: getVendor(owner, resolver, filename), watches: [] };
 }
 
-function getVendor(owner: Package, resolver: Resolver): string {
+function getVendor(owner: Package, resolver: Resolver, filename: string): string {
   let engineConfig = resolver.owningEngine(owner);
   let engine: Engine = {
     package: owner,
@@ -34,16 +35,11 @@ function getVendor(owner: Package, resolver: Resolver): string {
     appRelativePath: 'NOT_USED_DELETE_ME',
   };
 
-  // TODO - From where do we get this dynamically? in compat-app-builder:
-  // let emberENV = this.configTree.readConfig().EmberENV;
-  const emberENV = {
-    EXTEND_PROTOTYPES: false,
-    FEATURES: {},
-    _APPLICATION_TEMPLATE_WRAPPER: false,
-    _DEFAULT_ASYNC_OBSERVERS: true,
-    _JQUERY_INTEGRATION: false,
-    _TEMPLATE_ONLY_GLIMMER_COMPONENTS: true,
-  };
+  let path = join(locateEmbroiderWorkingDir(resolver.options.appRoot), 'ember-env.json');
+  if (!lstatSync(path).isFile()) {
+    throw new Error(`Failed to read the ember-env.json when generating content for ${filename}`);
+  }
+  let emberENV = readJSONSync(path);
 
   return generateVendor(engine, emberENV);
 }

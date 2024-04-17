@@ -884,6 +884,7 @@ export class CompatAppBuilder {
     let resolverConfig = this.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
     this.addContentForConfig(this.contentForTree.readContents());
+    this.addEnvironmentConfig(this.configTree.readConfig());
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
@@ -983,6 +984,12 @@ export class CompatAppBuilder {
 
   private addContentForConfig(contentForConfig: any) {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'content-for.json'), contentForConfig, {
+      spaces: 2,
+    });
+  }
+
+  private addEnvironmentConfig(environmentConfig: any) {
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'environment.json'), environmentConfig, {
       spaces: 2,
     });
   }

@@ -77,7 +77,8 @@ export class CompatAppBuilder {
     private configTree: V1Config,
     private contentForTree: ContentForConfig,
     private synthVendor: Package,
-    private synthStyles: Package
+    private synthStyles: Package,
+    private testConfigTree?: V1Config
   ) {}
 
   @Memoize()
@@ -884,7 +885,7 @@ export class CompatAppBuilder {
     let resolverConfig = this.resolverConfig(appFiles);
     this.addResolverConfig(resolverConfig);
     this.addContentForConfig(this.contentForTree.readContents());
-    this.addEnvironmentConfig(this.configTree.readConfig());
+    this.addEnvironmentConfig(this.configTree.readConfig(), this.testConfigTree?.readConfig());
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
@@ -988,8 +989,10 @@ export class CompatAppBuilder {
     });
   }
 
-  private addEnvironmentConfig(environmentConfig: any) {
-    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'environment.json'), environmentConfig, {
+  private addEnvironmentConfig(environmentConfig: any, testEnvironmentConfig?: any) {
+    let output = { [environmentConfig.environment]: environmentConfig };
+    if (testEnvironmentConfig) output[testEnvironmentConfig.environment] = testEnvironmentConfig;
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'environment.json'), output, {
       spaces: 2,
     });
   }

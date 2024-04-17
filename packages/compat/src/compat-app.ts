@@ -10,6 +10,7 @@ import buildFunnel from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
+import ContentForConfig from './content-for-config';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo } from '@embroider/core';
@@ -147,6 +148,19 @@ export default class CompatApp {
     }
   }
 
+  @Memoize()
+  private get contentFor(): ContentForConfig {
+    const configPaths = [
+      { file: '/index.html', path: join('environments', `${this.legacyEmberAppInstance.env}.json`) },
+    ];
+    if (this.shouldBuildTests) configPaths.push({ file: '/tests/index.html', path: join('environments', `test.json`) });
+    return new ContentForConfig(this.configTree, {
+      availableContentForTypes: this.options.availableContentForTypes,
+      configPaths,
+      pattern: this.filteredPatternsByContentFor.contentFor,
+    });
+  }
+
   get autoRun(): boolean {
     return this.legacyEmberAppInstance.options.autoRun;
   }
@@ -180,6 +194,14 @@ export default class CompatApp {
     });
   }
 
+  private get filteredPatternsByContentFor() {
+    const filter = '/{{content-for [\'"](.+?)["\']}}/g';
+    return {
+      contentFor: this.configReplacePatterns.find((pattern: any) => filter.includes(pattern.match.toString())),
+      others: this.configReplacePatterns.filter((pattern: any) => !filter.includes(pattern.match.toString())),
+    };
+  }
+
   private get htmlTree() {
     if (this.legacyEmberAppInstance.tests) {
       return mergeTrees([this.indexTree, this.testIndexTree]);
@@ -199,7 +221,7 @@ export default class CompatApp {
     return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),
       files: [indexFilePath],
-      patterns: this.configReplacePatterns,
+      patterns: this.filteredPatternsByContentFor.others,
       annotation: 'ConfigReplace/indexTree',
     });
   }
@@ -214,7 +236,7 @@ export default class CompatApp {
     return new this.configReplace(index, this.configTree, {
       configPath: join('environments', `test.json`),
       files: ['tests/index.html'],
-      patterns: this.configReplacePatterns,
+      patterns: this.filteredPatternsByContentFor.others,
       annotation: 'ConfigReplace/testIndexTree',
     });
   }
@@ -780,6 +802,7 @@ export default class CompatApp {
   private inTrees(prevStageTree: BroccoliNode) {
     let publicTree = this.publicTree;
     let configTree = this.config;
+    let contentForTree = this.contentFor;
 
     if (this.options.extraPublicTrees.length > 0) {
       publicTree = mergeTrees([publicTree, ...this.options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
@@ -790,6 +813,7 @@ export default class CompatApp {
       htmlTree: this.htmlTree,
       publicTree,
       configTree,
+      contentForTree,
       appBootTree: this.appBoot,
       prevStageTree,
     };
@@ -811,7 +835,12 @@ export default class CompatApp {
     }
   }
 
-  private async instantiate(root: string, packageCache: RewrittenPackageCache, configTree: V1Config) {
+  private async instantiate(
+    root: string,
+    packageCache: RewrittenPackageCache,
+    configTree: V1Config,
+    contentForTree: ContentForConfig
+  ) {
     let origAppPkg = this.appPackage();
     let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
     let workingDir = locateEmbroiderWorkingDir(this.root);
@@ -822,6 +851,7 @@ export default class CompatApp {
       this.options,
       this,
       configTree,
+      contentForTree,
       packageCache.get(join(workingDir, 'rewritten-packages', '@embroider', 'synthesized-vendor')),
       packageCache.get(join(workingDir, 'rewritten-packages', '@embroider', 'synthesized-styles'))
     );
@@ -837,7 +867,7 @@ export default class CompatApp {
         if (!this.active) {
           let { outputPath } = await prevStage.ready();
           let packageCache = RewrittenPackageCache.shared('embroider', this.root);
-          this.active = await this.instantiate(outputPath, packageCache, inTrees.configTree);
+          this.active = await this.instantiate(outputPath, packageCache, inTrees.configTree, inTrees.contentForTree);
           resolve({ outputPath });
         }
         await this.active.build(treePaths);

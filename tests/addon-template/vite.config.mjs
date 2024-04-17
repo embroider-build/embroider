@@ -7,6 +7,7 @@ import {
   optimizeDeps,
   compatPrebuild,
   assets,
+  contentFor,
 } from "@embroider/vite";
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
@@ -26,6 +27,7 @@ export default defineConfig(({ mode }) => {
       resolver(),
       compatPrebuild(),
       assets(),
+      contentFor(),
 
       babel({
         babelHelpers: "runtime",

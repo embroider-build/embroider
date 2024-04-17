@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { resolver, hbs, scripts, templateTag, optimizeDeps, compatPrebuild } from '@embroider/vite';
+import { resolver, hbs, scripts, templateTag, optimizeDeps, compatPrebuild, contentFor } from '@embroider/vite';
 import { resolve } from 'path';
 import { babel } from '@rollup/plugin-babel';
 
@@ -16,6 +16,7 @@ export default defineConfig({
     scripts(),
     resolver(),
     compatPrebuild(),
+    contentFor(),
 
     babel({
       babelHelpers: 'runtime',

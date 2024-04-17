@@ -275,6 +275,7 @@ export class CompatAppBuilder {
       // this is the additional stufff that @embroider/compat adds on top to do
       // global template resolving
       modulePrefix: this.modulePrefix(),
+      splitAtRoutes: this.options.splitAtRoutes,
       podModulePrefix: this.podModulePrefix(),
       activePackageRules: this.activeRules(),
       options,

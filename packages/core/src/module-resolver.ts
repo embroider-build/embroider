@@ -91,6 +91,7 @@ export interface Options {
   appRoot: string;
   engines: EngineConfig[];
   modulePrefix: string;
+  splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
 }

@@ -4,7 +4,6 @@ import { lstatSync, readFileSync, readJSONSync } from 'fs-extra';
 import { sortBy } from 'lodash';
 import { join } from 'path';
 import resolve from 'resolve';
-import type { Engine } from './app-files';
 import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
 
@@ -22,18 +21,12 @@ export function renderVendor(filename: string, resolver: Resolver): VirtualConte
 
 function getVendor(owner: Package, resolver: Resolver, filename: string): string {
   let engineConfig = resolver.owningEngine(owner);
-  let engine: Engine = {
-    package: owner,
-    addons: new Map(
-      engineConfig.activeAddons.map(addon => [
-        resolver.packageCache.get(addon.root) as V2AddonPackage,
-        addon.canResolveFromFile,
-      ])
-    ),
-    isApp: true,
-    modulePrefix: resolver.options.modulePrefix,
-    appRelativePath: 'NOT_USED_DELETE_ME',
-  };
+  let addons = new Map(
+    engineConfig.activeAddons.map(addon => [
+      resolver.packageCache.get(addon.root) as V2AddonPackage,
+      addon.canResolveFromFile,
+    ])
+  );
 
   let path = join(locateEmbroiderWorkingDir(resolver.options.appRoot), 'ember-env.json');
   if (!lstatSync(path).isFile()) {
@@ -41,12 +34,12 @@ function getVendor(owner: Package, resolver: Resolver, filename: string): string
   }
   let emberENV = readJSONSync(path);
 
-  return generateVendor(engine, emberENV);
+  return generateVendor(addons, emberENV);
 }
 
-function generateVendor(engine: Engine, emberENV?: unknown): string {
+function generateVendor(addons: Map<V2AddonPackage, string>, emberENV?: unknown): string {
   // Add addons implicit-scripts
-  let vendor: string[] = impliedAddonVendors(engine).map((sourcePath: string): string => {
+  let vendor: string[] = impliedAddonVendors(addons).map((sourcePath: string): string => {
     let source = readFileSync(sourcePath);
     return `${source}`;
   });
@@ -60,9 +53,9 @@ function generateVendor(engine: Engine, emberENV?: unknown): string {
   return vendor.join('') as string;
 }
 
-function impliedAddonVendors(engine: Engine): string[] {
+function impliedAddonVendors(addons: Map<V2AddonPackage, string>): string[] {
   let result: Array<string> = [];
-  for (let addon of sortBy(Array.from(engine.addons.keys()), pkg => {
+  for (let addon of sortBy(Array.from(addons.keys()), pkg => {
     switch (pkg.name) {
       case 'loader.js':
         return 0;

@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## Release (2024-04-18)
+
+@embroider/compat 3.4.8 (patch)
+@embroider/core 3.4.8 (patch)
+@embroider/macros 1.16.0 (minor)
+@embroider/test-setup 4.0.0 (major)
+@embroider/webpack 4.0.0 (major)
+
+#### :boom: Breaking Change
+* `@embroider/webpack`
+  * [#1868](https://github.com/embroider-build/embroider/pull/1868) Adjusting `@embroider/webpack` to use `@babel/preset-env` to avoid critical security audit ([@lupestro](https://github.com/lupestro))
+
+#### :rocket: Enhancement
+* `@embroider/macros`, `@embroider/test-fixtures`
+  * [#1858](https://github.com/embroider-build/embroider/pull/1858) Add support for `{{unless}}` to the `macroCondition` macro ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#1885](https://github.com/embroider-build/embroider/pull/1885) Fix pre support in portable babel launcher ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Ralph Mack ([@lupestro](https://github.com/lupestro))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
 ## Release (2024-04-10)
 
 @embroider/addon-dev 4.3.1 (patch)

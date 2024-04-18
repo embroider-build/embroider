@@ -112,7 +112,7 @@ appScenarios
         );
 
         fileContents.matches(
-          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
+          /precompileTemplate\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
           'called template is still hbs and custom transforms have run'
         );
 
@@ -188,7 +188,7 @@ appScenarios
         );
 
         file.matches(
-          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
+          /precompileTemplate\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
           'called template is still hbs and custom transforms have run'
         );
 

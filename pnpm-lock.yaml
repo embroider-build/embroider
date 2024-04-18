@@ -8,6 +8,7 @@ overrides:
   browserslist: ^4.14.0
   graceful-fs: ^4.0.0
   '@types/eslint': ^8.37.0
+  babel-plugin-module-resolver@5.0.1: 5.0.0
 
 importers:
 
@@ -8009,9 +8010,6 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependenciesMeta:
-      ajv:
-        optional: true
     dependencies:
       ajv: 8.12.0
 
@@ -22890,7 +22888,7 @@ packages:
     resolution: {integrity: sha512-xebP81SNcPuNpPP3uzeW1NYXxI3rxyJzF3pD6sH4jE7o/IX+WtSpwnVU+qIsDPyk0d3hmFQ7mjqc6AtV604hbg==}
     hasBin: true
     peerDependencies:
-      browserslist: '>= 4.21.0'
+      browserslist: ^4.14.0
     dependencies:
       browserslist: 4.23.0
       escalade: 3.1.2

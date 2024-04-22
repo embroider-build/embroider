@@ -2,7 +2,7 @@ import { module, test } from 'qunit';
 import { setupRenderingTest } from 'ember-qunit';
 import { render, click } from '@ember/test-helpers';
 import hbs from 'htmlbars-inline-precompile';
-import { helper } from '@ember/component/helper';
+import { precompileTemplate } from "@ember/template-compilation";
 
 module('Integration | Macro | macroCondition + {{unless}}', function (hooks) {
   setupRenderingTest(hooks);
@@ -24,13 +24,12 @@ module('Integration | Macro | macroCondition + {{unless}}', function (hooks) {
 
   test('macroCondition in subexpression position when true', async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
+    function myAssertion(value) {
         assert.strictEqual(value, 'blue');
-      })
-    );
-    await render(hbs`{{my-assertion (unless (macroCondition true) 'red' 'blue') }}`);
+    }
+    await render(precompileTemplate(`{{myAssertion (unless (macroCondition true) 'red' 'blue') }}`, {
+      scope: () => ({ myAssertion })
+    }));
   });
 
   test('macroCondition inside string', async function (assert) {
@@ -41,61 +40,52 @@ module('Integration | Macro | macroCondition + {{unless}}', function (hooks) {
 
   test('macroCondition in subexpression position when false', async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
+    function myAssertion(value) {
         assert.strictEqual(value, 'red');
-      })
-    );
-    await render(hbs`{{my-assertion (unless (macroCondition false) 'red' 'blue') }}`);
+    }
+    await render(precompileTemplate(`{{myAssertion (unless (macroCondition false) 'red' 'blue') }}`, {
+      scope: () => ({ myAssertion })
+    }));
   });
 
   test('macroCondition in subexpression position when true with no alternate', async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
+    function myAssertion(value) {
         assert.strictEqual(value, undefined);
-      })
-    );
-    await render(hbs`{{my-assertion (unless (macroCondition true) 'red') }}`);
+    }
+    await render(precompileTemplate(`{{myAssertion (unless (macroCondition true) 'red') }}`, {
+      scope: () => ({ myAssertion })
+    }));
   });
 
   test('macroCondition composes with other macros, true case', async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
+    function myAssertion(value) {
         assert.strictEqual(value, 'blue');
-      })
-    );
-    await render(
-      hbs`{{my-assertion (unless (macroCondition (macroDependencySatisfies 'ember-source' '*')) 'red' 'blue') }}`
-    );
+      }
+    await render(precompileTemplate(`{{myAssertion (unless (macroCondition (macroDependencySatisfies 'ember-source' '*')) 'red' 'blue') }}`, {
+      scope: () => ({ myAssertion })
+    }));
   });
 
   test('macroCondition composes with other macros, false case', async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
+    function myAssertion(value) {
         assert.strictEqual(value, 'red');
-      })
-    );
-    await render(
-      hbs`{{my-assertion (unless (macroCondition (macroDependencySatisfies 'ember-source' '10.x')) 'red' 'blue') }}`
-    );
+      }
+      await render(precompileTemplate(`{{myAssertion (unless (macroCondition (macroDependencySatisfies 'ember-source' '10.x')) 'red' 'blue') }}`, {
+        scope: () => ({ myAssertion })
+      }));
   });
 
   test('macroCondition composes with self', async function (assert) {
     assert.expect(1);
-    this.owner.register(
-      'helper:my-assertion',
-      helper(function ([value]) {
+    function myAssertion(value) {
         assert.strictEqual(value, 'red');
-      })
-    );
-    await render(hbs`{{my-assertion (unless (macroCondition false) (unless (macroCondition true) 'green' 'red') 'blue') }}`);
+      }
+      await render(precompileTemplate(`{{myAssertion (unless (macroCondition false) (unless (macroCondition true) 'green' 'red') 'blue') }}`, {
+        scope: () => ({ myAssertion })
+      }));
   });
 
   test('macroCondition in modifier position when false', async function (assert) {

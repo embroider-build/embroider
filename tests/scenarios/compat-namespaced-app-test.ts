@@ -45,7 +45,10 @@ appScenarios
       type: 'addon',
       'implicit-modules': ['./my-implicit-module.js'],
     };
-    addon.files['my-implicit-module.js'] = 'globalThis.addonImplicitModulesWorked = true';
+    addon.files['my-implicit-module.js'] = `
+      globalThis.addonImplicitModulesWorked = true;
+      export default Object.assign({}, {});
+    `;
     app.addDevDependency(addon);
   })
   .forEachScenario(function (scenario) {

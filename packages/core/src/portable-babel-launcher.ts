@@ -34,15 +34,15 @@ export default function babelLauncher(
 
   function wrap1(original: any) {
     if (typeof original === 'function') {
-      return function (this: any, state: any) {
-        return original.call(this, convertState(state));
+      return function (this: any, file: any) {
+        return original.call(convertState(this), file);
       };
     }
   }
 
   function wrap2(original: Function) {
     return function (this: any, path: any, state: any) {
-      return original.call(this, path, convertState(state));
+      return original.call(convertState(this), path, convertState(state));
     };
   }
 

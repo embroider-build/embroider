@@ -132,7 +132,7 @@ stage2Scenarios
         // check that the app trees with in repo addon are combined correctly
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           //TODO investigate removing this @embroider-dep
           .resolves('my-app/service/in-repo.js')
@@ -143,7 +143,7 @@ stage2Scenarios
         // secondary in-repo-addon was correctly detected and activated
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           //TODO investigate removing this @embroider-dep
           .resolves('my-app/services/secondary.js')
@@ -210,7 +210,7 @@ stage2Scenarios
       test('verifies that the correct lexigraphically sorted addons win', function () {
         let expectModule = expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule();
         expectModule.resolves('my-app/service/in-repo.js').to('./lib/in-repo-b/_app_/service/in-repo.js');
         expectModule.resolves('my-app/service/addon.js').to('./node_modules/dep-b/_app_/service/addon.js');
@@ -220,7 +220,7 @@ stage2Scenarios
       test('addons declared as dependencies should win over devDependencies', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           .resolves('my-app/service/dep-wins-over-dev.js')
           .to('./node_modules/dep-b/_app_/service/dep-wins-over-dev.js');
@@ -229,7 +229,7 @@ stage2Scenarios
       test('in repo addons declared win over dependencies', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           .resolves('my-app/service/in-repo-over-deps.js')
           .to('./lib/in-repo-a/_app_/service/in-repo-over-deps.js');
@@ -238,7 +238,7 @@ stage2Scenarios
       test('ordering with before specified', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           .resolves('my-app/service/test-before.js')
           .to('./node_modules/dev-d/_app_/service/test-before.js');
@@ -247,7 +247,7 @@ stage2Scenarios
       test('ordering with after specified', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           .resolves('my-app/service/test-after.js')
           .to('./node_modules/dev-b/_app_/service/test-after.js');
@@ -709,7 +709,7 @@ stage2Scenarios
       test('non-static other paths are included in the entrypoint', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule().codeContains(`d("my-app/non-static-dir/another-library", function () {
             return i("my-app/non-static-dir/another-library.js");
           });`);
@@ -718,7 +718,7 @@ stage2Scenarios
       test('static other paths are not included in the entrypoint', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           .withContents(content => {
             return !/my-app\/static-dir\/my-library\.js"/.test(content);
@@ -728,7 +728,7 @@ stage2Scenarios
       test('top-level static other paths are not included in the entrypoint', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           .withContents(content => {
             return !content.includes('my-app/top-level-static.js');
@@ -738,7 +738,7 @@ stage2Scenarios
       test('staticAppPaths do not match partial path segments', function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule()
           .withContents(content => {
             return content.includes('my-app/static-dir-not-really/something.js');

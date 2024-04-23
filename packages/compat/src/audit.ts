@@ -1,5 +1,5 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
-import { join, resolve as resolvePath } from 'path';
+import { join, resolve as resolvePath, dirname } from 'path';
 import type { AppMeta, ResolverOptions } from '@embroider/core';
 import { explicitRelative, hbsToJS, locateEmbroiderWorkingDir, Resolver, RewrittenPackageCache } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
@@ -193,6 +193,14 @@ export class Audit {
       // the audit process deliberately removes the @embroider/macros babel
       // plugins, so the imports are still present and should be left alone.
       return undefined;
+    }
+
+    if (fromFile.endsWith('.html') && specifier.startsWith(this.meta['root-url'])) {
+      // root-relative URLs in HTML are actually relative to the appDir
+      specifier = explicitRelative(
+        dirname(fromFile),
+        resolvePath(this.movedAppRoot, specifier.replace(this.meta['root-url'], ''))
+      );
     }
 
     let resolution = await this.resolver.nodeResolve(specifier, fromFile);

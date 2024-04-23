@@ -1406,7 +1406,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs.js': `
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} {{(capitalize)}} {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `,
         });
@@ -1416,7 +1416,7 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} {{(capitalize)}} {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `);
       });
@@ -1426,7 +1426,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs.js': `
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} <capitalize /> {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `,
         });
@@ -1436,7 +1436,7 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} <capitalize /> {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `);
       });
@@ -1446,7 +1446,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs.js': `
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} <div {{capitalize}} /> {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `,
         });
@@ -1456,7 +1456,7 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} <div {{capitalize}} /> {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `);
       });
@@ -1466,7 +1466,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs.js': `
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} {{capitalize 1}} {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `,
         });
@@ -1476,7 +1476,7 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           export default precompileTemplate("{{#each things as |capitalize|}} {{capitalize 1}} {{/each}}", {
-            scope: () => ({ thing }),
+            scope: () => ({ things }),
           });
         `);
       });

@@ -2,7 +2,14 @@ import literal from './literal';
 import getConfig from './get-config';
 import dependencySatisfies from './dependency-satisfies';
 import { maybeAttrs } from './macro-maybe-attrs';
-import { macroIfBlock, macroIfExpression, macroIfMustache } from './macro-condition';
+import {
+  macroIfBlock,
+  macroIfExpression,
+  macroIfMustache,
+  macroUnlessBlock,
+  macroUnlessExpression,
+  macroUnlessMustache,
+} from './macro-condition';
 import { failBuild } from './fail-build';
 import { RewrittenPackageCache } from '@embroider/shared-internals';
 
@@ -181,6 +188,9 @@ export function makeSecondTransform() {
           if (node.path.original === 'if') {
             return macroIfBlock(node);
           }
+          if (node.path.original === 'unless') {
+            return macroUnlessBlock(node);
+          }
         },
         SubExpression(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -191,6 +201,9 @@ export function makeSecondTransform() {
           }
           if (node.path.original === 'if') {
             return macroIfExpression(node, env.syntax.builders);
+          }
+          if (node.path.original === 'unless') {
+            return macroUnlessExpression(node, env.syntax.builders);
           }
           if (node.path.original === 'macroFailBuild') {
             failBuild(node);
@@ -206,6 +219,16 @@ export function makeSecondTransform() {
               modifier.path = macroIfExpression(modifier.path, env.syntax.builders);
               if (modifier.path.type === 'UndefinedLiteral') {
                 return false;
+              }
+            }
+            if (
+              modifier.path.type === 'SubExpression' &&
+              modifier.path.path.type === 'PathExpression' &&
+              modifier.path.path.original === 'unless'
+            ) {
+              modifier.path = macroUnlessExpression(modifier.path, env.syntax.builders);
+              if (modifier.path.type === 'UndefinedLiteral') {
+                return true;
               }
             }
             if (modifier.path.type !== 'PathExpression') {
@@ -230,6 +253,9 @@ export function makeSecondTransform() {
           }
           if (node.path.original === 'if') {
             return macroIfMustache(node, env.syntax.builders);
+          }
+          if (node.path.original === 'unless') {
+            return macroUnlessMustache(node, env.syntax.builders);
           }
           if (node.path.original === 'macroFailBuild') {
             failBuild(node);

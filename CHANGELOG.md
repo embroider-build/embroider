@@ -1,4 +1,106 @@
 # Embroider Changelog
+
+## Release (2024-04-18)
+
+@embroider/compat 3.4.8 (patch)
+@embroider/core 3.4.8 (patch)
+@embroider/macros 1.16.0 (minor)
+@embroider/test-setup 4.0.0 (major)
+@embroider/webpack 4.0.0 (major)
+
+#### :boom: Breaking Change
+* `@embroider/webpack`
+  * [#1868](https://github.com/embroider-build/embroider/pull/1868) Adjusting `@embroider/webpack` to use `@babel/preset-env` to avoid critical security audit ([@lupestro](https://github.com/lupestro))
+
+#### :rocket: Enhancement
+* `@embroider/macros`, `@embroider/test-fixtures`
+  * [#1858](https://github.com/embroider-build/embroider/pull/1858) Add support for `{{unless}}` to the `macroCondition` macro ([@Windvis](https://github.com/Windvis))
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#1885](https://github.com/embroider-build/embroider/pull/1885) Fix pre support in portable babel launcher ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Ralph Mack ([@lupestro](https://github.com/lupestro))
+- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))
+
+## Release (2024-04-10)
+
+@embroider/addon-dev 4.3.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#1874](https://github.com/embroider-build/embroider/pull/1874) with namespace in publicAssets don't include path ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2024-04-10)
+
+@embroider/addon-dev 4.3.0 (minor)
+@embroider/compat 3.4.7 (patch)
+@embroider/core 3.4.7 (patch)
+@embroider/macros 1.15.1 (patch)
+@embroider/shared-internals 2.6.0 (minor)
+@embroider/webpack 3.2.3 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`, `@embroider/shared-internals`, `@embroider/test-scenarios`
+  * [#1856](https://github.com/embroider-build/embroider/pull/1856) Compile Hbs route templates correctly ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#1867](https://github.com/embroider-build/embroider/pull/1867) add a namespace option for public-assets plugin ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* Other
+  * [#1871](https://github.com/embroider-build/embroider/pull/1871) fix release-plan unlabelled changes PR ([@mansona](https://github.com/mansona))
+  * [#1869](https://github.com/embroider-build/embroider/pull/1869) update release plan ([@mansona](https://github.com/mansona))
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#1806](https://github.com/embroider-build/embroider/pull/1806) resolver transform to emit imports for helper and modifiers that need… ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 3
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+## Release (2024-03-07)
+
+@embroider/compat 3.4.6 (patch)
+@embroider/core 3.4.6 (patch)
+@embroider/macros 1.15.0 (minor)
+@embroider/util 1.13.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/macros`, `@embroider/util`
+  * [#1832](https://github.com/embroider-build/embroider/pull/1832) Update to `ember-cli-babel` v8 ([@bertdeblock](https://github.com/bertdeblock))
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1838](https://github.com/embroider-build/embroider/pull/1838) make sure @embroider/macros doesn't try to load a babel config ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2024-02-28)
+
+@embroider/compat 3.4.5 (patch)
+@embroider/core 3.4.5 (patch)
+@embroider/macros 1.14.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/macros`
+  * [#1815](https://github.com/embroider-build/embroider/pull/1815) Make macro configs static ([@simonihmig](https://github.com/simonihmig))
+
+#### :house: Internal
+* Other
+  * [#1824](https://github.com/embroider-build/embroider/pull/1824) update release-plan ([@mansona](https://github.com/mansona))
+* `@embroider/test-scenarios`
+  * [#1820](https://github.com/embroider-build/embroider/pull/1820) [stable] Pin ember-data to fix issue in CI ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
 ## Release (2024-02-05)
 
 @embroider/addon-dev 4.2.1 (patch)

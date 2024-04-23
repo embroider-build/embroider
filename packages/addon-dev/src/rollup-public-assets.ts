@@ -1,10 +1,34 @@
 import { readJsonSync, writeJsonSync } from 'fs-extra';
 import walkSync from 'walk-sync';
 import type { Plugin } from 'rollup';
+import { resolve, join } from 'path/posix';
 
+export interface PublicAssetsOptions {
+  /**
+   * glob pattern passed to `walkSync.include` to pick files
+   */
+  include?: string[];
+
+  /**
+   * glob pattern passed to `walkSync.ignore` to exclude files
+   */
+  exclude?: string[];
+
+  /**
+   * namespace to expose files
+   */
+  namespace?: string;
+}
+
+/**
+ * A rollup plugin to expose a folder of assets
+ *
+ * @param path - the public folder that you want to add as public assets
+ * @returns
+ */
 export default function publicAssets(
   path: string,
-  opts: { include: string[]; exclude: string[] }
+  opts?: PublicAssetsOptions
 ): Plugin {
   const includeGlobPatterns = opts?.include;
   const excludedGlobPatterns = opts?.exclude || [];
@@ -27,7 +51,9 @@ export default function publicAssets(
       });
       const publicAssets: Record<string, string> = filenames.reduce(
         (acc: Record<string, string>, v): Record<string, string> => {
-          acc[`./${path}/${v}`] = ['/', pkg.name, '/', path, '/', v].join('');
+          const namespace = opts?.namespace ?? join(pkg.name, path);
+
+          acc[`./${path}/${v}`] = resolve('/' + join(namespace, v));
           return acc;
         },
         {}

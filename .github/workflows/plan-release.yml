@@ -8,7 +8,7 @@ on:
       - labeled
 
 concurrency:
-  group: plan-release # only the latest one of these should ever be running
+  group: plan-stable-release # only the latest one of these should ever be running
   cancel-in-progress: true
 
 jobs:
@@ -33,6 +33,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: check-plan
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       explanation: ${{ steps.explanation.outputs.text }}
     # only run on push event if plan wasn't updated (don't create a release plan when we're releasing)
@@ -42,9 +45,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         # We need to download lots of history so that
-        # lerna-changelog can discover what's changed since the last release
+        # github-changelog can discover what's changed since the last release
         with:
           fetch-depth: 0
+          ref: 'stable'
       - uses: ./.github/actions/setup
         with:
           use_pinned_node: true
@@ -52,20 +56,26 @@ jobs:
       - name: "Generate Explanation and Prep Changelogs"
         id: explanation
         run: |
-          set -x
+          set +e
 
-          pnpm release-plan prepare
+          pnpm release-plan prepare 2> >(tee -a stderr.txt >&2)
 
-          echo 'text<<EOF' >> $GITHUB_OUTPUT
-          jq .description .release-plan.json -r >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          if [ $? -ne 0 ]; then
+            echo 'text<<EOF' >> $GITHUB_OUTPUT
+            cat stderr.txt >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          else
+            echo 'text<<EOF' >> $GITHUB_OUTPUT
+            jq .description .release-plan.json -r >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+            rm stderr.txt
+          fi
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: peter-evans/create-pull-request@v5
+      - uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "Prepare Release using 'release-plan'"
-          author: "github-actions[bot] <github-actions-bot@users.noreply.github.com>"
           labels: "internal"
           branch: release-preview-stable
           title: Prepare Release

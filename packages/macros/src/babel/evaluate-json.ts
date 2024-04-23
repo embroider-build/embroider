@@ -5,6 +5,7 @@ import type State from './state';
 import dependencySatisfies from './dependency-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
+import assertNever from 'assert-never';
 
 type OpValue = string | boolean | number;
 
@@ -388,13 +389,39 @@ export class Evaluator {
       return { confident: true, value: moduleExists(path, this.state), hasRuntimeImplementation: false };
     }
     if (callee.referencesImport('@embroider/macros', 'getConfig')) {
-      return { confident: true, value: getConfig(path, this.state, 'package'), hasRuntimeImplementation: true };
+      return { confident: true, value: getConfig(path, this.state, 'package'), hasRuntimeImplementation: false };
     }
     if (callee.referencesImport('@embroider/macros', 'getOwnConfig')) {
-      return { confident: true, value: getConfig(path, this.state, 'own'), hasRuntimeImplementation: true };
+      return { confident: true, value: getConfig(path, this.state, 'own'), hasRuntimeImplementation: false };
     }
     if (callee.referencesImport('@embroider/macros', 'getGlobalConfig')) {
-      return { confident: true, value: getConfig(path, this.state, 'getGlobalConfig'), hasRuntimeImplementation: true };
+      // Check for getGlobalConfig().fastboot.isRunning, which is the only pattern in use where config actually needs to have a runtime implementation.
+      // For compatibility reasons we will continue to support that. All other cases of macro configs are static now.
+      let maybeFastbootMemberExpression = path.parentPath;
+      if (
+        maybeFastbootMemberExpression.isMemberExpression() ||
+        maybeFastbootMemberExpression.isOptionalMemberExpression()
+      ) {
+        let maybeFastbootProperty = maybeFastbootMemberExpression.isMemberExpression()
+          ? maybeFastbootMemberExpression.get('property')
+          : maybeFastbootMemberExpression.isOptionalMemberExpression()
+          ? maybeFastbootMemberExpression.get('property')
+          : assertNever(maybeFastbootMemberExpression);
+
+        if (maybeFastbootProperty.isIdentifier() && maybeFastbootProperty.node.name === 'fastboot') {
+          return {
+            confident: true,
+            value: getConfig(path, this.state, 'getGlobalConfig'),
+            hasRuntimeImplementation: true,
+          };
+        }
+      }
+
+      return {
+        confident: true,
+        value: getConfig(path, this.state, 'getGlobalConfig'),
+        hasRuntimeImplementation: false,
+      };
     }
     if (callee.referencesImport('@embroider/macros', 'isDevelopingApp')) {
       return {
@@ -446,7 +473,7 @@ export function buildLiterals(
   if (typeof value === 'undefined') {
     return babelContext.types.identifier('undefined');
   }
-  let statement = babelContext.parse(`a(${JSON.stringify(value)})`) as t.File;
+  let statement = babelContext.parse(`a(${JSON.stringify(value)})`, { configFile: false }) as t.File;
   let expression = (statement.program.body[0] as t.ExpressionStatement).expression as t.CallExpression;
   return expression.arguments[0] as t.ObjectExpression;
 }

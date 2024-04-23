@@ -17,6 +17,7 @@
   * [Why do v2 addons need a build step?](#why-do-v2-addons-need-a-build-step)
   * [How can I integrate with the app's build?](#how-can-i-integrate-with-the-apps-build)
   * [How can I define the public exports of my addon?](#how-can-i-define-the-public-exports-of-my-addon)
+  * [How can I provide route templates with my v2 addon?](#how-can-i-provide-route-templates-with-my-v2-addon)
 
 <!-- tocstop -->
 
@@ -141,7 +142,8 @@ This is done by adding some meta data to the addon's `package.json`, specifying 
 }
 ```
  
-If you have many files you want to expose this way, you can instead add the `addon.publicAssets()` plugin from `@embroider/addon-dev` to your Rollup config to automate the generation of this mapping data.
+If you have many files you want to expose this way, you can instead add the `addon.publicAssets()` plugin from `@embroider/addon-dev` to your Rollup config to automate the generation of this mapping data. This rollup plugin will automatically prefix your public assets with a folder name that matches your addon packages name, this is to prevent any name clashes between addons. You can read more about it in the docs for the addon-dev rollup plugin utilities https://github.com/embroider-build/embroider/tree/main/packages/addon-dev#rollup-utilities
+
 
 ## Build setup
 
@@ -195,3 +197,29 @@ Additionally, there is a feature supported in node.js and modern bundlers to def
 When using `package.json#exports` make sure that:
 - the `addon.publicEntrypoints(...)` plugin in `rollup.config.mjs` includes _at least_ whatever is defined in `package.json#exports`
 - the modules that `addon.appReexports(...)` exposes must have overlap with the `package.json#exports` so that the app-tree merging may import from the addon
+
+### How can I provide route templates with my v2 addon?
+
+During a v2 addon build step, standalone `.hbs` are considered template-only components by default.
+
+If you want your v2 addon to provide a route template, the best way to proceed is to make it a `.gjs` file using [ember-route-template](https://github.com/discourse/ember-route-template). Similarly, if you want to migrate to v2 a classic addon that used to provide `.hbs` route templates, you should refactor the `.hbs` to `.gjs` files to complete the migration.
+
+If for whatever reason the `.gjs` approach cannot be used, it's still possible to have your v2 addon providing the route templates as `.hbs`, but it requires extra configuration. During the build step, Rollup and Babel work together to transform all standalone `.hbs` into template-only components. Therefore, you need to tell both Rollup and Babel to _not_ compile a given list of `.hbs` files this way.
+
+Let's assume your addon has a `templates/` folder that contains all your route templates. The files in `templates/` should be compiled as simple templates (not template-only components).
+
+In the `rollup.config.mjs`, pass a list of glob patterns in the `excludeColocation` option of the function `addon.hbs`:
+
+```js 
+addon.hbs({ excludeColocation: ['templates/**/*'] }),
+```
+
+In the `babel.config.json`, pass the same list of glob patterns in the `exclude` option of the `template-colocation-plugin`:
+
+```
+"plugins": [
+  ["@embroider/addon-dev/template-colocation-plugin", {
+    exclude: ['templates/**/*']
+  }],
+],
+```

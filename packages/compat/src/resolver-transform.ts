@@ -114,6 +114,7 @@ const builtInKeywords: Record<string, BuiltIn | undefined> = {
 interface ComponentResolution {
   type: 'component';
   specifier: string;
+  importedName: string;
   yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
@@ -126,13 +127,14 @@ type HelperResolution = {
   nameHint?: string;
   namedImport?: string;
   specifier: string;
+  importedName: string;
 };
 
 type ModifierResolution = {
   type: 'modifier';
   specifier: string;
-  nameHint?: string;
-  namedImport?: string;
+  importedName: string;
+  nameHint: string;
 };
 
 type ResolutionResult = ComponentResolution | HelperResolution | ModifierResolution;
@@ -186,14 +188,9 @@ class TemplateResolver implements ASTPlugin {
       case 'component':
       case 'modifier':
       case 'helper': {
-        let name = this.env.meta.jsutils.bindImport(
-          resolution.specifier,
-          resolution.namedImport ?? 'default',
-          parentPath,
-          {
-            nameHint: resolution.nameHint,
-          }
-        );
+        let name = this.env.meta.jsutils.bindImport(resolution.specifier, resolution.importedName, parentPath, {
+          nameHint: resolution.nameHint,
+        });
         setter(parentPath.node, this.env.syntax.builders.path(name));
         return;
       }
@@ -407,14 +404,15 @@ class TemplateResolver implements ASTPlugin {
     const builtIn = builtInKeywords[name];
 
     if (builtIn?.importableComponent) {
-      let [namedImport, specifier] = builtIn.importableComponent;
+      let [importedName, specifier] = builtIn.importableComponent;
       return {
         type: 'component',
         specifier,
+        importedName,
         yieldsComponents: [],
         yieldsArguments: [],
         argumentsAreComponents: [],
-        namedImport,
+        nameHint: importedName,
       };
     }
 
@@ -429,6 +427,7 @@ class TemplateResolver implements ASTPlugin {
     return {
       type: 'component',
       specifier: `#embroider_compat/components/${name}`,
+      importedName: 'default',
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
@@ -488,11 +487,12 @@ class TemplateResolver implements ASTPlugin {
     const builtIn = builtInKeywords[path];
 
     if (builtIn?.importableHelper) {
-      let [namedImport, specifier] = builtIn.importableHelper;
+      let [importedName, specifier] = builtIn.importableHelper;
       return {
         type: 'helper',
         specifier,
-        namedImport,
+        importedName,
+        nameHint: importedName,
       };
     }
 
@@ -503,6 +503,7 @@ class TemplateResolver implements ASTPlugin {
     return {
       type: 'helper',
       specifier: `#embroider_compat/helpers/${path}`,
+      importedName: 'default',
       nameHint: this.nameHint(path),
     };
   }
@@ -571,23 +572,25 @@ class TemplateResolver implements ASTPlugin {
     let builtIn = builtInKeywords[path];
 
     if (builtIn?.importableComponent) {
-      let [namedImport, specifier] = builtIn.importableComponent;
+      let [importedName, specifier] = builtIn.importableComponent;
       return {
         type: 'component',
         specifier,
+        importedName,
         yieldsComponents: [],
         yieldsArguments: [],
         argumentsAreComponents: [],
-        namedImport,
+        nameHint: importedName,
       };
     }
 
     if (builtIn?.importableHelper) {
-      let [namedImport, specifier] = builtIn.importableHelper;
+      let [importedName, specifier] = builtIn.importableHelper;
       return {
         type: 'helper',
         specifier,
-        namedImport,
+        importedName,
+        nameHint: importedName,
       };
     }
 
@@ -642,6 +645,7 @@ class TemplateResolver implements ASTPlugin {
     return {
       type: 'component',
       specifier: `#embroider_compat/ambiguous/${path}`,
+      importedName: 'default',
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
@@ -656,11 +660,12 @@ class TemplateResolver implements ASTPlugin {
 
     const builtIn = builtInKeywords[path];
     if (builtIn?.importableModifier) {
-      let [namedImport, specifier] = builtIn.importableModifier;
+      let [importedName, specifier] = builtIn.importableModifier;
       return {
         type: 'modifier',
         specifier,
-        namedImport,
+        importedName,
+        nameHint: importedName,
       };
     }
 
@@ -671,6 +676,7 @@ class TemplateResolver implements ASTPlugin {
     return {
       type: 'modifier',
       specifier: `#embroider_compat/modifiers/${path}`,
+      importedName: 'default',
       nameHint: this.nameHint(path),
     };
   }

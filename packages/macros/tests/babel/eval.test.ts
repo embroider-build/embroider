@@ -164,7 +164,14 @@ describe('hasRuntimeImplementation', function () {
         let code = transform(`
         import { getConfig } from '@embroider/macros';
         const result = getConfig('foo')`);
-        expect(code).toMatch(`result = true`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('getConfig property access', () => {
+        let code = transform(`
+        import { getConfig } from '@embroider/macros';
+        const result = getConfig('foo').bar`);
+        expect(code).toMatch(`result = false`);
       });
 
       // this is throwing internally, not sure how to fix
@@ -172,13 +179,42 @@ describe('hasRuntimeImplementation', function () {
         let code = transform(`
         import { getOwnConfig } from '@embroider/macros';
         const result = getOwnConfig()`);
-        expect(code).toMatch(`result = true`);
+        expect(code).toMatch(`result = false`);
       });
 
       test('getGlobalConfig', () => {
         let code = transform(`
         import { getGlobalConfig } from '@embroider/macros';
         const result = getGlobalConfig()`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('getGlobalConfig property access', () => {
+        let code = transform(`
+        import { getGlobalConfig } from '@embroider/macros';
+        const result = getGlobalConfig().foo`);
+        expect(code).toMatch(`result = false`);
+      });
+
+      test('getGlobalConfig fastboot access', () => {
+        let code = transform(`
+        import { getGlobalConfig } from '@embroider/macros';
+        const result = getGlobalConfig().fastboot`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      // fastboot.isRunning relies on dynamic evaluation at runtime. For backwards compatibility we keep it working. See https://github.com/embroider-build/embroider/issues/1804
+      test('getGlobalConfig fastboot.isRunning access', () => {
+        let code = transform(`
+        import { getGlobalConfig } from '@embroider/macros';
+        const result = getGlobalConfig().fastboot.isRunning`);
+        expect(code).toMatch(`result = true`);
+      });
+
+      test('getGlobalConfig fastboot?.isRunning access', () => {
+        let code = transform(`
+        import { getGlobalConfig } from '@embroider/macros';
+        const result = getGlobalConfig().fastboot?.isRunning`);
         expect(code).toMatch(`result = true`);
       });
 

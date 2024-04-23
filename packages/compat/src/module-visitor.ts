@@ -210,10 +210,10 @@ class ModuleVisitor {
       if (resolution) {
         resolved.set(dep, resolution);
         this.scheduleVisit(resolution, fromFile);
-        break;
+        continue;
       } else {
         resolved.set(dep, { isResolutionFailure: true as true });
-        break;
+        continue;
       }
     }
     return resolved;

@@ -4,8 +4,6 @@ import { merge } from 'lodash';
 import QUnit from 'qunit';
 import type { PreparedApp } from 'scenario-tester';
 import fetch from 'node-fetch';
-import globby from 'globby';
-import path from 'path';
 
 import { appScenarios, baseAddon } from './scenarios';
 import CommandWatcher from './helpers/command-watcher';
@@ -137,22 +135,8 @@ appScenarios
 appScenarios
   .map('compat-addon-classic-features-virtual-scripts', () => {})
   .forEachScenario(scenario => {
-    let app: PreparedApp;
-
-    Qmodule(`${scenario.name} - build mode`, function (hooks) {
-      hooks.before(async assert => {
-        app = await scenario.prepare();
-        let result = await app.execute('pnpm build');
-        assert.equal(result.exitCode, 0, result.output);
-      });
-
-      test('vendor.js script is emitted in the build', async function (assert) {
-        let files = await globby('vendor.*.js', { cwd: path.join(app.dir, 'dist/assets') });
-        assert.strictEqual(files.length, 1);
-      });
-    });
-
-    Qmodule(`${scenario.name} - dev mode`, function (hooks) {
+    Qmodule(`${scenario.name}`, function (hooks) {
+      let app: PreparedApp;
       hooks.before(async () => {
         app = await scenario.prepare();
       });

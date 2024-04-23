@@ -116,6 +116,19 @@ appScenarios
         assert.true(content.includes('<p>Content for body</p>'));
         assert.true(!content.includes('<p>Content for custom</p>'));
       });
+
+      test('content-for are replaced: dev mode', async function (assert) {
+        const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        try {
+          const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+          let response = await fetch(`${url}/`);
+          let text = await response.text();
+          assert.true(text.includes('<p>Content for body</p>'));
+          assert.true(text.includes('<p>Content for custom</p>'));
+        } finally {
+          await server.shutdown();
+        }
+      });
     });
   });
 

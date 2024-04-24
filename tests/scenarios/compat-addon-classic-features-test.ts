@@ -1,5 +1,5 @@
 import { throwOnWarnings } from '@embroider/core';
-import { readFileSync } from 'fs';
+import { lstatSync, readFileSync } from 'fs';
 import { merge } from 'lodash';
 import QUnit from 'qunit';
 import type { PreparedApp } from 'scenario-tester';
@@ -125,6 +125,46 @@ appScenarios
           let text = await response.text();
           assert.true(text.includes('<p>Content for body</p>'));
           assert.true(text.includes('<p>Content for custom</p>'));
+        } finally {
+          await server.shutdown();
+        }
+      });
+    });
+  });
+
+appScenarios
+  .map('compat-addon-classic-features-virtual-scripts', () => {})
+  .forEachScenario(scenario => {
+    let app: PreparedApp;
+
+    Qmodule(`${scenario.name} - build mode`, function (hooks) {
+      hooks.before(async assert => {
+        app = await scenario.prepare();
+        let result = await app.execute('pnpm build');
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test('vendor.js script is emitted in the build', async function (assert) {
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/vendor.js`).isFile());
+      });
+    });
+
+    Qmodule(`${scenario.name} - dev mode`, function (hooks) {
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test('vendor.js script is served', async function (assert) {
+        const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        try {
+          const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+          let response = await fetch(`${url}/@embroider/core/vendor.js`);
+          assert.strictEqual(response.status, 200);
+          // checking the response status 200 is not enough to assert vendor.js is served,
+          // because when the URL is not recognized, the response contains the index.html
+          // and has a 200 status (for index.html being returned correctly)
+          let text = await response.text();
+          assert.true(!text.includes('<!DOCTYPE html>'));
         } finally {
           await server.shutdown();
         }

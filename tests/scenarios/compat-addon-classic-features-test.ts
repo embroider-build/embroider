@@ -135,35 +135,39 @@ appScenarios
 appScenarios
   .map('compat-addon-classic-features-virtual-scripts', () => {})
   .forEachScenario(scenario => {
-    let app: PreparedApp;
-
-    Qmodule(`${scenario.name} - build mode`, function (hooks) {
-      hooks.before(async assert => {
-        app = await scenario.prepare();
-        let result = await app.execute('pnpm build');
-        assert.equal(result.exitCode, 0, result.output);
-      });
-
-      test('vendor.js script is emitted in the build', async function (assert) {
-        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/vendor.js`).isFile());
-      });
-    });
-
-    Qmodule(`${scenario.name} - dev mode`, function (hooks) {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
       hooks.before(async () => {
         app = await scenario.prepare();
       });
 
-      test('vendor.js script is served', async function (assert) {
+      test('virtual scripts are emitted in the build', async function (assert) {
+        let result = await app.execute('pnpm build');
+        assert.equal(result.exitCode, 0, result.output);
+
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/vendor.js`).isFile());
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/test-support.js`).isFile());
+      });
+
+      test('virtual scripts contents are served in dev mode', async function (assert) {
         const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
         try {
           const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
           let response = await fetch(`${url}/@embroider/core/vendor.js`);
           assert.strictEqual(response.status, 200);
           // checking the response status 200 is not enough to assert vendor.js is served,
           // because when the URL is not recognized, the response contains the index.html
           // and has a 200 status (for index.html being returned correctly)
           let text = await response.text();
+          assert.true(!text.includes('<!DOCTYPE html>'));
+
+          response = await fetch(`${url}/@embroider/core/test-support.js`);
+          assert.strictEqual(response.status, 200);
+          // checking the response status 200 is not enough to assert test-support.js is served,
+          // because when the URL is not recognized, the response contains the index.html
+          // and has a 200 status (for index.html being returned correctly)
+          text = await response.text();
           assert.true(!text.includes('<!DOCTYPE html>'));
         } finally {
           await server.shutdown();

@@ -264,6 +264,11 @@ export class Audit {
 
   private inspectImports(filename: string, module: CompleteModule, modules: Record<string, Module>) {
     for (let imp of module.imports) {
+      // our Audit should always ignore any imports of @embroider/macros because we already ignored them
+      // in resolveId above
+      if (imp.source === '@embroider/macros') {
+        continue;
+      }
       let resolved = module.resolutions[imp.source];
       if (!resolved) {
         this.findings.push({

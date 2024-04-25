@@ -1,6 +1,3 @@
-// TODO: split this so we have the import-analysis part as part of
-// module-visitor and Audit adds its problem-detectoin stuff in the (optional)
-// babel config
 import { explicitRelative } from '@embroider/core';
 import {
   type CodeFrameStorage,
@@ -13,7 +10,6 @@ import fromPairs from 'lodash/fromPairs';
 import assertNever from 'assert-never';
 import { JSDOM } from 'jsdom';
 
-// TODO: this is an audit concern
 import type { Finding } from './audit';
 import type { TransformOptions } from '@babel/core';
 
@@ -91,12 +87,10 @@ export interface Import {
 interface VisitorParams {
   base: string;
   resolveId: (specifier: string, fromFile: string) => Promise<string | undefined>;
-  // TODO: remove Finding[] from this type
-  load: (id: string) => Promise<Finding[] | { content: string | Buffer; type: ContentType }>;
+  load: (id: string) => Promise<{ content: string | Buffer; type: ContentType } | undefined>;
   entrypoints: string[];
   debug?: boolean;
 
-  // TODO: remove below this point
   findings: Finding[];
   frames: CodeFrameStorage;
   babelConfig: TransformOptions;
@@ -116,8 +110,7 @@ class ModuleVisitor {
   private base: string;
   private debugEnabled: boolean;
   private resolveId: (specifier: string, fromFile: string) => Promise<string | undefined>;
-  // TODO: remove Finding[] from return type
-  private load: (id: string) => Promise<Finding[] | { content: string | Buffer; type: ContentType }>;
+  private load: (id: string) => Promise<{ content: string | Buffer; type: ContentType } | undefined>;
   private entrypoints: string[];
 
   constructor(private params: VisitorParams) {
@@ -147,6 +140,10 @@ class ModuleVisitor {
         for (let finding of loaded) {
           this.params.findings.push(finding);
         }
+        continue;
+      }
+      // if the load hook returned undefined we need to just skip it
+      if (loaded === undefined) {
         continue;
       }
       let { content, type } = loaded;

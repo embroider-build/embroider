@@ -226,7 +226,7 @@ export class Audit {
     }
   };
 
-  private load = async (id: string): Promise<Finding[] | { content: string | Buffer; type: ContentType }> => {
+  private load = async (id: string): Promise<{ content: string | Buffer; type: ContentType } | undefined> => {
     let content: string | Buffer;
     if (this.virtualModules.has(id)) {
       content = this.virtualModules.get(id)!;
@@ -310,19 +310,18 @@ export class Audit {
     return isNamespaceMarker(name) || target.isCJS || target.isAMD || target.exports.includes(name);
   }
 
-  private handleJSON(filename: string, content: Buffer | string): { content: string; type: ContentType } | Finding[] {
+  private handleJSON(filename: string, content: Buffer | string): { content: string; type: ContentType } | undefined {
     let js;
     try {
       let structure = JSON.parse(content.toString('utf8'));
       js = `export default ${JSON.stringify(structure)}`;
     } catch (err) {
-      return [
-        {
-          filename,
-          message: `failed to parse JSON`,
-          detail: err.toString().replace(filename, explicitRelative(this.originAppRoot, filename)),
-        },
-      ];
+      this.findings.push({
+        filename,
+        message: `failed to parse JSON`,
+        detail: err.toString().replace(filename, explicitRelative(this.originAppRoot, filename)),
+      });
+      return;
     }
     return { content: js, type: 'javascript' };
   }

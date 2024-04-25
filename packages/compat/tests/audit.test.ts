@@ -222,7 +222,11 @@ describe('audit', function () {
     });
     let result = await audit();
     expect(result.findings).toEqual([]);
-    let exports = result.modules['./app.js'].exports;
+    let appModule = result.modules['./app.js'];
+    if (appModule.type !== 'complete') {
+      throw new Error('./app.js module did not parse or resolve correctly');
+    }
+    let exports = appModule.exports;
     expect(exports).toContain('a');
     expect(exports).toContain('b');
     expect(exports).toContain('c');
@@ -269,7 +273,11 @@ describe('audit', function () {
 
     let result = await audit();
     expect(result.findings).toEqual([]);
-    let exports = result.modules['./app.js'].exports;
+    let appModule = result.modules['./app.js'];
+    if (appModule.type !== 'complete') {
+      throw new Error('./app.js module did not parse or resolve correctly');
+    }
+    let exports = appModule.exports;
     expect(exports).toContain('a');
     expect(exports).toContain('b');
     expect(exports).not.toContain('thing');
@@ -277,8 +285,8 @@ describe('audit', function () {
     expect(exports).toContain('alpha');
     expect(exports).toContain('beta');
     expect(exports).toContain('libC');
-    expect(result.modules['./app.js'].imports.length).toBe(3);
-    let imports = fromPairs(result.modules['./app.js'].imports.map(imp => [imp.source, imp.specifiers]));
+    expect(appModule.imports.length).toBe(3);
+    let imports = fromPairs(appModule.imports.map(imp => [imp.source, imp.specifiers]));
     expect(withoutCodeFrames(imports)).toEqual({
       './lib-a': [
         { name: 'default', local: null },

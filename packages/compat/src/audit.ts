@@ -9,7 +9,14 @@ import type { NamespaceMarker } from './audit/babel-visitor';
 import { CodeFrameStorage, isNamespaceMarker } from './audit/babel-visitor';
 import { AuditBuildOptions, AuditOptions } from './audit/options';
 import { buildApp, BuildError, isBuildError } from './audit/build';
-import { type ContentType, type Module, visitModules, isLinked, type RootMarker, isRootMarker } from './module-visitor';
+import {
+  type ContentType,
+  type Module,
+  visitModules,
+  type RootMarker,
+  isRootMarker,
+  type CompleteModule,
+} from './module-visitor';
 
 export interface AuditMessage {
   message: string;
@@ -41,7 +48,11 @@ export class AuditResults {
     let results = new this();
     results.modules = modules;
     for (let finding of findings) {
-      let relFinding = Object.assign({}, finding, { filename: explicitRelative(baseDir, finding.filename) });
+      const filename = finding.filename.startsWith('./')
+        ? finding.filename
+        : explicitRelative(baseDir, finding.filename);
+
+      let relFinding = Object.assign({}, finding, { filename });
       results.findings.push(relFinding);
     }
     return results;
@@ -245,13 +256,13 @@ export class Audit {
 
   private inspectModules(modules: Record<string, Module>) {
     for (let [filename, module] of Object.entries(modules)) {
-      if (isLinked(module)) {
+      if (module.type === 'complete') {
         this.inspectImports(filename, module, modules);
       }
     }
   }
 
-  private inspectImports(filename: string, module: Module, modules: Record<string, Module>) {
+  private inspectImports(filename: string, module: CompleteModule, modules: Record<string, Module>) {
     for (let imp of module.imports) {
       let resolved = module.resolutions[imp.source];
       if (!resolved) {
@@ -264,7 +275,7 @@ export class Audit {
       } else if (resolved) {
         let target = modules[resolved]!;
         for (let specifier of imp.specifiers) {
-          if (isLinked(target) && !this.moduleProvidesName(target, specifier.name)) {
+          if (target.type === 'complete' && !this.moduleProvidesName(target, specifier.name)) {
             if (specifier.name === 'default') {
               let backtick = '`';
               this.findings.push({
@@ -287,7 +298,7 @@ export class Audit {
     }
   }
 
-  private moduleProvidesName(target: Module, name: string | NamespaceMarker) {
+  private moduleProvidesName(target: CompleteModule, name: string | NamespaceMarker) {
     // any module can provide a namespace.
     // CJS and AMD are too dynamic to be sure exactly what names are available,
     // so they always get a pass

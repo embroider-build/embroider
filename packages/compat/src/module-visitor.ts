@@ -17,15 +17,26 @@ import { JSDOM } from 'jsdom';
 import type { Finding } from './audit';
 import type { TransformOptions } from '@babel/core';
 
-export interface Module {
+export type Module = CompleteModule | ParsedModule | UnparseableModule;
+
+export interface UnparseableModule {
+  type: 'unparseable';
   appRelativePath: string;
   consumedFrom: (string | RootMarker)[];
+}
+
+export interface ParsedModule extends Omit<UnparseableModule, 'type'> {
+  type: 'parsed';
   imports: Import[];
-  exports: string[];
   resolutions: { [source: string]: string | null };
   content: string;
   isCJS: boolean;
   isAMD: boolean;
+}
+
+export interface CompleteModule extends Omit<ParsedModule, 'type'> {
+  type: 'complete';
+  exports: string[];
 }
 
 interface InternalModule {
@@ -63,7 +74,7 @@ type LinkedInternalModule = Omit<ResolvedInternalModule, 'linked'> & {
   linked: NonNullable<ResolvedInternalModule['linked']>;
 };
 
-export function isLinked(module: InternalModule | undefined): module is LinkedInternalModule {
+function isLinked(module: InternalModule | undefined): module is LinkedInternalModule {
   return Boolean(module?.parsed && module.resolved && module.linked);
 }
 
@@ -321,44 +332,61 @@ class ModuleVisitor {
     }
   }
 
+  private toPublicModule(filename: string, module: InternalModule): Module {
+    let result: UnparseableModule = {
+      type: 'unparseable',
+      appRelativePath: explicitRelative(this.base, filename),
+      consumedFrom: module.consumedFrom.map(entry => {
+        if (isRootMarker(entry)) {
+          return entry;
+        } else {
+          return explicitRelative(this.base, entry);
+        }
+      }),
+    };
+
+    if (!module.parsed || !module.resolved) {
+      return result;
+    }
+
+    let parsedResult: ParsedModule = {
+      ...result,
+      type: 'parsed',
+      resolutions: fromPairs(
+        [...module.resolved].map(([source, target]) => [
+          source,
+          isResolutionFailure(target) ? null : explicitRelative(this.base, target),
+        ])
+      ),
+      imports: module.parsed.imports.map(i => ({
+        source: i.source,
+        specifiers: i.specifiers.map(s => ({
+          name: s.name,
+          local: s.local,
+          codeFrameIndex: s.codeFrameIndex,
+        })),
+        codeFrameIndex: i.codeFrameIndex,
+      })),
+      content: module.parsed.transpiledContent.toString(),
+      isAMD: Boolean(module.parsed.isAMD),
+      isCJS: Boolean(module.parsed.isCJS),
+    };
+
+    if (!module.linked) {
+      return parsedResult;
+    }
+
+    return {
+      ...parsedResult,
+      type: 'complete',
+      exports: [...module.linked.exports],
+    };
+  }
+
   private buildResults() {
     let publicModules: Record<string, Module> = {};
     for (let [filename, module] of this.modules) {
-      let publicModule: Module = {
-        appRelativePath: explicitRelative(this.base, filename),
-        consumedFrom: module.consumedFrom.map(entry => {
-          if (isRootMarker(entry)) {
-            return entry;
-          } else {
-            return explicitRelative(this.base, entry);
-          }
-        }),
-        resolutions: module.resolved
-          ? fromPairs(
-              [...module.resolved].map(([source, target]) => [
-                source,
-                isResolutionFailure(target) ? null : explicitRelative(this.base, target),
-              ])
-            )
-          : {},
-        imports: module.parsed?.imports
-          ? module.parsed.imports.map(i => ({
-              source: i.source,
-              specifiers: i.specifiers.map(s => ({
-                name: s.name,
-                local: s.local,
-                codeFrameIndex: s.codeFrameIndex,
-              })),
-              codeFrameIndex: i.codeFrameIndex,
-            }))
-          : [],
-        exports: module.linked?.exports ? [...module.linked.exports] : [],
-        content: module.parsed?.transpiledContent
-          ? module.parsed?.transpiledContent.toString()
-          : 'module failed to transpile',
-        isAMD: Boolean(module.parsed?.isAMD),
-        isCJS: Boolean(module.parsed?.isCJS),
-      };
+      let publicModule = this.toPublicModule(filename, module);
       publicModules[explicitRelative(this.base, filename)] = publicModule;
     }
     return publicModules;

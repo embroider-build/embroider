@@ -1,5 +1,6 @@
 import { throwOnWarnings } from '@embroider/core';
 import { lstatSync, readFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 import { merge } from 'lodash';
 import QUnit from 'qunit';
 import type { PreparedApp } from 'scenario-tester';
@@ -204,22 +205,31 @@ appScenarios
         let result = await app.execute('pnpm build');
         assert.equal(result.exitCode, 0, result.output);
 
-        let [mainStyles] = await globby('dist/assets/main-*.css', { cwd: app.dir });
-        let content = readFileSync(join(app.dir, mainStyles)).toString();
-        assert.true(content.includes('.my-addon-p{color:#00f}'));
+        // TODO: replace with an Audit when it's ready to take any given dist
+        let styles = await globby('dist/**/*.css', { cwd: app.dir });
+        let readResult = await Promise.all(
+          styles.map(async styleFile => {
+            let content = await readFile(join(app.dir, styleFile));
+            return content.toString().includes('.my-addon-p{color:#00f}');
+          })
+        );
+        assert.true(readResult.includes(true));
       });
 
       test('virtual styles are included in the CSS of the test build', async function (assert) {
         let result = await app.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
 
-        let [mainStyles] = await globby('dist/assets/app-template-*.css', { cwd: app.dir });
-        let content = readFileSync(join(app.dir, mainStyles)).toString();
-        assert.true(content.includes('.my-addon-p{color:#00f}'));
-
-        let [testStyles] = await globby('dist/assets/tests-*.css', { cwd: app.dir });
-        content = readFileSync(join(app.dir, testStyles)).toString();
-        assert.true(content.includes('#qunit-tests'));
+        // TODO: replace with an Audit when it's ready to take any given dist
+        let styles = await globby('dist/**/*.css', { cwd: app.dir });
+        let readResult = await Promise.all(
+          styles.map(async styleFile => {
+            let content = await readFile(join(app.dir, styleFile));
+            return content.toString();
+          })
+        );
+        assert.true(readResult.some(content => content.includes('.my-addon-p{color:#00f}')));
+        assert.true(readResult.some(content => content.includes('#qunit-tests')));
       });
 
       test('virtual styles are served in dev mode', async function (assert) {

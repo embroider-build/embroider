@@ -11,8 +11,8 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.4.7",
-      "newVersion": "3.4.8",
+      "oldVersion": "3.4.8",
+      "newVersion": "3.4.9",
       "constraints": [
         {
           "impact": "patch",
@@ -23,16 +23,12 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.4.7",
-      "newVersion": "3.4.8",
+      "oldVersion": "3.4.8",
+      "newVersion": "3.4.9",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
@@ -41,13 +37,13 @@
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.15.1",
-      "newVersion": "1.16.0",
+      "impact": "patch",
+      "oldVersion": "1.16.0",
+      "newVersion": "1.16.1",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
@@ -62,35 +58,26 @@
       "oldVersion": "2.6.0"
     },
     "@embroider/test-setup": {
-      "impact": "major",
-      "oldVersion": "3.0.3",
-      "newVersion": "4.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/webpack"
-        }
-      ],
-      "pkgJSONPath": "./packages/test-setup/package.json"
+      "oldVersion": "4.0.0"
     },
     "@embroider/util": {
-      "oldVersion": "1.13.0"
+      "impact": "patch",
+      "oldVersion": "1.13.0",
+      "newVersion": "1.13.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/util/package.json"
     },
     "@embroider/vite": {
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "impact": "major",
-      "oldVersion": "3.2.3",
-      "newVersion": "4.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.0"
     }
   },
-  "description": "## Release (2024-04-18)\n\n@embroider/compat 3.4.8 (patch)\n@embroider/core 3.4.8 (patch)\n@embroider/macros 1.16.0 (minor)\n@embroider/test-setup 4.0.0 (major)\n@embroider/webpack 4.0.0 (major)\n\n#### :boom: Breaking Change\n* `@embroider/webpack`\n  * [#1868](https://github.com/embroider-build/embroider/pull/1868) Adjusting `@embroider/webpack` to use `@babel/preset-env` to avoid critical security audit ([@lupestro](https://github.com/lupestro))\n\n#### :rocket: Enhancement\n* `@embroider/macros`, `@embroider/test-fixtures`\n  * [#1858](https://github.com/embroider-build/embroider/pull/1858) Add support for `{{unless}}` to the `macroCondition` macro ([@Windvis](https://github.com/Windvis))\n\n#### :bug: Bug Fix\n* `@embroider/core`, `@embroider/test-scenarios`\n  * [#1885](https://github.com/embroider-build/embroider/pull/1885) Fix pre support in portable babel launcher ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Ralph Mack ([@lupestro](https://github.com/lupestro))\n- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))\n"
+  "description": "## Release (2024-04-30)\n\n@embroider/compat 3.4.9 (patch)\n@embroider/core 3.4.9 (patch)\n@embroider/macros 1.16.1 (patch)\n@embroider/util 1.13.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`, `@embroider/util`\n  * [#1891](https://github.com/embroider-build/embroider/pull/1891) Revert \"Update to `ember-cli-babel` v8\" ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

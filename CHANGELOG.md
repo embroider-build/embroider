@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2024-04-30)
+
+@embroider/compat 3.4.9 (patch)
+@embroider/core 3.4.9 (patch)
+@embroider/macros 1.16.1 (patch)
+@embroider/util 1.13.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`, `@embroider/util`
+  * [#1891](https://github.com/embroider-build/embroider/pull/1891) Revert "Update to `ember-cli-babel` v8" ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-04-18)
 
 @embroider/compat 3.4.8 (patch)

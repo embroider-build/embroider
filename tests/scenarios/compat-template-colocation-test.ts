@@ -133,7 +133,7 @@ scenarios
       test(`app's colocated components are implicitly included correctly`, function () {
         expectAudit
           .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+          .resolves('/assets/my-app.js')
           .toModule().codeContains(`d("my-app/components/has-colocated-template", function () {
             return i("my-app/components/has-colocated-template.js");
           });`);

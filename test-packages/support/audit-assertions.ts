@@ -114,6 +114,10 @@ export class ExpectModule {
       this.emitMissingModule();
       return;
     }
+    if (this.module.type === 'unparseable') {
+      this.emitUnparsableModule(message);
+      return;
+    }
     const result = fn(this.module.content);
     this.expectAudit.assert.pushResult({
       result,
@@ -123,9 +127,22 @@ export class ExpectModule {
     });
   }
 
+  private emitUnparsableModule(message?: string) {
+    this.expectAudit.assert.pushResult({
+      result: false,
+      actual: `${this.inputName} failed to parse`,
+      expected: true,
+      message: `${this.inputName} failed to parse${message ? `: (${message})` : ''}`,
+    });
+  }
+
   codeEquals(expectedSource: string) {
     if (!this.module) {
       this.emitMissingModule();
+      return;
+    }
+    if (this.module.type === 'unparseable') {
+      this.emitUnparsableModule();
       return;
     }
     this.expectAudit.assert.codeEqual(this.module.content, expectedSource);
@@ -136,6 +153,10 @@ export class ExpectModule {
       this.emitMissingModule();
       return;
     }
+    if (this.module.type === 'unparseable') {
+      this.emitUnparsableModule();
+      return;
+    }
     this.expectAudit.assert.codeContains(this.module.content, expectedSource);
   }
 
@@ -144,6 +165,12 @@ export class ExpectModule {
       this.emitMissingModule();
       return new EmptyExpectResolution();
     }
+
+    if (this.module.type === 'unparseable') {
+      this.emitUnparsableModule();
+      return new EmptyExpectResolution();
+    }
+
     if (!(specifier in this.module.resolutions)) {
       this.expectAudit.assert.pushResult({
         result: false,

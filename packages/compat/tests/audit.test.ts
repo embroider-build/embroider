@@ -4,7 +4,6 @@ import type { AppMeta } from '@embroider/core';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
-import type { Finding } from '../src/audit';
 import { Audit } from '../src/audit';
 import type { CompatResolverOptions } from '../src/resolver-transform';
 import type { TransformOptions } from '@babel/core';
@@ -223,7 +222,11 @@ describe('audit', function () {
     });
     let result = await audit();
     expect(result.findings).toEqual([]);
-    let exports = result.modules['./app.js'].exports;
+    let appModule = result.modules['./app.js'];
+    if (appModule.type !== 'complete') {
+      throw new Error('./app.js module did not parse or resolve correctly');
+    }
+    let exports = appModule.exports;
     expect(exports).toContain('a');
     expect(exports).toContain('b');
     expect(exports).toContain('c');
@@ -270,7 +273,11 @@ describe('audit', function () {
 
     let result = await audit();
     expect(result.findings).toEqual([]);
-    let exports = result.modules['./app.js'].exports;
+    let appModule = result.modules['./app.js'];
+    if (appModule.type !== 'complete') {
+      throw new Error('./app.js module did not parse or resolve correctly');
+    }
+    let exports = appModule.exports;
     expect(exports).toContain('a');
     expect(exports).toContain('b');
     expect(exports).not.toContain('thing');
@@ -278,9 +285,9 @@ describe('audit', function () {
     expect(exports).toContain('alpha');
     expect(exports).toContain('beta');
     expect(exports).toContain('libC');
-    expect(result.modules['./app.js'].imports.length).toBe(3);
-    let imports = fromPairs(result.modules['./app.js'].imports.map(imp => [imp.source, imp.specifiers]));
-    expect(imports).toEqual({
+    expect(appModule.imports.length).toBe(3);
+    let imports = fromPairs(appModule.imports.map(imp => [imp.source, imp.specifiers]));
+    expect(withoutCodeFrames(imports)).toEqual({
       './lib-a': [
         { name: 'default', local: null },
         { name: 'b', local: null },
@@ -397,10 +404,25 @@ describe('audit', function () {
   });
 });
 
-function withoutCodeFrames(findings: Finding[]): Finding[] {
-  return findings.map(f => {
-    let result = Object.assign({}, f);
-    delete result.codeFrame;
-    return result;
-  });
+function withoutCodeFrames<T extends { codeFrameIndex?: any }>(modules: Record<string, T[]>): Record<string, T[]>;
+function withoutCodeFrames<T extends { codeFrame?: any }>(findings: T[]): T[];
+function withoutCodeFrames<T extends { codeFrameIndex?: any }, U extends { codeFrame?: any }>(
+  input: Record<string, T[]> | U[]
+): Record<string, T[]> | U[] {
+  if (Array.isArray(input)) {
+    return input.map(f => {
+      let result = Object.assign({}, f);
+      delete result.codeFrame;
+      return result;
+    });
+  }
+  const result: Record<string, T[]> = {};
+
+  const knownInput = input;
+
+  for (let item in knownInput) {
+    result[item] = knownInput[item].map(i => ({ ...i, codeFrameIndex: undefined }));
+  }
+
+  return result;
 }

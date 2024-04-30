@@ -487,9 +487,6 @@ importers:
 
   packages/macros:
     dependencies:
-      '@babel/core':
-        specifier: ^7.24.0
-        version: 7.24.0
       '@embroider/shared-internals':
         specifier: workspace:*
         version: link:../shared-internals
@@ -500,8 +497,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.1
       ember-cli-babel:
-        specifier: ^8.2.0
-        version: 8.2.0(@babel/core@7.24.0)
+        specifier: ^7.26.6
+        version: 7.26.11
       find-up:
         specifier: ^5.0.0
         version: 5.0.0
@@ -515,6 +512,9 @@ importers:
         specifier: ^7.3.2
         version: 7.6.0
     devDependencies:
+      '@babel/core':
+        specifier: ^7.14.5
+        version: 7.24.0
       '@babel/plugin-transform-modules-amd':
         specifier: ^7.19.6
         version: 7.23.3(@babel/core@7.24.0)
@@ -746,9 +746,6 @@ importers:
 
   packages/util:
     dependencies:
-      '@babel/core':
-        specifier: ^7.24.0
-        version: 7.24.0
       '@embroider/macros':
         specifier: workspace:^
         version: link:../macros
@@ -756,9 +753,12 @@ importers:
         specifier: ^3.0.5
         version: 3.0.8
       ember-cli-babel:
-        specifier: ^8.2.0
-        version: 8.2.0(@babel/core@7.24.0)
+        specifier: ^7.26.11
+        version: 7.26.11
     devDependencies:
+      '@babel/core':
+        specifier: ^7.19.6
+        version: 7.24.0
       '@ember/jquery':
         specifier: ^2.0.0
         version: 2.0.0
@@ -8797,6 +8797,7 @@ packages:
       pkg-up: 3.1.0
       reselect: 4.1.8
       resolve: 1.22.8
+    dev: true
 
   /babel-plugin-polyfill-corejs2@0.4.8(@babel/core@7.23.9):
     resolution: {integrity: sha512-OtIuQfafSzpo/LhnJaykc0R/MMnuLSSVjVYy9mHArIZ9qTCSZ6TpWCuEKZYVoN//t8HqBNScHrOtCrIK5IaGLg==}
@@ -9393,6 +9394,7 @@ packages:
     resolution: {integrity: sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==}
     dependencies:
       balanced-match: 1.0.2
+    dev: true
 
   /braces@2.3.2:
     resolution: {integrity: sha512-aNdbnj9P8PjdXU4ybaWLK2IF3jc/EoDYbC7AazW6to3TRsfXxscC9UXOB5iDiEQrkyIbWp2SLQda4+QAa7nc3w==}
@@ -9518,6 +9520,7 @@ packages:
       workerpool: 6.5.1
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /broccoli-builder@0.18.14:
     resolution: {integrity: sha512-YoUHeKnPi4xIGZ2XDVN9oHNA9k3xF5f5vlA+1wvrxIIDXqQU97gp2FxVAF503Zxdtt0C5CRB5n+47k2hlkaBzA==}
@@ -11923,6 +11926,7 @@ packages:
       semver: 7.6.0
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /ember-cli-build-config-editor@0.5.1:
     resolution: {integrity: sha512-wNGVcpHbp6R+DeDHdpx+w4M+F+2cjaFDvf4ZV3VeIcHXLoxYlo0duXkbOLVKalHK/al6xO+rlZt5KqjK5Cyp0w==}
@@ -16198,6 +16202,7 @@ packages:
     dependencies:
       json5: 2.2.3
       path-exists: 4.0.0
+    dev: true
 
   /find-cache-dir@3.3.2:
     resolution: {integrity: sha512-wXZV5emFEjrridIgED11OoUKLxiYjAcqot/NJdAkOhlJ+vGzwhOAfcG5OX1jP+S0PcjEn8bdMJv+g2jwQ3Onig==}
@@ -16794,6 +16799,7 @@ packages:
       inherits: 2.0.4
       minimatch: 5.1.6
       once: 1.4.0
+    dev: true
 
   /global-modules@1.0.0:
     resolution: {integrity: sha512-sKzpEkf11GpOFuw0Zzjzmt4B4UZwjOcG757PPvrfhxcLFbq0wpsgpOqxpxtxFiCG4DtG93M6XRVbF2oGdev7bg==}
@@ -19301,6 +19307,7 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       brace-expansion: 2.0.1
+    dev: true
 
   /minimatch@7.4.6:
     resolution: {integrity: sha512-sBz8G/YjVniEz6lKPNpKxXwazJe4c19fEfV2GDMX6AjFz+MX9uDWIZW8XreVhkFW3fkIdTv/gxWr/Kks5FFAVw==}

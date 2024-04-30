@@ -1,4 +1,6 @@
-import type { AuditBuildOptions, AuditResults, Module } from '../../packages/compat/src/audit';
+import type { AuditBuildOptions, Finding, Module } from '../../packages/compat/src/audit';
+import { httpAudit, type HTTPAuditOptions } from '../../packages/compat/src/http-audit';
+import type { Import } from '../../packages/compat/src/module-visitor';
 import { Audit } from '../../packages/compat/src/audit';
 import { explicitRelative } from '../../packages/shared-internals';
 import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
@@ -13,17 +15,29 @@ import { getRewrittenLocation } from './rewritten-path';
   take advantage of the audit tool within our test suite to help us analyze
   Embroider's output.
 */
-export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions) {
-  let result: AuditResults;
+export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions | HTTPAuditOptions) {
+  let result: { modules: { [file: string]: Module }; findings: Finding[] };
   let expectAudit: ExpectAuditResults;
 
   hooks.before(async () => {
-    result = await Audit.run(opts());
+    let o = opts();
+    if ('appURL' in o) {
+      result = await httpAudit(o);
+    } else {
+      result = await Audit.run(o);
+    }
   });
 
   hooks.beforeEach(assert => {
     installAuditAssertions(assert);
-    expectAudit = new ExpectAuditResults(result, assert, opts().app);
+    let o = opts();
+    let pathRewriter: (p: string) => string;
+    if ('appURL' in o) {
+      pathRewriter = p => p;
+    } else {
+      pathRewriter = p => getRewrittenLocation(o.app, p);
+    }
+    expectAudit = new ExpectAuditResults(result, assert, pathRewriter);
   });
 
   return {
@@ -40,7 +54,7 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
 }
 
 async function audit(this: Assert, opts: AuditBuildOptions): Promise<ExpectAuditResults> {
-  return new ExpectAuditResults(await Audit.run(opts), this, opts.app);
+  return new ExpectAuditResults(await Audit.run(opts), this, p => getRewrittenLocation(opts.app, p));
 }
 
 export function installAuditAssertions(assert: Assert) {
@@ -55,12 +69,12 @@ declare global {
 }
 
 export class ExpectAuditResults {
-  constructor(readonly result: AuditResults, readonly assert: Assert, private appDir: string) {}
-
-  // input and output paths are relative to getAppDir()
-  toRewrittenPath = (path: string) => {
-    return getRewrittenLocation(this.appDir, path);
-  };
+  constructor(
+    readonly result: { modules: { [file: string]: Module }; findings: Finding[] },
+    readonly assert: Assert,
+    // input and output paths are relative to getAppDir()
+    readonly toRewrittenPath: (path: string) => string
+  ) {}
 
   module(inputName: string): PublicAPI<ExpectModule> {
     return new ExpectModule(this, inputName);
@@ -109,7 +123,7 @@ export class ExpectModule {
     });
   }
 
-  withContents(fn: (src: string) => boolean, message?: string) {
+  withContents(fn: (src: string, imports: Import[]) => boolean, message?: string) {
     if (!this.module) {
       this.emitMissingModule();
       return;
@@ -118,7 +132,7 @@ export class ExpectModule {
       this.emitUnparsableModule(message);
       return;
     }
-    const result = fn(this.module.content);
+    const result = fn(this.module.content, this.module.imports);
     this.expectAudit.assert.pushResult({
       result,
       actual: result,
@@ -160,7 +174,7 @@ export class ExpectModule {
     this.expectAudit.assert.codeContains(this.module.content, expectedSource);
   }
 
-  resolves(specifier: string): PublicAPI<ExpectResolution> {
+  resolves(specifier: string | RegExp): PublicAPI<ExpectResolution> {
     if (!this.module) {
       this.emitMissingModule();
       return new EmptyExpectResolution();
@@ -171,7 +185,19 @@ export class ExpectModule {
       return new EmptyExpectResolution();
     }
 
-    if (!(specifier in this.module.resolutions)) {
+    let resolution: string | undefined | null;
+    if (typeof specifier === 'string') {
+      resolution = this.module.resolutions[specifier];
+    } else {
+      for (let [source, module] of Object.entries(this.module.resolutions)) {
+        if (specifier.test(source)) {
+          resolution = module;
+          break;
+        }
+      }
+    }
+
+    if (resolution === undefined) {
       this.expectAudit.assert.pushResult({
         result: false,
         expected: `${this.module.appRelativePath} does not refer to ${specifier}`,
@@ -179,8 +205,8 @@ export class ExpectModule {
       });
       return new EmptyExpectResolution();
     }
-    let resolution = this.module.resolutions[specifier];
-    if (!resolution) {
+
+    if (resolution === null) {
       this.expectAudit.assert.pushResult({
         result: false,
         expected: `${specifier} fails to resolve in ${this.module.appRelativePath}`,

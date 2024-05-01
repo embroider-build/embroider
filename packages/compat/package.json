@@ -87,7 +87,7 @@
     "broccoli-node-api": "^1.7.0",
     "code-equality-assertions": "^0.9.0",
     "ember-engines": "^0.8.19",
-    "scenario-tester": "^3.0.1",
+    "scenario-tester": "^4.0.0",
     "typescript": "^5.4.5"
   },
   "peerDependencies": {

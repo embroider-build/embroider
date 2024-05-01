@@ -49,7 +49,7 @@
     "@types/semver": "^7.3.6",
     "babel-plugin-ember-template-compilation": "^2.1.1",
     "code-equality-assertions": "^0.9.0",
-    "scenario-tester": "^3.0.1",
+    "scenario-tester": "^4.0.0",
     "typescript": "^5.4.5"
   },
   "peerDependencies": {

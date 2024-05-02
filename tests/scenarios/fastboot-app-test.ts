@@ -91,13 +91,13 @@ appScenarios
 
       ['production', 'development'].forEach(env => {
         test(`pnpm test: ${env}`, async function (assert) {
-          let result = await app.execute(`pnpm test`, {
+          let result = await app.execute(`pnpm vite build --mode ${env}`, {
             env: {
-              EMBER_ENV: env,
-              EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
-              EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+              FORCE_BUILD_TESTS: 'true',
             },
           });
+          assert.equal(result.exitCode, 0, result.output);
+          result = await app.execute(`pnpm ember test --path dist`);
           assert.equal(result.exitCode, 0, result.output);
         });
 

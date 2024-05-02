@@ -29,8 +29,11 @@ export interface ExportAll {
   all: string;
 }
 
-// babelConfig must include { ast: true }
 export function auditJS(rawSource: string, filename: string, babelConfig: TransformOptions, frames: CodeFrameStorage) {
+  if (!babelConfig.ast) {
+    throw new Error(`module auditing requires a babel config with ast: true`);
+  }
+
   let imports = [] as InternalImport[];
   let exports = new Set<string | ExportAll>();
   let problems = [] as { message: string; detail: string; codeFrameIndex: number | undefined }[];

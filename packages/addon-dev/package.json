@@ -44,7 +44,7 @@
     "@types/yargs": "^17.0.3",
     "rollup": "^3.23.0",
     "tmp": "^0.1.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.4.5"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

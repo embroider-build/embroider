@@ -3,9 +3,12 @@ import type { PreparedApp } from 'scenario-tester';
 import { Project } from 'scenario-tester';
 import type { FastbootTestHelpers } from './helpers';
 import { setupFastboot, loadFromFixtureData } from './helpers';
+import { readFile } from 'fs/promises';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import type { JSDOM } from 'jsdom';
+import globby from 'globby';
+import { join } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -107,9 +110,7 @@ appScenarios
 
           hooks.before(async () => {
             fb = await setupFastboot(app, env, {
-              EMBER_ENV: env,
-              EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
-              EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+              FORCE_BUILD_TESTS: 'true',
             });
             doc = (await fb.visit('/')).window.document;
           });
@@ -136,24 +137,32 @@ appScenarios
             assert.equal(doc.querySelector('[data-test="lazy-component"]')!.textContent!.trim(), 'From sample-lib');
           });
           test('eager CSS from a v2 addon is present', async function (assert) {
-            for (let link of [...doc.querySelectorAll('link[rel="stylesheet"]')]) {
-              let src = await fb.fetchAsset(link.getAttribute('href')!);
-              if (/eager-styles-marker/.test(src)) {
-                assert.ok(true, 'found expected style');
-                return;
-              }
-            }
-            assert.ok(false, 'did not find expected style');
+            // TODO: replace with an Audit when it's ready to take any given dist
+            let styles = await globby('dist/**/*.css', { cwd: app.dir });
+            let readResult = await Promise.all(
+              styles.map(async styleFile => {
+                let content = await readFile(join(app.dir, styleFile));
+                return content.toString();
+              })
+            );
+            assert.true(
+              readResult.some(content => /eager-styles-marker/.test(content)),
+              'found expected style'
+            );
           });
           test('lazy CSS from a v2 addon is present', async function (assert) {
-            for (let link of [...doc.querySelectorAll('link[rel="stylesheet"]')]) {
-              let src = await fb.fetchAsset(link.getAttribute('href')!);
-              if (/lazy-styles-marker/.test(src)) {
-                assert.ok(true, 'found expected style');
-                return;
-              }
-            }
-            assert.ok(false, 'did not find expected style');
+            // TODO: replace with an Audit when it's ready to take any given dist
+            let styles = await globby('dist/**/*.css', { cwd: app.dir });
+            let readResult = await Promise.all(
+              styles.map(async styleFile => {
+                let content = await readFile(join(app.dir, styleFile));
+                return content.toString();
+              })
+            );
+            assert.true(
+              readResult.some(content => /lazy-styles-marker/.test(content)),
+              'found expected style'
+            );
           });
         });
       });

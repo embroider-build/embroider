@@ -202,6 +202,31 @@ Scenarios.fromProject(() => baseV2Addon())
           },
         });
       });
+
+      test('unrelated files are not modified', async function (assert) {
+          watcher = new DevWatcher(addon);
+
+          await watcher.start();
+
+          let someFile = path.join(addon.dir, 'src/components/demo.hbs');
+          let distPath = path.join(addon.dir, 'dist/components/button.js');
+
+          await isNotModified({
+            filePath: distPath,
+            assert,
+            // Update a component
+            fn: async () => {
+              let someContent = await fs.readFile(someFile);
+
+              // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
+              // to guess for how long it'll take for the file system to update our file.
+              //
+              // the `stat` is measured in `ms`, so it's still pretty fast
+              await aBit(10);
+              await fs.writeFile(someFile, someContent + `\n`);
+              await watcher?.nextBuild();
+            },
+          });
     });
   });
 

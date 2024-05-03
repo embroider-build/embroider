@@ -1,14 +1,14 @@
-import { dirname, join, normalize, resolve, relative, isAbsolute } from 'path';
-import { readFileSync } from 'fs';
 import {
-  AddonMeta,
   AddonInstance,
-  isDeepAddonInstance,
+  AddonMeta,
   PackageInfo,
+  isDeepAddonInstance,
 } from '@embroider/shared-internals';
 import buildFunnel from 'broccoli-funnel';
-import { satisfies } from 'semver';
 import commonAncestorPath from 'common-ancestor-path';
+import { readFileSync } from 'fs';
+import { dirname, isAbsolute, join, normalize, relative, resolve } from 'path';
+import { satisfies } from 'semver';
 
 export interface ShimOptions {
   disabled?: (options: any) => boolean;
@@ -29,6 +29,47 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
 
   let meta = addonMeta(pkg);
   let disabled = false;
+
+  function treeFor(
+    addonInstance: AddonInstance,
+    resourceMap: Record<string, string>,
+    // default expectation is for resourceMap to map from interior to exterior, swap if needed
+    swapInteriorExterior = false
+  ) {
+    const absoluteInteriorPaths = Object[
+      swapInteriorExterior ? 'values' : 'keys'
+    ](resourceMap).map((internalPath) => join(directory, internalPath));
+
+    if (absoluteInteriorPaths.length === 0) {
+      return;
+    }
+
+    const ancestorPath =
+      commonAncestorPath(...absoluteInteriorPaths.map(dirname)) ?? directory;
+    const ancestorPathRel = relative(directory, ancestorPath);
+    const ancestorTree = addonInstance.treeGenerator(ancestorPath);
+    const relativeInteriorPaths = absoluteInteriorPaths.map((absPath) =>
+      relative(ancestorPath, absPath)
+    );
+
+    return buildFunnel(ancestorTree, {
+      files: relativeInteriorPaths,
+      getDestinationPath(relativePath: string): string {
+        for (let [a, b] of Object.entries(resourceMap)) {
+          const interiorName = swapInteriorExterior ? b : a;
+          const exteriorName = swapInteriorExterior ? a : b;
+          if (join(ancestorPathRel, relativePath) === normalize(interiorName)) {
+            return exteriorName;
+          }
+        }
+        throw new Error(
+          `bug in addonV1Shim, no match for ${relativePath} in ${JSON.stringify(
+            resourceMap
+          )}`
+        );
+      },
+    });
+  }
 
   return {
     name: pkg.name,
@@ -62,43 +103,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       }
       let maybeAppJS = meta['app-js'];
       if (maybeAppJS) {
-        const appJS = maybeAppJS;
-        const absoluteAppJSPaths = Object.values(appJS).map((internalPath) =>
-          join(directory, internalPath)
-        );
-
-        if (absoluteAppJSPaths.length === 0) {
-          return;
-        }
-
-        const ancestorPath =
-          commonAncestorPath(...absoluteAppJSPaths.map(dirname)) ?? directory;
-        const ancestorPathRel = relative(directory, ancestorPath);
-        const ancestorTree = this.treeGenerator(ancestorPath);
-        const relativeAppJSPaths = absoluteAppJSPaths.map((absPath) =>
-          relative(ancestorPath, absPath)
-        );
-
-        console.log(ancestorPath);
-        console.log(relativeAppJSPaths);
-
-        return buildFunnel(ancestorTree, {
-          files: relativeAppJSPaths,
-          getDestinationPath(relativePath: string): string {
-            for (let [exteriorName, interiorName] of Object.entries(appJS)) {
-              if (
-                join(ancestorPathRel, relativePath) === normalize(interiorName)
-              ) {
-                return exteriorName;
-              }
-            }
-            throw new Error(
-              `bug in addonV1Shim, no match for ${relativePath} in ${JSON.stringify(
-                appJS
-              )}`
-            );
-          },
-        });
+        return treeFor(this, maybeAppJS, true);
       }
     },
 
@@ -115,44 +120,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       }
       let maybeAssets = meta['public-assets'];
       if (maybeAssets) {
-        const assets = maybeAssets;
-
-        const absoluteAppJSPaths = Object.keys(assets).map((internalPath) =>
-          join(directory, internalPath)
-        );
-
-        if (absoluteAppJSPaths.length === 0) {
-          return;
-        }
-
-        const ancestorPath =
-          commonAncestorPath(...absoluteAppJSPaths.map(dirname)) ?? directory;
-        const ancestorPathRel = relative(directory, ancestorPath);
-        const ancestorTree = this.treeGenerator(ancestorPath);
-        const relativeAppJSPaths = absoluteAppJSPaths.map((absPath) =>
-          relative(ancestorPath, absPath)
-        );
-
-        console.log(ancestorPath);
-        console.log(relativeAppJSPaths);
-
-        return buildFunnel(ancestorTree, {
-          files: relativeAppJSPaths,
-          getDestinationPath(relativePath: string): string {
-            for (let [interiorName, exteriorName] of Object.entries(assets)) {
-              if (
-                join(ancestorPathRel, relativePath) === normalize(interiorName)
-              ) {
-                return exteriorName;
-              }
-            }
-            throw new Error(
-              `bug in addonV1Shim, no match for ${relativePath} in ${JSON.stringify(
-                assets
-              )}`
-            );
-          },
-        });
+        return treeFor(this, maybeAssets);
       }
     },
 

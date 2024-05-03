@@ -1,6 +1,5 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'rollup';
-import { readFileSync } from 'fs';
 import { Preprocessor } from 'content-tag';
 
 const PLUGIN_NAME = 'rollup-gjs-plugin';
@@ -14,11 +13,10 @@ export default function rollupGjsPlugin(
   return {
     name: PLUGIN_NAME,
 
-    load(id: string) {
+    transform(input: string, id: string) {
       if (!gjsFilter(id)) {
         return null;
       }
-      let input = readFileSync(id, 'utf8');
       let code = processor.process(input, {
         filename: id,
         inline_source_map,

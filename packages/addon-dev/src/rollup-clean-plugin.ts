@@ -21,6 +21,7 @@ export default function clean(): Plugin {
         });
         for (const file of files) {
           if (!bundle[file]) {
+            generatedAssets.delete(file);
             rmSync(join(options.dir!, file));
           }
         }
@@ -41,6 +42,7 @@ export default function clean(): Plugin {
             generatedAssets.get(checkKey)
         ) {
           delete bundle[key];
+          continue;
         } else {
           generatedAssets.set(
             checkKey,
@@ -48,7 +50,7 @@ export default function clean(): Plugin {
           );
         }
         if (
-          (bundle[checkKey] as any).moduleIds?.every(
+          (bundle[checkKey] as any)?.moduleIds?.every(
             (m: string) => !changed.has(m)
           )
         ) {

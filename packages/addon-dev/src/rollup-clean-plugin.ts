@@ -1,15 +1,15 @@
 import walkSync from 'walk-sync';
 import { rmSync } from 'fs';
 import { join } from 'path';
-import type { Plugin } from 'rollup';
+import type { OutputAsset, Plugin } from 'rollup';
 import { existsSync } from 'fs-extra';
 
 export default function clean(): Plugin {
   const changed = new Set();
+  const generatedAssets = new Map();
   return {
     name: 'clean',
     transform(_code, id) {
-      console.log(id);
       changed.add(id);
       return;
     },
@@ -34,6 +34,18 @@ export default function clean(): Plugin {
             delete bundle[key];
             continue;
           }
+        }
+        if (
+          bundle[checkKey]?.type === 'asset' &&
+          (bundle[checkKey] as OutputAsset).source ===
+            generatedAssets.get(checkKey)
+        ) {
+          delete bundle[key];
+        } else {
+          generatedAssets.set(
+            checkKey,
+            (bundle[checkKey] as OutputAsset).source
+          );
         }
         if (
           (bundle[checkKey] as any).moduleIds?.every(

@@ -3,6 +3,7 @@ import { baseV2Addon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import { Scenarios } from 'scenario-tester';
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { DevWatcher, becomesModified, isNotModified } from './helpers';
@@ -73,6 +74,7 @@ Scenarios.fromProject(() => baseV2Addon())
               flip
             </button>
           `,
+          'other.hbs': '<div></div>',
           'out.hbs': `<out>{{yield}}</out>`,
           'demo.js': `
             import Component from '@glimmer/component';
@@ -143,31 +145,55 @@ Scenarios.fromProject(() => baseV2Addon())
           let someFile = path.join(addon.dir, 'src/components/demo.hbs');
           let distPath = path.join(addon.dir, 'dist/components/test.js');
           let srcPathDemo = path.join(addon.dir, 'src/components/demo.hbs');
-          let distPathDemo = path.join(addon.dir, 'dist/_app_/components/demo.js');
+          let distPathDemoComp = path.join(addon.dir, 'dist/components/demo.js');
+          let srcPathButton = path.join(addon.dir, 'src/components/other.hbs');
+          let distPathButton = path.join(addon.dir, 'dist/_app_/components/other.js');
 
-          assert.strictEqual(
-            await fs.exists(distPathDemo),
-            true,
-            `Expected ${distPathDemo} to exist`
-          );
-          let origContent = await fs.readFile(srcPathDemo);
+          assert.strictEqual(existsSync(distPathButton), true, `Expected ${distPathButton} to exist`);
+          let origContent = await fs.readFile(srcPathButton);
+          let demoContent = await fs.readFile(srcPathDemo);
 
-          await fs.rm(srcPathDemo);
+          await fs.rm(srcPathButton);
           await watcher?.nextBuild();
+          assert.strictEqual(existsSync(distPathButton), false, `Expected ${distPathButton} to be deleted`);
 
-          assert.strictEqual(
-            await fs.exists(distPathDemo),
-            false,
-            `Expected ${distPathDemo} to be deleted`
-          );
-
-          await fs.writeFile(srcPathDemo, origContent);
+          await fs.writeFile(srcPathButton, origContent);
           await watcher?.nextBuild();
-          assert.strictEqual(
-            await fs.exists(distPathDemo),
-            true,
-            `Expected ${distPathDemo} to exist`
-          );
+          assert.strictEqual(existsSync(distPathButton), true, `Expected ${distPathButton} to exist`);
+
+          await becomesModified({
+            filePath: distPathDemoComp,
+            assert,
+            // Update a component
+            fn: async () => {
+              let someContent = await fs.readFile(srcPathDemo);
+
+              // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
+              // to guess for how long it'll take for the file system to update our file.
+              //
+              // the `stat` is measured in `ms`, so it's still pretty fast
+              await aBit(10);
+              await fs.writeFile(srcPathDemo, someContent + `\n`);
+              await watcher?.nextBuild();
+            },
+          });
+
+          await becomesModified({
+            filePath: distPathDemoComp,
+            assert,
+            // Update a component
+            fn: async () => {
+              // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
+              // to guess for how long it'll take for the file system to update our file.
+              //
+              // the `stat` is measured in `ms`, so it's still pretty fast
+              await aBit(10);
+              await fs.rm(srcPathDemo);
+              await watcher?.nextBuild();
+            },
+          });
+
+          await fs.writeFile(srcPathDemo, demoContent);
 
           await isNotModified({
             filePath: distPath,
@@ -255,7 +281,6 @@ Scenarios.fromProject(() => baseV2Addon())
           await watcher.start();
 
           let manifestPath = path.join(addon.dir, 'package.json');
-        
           await becomesModified({
             filePath: manifestPath,
             assert,

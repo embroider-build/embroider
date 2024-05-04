@@ -30,15 +30,14 @@ export default function rollupHbsPlugin({
       }
     },
 
-    load(id: string) {
-      if (hbsFilter(id)) {
-        return getHbsToJSCode(id);
-      }
+    transform(code: string, id: string) {
       let meta = getMeta(this, id);
+      if (hbsFilter(id) && meta?.type !== 'template-js') {
+        return getHbsToJSCode(code);
+      }
       if (meta) {
         if (meta?.type === 'template-js') {
-          const hbsFile = id.replace(/\.js$/, '.hbs');
-          return getHbsToJSCode(hbsFile);
+          return getHbsToJSCode(code);
         }
         return {
           code: templateOnlyComponent,
@@ -65,8 +64,7 @@ function getMeta(context: PluginContext, id: string): Meta | null {
   }
 }
 
-function getHbsToJSCode(file: string): { code: string } {
-  let input = readFileSync(file, 'utf8');
+function getHbsToJSCode(input: string): { code: string } {
   let code = hbsToJS(input);
   return {
     code,
@@ -95,7 +93,7 @@ async function maybeSynthesizeComponentJS(
   // file exists. Synthesize the JS. The meta states if the hbs corresponds
   // to a template-only component or a simple template like a route template.
   return {
-    id: templateResolution.id.replace(/\.hbs$/, '.js'),
+    id: templateResolution.id,
     meta: {
       'rollup-hbs-plugin': {
         type,

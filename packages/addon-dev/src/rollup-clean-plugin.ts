@@ -11,7 +11,15 @@ export default function clean(): Plugin {
     name: 'clean',
     transform(_code, id) {
       changed.add(id);
-      return;
+      // support colocation changes
+      // could also be done directly in the babel plugin
+      // by passing rollup context into it
+      let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
+      console.log('watch', hbsFilename, '?');
+      if (hbsFilename !== id && existsSync(hbsFilename)) {
+        console.log('watch', hbsFilename, 'for', id);
+        this.addWatchFile(hbsFilename);
+      }
     },
     generateBundle(options, bundle) {
       if (existsSync(options.dir!)) {

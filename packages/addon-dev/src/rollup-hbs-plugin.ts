@@ -1,6 +1,5 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin, PluginContext, CustomPluginOptions } from 'rollup';
-import { readFileSync } from 'fs';
 import { correspondingTemplate, hbsToJS } from '@embroider/core';
 import minimatch from 'minimatch';
 

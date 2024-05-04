@@ -135,13 +135,39 @@ Scenarios.fromProject(() => baseV2Addon())
       });
 
       Qmodule('Watching the addon via rollup -c -w', function () {
-        test('unrelated files are not modified', async function (assert) {
+        test('files are correctly synced', async function (assert) {
           watcher = new DevWatcher(addon);
 
           await watcher.start();
 
           let someFile = path.join(addon.dir, 'src/components/demo.hbs');
           let distPath = path.join(addon.dir, 'dist/components/test.js');
+          let srcPathDemo = path.join(addon.dir, 'src/components/demo.hbs');
+          let distPathDemo = path.join(addon.dir, 'dist/_app_/components/demo.js');
+
+          assert.strictEqual(
+            await fs.exists(distPathDemo),
+            true,
+            `Expected ${distPathDemo} to exist`
+          );
+          let origContent = await fs.readFile(srcPathDemo);
+
+          await fs.rm(srcPathDemo);
+          await watcher?.nextBuild();
+
+          assert.strictEqual(
+            await fs.exists(distPathDemo),
+            false,
+            `Expected ${distPathDemo} to be deleted`
+          );
+
+          await fs.writeFile(srcPathDemo, origContent);
+          await watcher?.nextBuild();
+          assert.strictEqual(
+            await fs.exists(distPathDemo),
+            true,
+            `Expected ${distPathDemo} to exist`
+          );
 
           await isNotModified({
             filePath: distPath,
@@ -229,7 +255,7 @@ Scenarios.fromProject(() => baseV2Addon())
           await watcher.start();
 
           let manifestPath = path.join(addon.dir, 'package.json');
-
+        
           await becomesModified({
             filePath: manifestPath,
             assert,

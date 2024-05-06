@@ -4,7 +4,7 @@ import { join } from 'path';
 import type { OutputAsset, Plugin } from 'rollup';
 import { existsSync } from 'fs-extra';
 
-export default function clean(): Plugin {
+export default function incremental(): Plugin {
   const changed = new Set();
   const generatedAssets = new Map();
   return {
@@ -15,9 +15,7 @@ export default function clean(): Plugin {
       // could also be done directly in the babel plugin
       // by passing rollup context into it
       let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
-      console.log('watch', hbsFilename, '?');
       if (hbsFilename !== id && existsSync(hbsFilename)) {
-        console.log('watch', hbsFilename, 'for', id);
         this.addWatchFile(hbsFilename);
       }
     },
@@ -63,10 +61,8 @@ export default function clean(): Plugin {
           )
         ) {
           delete bundle[key];
-          console.log('deleted', key);
           continue;
         }
-        console.log('not deleted', key);
       }
       changed.clear();
     },

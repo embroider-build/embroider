@@ -26,6 +26,7 @@ import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import type UserOptions from './options';
 import { nodeResolve } from './node-resolve';
+import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -206,6 +207,7 @@ export class Resolver {
     request = this.handleVendorStyles(request);
     request = this.handleTestSupportStyles(request);
     request = this.handleEntrypoint(request);
+    request = this.handleRouteEntrypoint(request);
     request = this.handleRenaming(request);
     request = this.handleVendor(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
@@ -457,6 +459,26 @@ export class Resolver {
     }
 
     return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
+  }
+
+  private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+
+    let routeName = decodePublicRouteEntrypoint(request.specifier);
+
+    if (!routeName) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    return logTransition('route entrypoint', request, request.virtualize(encodeRouteEntrypoint(pkg.root, routeName)));
   }
 
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {

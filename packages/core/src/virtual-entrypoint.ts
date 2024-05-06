@@ -5,9 +5,9 @@ import type { CompatResolverOptions } from '../../compat/src/resolver-transform'
 import { flatten, partition } from 'lodash';
 import { posix, join } from 'path';
 import { extensionsPattern } from '@embroider/shared-internals';
-import { type default as Options, optionsWithDefaults } from './options';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
+import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
 
@@ -106,15 +106,14 @@ export function renderEntrypoint(
     splitRoute(
       routeName,
       routeFiles,
+      resolver.options.splitAtRoutes,
       (_: string, filename: string) => {
         requiredAppFiles.push([filename]);
       },
       (routeNames: string[], _files: string[]) => {
-        // TODO: we don't consume files anymore, should we stop generating it?
-        let routeEntrypoint = `assets/_route_/${encodeURIComponent(routeNames[0])}.js`;
         lazyRoutes.push({
           names: routeNames,
-          path: importPaths(resolver, appFiles, routeEntrypoint).buildtime,
+          path: encodePublicRouteEntrypoint(routeNames, _files),
         });
       }
     );
@@ -272,7 +271,7 @@ function excludeDotFiles(files: string[]) {
   return files.filter(file => !file.startsWith('.') && !file.includes('/.'));
 }
 
-function importPaths(resolver: Resolver, { engine }: AppFiles, engineRelativePath: string) {
+export function importPaths(resolver: Resolver, { engine }: AppFiles, engineRelativePath: string) {
   let resolvableExtensionsPattern = extensionsPattern(resolver.options.resolvableExtensions);
   let noHBS = engineRelativePath.replace(resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
   return {
@@ -281,13 +280,14 @@ function importPaths(resolver: Resolver, { engine }: AppFiles, engineRelativePat
   };
 }
 
-function splitRoute(
+export function splitRoute(
   routeName: string,
   files: RouteFiles,
+  splitAtRoutes: (RegExp | string)[] | undefined,
   addToParent: (routeName: string, filename: string) => void,
   addLazyBundle: (routeNames: string[], files: string[]) => void
 ) {
-  let shouldSplit = routeName && shouldSplitRoute(routeName);
+  let shouldSplit = routeName && shouldSplitRoute(routeName, splitAtRoutes);
   let ownFiles = [];
   let ownNames = new Set() as Set<string>;
 
@@ -322,7 +322,7 @@ function splitRoute(
     splitRoute(
       `${routeName}.${childName}`,
       childFiles,
-
+      splitAtRoutes,
       (childRouteName: string, childFile: string) => {
         // this is our child calling "addToParent"
         if (shouldSplit) {
@@ -343,33 +343,27 @@ function splitRoute(
   }
 }
 
-function readEmbroiderConfig(): Required<Options> {
-  // TODO
-  return optionsWithDefaults({});
+function shouldSplitRoute(routeName: string, splitAtRoutes: (RegExp | string)[] | undefined) {
+  if (!splitAtRoutes) {
+    return false;
+  }
+  return splitAtRoutes.find(pattern => {
+    if (typeof pattern === 'string') {
+      return pattern === routeName;
+    } else {
+      return pattern.test(routeName);
+    }
+  });
 }
 
-function shouldSplitRoute(routeName: string) {
-  let config = readEmbroiderConfig();
-  return (
-    !config.splitAtRoutes ||
-    config.splitAtRoutes.find(pattern => {
-      if (typeof pattern === 'string') {
-        return pattern === routeName;
-      } else {
-        return pattern.test(routeName);
-      }
-    })
-  );
-}
-
-function getAppFiles(appRoot: string): Set<string> {
+export function getAppFiles(appRoot: string): Set<string> {
   const files: string[] = walkSync(appRoot, {
     ignore: ['_babel_config_.js', '_babel_filter_.js', 'app.js', 'assets', 'testem.js', 'node_modules'],
   });
   return new Set(files);
 }
 
-function getFastbootFiles(appRoot: string): Set<string> {
+export function getFastbootFiles(appRoot: string): Set<string> {
   const appDirPath = join(appRoot, '_fastboot_');
   const files: string[] = walkSync(appDirPath);
   return new Set(files);

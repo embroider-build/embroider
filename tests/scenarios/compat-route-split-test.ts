@@ -44,6 +44,18 @@ let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
       modifiers: {
         'auto-focus.js': 'export default function(){}',
       },
+      'router.js': `import EmberRouter from '@embroider/router';
+      import config from 'my-app/config/environment';
+
+      export default class Router extends EmberRouter {
+        location = config.locationType;
+        rootURL = config.rootURL;
+      }
+
+      Router.map(function () {
+        this.route('people');
+      });
+      `,
     },
   });
   app.linkDependency('@ember/string', { baseDir: __dirname });
@@ -63,17 +75,17 @@ splitScenarios
           },
         },
         controllers: {
-          'index.js': '',
-          'people.js': '',
+          'index.js': `import Controller from '@ember/controller'; export default class Thingy extends Controller {}`,
+          'people.js': `import Controller from '@ember/controller'; export default class Thingy extends Controller {}`,
           people: {
-            'show.js': '',
+            'show.js': `import Controller from '@ember/controller'; export default class Thingy extends Controller {}`,
           },
         },
         routes: {
-          'index.js': '',
-          'people.js': '',
+          'index.js': `import Route from '@ember/routing/route';export default class ThingyRoute extends Route {}`,
+          'people.js': `import Route from '@ember/routing/route';export default class ThingyRoute extends Route {}`,
           people: {
-            'show.js': '',
+            'show.js': `import Route from '@ember/routing/route';export default class ThingyRoute extends Route {}`,
           },
         },
       },

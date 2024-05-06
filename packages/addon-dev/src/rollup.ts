@@ -8,7 +8,7 @@ import {
   default as publicAssets,
   type PublicAssetsOptions,
 } from './rollup-public-assets';
-import { default as clean } from './rollup-clean-plugin';
+import { default as clean } from './rollup-incremental-plugin';
 import type { Plugin } from 'rollup';
 
 export class Addon {
@@ -63,8 +63,9 @@ export class Addon {
     return gjs(options);
   }
 
-  // By default rollup does not clear the output directory between builds. This
-  // does that. It only deletes files that are not part of the generated bundle
+  // this does incremental updates to the dist files and also deletes files that are not part of the generated bundle
+  // rollup already supports incremental transforms of files,
+  // this extends it to the dist files
   clean() {
     return clean();
   }

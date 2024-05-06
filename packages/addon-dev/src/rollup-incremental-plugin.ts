@@ -7,6 +7,17 @@ import { existsSync } from 'fs-extra';
 export default function incremental(): Plugin {
   const changed = new Set();
   const generatedAssets = new Map();
+
+  function isEqual(v1: string | Uint8Array, v2: string | Uint8Array): boolean {
+    if (typeof v1 === 'string' && typeof v2 === 'string') {
+      return v1 === v2;
+    }
+    if (Buffer.isBuffer(v1) && Buffer.isBuffer(v2)) {
+      return v1.equals(v2);
+    }
+    return false;
+  }
+
   return {
     name: 'clean',
     transform(_code, id) {
@@ -44,16 +55,22 @@ export default function incremental(): Plugin {
         }
         if (
           bundle[checkKey]?.type === 'asset' &&
-          (bundle[checkKey] as OutputAsset).source ===
-            generatedAssets.get(checkKey)
+          generatedAssets.has(checkKey)
         ) {
-          delete bundle[key];
-          continue;
-        } else {
-          generatedAssets.set(
-            checkKey,
-            (bundle[checkKey] as OutputAsset).source
-          );
+          if (
+            isEqual(
+              (bundle[checkKey] as OutputAsset).source,
+              generatedAssets.get(checkKey)
+            )
+          ) {
+            delete bundle[key];
+            continue;
+          } else {
+            generatedAssets.set(
+              checkKey,
+              (bundle[checkKey] as OutputAsset).source
+            );
+          }
         }
         if (
           (bundle[checkKey] as any)?.moduleIds?.every(

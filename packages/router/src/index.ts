@@ -68,8 +68,11 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
     setupRouter(...args: unknown[]) {
       // @ts-expect-error extending private method
       let isSetup = super.setupRouter(...args);
-      let microLib = (this as unknown as { _routerMicrolib: { getRoute: (name: string) => unknown } })._routerMicrolib;
-      microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
+      if (isSetup) {
+        let microLib = (this as unknown as { _routerMicrolib: { getRoute: (name: string) => unknown } })
+          ._routerMicrolib;
+        microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
+      }
       return isSetup;
     }
 

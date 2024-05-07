@@ -36,7 +36,6 @@ appScenarios
     addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
 
     project.addDevDependency(addon);
-    project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-8' });
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
     merge(project.files, {

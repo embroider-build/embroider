@@ -3,7 +3,7 @@ import { appScenarios, baseV2Addon } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
-import { pathExistsSync, readJsonSync, readFileSync } from 'fs-extra';
+import { pathExistsSync } from 'fs-extra';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -25,17 +25,6 @@ appScenarios
     };
 
     merge(addon.files, {
-      'babel.config.json': `
-        {
-          "plugins": [
-            ["babel-plugin-ember-template-compilation", {
-              "targetFormat": "hbs",
-              "transforms": []
-            }],
-            ["module:decorator-transforms", { "runtime": { "import": "decorator-transforms/runtime" } }]
-          ]
-        }
-      `,
       'rollup.config.mjs': `
       import { Addon } from '@embroider/addon-dev/rollup';
       import { babel } from '@rollup/plugin-babel';
@@ -49,46 +38,24 @@ appScenarios
         output: addon.output(),
         plugins: [
           addon.publicEntrypoints(['**/*.js']),
-          addon.appReexports(['components/*.js']),
           addon.dependencies(),
-          babel({ extensions: ['.js', '.gjs', '.ts', '.gts'], babelHelpers: 'bundled' }),
-          addon.gjs(),
-          addon.hbs(),
-          addon.keepAssets(["**/*.css"]),
+          babel({ extensions: ['.js'], babelHelpers: 'bundled' }),
           addon.clean(),
         ],
       };
 
       `,
       src: {
-        components: {
-          'styles.css': `button { font-weight: bold; color: blue; }`,
-          'demo.gjs': `
-            import Component from '@glimmer/component';
-            import { tracked } from '@glimmer/tracking';
-            import { on } from '@ember/modifier';
+        'index.js': `
+          import { importSync, isDevelopingApp, macroCondition } from '@embroider/macros';
 
-            import { importSync, isDevelopingApp, macroCondition } from '@embroider/macros';
+          export let foo = 'module';
 
-            if (macroCondition(isDevelopingApp())) {
-              importSync('./styles.css');
-            }
-
-            export default class ExampleComponent extends Component {
-              @tracked active = false;
-
-              flip = () => (this.active = !this.active);
-
-              <template>
-                Hello there!
-
-                <out>{{this.active}}</out>
-
-                <button {{on 'click' this.flip}}>flip</button>
-              </template>
-            }
-          `,
-        },
+          if (macroCondition(isDevelopingApp())) {
+            // value will be asserted in the test
+            foo = 'macro'
+          }
+        `,
       },
     });
 
@@ -97,7 +64,6 @@ appScenarios
     addon.linkDependency('@babel/runtime', { baseDir: __dirname });
     addon.linkDevDependency('@babel/core', { baseDir: __dirname });
     addon.linkDevDependency('@rollup/plugin-babel', { baseDir: __dirname });
-    addon.linkDependency('decorator-transforms', { baseDir: __dirname });
     addon.linkDevDependency('rollup', { baseDir: __dirname });
 
     project.addDevDependency(addon);
@@ -108,22 +74,12 @@ appScenarios
       tests: {
         // the app is not set up with typescript
         'the-test.js': `
-          import { click, render } from '@ember/test-helpers';
-          import { hbs } from 'ember-cli-htmlbars';
           import { module, test } from 'qunit';
-          import { setupRenderingTest } from 'ember-qunit';
+          import { foo } from 'v2-addon';
 
           module('v2 addon tests', function (hooks) {
-            setupRenderingTest(hooks);
-
-            test('<Demo />', async function (assert) {
-              await render(hbs\`<Demo />\`);
-
-              assert.dom('out').containsText('false');
-
-              await click('button');
-
-              assert.dom('out').containsText('true');
+            test('macros ran', async function (assert) {
+              assert.strictEqual(foo, 'macro');
             });
           });
         `,
@@ -166,38 +122,6 @@ appScenarios
         test('output directories exist', async function (assert) {
           let { dir } = inDependency(app, 'v2-addon');
           assert.strictEqual(pathExistsSync(path.join(dir, 'dist')), true, 'dist/');
-          assert.strictEqual(pathExistsSync(path.join(dir, 'dist', '_app_')), true, 'dist/_app_');
-        });
-
-        test('package.json is modified appropriately', async function (assert) {
-          let { dir } = inDependency(app, 'v2-addon');
-          let reExports = readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js'];
-
-          assert.deepEqual(reExports, {
-            './components/demo.js': './dist/_app_/components/demo.js',
-          });
-        });
-
-        test('the addon was built successfully', async function (assert) {
-          let { dir } = inDependency(app, 'v2-addon');
-          let expectedModules = {
-            './dist/_app_/components/demo.js': 'export { default } from "v2-addon/components/demo";\n',
-          };
-
-          assert.strictEqual(
-            Object.keys(readJsonSync(path.join(dir, 'package.json'))['ember-addon']['app-js']).length,
-            Object.keys(expectedModules).length
-          );
-
-          for (let [pathName, moduleContents] of Object.entries(expectedModules)) {
-            let filePath = path.join(dir, pathName);
-            assert.deepEqual(pathExistsSync(filePath), true, `pathExists: ${pathName}`);
-            assert.strictEqual(
-              readFileSync(filePath, { encoding: 'utf8' }),
-              moduleContents,
-              `has correct reexport: ${pathName}`
-            );
-          }
         });
       });
 

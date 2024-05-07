@@ -1,5 +1,5 @@
 import { appScenarios, baseV2Addon } from './scenarios';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 

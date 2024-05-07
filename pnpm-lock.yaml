@@ -1582,9 +1582,6 @@ importers:
       '@types/qunit':
         specifier: 2.19.10
         version: 2.19.10
-      decorator-transforms:
-        specifier: ^1.0.1
-        version: 1.2.1(@babel/core@7.26.0)
       ember-auto-import:
         specifier: ^2.6.3
         version: 2.10.0
@@ -1736,9 +1733,6 @@ importers:
       ember-cli-5.8:
         specifier: npm:ember-cli@~5.8.0
         version: /ember-cli@5.8.1
-      ember-cli-babel-8:
-        specifier: npm:ember-cli-babel@^8.2.0
-        version: /ember-cli-babel@8.2.0(@babel/core@7.26.0)
       ember-cli-babel-latest:
         specifier: npm:ember-cli-babel@latest
         version: /ember-cli-babel@8.2.0(@babel/core@7.26.0)
@@ -3457,7 +3451,7 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/core': 7.26.0(supports-color@8.1.1)
+      '@babel/core': 7.26.0
       '@babel/helper-plugin-utils': 7.25.9
 
   /@babel/plugin-transform-private-methods@7.25.9(@babel/core@7.26.0):
@@ -12379,15 +12373,6 @@ packages:
     dependencies:
       mimic-response: 1.0.1
     dev: true
-
-  /decorator-transforms@1.2.1(@babel/core@7.26.0):
-    resolution: {integrity: sha512-UUtmyfdlHvYoX3VSG1w5rbvBQ2r5TX1JsE4hmKU9snleFymadA3VACjl6SRfi9YgBCSjBbfQvR1bs9PRW9yBKw==}
-    dependencies:
-      '@babel/plugin-syntax-decorators': 7.25.9(@babel/core@7.26.0)
-      babel-import-util: 2.1.1
-    transitivePeerDependencies:
-      - '@babel/core'
-    dev: false
 
   /decorator-transforms@2.3.0(@babel/core@7.26.0):
     resolution: {integrity: sha512-jo8c1ss9yFPudHuYYcrJ9jpkDZIoi+lOGvt+Uyp9B+dz32i50icRMx9Bfa8hEt7TnX1FyKWKkjV+cUdT/ep2kA==}

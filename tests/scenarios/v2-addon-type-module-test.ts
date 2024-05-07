@@ -15,6 +15,7 @@ appScenarios
     addon.pkg.type = 'module';
     addon.pkg.files = ['dist'];
     addon.pkg.exports = {
+      '.': './dist/index.js',
       './*': './dist/*.js',
       './addon-main.cjs': './addon-main.cjs',
       // needed for our "inDependency" function defined in this test

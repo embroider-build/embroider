@@ -63,11 +63,12 @@ appScenarios
 
         const { compatBuild, recommendedOptions } = require('@embroider/compat');
 
-        const Webpack = require('@embroider/webpack').Webpack;
-        return compatBuild(app, Webpack, {
-          ...recommendedOptions.optimized,
+        const { maybeEmbroider } = require('@embroider/test-setup');
+        return maybeEmbroider(app, {
           skipBabel: [
-            { package: 'qunit' },
+            {
+              package: 'qunit',
+            },
           ],
         });
       };

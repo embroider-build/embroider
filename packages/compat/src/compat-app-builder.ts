@@ -51,7 +51,6 @@ import type { Package, PackageInfo } from '@embroider/core';
 import { ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
-import SourceMapConcat from 'fast-sourcemap-concat';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
@@ -588,15 +587,6 @@ export class CompatAppBuilder {
         return prior.kind === 'in-memory' && stringOrBufferEqual(prior.source, asset.source);
       case 'built-ember':
         return prior.kind === 'built-ember' && prior.source === asset.source;
-      case 'concatenated-asset':
-        return (
-          prior.kind === 'concatenated-asset' &&
-          prior.sources.length === asset.sources.length &&
-          prior.sources.every((priorFile, index) => {
-            let newFile = asset.sources[index];
-            return this.assetIsValid(newFile, priorFile);
-          })
-        );
     }
   }
 
@@ -618,35 +608,7 @@ export class CompatAppBuilder {
     writeFileSync(destination, asset.source, 'utf8');
   }
 
-  private async updateConcatenatedAsset(asset: ConcatenatedAsset) {
-    let concat = new SourceMapConcat({
-      outputFile: join(this.root, asset.relativePath),
-      mapCommentType: asset.relativePath.endsWith('.js') ? 'line' : 'block',
-      baseDir: this.root,
-    });
-    if (process.env.EMBROIDER_CONCAT_STATS) {
-      let MeasureConcat = (await import('@embroider/core/src/measure-concat')).default;
-      concat = new MeasureConcat(asset.relativePath, concat, this.root);
-    }
-    for (let source of asset.sources) {
-      switch (source.kind) {
-        case 'on-disk':
-          concat.addFile(explicitRelative(this.root, source.sourcePath));
-          break;
-        case 'in-memory':
-          if (typeof source.source !== 'string') {
-            throw new Error(`attempted to concatenated a Buffer-backed in-memory asset`);
-          }
-          concat.addSpace(source.source);
-          break;
-        default:
-          assertNever(source);
-      }
-    }
-    await concat.end();
-  }
-
-  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[]) {
+  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[]): Promise<void> {
     let assets = this.prepareAssets(requestedAssets, appFiles);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
@@ -663,9 +625,6 @@ export class CompatAppBuilder {
         case 'built-ember':
           this.updateBuiltEmberAsset(asset);
           break;
-        case 'concatenated-asset':
-          await this.updateConcatenatedAsset(asset);
-          break;
         default:
           assertNever(asset);
       }
@@ -676,7 +635,6 @@ export class CompatAppBuilder {
       }
     }
     this.assets = assets;
-    return [...assets.values()];
   }
 
   private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
@@ -719,22 +677,13 @@ export class CompatAppBuilder {
     let appFiles = this.updateAppJS(inputPaths.appJS);
     let assets = this.gatherAssets(inputPaths);
 
-    let finalAssets = await this.updateAssets(assets, appFiles);
+    await this.updateAssets(assets, appFiles);
 
     let assetPaths = assets.map(asset => asset.relativePath);
 
     if (this.activeFastboot) {
       // when using fastboot, our own package.json needs to be in the output so fastboot can read it.
       assetPaths.push('package.json');
-    }
-
-    for (let asset of finalAssets) {
-      // our concatenated assets all have map files that ride along. Here we're
-      // telling the final stage packager to be sure and serve the map files
-      // too.
-      if (asset.kind === 'concatenated-asset') {
-        assetPaths.push(asset.sourcemapPath);
-      }
     }
 
     let meta: AppMeta = {
@@ -1089,7 +1038,7 @@ interface TreeNames {
   configTree: BroccoliNode;
 }
 
-type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset | ConcatenatedAsset;
+type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset;
 
 class ParsedEmberAsset {
   kind: 'parsed-ember' = 'parsed-ember';
@@ -1118,17 +1067,5 @@ class BuiltEmberAsset {
     this.parsedAsset = asset;
     this.source = asset.html.dom.serialize();
     this.relativePath = asset.relativePath;
-  }
-}
-
-class ConcatenatedAsset {
-  kind: 'concatenated-asset' = 'concatenated-asset';
-  constructor(
-    public relativePath: string,
-    public sources: (OnDiskAsset | InMemoryAsset)[],
-    private resolvableExtensions: RegExp
-  ) {}
-  get sourcemapPath() {
-    return this.relativePath.replace(this.resolvableExtensions, '') + '.map';
   }
 }

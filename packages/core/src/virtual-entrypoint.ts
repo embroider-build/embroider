@@ -85,10 +85,10 @@ export function renderEntrypoint(
   let lazyEngines: { names: string[]; path: string }[] = [];
 
   if (isApp) {
-    // deliberately ignoring the app
+    // deliberately ignoring the app (which is the first entry in the engines array)
     let [, ...childEngines] = resolver.options.engines;
     for (let childEngine of childEngines) {
-      let target = `${childEngine.packageName}/-embroider-entrypoint.js`;
+      let target = `@embroider/core/entrypoint/${childEngine.packageName}`;
 
       if (childEngine.isLazy) {
         lazyEngines.push({
@@ -276,7 +276,7 @@ export function importPaths(resolver: Resolver, { engine }: AppFiles, engineRela
   let noHBS = engineRelativePath.replace(resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
   return {
     runtime: `${engine.modulePrefix}/${noHBS}`,
-    buildtime: `@embroider-dep/${posix.join(engine.package.name, engineRelativePath)}`,
+    buildtime: `./${engineRelativePath}`,
   };
 }
 

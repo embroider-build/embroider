@@ -448,14 +448,31 @@ export class Resolver {
     //TODO move the extra forwardslash handling out into the vite plugin
     const candidates = ['@embroider/core/entrypoint', '/@embroider/core/entrypoint', './@embroider/core/entrypoint'];
 
-    if (!candidates.includes(request.specifier)) {
+    if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
       return request;
     }
 
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    const result = /\.?\/?@embroider\/core\/entrypoint(?:\/(?<packageName>.*))?/.exec(request.specifier);
 
-    if (!pkg?.isV2Ember()) {
+    if (!result) {
+      // TODO make a better error
+      throw new Error('entrypoint does not match pattern' + request.specifier);
+    }
+
+    const { packageName } = result.groups!;
+
+    const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!requestingPkg?.isV2Ember()) {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    let pkg;
+
+    if (packageName) {
+      pkg = this.packageCache.resolve(packageName, requestingPkg);
+    } else {
+      pkg = requestingPkg;
     }
 
     return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));

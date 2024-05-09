@@ -897,7 +897,7 @@ let d = w.define;
 
 
 import "ember-testing";
-import "#embroider/core/entrypoint";
+import "@embroider/core/entrypoint";
 
 {{#each amdModules as |amdModule| ~}}
   d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});

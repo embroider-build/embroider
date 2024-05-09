@@ -9,6 +9,7 @@ overrides:
   graceful-fs: ^4.0.0
   '@types/eslint': ^8.37.0
   babel-plugin-module-resolver@5.0.1: 5.0.0
+  '@ember/legacy-built-in-components': ^0.5.0
 
 patchedDependencies:
   ember-source@5.8.0:
@@ -1680,8 +1681,8 @@ importers:
         specifier: ^7.18.6
         version: 7.24.5
       '@ember/legacy-built-in-components':
-        specifier: ^0.4.1
-        version: 0.4.2(ember-source@3.28.12)
+        specifier: ^0.5.0
+        version: 0.5.0(ember-source@3.28.12)
       '@ember/string':
         specifier: ^3.0.0
         version: 3.1.1
@@ -1771,7 +1772,7 @@ importers:
         version: /ember-data@5.3.0(@babel/core@7.24.5)(@ember/string@3.1.1)(ember-source@3.28.12)
       ember-engines:
         specifier: ^0.8.23
-        version: 0.8.23(@ember/legacy-built-in-components@0.4.2)(ember-source@3.28.12)
+        version: 0.8.23(@ember/legacy-built-in-components@0.5.0)(ember-source@3.28.12)
       ember-inline-svg:
         specifier: ^0.2.1
         version: 0.2.1(@babel/core@7.24.5)
@@ -4519,11 +4520,11 @@ packages:
       - supports-color
     dev: true
 
-  /@ember/legacy-built-in-components@0.4.2(ember-source@3.28.12):
-    resolution: {integrity: sha512-rJulbyVQIVe1zEDQDqAQHechHy44DsS2qxO24+NmU/AYxwPFSzWC/OZNCDFSfLU+Y5BVd/00qjxF0pu7Nk+TNA==}
-    engines: {node: 12.* || 14.* || >= 16}
+  /@ember/legacy-built-in-components@0.5.0(ember-source@3.28.12):
+    resolution: {integrity: sha512-hbUCt5rii6CT1L4mheH+aqCDeF1dzp/UjS2g7KFIKYGd9zMqyKU4OEnQGk2/O5tATXkEGPf4Zpj671BddBOrbQ==}
+    engines: {node: '>= 16'}
     peerDependencies:
-      ember-source: '*'
+      ember-source: '>= 4.8'
     dependencies:
       '@embroider/macros': 1.16.1(@glint/template@1.4.0)
       ember-cli-babel: 7.26.11
@@ -13828,14 +13829,14 @@ packages:
       - supports-color
     dev: true
 
-  /ember-engines@0.8.23(@ember/legacy-built-in-components@0.4.2)(ember-source@3.28.12):
+  /ember-engines@0.8.23(@ember/legacy-built-in-components@0.5.0)(ember-source@3.28.12):
     resolution: {integrity: sha512-rrvHUkZRNrf+9u/sCw7XYrITStjP/9Ypykk1nYQHoo+6Krp11e81QNVsGTXFpXtMHXbNtH5IcRyZvfSXqUOrUQ==}
     engines: {node: 10.* || >= 12}
     peerDependencies:
-      '@ember/legacy-built-in-components': '*'
+      '@ember/legacy-built-in-components': ^0.5.0
       ember-source: ^3.12 || 4
     dependencies:
-      '@ember/legacy-built-in-components': 0.4.2(ember-source@3.28.12)
+      '@ember/legacy-built-in-components': 0.5.0(ember-source@3.28.12)
       '@embroider/macros': 1.16.1(@glint/template@1.4.0)
       amd-name-resolver: 1.3.1
       babel-plugin-compact-reexports: 1.1.0
@@ -13864,7 +13865,7 @@ packages:
     resolution: {integrity: sha512-rrvHUkZRNrf+9u/sCw7XYrITStjP/9Ypykk1nYQHoo+6Krp11e81QNVsGTXFpXtMHXbNtH5IcRyZvfSXqUOrUQ==}
     engines: {node: 10.* || >= 12}
     peerDependencies:
-      '@ember/legacy-built-in-components': '*'
+      '@ember/legacy-built-in-components': ^0.5.0
       ember-source: ^3.12 || 4
     dependencies:
       '@embroider/macros': 1.16.1(@glint/template@1.4.0)

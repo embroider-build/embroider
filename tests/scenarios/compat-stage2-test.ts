@@ -133,7 +133,7 @@ stage2Scenarios
           .module('./node_modules/.embroider/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
-          .resolves('@embroider-dep/my-app/service/in-repo.js')
+          .resolves('./service/in-repo.js')
           .to('./node_modules/dep-b/lib/in-repo-c/_app_/service/in-repo.js');
       });
 
@@ -143,7 +143,7 @@ stage2Scenarios
           .module('./node_modules/.embroider/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
-          .resolves('@embroider-dep/my-app/services/secondary.js')
+          .resolves('./services/secondary.js')
           .to('./lib/secondary-in-repo-addon/_app_/services/secondary.js');
 
         // secondary is resolvable from primary
@@ -209,15 +209,9 @@ stage2Scenarios
           .module('./node_modules/.embroider/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule();
-        expectModule
-          .resolves('@embroider-dep/my-app/service/in-repo.js')
-          .to('./lib/in-repo-b/_app_/service/in-repo.js');
-        expectModule
-          .resolves('@embroider-dep/my-app/service/addon.js')
-          .to('./node_modules/dep-b/_app_/service/addon.js');
-        expectModule
-          .resolves('@embroider-dep/my-app/service/dev-addon.js')
-          .to('./node_modules/dev-c/_app_/service/dev-addon.js');
+        expectModule.resolves('./service/in-repo.js').to('./lib/in-repo-b/_app_/service/in-repo.js');
+        expectModule.resolves('./service/addon.js').to('./node_modules/dep-b/_app_/service/addon.js');
+        expectModule.resolves('./service/dev-addon.js').to('./node_modules/dev-c/_app_/service/dev-addon.js');
       });
 
       test('addons declared as dependencies should win over devDependencies', function () {
@@ -225,7 +219,7 @@ stage2Scenarios
           .module('./node_modules/.embroider/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
-          .resolves('@embroider-dep/my-app/service/dep-wins-over-dev.js')
+          .resolves('./service/dep-wins-over-dev.js')
           .to('./node_modules/dep-b/_app_/service/dep-wins-over-dev.js');
       });
 
@@ -234,7 +228,7 @@ stage2Scenarios
           .module('./node_modules/.embroider/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
-          .resolves('@embroider-dep/my-app/service/in-repo-over-deps.js')
+          .resolves('./service/in-repo-over-deps.js')
           .to('./lib/in-repo-a/_app_/service/in-repo-over-deps.js');
       });
 
@@ -243,7 +237,7 @@ stage2Scenarios
           .module('./node_modules/.embroider/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
-          .resolves('@embroider-dep/my-app/service/test-before.js')
+          .resolves('./service/test-before.js')
           .to('./node_modules/dev-d/_app_/service/test-before.js');
       });
 
@@ -252,7 +246,7 @@ stage2Scenarios
           .module('./node_modules/.embroider/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
-          .resolves('@embroider-dep/my-app/service/test-after.js')
+          .resolves('./service/test-after.js')
           .to('./node_modules/dev-b/_app_/service/test-after.js');
       });
     });
@@ -682,9 +676,7 @@ stage2Scenarios
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(contents => {
-            const result = /import \* as (\w+) from "@embroider-dep\/my-app\/non-static-dir\/another-library.js";/.exec(
-              contents
-            );
+            const result = /import \* as (\w+) from "\.\/non-static-dir\/another-library.js";/.exec(contents);
 
             if (!result) {
               throw new Error('Could not find import for non-static-dir/another-library');
@@ -728,7 +720,7 @@ stage2Scenarios
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
-            return content.includes('my-app/static-dir-not-really/something.js');
+            return content.includes('./static-dir-not-really/something.js');
           });
       });
 

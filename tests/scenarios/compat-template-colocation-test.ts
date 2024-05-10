@@ -135,8 +135,7 @@ scenarios
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(contents => {
-            const result =
-              /import \* as (\w+) from "@embroider-dep\/my-app\/components\/has-colocated-template.js";/.exec(contents);
+            const result = /import \* as (\w+) from "\.\/components\/has-colocated-template.js";/.exec(contents);
 
             if (!result) {
               throw new Error('Missing import of has-colocated-template');
@@ -212,13 +211,9 @@ scenarios
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
-            assert.notOk(
-              /import \* as (\w+) from "@embroider-dep\/my-app\/components\/has-colocated-component.js"/.test(content)
-            );
+            assert.notOk(/import \* as (\w+) from "\.\/components\/has-colocated-component.js"/.test(content));
 
-            assert.notOk(
-              /import \* as (\w+) from "@embroider-dep\/my-app\/components\/template-only-component.js"/.test(content)
-            );
+            assert.notOk(/import \* as (\w+) from "\.\/components\/template-only-component.js"/.test(content));
 
             return true;
           });
@@ -309,8 +304,7 @@ appScenarios
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
-            let result =
-              /import \* as (\w+) from "@embroider-dep\/my-app\/components\/pod-component\/component.js"/.exec(content);
+            let result = /import \* as (\w+) from "\.\/components\/pod-component\/component.js"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component');
@@ -325,9 +319,7 @@ appScenarios
             });`
             );
 
-            result = /import \* as (\w+) from "@embroider-dep\/my-app\/components\/pod-component\/template.hbs"/.exec(
-              content
-            );
+            result = /import \* as (\w+) from "\.\/components\/pod-component\/template.hbs"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component template');
@@ -342,9 +334,7 @@ appScenarios
             });`
             );
 
-            result = /import \* as (\w+) from "@embroider-dep\/my-app\/components\/template-only\/template.hbs"/.exec(
-              content
-            );
+            result = /import \* as (\w+) from "\.\/components\/template-only\/template.hbs"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find template only component');

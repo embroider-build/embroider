@@ -378,11 +378,11 @@ setComponentTemplate(
   precompileTemplate(
   "<div data-test-single-file-component>Hello {{@message}}</div><div data-test-another><Another /></div><Button data-test-button @onClick={{this.doIt}} />",
   {
+  strictMode: true,
   scope: () => ({
     Another,
     Button,
   }),
-  strictMode: true
 }), _SingleFileComponent);
 
 export { SingleFileComponent as default };

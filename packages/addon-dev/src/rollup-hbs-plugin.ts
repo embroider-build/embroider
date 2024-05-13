@@ -29,29 +29,34 @@ export default function rollupHbsPlugin({
       }
     },
 
-    transform(code: string, id: string) {
-      let meta = getMeta(this, id);
-      if (hbsFilter(id) && meta?.type !== 'template-js') {
-        return getHbsToJSCode(code);
+    async transform(code: string, id: string) {
+      if (!hbsFilter(id)) {
+        return;
       }
-      if (meta) {
-        if (meta?.type === 'template-js') {
-          return getHbsToJSCode(code);
-        }
+      let meta = getMeta(this, id);
+      if (meta?.type === 'template-only-component-js') {
         return {
-          code: templateOnlyComponent,
+          code: templateOnlyComponent(code),
         };
       }
+      return getHbsToJSCode(code);
     },
   };
 }
 
-const templateOnlyComponent =
-  `import templateOnly from '@ember/component/template-only';\n` +
-  `export default templateOnly();\n`;
+function templateOnlyComponent(hbsCode: string) {
+  const code = hbsCode.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+  return `
+  import templateOnly from '@ember/component/template-only';
+  import { precompileTemplate } from '@ember/template-compilation';
+  import { setComponentTemplate } from '@ember/component';
+  export default setComponentTemplate(precompileTemplate(\`${code}\`), templateOnly());
+  `;
+}
 
 type Meta = {
   type: 'template-only-component-js' | 'template-js';
+  hbsFile: string;
 };
 
 function getMeta(context: PluginContext, id: string): Meta | null {

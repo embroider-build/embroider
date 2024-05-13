@@ -115,6 +115,8 @@ appScenarios
             }
           }),
 
+          addon.clean(),
+
           addon.dependencies(),
 
           babel({ extensions: ['.js', '.ts'], babelHelpers: 'inline' }),
@@ -125,10 +127,6 @@ appScenarios
           }),
 
           addon.hbs(),
-
-
-
-          addon.clean(),
         ],
       };
 

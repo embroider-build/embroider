@@ -6,6 +6,10 @@ import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-
 import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
 import { decodeVirtualVendor, renderVendor } from './virtual-vendor';
 import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
+import {
+  decodeEmbroiderMacrosFastbootInit,
+  renderEmbroiderMacrosFastbootInit,
+} from './virtual-embroider-macros-fastboot-init';
 
 import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
 import { decodeTestEntrypoint, renderTestEntrypoint } from './virtual-test-entrypoint';
@@ -81,6 +85,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let isTestSupportStyles = decodeTestSupportStyles(filename);
   if (isTestSupportStyles) {
     return renderTestSupportStyles(filename, resolver);
+  }
+
+  let isEmbroiderMacrosFastbootInit = decodeEmbroiderMacrosFastbootInit(filename);
+  if (isEmbroiderMacrosFastbootInit) {
+    return renderEmbroiderMacrosFastbootInit();
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);

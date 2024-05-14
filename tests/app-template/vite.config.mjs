@@ -7,6 +7,7 @@ import {
   optimizeDeps,
   compatPrebuild,
   assets,
+  fastboot,
   contentFor,
 } from "@embroider/vite";
 import { resolve } from "path";
@@ -27,6 +28,7 @@ export default defineConfig(({ mode }) => {
       resolver(),
       compatPrebuild(),
       assets(),
+      fastboot(),
       contentFor(),
 
       babel({

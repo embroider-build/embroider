@@ -13,7 +13,7 @@ export async function setupFastboot(
   environment = 'development',
   envVars?: Record<string, string>
 ): Promise<FastbootTestHelpers> {
-  let result = await app.execute(`node node_modules/ember-cli/bin/ember build --environment=${environment}`, {
+  let result = await app.execute(`node node_modules/vite/bin/vite build --mode=${environment}`, {
     env: envVars,
   });
 

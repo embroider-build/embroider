@@ -190,7 +190,7 @@ export class Resolver {
       return this.external('early require', request, request.specifier);
     }
 
-    request = this.handleFastbootSwitch(request);
+    request = await this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
     request = this.handleImplicitTestScripts(request);
@@ -335,7 +335,7 @@ export class Resolver {
     return request;
   }
 
-  private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
+  private async handleFastbootSwitch<R extends ModuleRequest>(request: R): Promise<R> {
     if (isTerminal(request)) {
       return request;
     }
@@ -369,15 +369,9 @@ export class Resolver {
           } else {
             targetFile = fastbootFile.localFilename;
           }
-          return logTransition(
-            'matched app entry',
-            request,
-            // deliberately not using rehome because we want
-            // generateFastbootSwitch to see that this request is coming *from*
-            // a fastboot switch so it won't cycle back around. Instead we make
-            // the targetFile relative to the fromFile that we already have.
-            request.alias(explicitRelative(dirname(request.fromFile), resolve(pkg.root, targetFile)))
-          );
+
+          let resolution = await request.alias(targetFile).rehome(resolve(pkg.root, 'package.json')).defaultResolve();
+          return logTransition('matched app entry', request, request.resolveTo(resolution));
         }
       }
 

@@ -4,6 +4,13 @@ import type { PluginContext, ResolveIdResult } from 'rollup';
 
 export const virtualPrefix = 'embroider_virtual:';
 
+// TODO: Query params should be bundler-specific and not be sent to the
+// bundler-agnostic part of Embroider (e.g. Vite-specific ?direct param)
+// However, Fastboot currently relies on the ?names query param, so this
+// constant is used as a quick fix to keep the query param when requesting
+// Fastboot-related virtual content.
+export const fastbootQueryParam = 'names';
+
 export class RollupModuleRequest implements ModuleRequest {
   static from(
     context: PluginContext,
@@ -166,8 +173,10 @@ export class RollupModuleRequest implements ModuleRequest {
       },
     });
     if (result) {
-      let { pathname } = new URL(result.id, 'http://example.com');
-      return { type: 'found', filename: pathname, result, isVirtual: this.isVirtual };
+      // strip Vite-specific query params but keep FastBoot ones
+      let { pathname, searchParams } = new URL(result.id, 'http://example.com');
+      let filename = searchParams.get(fastbootQueryParam) ? result.id : pathname;
+      return { type: 'found', filename, result, isVirtual: this.isVirtual };
     } else {
       return { type: 'not_found', err: undefined };
     }

@@ -1,9 +1,11 @@
 import type { Plugin, ViteDevServer } from 'vite';
-import { virtualContent, ResolverLoader } from '@embroider/core';
-import { RollupModuleRequest, virtualPrefix } from './request';
+import { type PluginItem, transform } from '@babel/core';
+import { locateEmbroiderWorkingDir, virtualContent, ResolverLoader } from '@embroider/core';
+import { fastbootQueryParam, RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 import makeDebug from 'debug';
 import { resolve } from 'path';
+import { readJSONSync } from 'fs-extra';
 
 const debug = makeDebug('embroider:vite');
 
@@ -11,6 +13,7 @@ export function resolver(): Plugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let server: ViteDevServer;
   let virtualDeps: Map<string, string[]> = new Map();
+  let macrosConfig: PluginItem | undefined;
 
   return {
     name: 'embroider-resolver',
@@ -53,11 +56,18 @@ export function resolver(): Plugin {
     },
     load(id) {
       if (id.startsWith(virtualPrefix)) {
-        let { pathname } = new URL(id, 'http://example.com');
-        let { src, watches } = virtualContent(pathname.slice(virtualPrefix.length + 1), resolverLoader.resolver);
+        // strip Vite-specific query params but keep FastBoot ones
+        let { pathname, searchParams } = new URL(id, 'http://example.com');
+        let specifier = searchParams.get(fastbootQueryParam) ? id : pathname;
+        let { src, watches } = virtualContent(specifier.slice(virtualPrefix.length + 1), resolverLoader.resolver);
         virtualDeps.set(id, watches);
         server?.watcher.add(watches);
-        return src;
+        if (!macrosConfig) {
+          macrosConfig = readJSONSync(
+            resolve(locateEmbroiderWorkingDir(process.cwd()), 'rewritten-app', 'macros-config.json')
+          ) as PluginItem;
+        }
+        return pathname.endsWith('.css') ? src : runMacros(src, id, macrosConfig);
       }
     },
     buildEnd() {
@@ -79,4 +89,11 @@ export function resolver(): Plugin {
       });
     },
   };
+}
+
+function runMacros(src: string, filename: string, macrosConfig: PluginItem): string {
+  return transform(src, {
+    filename,
+    plugins: [macrosConfig],
+  })!.code!;
 }

@@ -129,7 +129,7 @@ export default setComponentTemplate(template, templateOnlyComponent(undefined, "
 
 export function virtualExternalESModule(specifier: string, exports: string[] | undefined): string {
   if (exports) {
-    return externalESPrefix + specifier + `?exports=${exports.join(',')}`;
+    return externalESPrefix + specifier + `/exports=${exports.join(',')}`;
   } else {
     return externalESPrefix + specifier;
   }
@@ -142,12 +142,12 @@ export function virtualExternalCJSModule(specifier: string): string {
 function decodeVirtualExternalESModule(filename: string): { moduleName: string; exports: string[] } | undefined {
   if (filename.startsWith(externalESPrefix)) {
     let exports: string[] = [];
-    let url = new URL(filename.slice(externalESPrefix.length), 'http://example.com');
-    let nameString = url.searchParams.get('exports');
+    let components = filename.split('/exports=');
+    let nameString = components[1];
     if (nameString) {
       exports = nameString.split(',');
     }
-    let moduleName = url.pathname.slice(1);
+    let moduleName = components[0].slice(externalESPrefix.length);
     return { moduleName, exports };
   }
 }

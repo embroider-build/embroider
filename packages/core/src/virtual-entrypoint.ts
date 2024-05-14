@@ -148,7 +148,7 @@ export function renderEntrypoint(
     //   appConfig: this.configTree.readConfig().APP,
     // });
     Object.assign(params, {
-      autoRun: true,
+      autoRun: resolver.options.autoRun,
       appBoot: '',
       mainModule: './app',
       appConfig: {},

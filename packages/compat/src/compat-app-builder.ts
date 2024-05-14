@@ -278,6 +278,7 @@ export class CompatAppBuilder {
       podModulePrefix: this.podModulePrefix(),
       activePackageRules: this.activeRules(),
       options,
+      autoRun: this.compatApp.autoRun,
     };
 
     return config;

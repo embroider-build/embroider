@@ -51,6 +51,7 @@ describe('audit', function () {
         },
       ],
       resolvableExtensions,
+      autoRun: true,
     };
 
     let babel: TransformOptions = {

@@ -100,6 +100,7 @@ Scenarios.fromProject(() => new Project())
                 ...extraOpts?.appPackageRules,
               },
             ],
+            autoRun: true,
           };
 
           givenFiles({

@@ -95,6 +95,7 @@ export interface Options {
   splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
+  autoRun: boolean;
 }
 
 // TODO: once we can remove the stage2 entrypoint this type can get streamlined

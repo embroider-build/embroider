@@ -23,6 +23,12 @@ export function fastboot(): Plugin {
             fileName: 'assets/embroider_macros_fastboot_init.js',
             source: virtualContent('assets/embroider_macros_fastboot_init.js', resolverLoader.resolver).src,
           });
+          // TODO: don't rely on rewritten-app
+          this.emitFile({
+            type: 'asset',
+            fileName: 'package.json',
+            source: readFileSync(resolve(locateEmbroiderWorkingDir(process.cwd()), 'rewritten-app', 'package.json')),
+          });
         }
       },
     },

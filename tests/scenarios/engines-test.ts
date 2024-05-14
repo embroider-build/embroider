@@ -102,7 +102,7 @@ engineScenarios
       });
 
       test(`pnpm test safe`, async function (assert) {
-        let result = await app.execute('pnpm test --filter=!@optimized', {
+        let result = await app.execute("pnpm run test --filter='!@optimized'", {
           env: {
             EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
             EMBROIDER_TEST_SETUP_FORCE: 'embroider',

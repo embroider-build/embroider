@@ -1,11 +1,11 @@
-import { tsAppScenarios } from './scenarios';
-import type { PreparedApp } from 'scenario-tester';
+import { tsAppScenarios, tsAppClassicScenarios } from './scenarios';
+import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import { merge } from 'lodash';
 
 const { module: Qmodule, test } = QUnit;
 
-let routerApp = tsAppScenarios.map('router', project => {
+function setupScenario(project: Project) {
   project.linkDevDependency('@embroider/router', { baseDir: __dirname });
 
   // not strictly needed in the embroider case, but needed in the classic
@@ -224,6 +224,10 @@ let routerApp = tsAppScenarios.map('router', project => {
       },
     },
   });
+}
+
+let routerApp = tsAppScenarios.map('router', project => {
+  setupScenario(project);
 });
 
 routerApp.forEachScenario(scenario => {
@@ -247,20 +251,33 @@ routerApp.forEachScenario(scenario => {
       app = await scenario.prepare();
     });
 
-    test(`CLASSIC pnpm test:ember`, async function (assert) {
-      let result = await app.execute('pnpm ember test', {
-        env: {
-          EMBROIDER_TEST_SETUP_FORCE: 'classic',
-        },
-      });
-      assert.equal(result.exitCode, 0, result.output);
-    });
-
     test(`EMBROIDER pnpm test:ember`, async function (assert) {
       let result = await app.execute('pnpm test:ember', {
         env: {
           EMBROIDER_TEST_SETUP_FORCE: 'embroider',
           EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+        },
+      });
+      assert.equal(result.exitCode, 0, result.output);
+    });
+  });
+});
+
+let routerAppClassic = tsAppClassicScenarios.map('router-classic', project => {
+  setupScenario(project);
+});
+
+routerAppClassic.forEachScenario(scenario => {
+  Qmodule(scenario.name, function (hooks) {
+    let app: PreparedApp;
+    hooks.before(async () => {
+      app = await scenario.prepare();
+    });
+
+    test(`CLASSIC pnpm test:ember`, async function (assert) {
+      let result = await app.execute('pnpm ember test', {
+        env: {
+          EMBROIDER_TEST_SETUP_FORCE: 'classic',
         },
       });
       assert.equal(result.exitCode, 0, result.output);

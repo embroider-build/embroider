@@ -65,6 +65,10 @@ export function baseTSApp() {
   return Project.fromDir(dirname(require.resolve('../ts-app-template/package.json')), { linkDevDeps: true });
 }
 
+export function baseTSAppClassic() {
+  return Project.fromDir(dirname(require.resolve('../ts-app-template-classic/package.json')), { linkDevDeps: true });
+}
+
 export function baseViteApp() {
   return Project.fromDir(dirname(require.resolve('../vite-app/package.json')), { linkDevDeps: true });
 }
@@ -75,6 +79,10 @@ export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
 // at 4.8. So we're not going to run type tests on older releases that don't
 // support them.
 export const tsAppScenarios = supportMatrix(Scenarios.fromProject(baseTSApp)).skip('lts_3_28').skip('lts_4_4');
+
+export const tsAppClassicScenarios = supportMatrix(Scenarios.fromProject(baseTSAppClassic))
+  .skip('lts_3_28')
+  .skip('lts_4_4');
 
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
 

@@ -15,7 +15,7 @@ type EngineInfoByRoute = Record<string, { name: string }>;
 let Router: typeof EmberRouter;
 
 interface GetRoute {
-  (name: string): unknown;
+  (name: string): ReturnType<EmberRouter['_routerMicrolib']['getRoute']>;
   isEmbroiderRouterHandler?: true;
 }
 
@@ -81,7 +81,6 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
       let isSetup = super.setupRouter(...args);
       let microLib = this._routerMicrolib;
       if (!microLib.getRoute.isEmbroiderRouterHandler) {
-        // @ts-expect-error TODO fix this after merged to main
         microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
       }
       return isSetup;

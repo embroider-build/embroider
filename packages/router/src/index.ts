@@ -81,6 +81,7 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
       let isSetup = super.setupRouter(...args);
       let microLib = this._routerMicrolib;
       if (!microLib.getRoute.isEmbroiderRouterHandler) {
+        // @ts-expect-error TODO fix this after merged to main
         microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
       }
       return isSetup;

@@ -14,6 +14,17 @@ type EngineInfoByRoute = Record<string, { name: string }>;
 
 let Router: typeof EmberRouter;
 
+interface GetRoute {
+  (name: string): unknown;
+  isEmbroiderRouterHandler?: true;
+}
+
+interface Internals {
+  _routerMicrolib: {
+    getRoute: GetRoute;
+  };
+}
+
 if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ?? false)) {
   const waiter = buildWaiter('@embroider/router:lazy-route-waiter');
 
@@ -65,16 +76,18 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
 
     // This is the framework method that we're overriding to provide our own
     // handlerResolver.
-    setupRouter(...args: unknown[]) {
+    setupRouter(this: this & Internals, ...args: unknown[]) {
       // @ts-expect-error extending private method
       let isSetup = super.setupRouter(...args);
-      let microLib = (this as unknown as { _routerMicrolib: { getRoute: (name: string) => unknown } })._routerMicrolib;
-      microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
+      let microLib = this._routerMicrolib;
+      if (!microLib.getRoute.isEmbroiderRouterHandler) {
+        microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
+      }
       return isSetup;
     }
 
     private _handlerResolver(original: (name: string) => unknown) {
-      return (name: string) => {
+      let handler = ((name: string) => {
         const bundle = this.lazyBundle(name);
         if (!bundle || bundle.loaded) {
           return original(name);
@@ -93,7 +106,9 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
             throw err;
           }
         );
-      };
+      }) as GetRoute;
+      handler.isEmbroiderRouterHandler = true;
+      return handler;
     }
   }
 

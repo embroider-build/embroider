@@ -1,5 +1,44 @@
 # Embroider Changelog
 
+## Release (2024-05-08)
+
+@embroider/addon-shim 1.8.8 (patch)
+@embroider/compat 3.5.0 (minor)
+@embroider/router 2.1.7 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#1907](https://github.com/embroider-build/embroider/pull/1907) Make ember-source compat adapter tolerant of upcoming ember-source changes ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#1904](https://github.com/embroider-build/embroider/pull/1904) Fix getRoute override ([@jembezmamy](https://github.com/jembezmamy))
+* `@embroider/addon-shim`
+  * [#1901](https://github.com/embroider-build/embroider/pull/1901) [addon-shim]: Narrowed down broccoli trees for optimized file watching ([@simonihmig](https://github.com/simonihmig))
+
+#### :house: Internal
+* `@embroider/test-scenarios`
+  * [#1908](https://github.com/embroider-build/embroider/pull/1908) update tests to follow newer babel-plugin-ember-template-compiilation ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Paweł Bator ([@jembezmamy](https://github.com/jembezmamy))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2024-04-30)
+
+@embroider/compat 3.4.9 (patch)
+@embroider/core 3.4.9 (patch)
+@embroider/macros 1.16.1 (patch)
+@embroider/util 1.13.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`, `@embroider/util`
+  * [#1891](https://github.com/embroider-build/embroider/pull/1891) Revert "Update to `ember-cli-babel` v8" ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-04-18)
 
 @embroider/compat 3.4.8 (patch)

@@ -456,9 +456,6 @@ export class CompatAppBuilder {
 
     html.insertStyleLink(html.styles, `assets/${this.origAppPackage.name}.css`);
 
-    // virtual-vendor entrypoint
-    html.insertScriptTag(html.implicitScripts, '@embroider/core/vendor.js');
-
     if (this.fastbootConfig) {
       // any extra fastboot vendor files get inserted into our
       // html.implicitScripts section, after the regular implicit script

@@ -511,9 +511,9 @@ export class Resolver {
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (pkg?.root !== this.options.engines[0].root) {
+    if (!pkg || !this.options.engines.some(e => e.root === pkg?.root)) {
       throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app or Engine. The top-level Ember app is the only one that has support for @embroider/core/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
       );
     }
 

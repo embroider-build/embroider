@@ -11,6 +11,7 @@ import type * as Babel from '@babel/core';
 import type { NodePath } from '@babel/traverse';
 import Plugin from 'broccoli-plugin';
 import type { Node } from 'broccoli-node-api';
+import { existsSync } from 'fs';
 
 export default class extends V1Addon {
   get v2Tree() {
@@ -21,11 +22,27 @@ export default class extends V1Addon {
     return this.app.options.staticEmberSource;
   }
 
-  // ember-source inlines a whole bunch of dependencies into itself
+  // versions of ember-source prior to
+  // https://github.com/emberjs/ember.js/pull/20675 ship dist/packages and
+  // dist/dependencies separately and the imports between them are package-name
+  // imports. Since many of the dependencies are also true package.json
+  // dependencies (in order to get typescript types), and our module-resolver
+  // prioritizes true dependencies, it's necessary to detect and remove the
+  // package.json dependencies.
+  //
+  // After the above linked change, ember-source ships only dist/packages and
+  // the inter-package imports are all relative. Some of the things in
+  // dist/packages are still the rolled-in dependencies, but now that the
+  // imports are all relative we need no special handling for them (beyond the
+  // normal v2 addon renamed-modules support.
   @Memoize()
   private get includedDependencies() {
     let result: string[] = [];
-    for (let name of readdirSync(resolve(this.root, 'dist', 'dependencies'))) {
+    let depsDir = resolve(this.root, 'dist', 'dependencies');
+    if (!existsSync(depsDir)) {
+      return result;
+    }
+    for (let name of readdirSync(depsDir)) {
       if (name[0] === '@') {
         for (let innerName of readdirSync(resolve(this.root, 'dist', 'dependencies', name))) {
           if (innerName.endsWith('.js')) {
@@ -87,6 +104,7 @@ export default class extends V1Addon {
       packages,
       buildFunnel(this.rootTree, {
         srcDir: 'dist/dependencies',
+        allowEmpty: true,
       }),
     ];
 

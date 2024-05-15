@@ -81,7 +81,7 @@ appScenarios
               {{content-for "body"}}
               {{content-for "custom"}}
           
-              <script src="{{rootURL}}assets/vendor.js"></script>
+              <script src="/@embroider/core/vendor.js"></script>
               <script src="{{rootURL}}assets/app-template.js"></script>
           
               {{content-for "body-footer"}}

@@ -3,7 +3,7 @@ import { compile } from './js-handlebars';
 import type { Resolver } from './module-resolver';
 import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
-import { posix, join } from 'path';
+import { join } from 'path';
 import { extensionsPattern } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';

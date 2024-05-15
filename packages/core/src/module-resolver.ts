@@ -5,7 +5,7 @@ import {
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve, posix, extname } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -412,6 +412,7 @@ export class Resolver {
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    pkg = pkg && this.packageCache.maybeMoved(pkg);
     if (!pkg?.isV2Ember()) {
       throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
     }
@@ -692,8 +693,7 @@ export class Resolver {
       }
       let targetPkgName = getPackageName(newRequest.specifier);
       if (targetPkgName && fromPkg.name !== targetPkgName) {
-        let targetPkg = this.packageCache.resolve(targetPkgName, fromPkg);
-        newRequest = this.makeResolvable(newRequest, targetPkg);
+        newRequest = this.makeResolvable(newRequest);
       } else {
         newRequest = renamedRequest;
       }
@@ -1097,7 +1097,7 @@ export class Resolver {
       return newRequest.withMeta({ originalFromFile });
     }
 
-    let newRequest = this.makeResolvable(request, pkg);
+    let newRequest = this.makeResolvable(request);
 
     if (newRequest === request) {
       return request;
@@ -1278,18 +1278,28 @@ export class Resolver {
     }
   }
 
-  async resolveAlias<R extends ModuleRequest>(request: R, path: string): Promise<{ importer: string; path: string }> {
+  async resolveAlias<R extends ModuleRequest>(request: R): Promise<R> {
     let engineNames = this.options.engines.map(e => e.packageName);
     let res = {
       importer: request.fromFile,
-      path,
+      path: request.specifier,
     };
+    let isVirtual = request.isVirtual;
+    let path = request.specifier;
     if (path.startsWith('.') || path.startsWith('#') || engineNames.some(packageName => path.startsWith(packageName))) {
       let resolved = await this.beforeResolve(request);
       if (resolved.isVirtual) {
+        isVirtual = true;
         let result = await this.resolve(request);
         if (result.type !== 'not_found') {
-          res = result.result as any;
+          const r = result.result as any;
+          if (r?.path) {
+            res.path = r.path;
+            res.importer = r.importer;
+          } else if (r?.specifier) {
+            res.path = r.specifier;
+            res.importer = r.fromFile;
+          }
         }
       }
       if (!resolved.isVirtual) {
@@ -1306,26 +1316,46 @@ export class Resolver {
         res.importer = resolved.fromFile;
       }
     }
-    return res;
+    if (!isVirtual) {
+      const extNameRegex = new RegExp(`\\${extname(res.path)}$`);
+      res.path = res.path.replace(extNameRegex, '');
+    }
+    return request.alias(res.path).rehome(res.importer);
   }
 
-  private makeResolvable<R extends ModuleRequest>(request: R, pkg: Package) {
-    if (!pkg.isV2Addon() || !pkg.meta['auto-upgraded'] || !pkg.root.includes('rewritten-packages')) {
-      // some tests make addons be auto-upgraded, but are not actually in rewritten-packages
-      return request;
+  makeResolvable<R extends ModuleRequest>(request: R): R {
+    if (request.fromFile && !request.fromFile.startsWith('./')) {
+      let fromPkg: Package;
+      try {
+        fromPkg =
+          this.packageCache.ownerOfFile(request.fromFile) || this.packageCache.ownerOfFile(this.options.appRoot)!;
+      } catch (e) {
+        console.log(e);
+        fromPkg = this.packageCache.ownerOfFile(this.options.appRoot)!;
+      }
+
+      let pkgName = getPackageName(request.specifier);
+      try {
+        let pkg = pkgName ? this.packageCache.resolve(pkgName, fromPkg!) : fromPkg;
+        if (!pkg.isV2Addon() || !pkg.meta['auto-upgraded'] || !pkg.root.includes('rewritten-packages')) {
+          // some tests make addons be auto-upgraded, but are not actually in rewritten-packages
+          return request;
+        }
+        let levels = ['..'];
+        if (pkg.name.startsWith('@')) {
+          levels.push('..');
+        }
+        let resolvedRoot = resolve(pkg.root, ...levels, ...levels, '..');
+        let specifier = resolve(pkg.root, ...levels, request.specifier);
+        let makeAbsolutePath = this.options.makeAbsolutePathToRwPackages;
+        if (makeAbsolutePath && makeAbsolutePath.some((addon: string) => request.specifier.startsWith(addon))) {
+          return request.alias(specifier);
+        }
+        specifier = specifier.replace(resolvedRoot, '@embroider/rewritten-packages').replace(/\\/g, '/');
+        return request.alias(specifier).rehome(resolve(this.options.appRoot, 'package.json'));
+      } catch (e) {}
     }
-    let levels = ['..'];
-    if (pkg.name.startsWith('@')) {
-      levels.push('..');
-    }
-    let resolvedRoot = resolve(pkg.root, ...levels, ...levels, '..');
-    let specifier = resolve(pkg.root, ...levels, request.specifier);
-    let makeAbsolutePath = this.options.makeAbsolutePathToRwPackages;
-    if (makeAbsolutePath && makeAbsolutePath.some((addon: string) => request.specifier.startsWith(addon))) {
-      return request.alias(specifier);
-    }
-    specifier = specifier.replace(resolvedRoot, '@embroider/rewritten-packages').replace(/\\/g, '/');
-    return request.alias(specifier).rehome(resolve(this.options.appRoot, 'package.json'));
+    return request;
   }
 
   private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
@@ -1373,9 +1403,10 @@ export class Resolver {
     // but then come back to the original location here in the fallback when the
     // rehomed request fails
     let movedPkg = this.packageCache.maybeMoved(pkg);
-    if (movedPkg !== pkg) {
+    if (movedPkg !== pkg && !movedPkg.isV2App()) {
       let originalFromFile = request.meta?.originalFromFile;
       if (typeof originalFromFile !== 'string') {
+        console.log(pkg, movedPkg, request.specifier);
         throw new Error(`bug: embroider resolver's meta is not propagating`);
       }
       request = request.rehome(originalFromFile);
@@ -1400,10 +1431,7 @@ export class Resolver {
           explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier))
         );
         if (appJSMatch) {
-          let fromPkg = this.packageCache.ownerOfFile(appJSMatch.fromFile)!;
-          let pkgName = getPackageName(appJSMatch.specifier);
-          let targetPkg = pkgName ? this.packageCache.resolve(pkgName, fromPkg) : fromPkg;
-          appJSMatch = this.makeResolvable(appJSMatch, targetPkg);
+          appJSMatch = this.makeResolvable(appJSMatch);
           return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
         } else {
           return logTransition('fallbackResolve: relative appJs search failure', request);
@@ -1419,9 +1447,8 @@ export class Resolver {
       let addon = this.locateActiveAddon(packageName);
       if (addon) {
         const rehomed = request.rehome(addon.canResolveFromFile);
-        const targetPkg = this.packageCache.get(addon.root);
         if (rehomed !== request) {
-          let newRequest = this.makeResolvable(rehomed, targetPkg);
+          let newRequest = this.makeResolvable(rehomed);
           return logTransition(`activeAddons`, request, newRequest);
         }
       }

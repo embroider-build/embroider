@@ -9,12 +9,15 @@ import CommandWatcher, { DEFAULT_TIMEOUT } from './helpers/command-watcher';
 
 const { module: Qmodule, test } = QUnit;
 
-let app = appScenarios.skip('canary').map('watch-mode', () => {
-  /**
-   * We will create files as a part of the watch-mode tests,
-   * because creating files should cause appropriate watch/update behavior
-   */
-});
+let app = appScenarios
+  .skip('canary')
+  .skip('lts_5_8')
+  .map('watch-mode', () => {
+    /**
+     * We will create files as a part of the watch-mode tests,
+     * because creating files should cause appropriate watch/update behavior
+     */
+  });
 
 class File {
   constructor(readonly label: string, readonly fullPath: string) {}

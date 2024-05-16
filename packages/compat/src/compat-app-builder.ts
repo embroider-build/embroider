@@ -27,7 +27,6 @@ import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
-import sortBy from 'lodash/sortBy';
 import flatten from 'lodash/flatten';
 import partition from 'lodash/partition';
 import mergeWith from 'lodash/mergeWith';
@@ -39,7 +38,7 @@ import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilat
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
-import type { InMemoryAsset, OnDiskAsset, ImplicitAssetPaths } from '@embroider/core/src/asset';
+import type { InMemoryAsset, OnDiskAsset } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
 import type { RouteFiles } from '@embroider/core/src/app-files';
 import { AppFiles } from '@embroider/core/src/app-files';
@@ -288,62 +287,9 @@ export class CompatAppBuilder {
     return config;
   }
 
-  private scriptPriority(pkg: Package) {
-    switch (pkg.name) {
-      case 'loader.js':
-        return 0;
-      case 'ember-source':
-        return 10;
-      default:
-        return 1000;
-    }
-  }
-
   @Memoize()
   private get resolvableExtensionsPattern(): RegExp {
     return extensionsPattern(this.resolvableExtensions());
-  }
-
-  private impliedAssets(type: keyof ImplicitAssetPaths, engine: AppFiles): (OnDiskAsset | InMemoryAsset)[] {
-    let result: (OnDiskAsset | InMemoryAsset)[] = this.impliedAddonAssets(type, engine).map(
-      (sourcePath: string): OnDiskAsset => {
-        let stats = statSync(sourcePath);
-        return {
-          kind: 'on-disk',
-          relativePath: explicitRelative(this.root, sourcePath),
-          sourcePath,
-          mtime: stats.mtimeMs,
-          size: stats.size,
-        };
-      }
-    );
-
-    return result;
-  }
-
-  private impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
-    let result: Array<string> = [];
-    for (let addon of sortBy(Array.from(engine.addons.keys()), this.scriptPriority.bind(this))) {
-      let implicitScripts = addon.meta[type];
-      if (implicitScripts) {
-        let styles = [];
-        let options = { basedir: addon.root };
-        for (let mod of implicitScripts) {
-          if (type === 'implicit-styles') {
-            // exclude engines because they will handle their own css importation
-            if (!addon.isLazyEngine()) {
-              styles.push(resolve.sync(mod, options));
-            }
-          } else {
-            result.push(resolve.sync(mod, options));
-          }
-        }
-        if (styles.length) {
-          result = [...styles, ...result];
-        }
-      }
-    }
-    return result;
   }
 
   @Memoize()
@@ -1062,12 +1008,9 @@ export class CompatAppBuilder {
     // only import styles from engines with a parent (this excludeds the parent application) as their styles
     // will be inserted via a direct <link> tag.
     if (!appFiles.engine.isApp && appFiles.engine.package.isLazyEngine()) {
-      let implicitStyles = this.impliedAssets('implicit-styles', appFiles);
-      for (let style of implicitStyles) {
-        styles.push({
-          path: explicitRelative('assets/_engine_', style.relativePath),
-        });
-      }
+      styles.push({
+        path: '@embroider/core/vendor.css',
+      });
 
       let engineMeta = appFiles.engine.package.meta as AddonMeta;
       if (engineMeta && engineMeta['implicit-styles']) {

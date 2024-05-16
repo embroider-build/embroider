@@ -21,6 +21,9 @@ export async function httpAudit(
     let response = await (options.fetch ?? globalThis.fetch)(id);
     let content = await response.text();
     let type: ContentType;
+    if (response.status !== 200) {
+      throw new Error(`oops status code ${response.status} - ${response.statusText} for ${id}: ${content}`);
+    }
     switch (response.headers.get('content-type')) {
       case 'text/javascript':
         type = 'javascript';
@@ -29,7 +32,7 @@ export async function httpAudit(
         type = 'html';
         break;
       default:
-        throw new Error(`oops content type ${response.headers.get('content-type')}`);
+        throw new Error(`oops content type ${response.headers.get('content-type')} for ${id}`);
     }
     return { content, type };
   }

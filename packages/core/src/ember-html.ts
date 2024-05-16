@@ -22,7 +22,6 @@ export interface EmberHTML {
   // Do not confuse these with controlling whether or not we will insert tests.
   // That is separately controlled via `includeTests`.
   testJavascript?: Node;
-  implicitTestScripts?: Node;
   implicitTestStyles?: Node;
 }
 
@@ -84,7 +83,6 @@ export class PreparedEmberHTML {
   implicitScripts: Placeholder;
   implicitStyles: Placeholder;
   testJavascript: Placeholder;
-  implicitTestScripts: Placeholder;
   implicitTestStyles: Placeholder;
 
   constructor(private asset: EmberAsset) {
@@ -97,9 +95,6 @@ export class PreparedEmberHTML {
     this.testJavascript = html.testJavascript
       ? Placeholder.replacing(html.testJavascript)
       : Placeholder.immediatelyAfter(this.javascript.end);
-    this.implicitTestScripts = html.implicitTestScripts
-      ? Placeholder.replacing(html.implicitTestScripts)
-      : Placeholder.immediatelyAfter(this.implicitScripts.end);
     this.implicitTestStyles = html.implicitTestStyles
       ? Placeholder.replacing(html.implicitTestStyles)
       : Placeholder.immediatelyAfter(this.implicitStyles.end);
@@ -111,7 +106,6 @@ export class PreparedEmberHTML {
       this.styles,
       this.implicitScripts,
       this.implicitStyles,
-      this.implicitTestScripts,
       this.implicitTestStyles,
       this.testJavascript,
     ];

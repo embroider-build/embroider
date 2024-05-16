@@ -214,7 +214,6 @@ export class CompatAppBuilder {
             implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
             implicitStyles: this.compatApp.findVendorStyles(styles, entrypoint),
             testJavascript: this.compatApp.findTestScript(scripts),
-            implicitTestScripts: this.compatApp.findTestSupportScript(scripts),
             implicitTestStyles: this.compatApp.findTestSupportStyles(styles),
           };
         },
@@ -476,9 +475,6 @@ export class CompatAppBuilder {
 
     let testJS = this.testJSEntrypoint(appFiles, prepared);
     html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
-
-    // virtual test-support.js
-    html.insertScriptTag(html.implicitTestScripts, '@embroider/core/test-support.js');
 
     html.insertStyleLink(html.implicitTestStyles, '@embroider/core/test-support.css');
   }

@@ -757,13 +757,6 @@ export default class CompatApp {
     );
   }
 
-  findTestSupportScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(
-      script =>
-        this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.testSupport.js.testSupport
-    );
-  }
-
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(
       script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.tests.js

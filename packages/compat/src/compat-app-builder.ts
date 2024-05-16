@@ -214,7 +214,6 @@ export class CompatAppBuilder {
             implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
             implicitStyles: this.compatApp.findVendorStyles(styles, entrypoint),
             testJavascript: this.compatApp.findTestScript(scripts),
-            implicitTestStyles: this.compatApp.findTestSupportStyles(styles),
           };
         },
       };
@@ -475,8 +474,6 @@ export class CompatAppBuilder {
 
     let testJS = this.testJSEntrypoint(appFiles, prepared);
     html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
-
-    html.insertStyleLink(html.implicitTestStyles, '@embroider/core/test-support.css');
   }
 
   // recurse to find all active addons that don't cross an engine boundary.

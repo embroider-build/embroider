@@ -751,12 +751,6 @@ export default class CompatApp {
     );
   }
 
-  findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(
-      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.testSupport.css
-    );
-  }
-
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(
       script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.tests.js

@@ -29,7 +29,6 @@ import { activePackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
-import { sync as resolveSync } from 'resolve';
 import bind from 'bind-decorator';
 import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync, realpathSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
@@ -86,38 +85,11 @@ export class CompatAppBuilder {
   private extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
     let assets: Asset[] = [];
 
-    // ember-cli traditionally outputs a dummy testem.js file to prevent
-    // spurious errors when running tests under "ember s".
-    if (this.compatApp.shouldBuildTests) {
-      let testemAsset = this.findTestemAsset();
-      if (testemAsset) {
-        assets.push(testemAsset);
-      }
-    }
-
     for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
       assets.push(asset);
     }
 
     return assets;
-  }
-
-  @Memoize()
-  private findTestemAsset(): Asset | undefined {
-    let sourcePath;
-    try {
-      sourcePath = resolveSync('ember-cli/lib/broccoli/testem.js', { basedir: this.root });
-    } catch (err) {}
-    if (sourcePath) {
-      let stat = statSync(sourcePath);
-      return {
-        kind: 'on-disk',
-        relativePath: 'testem.js',
-        sourcePath,
-        mtime: stat.mtime.getTime(),
-        size: stat.size,
-      };
-    }
   }
 
   private activeAddonChildren(pkg: Package): AddonPackage[] {

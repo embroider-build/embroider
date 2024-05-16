@@ -141,11 +141,6 @@ export function renderEntrypoint(
   // for the top-level entry template we need to pass extra params to the template
   // this is new, it used to be passed into the appJS function instead
   if (isApp) {
-    // TODO figure out how to actually translate these
-    // Object.assign(params, {
-    //   appConfig: this.configTree.readConfig().APP,
-    // });
-
     const appBoot = readFileSync(join(locateEmbroiderWorkingDir(resolver.options.appRoot), 'ember-app-boot.js'), {
       encoding: 'utf-8',
     });
@@ -154,7 +149,6 @@ export function renderEntrypoint(
       autoRun: resolver.options.autoRun,
       appBoot,
       mainModule: './app',
-      appConfig: {},
     });
   }
 
@@ -168,6 +162,8 @@ const entryTemplate = compile(`
 import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
 let w = window;
 let d = w.define;
+
+import environment from './config/environment';
 
 {{#if styles}}
   if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
@@ -240,7 +236,7 @@ w._embroiderEngineBundles_ = [
 
 {{#if autoRun ~}}
 if (!runningTests) {
-  i("{{js-string-escape mainModule}}").default.create({{json-stringify appConfig}});
+  i("{{js-string-escape mainModule}}").default.create(environment.APP);
 }
 {{else  if appBoot ~}}
   {{ appBoot }}
@@ -263,7 +259,6 @@ if (!runningTests) {
   autoRun?: boolean;
   appBoot?: string;
   mainModule?: string;
-  appConfig?: unknown;
   testSuffix?: boolean;
   lazyRoutes?: { names: string[]; path: string }[];
   lazyEngines?: { names: string[]; path: string }[];

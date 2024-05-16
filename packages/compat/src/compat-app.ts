@@ -14,7 +14,7 @@ import ContentForConfig from './content-for-config';
 import { V1Config, WriteV1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo } from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync } from 'fs-extra';
+import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync, writeFileSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import type { TransformOptions } from '@babel/core';
@@ -452,6 +452,32 @@ export default class CompatApp {
         let destPath = join(outputPath, localDestPath);
         ensureDirSync(dirname(destPath));
         copySync(sourcePath, destPath);
+      }
+
+      if (this.shouldBuildTests) {
+        writeFileSync(
+          join(outputPath, 'testem.js'),
+          `/*
+ * This is dummy file that exists for the sole purpose
+ * of allowing tests to run directly in the browser as
+ * well as by Testem.
+ *
+ * Testem is configured to run tests directly against
+ * the test build of index.html, which requires a
+ * snippet to load the testem.js file:
+ *   <script src="/testem.js"></script>
+ * This has to go before the qunit framework and app
+ * tests are loaded.
+ *
+ * Testem internally supplies this file. However, if you
+ * run the tests directly in the browser (localhost:8000/tests),
+ * this file does not exist.
+ *
+ * Hence the purpose of this fake file. This file is served
+ * directly from the express server to satisify the script load.
+*/`
+        );
+        this._publicAssets['/testem.js'] = './testem.js';
       }
 
       let remapAsset = this.remapAsset.bind(this);

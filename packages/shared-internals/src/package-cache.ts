@@ -66,7 +66,14 @@ export default class PackageCache {
     return p;
   }
 
-  ownerOfFile(filename: string): Package | undefined {
+  ownerOfFile(filenameInput: string): Package | undefined {
+    let filename = filenameInput;
+    const virtualPrefix = 'embroider_virtual:';
+
+    if (filename.includes(virtualPrefix)) {
+      filename = filename.replace(/^.*embroider_virtual:/, '');
+    }
+
     let segments = filename.replace(/\\/g, '/').split(posix.sep);
 
     // first we look through our cached packages for any that are rooted right

@@ -132,6 +132,8 @@ Scenarios.fromProject(() => new Project())
                 roots: [app.dir],
               },
             ],
+            autoRun: true,
+            staticAppPaths: [],
           };
 
           givenFiles({

@@ -23,6 +23,7 @@ export class AppFiles {
     appFiles: Set<string>,
     fastbootFiles: Set<string>,
     resolvableExtensions: RegExp,
+    staticAppPathsPattern: RegExp | undefined,
     podModulePrefix?: string
   ) {
     let tests: string[] = [];
@@ -114,7 +115,13 @@ export class AppFiles {
         continue;
       }
 
-      otherAppFiles.push(relativePath);
+      if (staticAppPathsPattern) {
+        if (!staticAppPathsPattern.test(relativePath)) {
+          otherAppFiles.push(relativePath);
+        }
+      } else {
+        otherAppFiles.push(relativePath);
+      }
     }
     this.tests = tests;
     this.components = components;

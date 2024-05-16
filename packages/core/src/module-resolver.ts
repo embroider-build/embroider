@@ -26,6 +26,7 @@ import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import type UserOptions from './options';
 import { nodeResolve } from './node-resolve';
+import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -91,8 +92,11 @@ export interface Options {
   appRoot: string;
   engines: EngineConfig[];
   modulePrefix: string;
+  splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
+  autoRun: boolean;
+  staticAppPaths: string[];
 }
 
 // TODO: once we can remove the stage2 entrypoint this type can get streamlined
@@ -196,6 +200,8 @@ export class Resolver {
     request = this.handleImplicitTestScripts(request);
     request = this.handleVendorStyles(request);
     request = this.handleTestSupportStyles(request);
+    request = this.handleEntrypoint(request);
+    request = this.handleRouteEntrypoint(request);
     request = this.handleRenaming(request);
     request = this.handleVendor(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
@@ -423,6 +429,67 @@ export class Resolver {
         request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
       );
     }
+  }
+
+  private handleEntrypoint<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+    // TODO: also handle targeting from the outside (for engines) like:
+    // request.specifier === 'my-package-name/-embroider-entrypoint.js'
+    // just like implicit-modules does.
+
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = ['@embroider/core/entrypoint', '/@embroider/core/entrypoint', './@embroider/core/entrypoint'];
+
+    if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
+      return request;
+    }
+
+    const result = /\.?\/?@embroider\/core\/entrypoint(?:\/(?<packageName>.*))?/.exec(request.specifier);
+
+    if (!result) {
+      // TODO make a better error
+      throw new Error('entrypoint does not match pattern' + request.specifier);
+    }
+
+    const { packageName } = result.groups!;
+
+    const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!requestingPkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    let pkg;
+
+    if (packageName) {
+      pkg = this.packageCache.resolve(packageName, requestingPkg);
+    } else {
+      pkg = requestingPkg;
+    }
+
+    return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
+  }
+
+  private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+
+    let routeName = decodePublicRouteEntrypoint(request.specifier);
+
+    if (!routeName) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    return logTransition('route entrypoint', request, request.virtualize(encodeRouteEntrypoint(pkg.root, routeName)));
   }
 
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {

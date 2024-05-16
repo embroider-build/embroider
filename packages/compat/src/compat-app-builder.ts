@@ -51,6 +51,7 @@ import type { Package, PackageInfo } from '@embroider/core';
 import { ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
 import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
+import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
@@ -279,6 +280,7 @@ export class CompatAppBuilder {
       activePackageRules: this.activeRules(),
       options,
       autoRun: this.compatApp.autoRun,
+      staticAppPaths: this.options.staticAppPaths,
     };
 
     return config;
@@ -546,9 +548,19 @@ export class CompatAppBuilder {
           appSync.files,
           fastbootSync?.files ?? new Set(),
           this.resolvableExtensionsPattern,
+          this.staticAppPathsPattern,
           this.podModulePrefix()
         )
     );
+  }
+
+  @Memoize()
+  private get staticAppPathsPattern(): RegExp | undefined {
+    if (this.options.staticAppPaths.length > 0) {
+      return new RegExp(
+        '^(?:' + this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath)).join('|') + ')(?:$|/)'
+      );
+    }
   }
 
   private prepareAsset(asset: Asset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>) {

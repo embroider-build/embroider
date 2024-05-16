@@ -700,7 +700,7 @@ stage2Scenarios
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
-            return !/my-app\/static-dir\/my-library\.js"/.test(content);
+            return !/\.\/static-dir\/my-library\.js"/.test(content);
           });
       });
 
@@ -710,7 +710,7 @@ stage2Scenarios
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
-            return !content.includes('my-app/top-level-static.js');
+            return !content.includes('./top-level-static.js');
           });
       });
 

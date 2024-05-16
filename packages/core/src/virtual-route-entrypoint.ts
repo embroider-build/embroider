@@ -5,7 +5,7 @@ import { resolve } from 'path';
 import { compile } from './js-handlebars';
 import { extensionsPattern } from '@embroider/shared-internals';
 import { partition } from 'lodash';
-import { getAppFiles, getFastbootFiles, importPaths, splitRoute } from './virtual-entrypoint';
+import { getAppFiles, getFastbootFiles, importPaths, splitRoute, staticAppPathsPattern } from './virtual-entrypoint';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-route-entrypoint.js:route=(?<route>.*)/;
 
@@ -70,6 +70,7 @@ export function renderRouteEntrypoint(
     getAppFiles(owner.root),
     hasFastboot ? getFastbootFiles(owner.root) : new Set(),
     extensionsPattern(resolver.options.resolvableExtensions),
+    staticAppPathsPattern(resolver.options.staticAppPaths),
     resolver.options.podModulePrefix
   );
 

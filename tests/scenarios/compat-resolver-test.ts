@@ -101,6 +101,7 @@ Scenarios.fromProject(() => new Project())
               },
             ],
             autoRun: true,
+            staticAppPaths: [],
           };
 
           givenFiles({

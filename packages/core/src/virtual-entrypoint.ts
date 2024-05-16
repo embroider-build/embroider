@@ -9,6 +9,7 @@ import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
 import { readFileSync } from 'fs-extra';
+import escapeRegExp from 'escape-string-regexp';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
 
@@ -22,6 +23,12 @@ export function decodeEntrypoint(filename: string): { fromFile: string } | undef
     return {
       fromFile: m.groups!.filename,
     };
+  }
+}
+
+export function staticAppPathsPattern(staticAppPaths: string[] | undefined): RegExp | undefined {
+  if (staticAppPaths && staticAppPaths.length > 0) {
+    return new RegExp('^(?:' + staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath)).join('|') + ')(?:$|/)');
   }
 }
 
@@ -58,6 +65,7 @@ export function renderEntrypoint(
     getAppFiles(owner.root),
     hasFastboot ? getFastbootFiles(owner.root) : new Set(),
     extensionsPattern(resolver.options.resolvableExtensions),
+    staticAppPathsPattern(resolver.options.staticAppPaths),
     resolver.options.podModulePrefix
   );
 

@@ -96,6 +96,7 @@ export interface Options {
   podModulePrefix?: string;
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
   autoRun: boolean;
+  staticAppPaths: string[];
 }
 
 // TODO: once we can remove the stage2 entrypoint this type can get streamlined

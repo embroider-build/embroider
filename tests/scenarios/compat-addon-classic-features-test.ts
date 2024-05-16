@@ -82,7 +82,7 @@ appScenarios
               {{content-for "custom"}}
           
               <script src="/@embroider/core/vendor.js"></script>
-              <script src="{{rootURL}}assets/app-template.js"></script>
+              <script src="/@embroider/core/entrypoint" type="module"></script>
           
               {{content-for "body-footer"}}
             </body>

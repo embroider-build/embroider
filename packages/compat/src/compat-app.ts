@@ -727,12 +727,11 @@ export default class CompatApp {
   }
 
   findAppScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
-    let appJS = scripts.find(
-      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.app.js
-    );
+    let moduleName = '/@embroider/core/entrypoint';
+    let appJS = scripts.find(script => this.withoutRootURL(script.src) === moduleName);
     return throwIfMissing(
       appJS,
-      this.legacyEmberAppInstance.options.outputPaths.app.js,
+      moduleName,
       scripts.map(s => s.src),
       entrypoint,
       'app javascript'

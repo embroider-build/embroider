@@ -9,6 +9,8 @@ import { distance } from 'fastest-levenshtein';
 import { sortBy } from 'lodash';
 import { getRewrittenLocation } from './rewritten-path';
 
+export { Import };
+
 /*
   The audit tool in @embroider/compat can be used directly to tell you about
   potential problems in an app that is trying to adopt embroider. But we also
@@ -19,17 +21,16 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
   let result: { modules: { [file: string]: Module }; findings: Finding[] };
   let expectAudit: ExpectAuditResults;
 
-  hooks.before(async () => {
+  async function visit() {
     let o = opts();
     if ('appURL' in o) {
       result = await httpAudit(o);
     } else {
       result = await Audit.run(o);
     }
-  });
+  }
 
-  hooks.beforeEach(assert => {
-    installAuditAssertions(assert);
+  function prepareResult(assert: Assert) {
     let o = opts();
     let pathRewriter: (p: string) => string;
     if ('appURL' in o) {
@@ -38,14 +39,30 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
       pathRewriter = p => getRewrittenLocation(o.app, p);
     }
     expectAudit = new ExpectAuditResults(result, assert, pathRewriter);
+  }
+
+  hooks.before(async () => {
+    await visit();
+  });
+
+  hooks.beforeEach(assert => {
+    installAuditAssertions(assert);
+    prepareResult(assert);
   });
 
   return {
+    async rerun() {
+      await visit();
+      prepareResult(expectAudit.assert);
+    },
     module(name: string) {
       return expectAudit.module(name);
     },
     get findings() {
       return expectAudit.findings;
+    },
+    get modules() {
+      return expectAudit.result.modules;
     },
     hasNoFindings() {
       return expectAudit.hasNoProblems();

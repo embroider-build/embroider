@@ -710,6 +710,7 @@ export class CompatAppBuilder {
     this.addResolverConfig(resolverConfig);
     this.addContentForConfig(this.contentForTree.readContents());
     this.addEmberEnvConfig(this.configTree.readConfig().EmberENV);
+    this.addAppBoot(this.compatApp.appBoot.readAppBoot());
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
@@ -817,6 +818,10 @@ export class CompatAppBuilder {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'ember-env.json'), emberEnvConfig, {
       spaces: 2,
     });
+  }
+
+  private addAppBoot(appBoot?: string) {
+    writeFileSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'ember-app-boot.js'), appBoot ?? '');
   }
 
   private importPaths({ engine }: AppFiles, engineRelativePath: string) {

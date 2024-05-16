@@ -4,10 +4,11 @@ import type { Resolver } from './module-resolver';
 import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
 import { join } from 'path';
-import { extensionsPattern } from '@embroider/shared-internals';
+import { extensionsPattern, locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
+import { readFileSync } from 'fs-extra';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
 
@@ -142,14 +143,16 @@ export function renderEntrypoint(
   if (isApp) {
     // TODO figure out how to actually translate these
     // Object.assign(params, {
-    //   autoRun: this.compatApp.autoRun,
-    //   appBoot: !this.compatApp.autoRun ? this.compatApp.appBoot.readAppBoot() : '',
-    //   mainModule: explicitRelative(dirname(relativePath), 'app'),
     //   appConfig: this.configTree.readConfig().APP,
     // });
+
+    const appBoot = readFileSync(join(locateEmbroiderWorkingDir(resolver.options.appRoot), 'ember-app-boot.js'), {
+      encoding: 'utf-8',
+    });
+
     Object.assign(params, {
       autoRun: resolver.options.autoRun,
-      appBoot: '',
+      appBoot,
       mainModule: './app',
       appConfig: {},
     });

@@ -738,25 +738,6 @@ export default class CompatApp {
     );
   }
 
-  findVendorStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
-    let vendorStyle = styles.find(
-      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.vendor.css
-    );
-    return throwIfMissing(
-      vendorStyle,
-      this.legacyEmberAppInstance.options.outputPaths.vendor.css,
-      styles.map(s => s.href),
-      entrypoint,
-      'vendor css'
-    );
-  }
-
-  findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(
-      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.testSupport.css
-    );
-  }
-
   findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
     return scripts.find(
       script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.tests.js

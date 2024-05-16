@@ -12,7 +12,6 @@ export interface EmberHTML {
   javascript: Node;
   styles: Node;
   implicitScripts: Node;
-  implicitStyles: Node;
 
   // these are optional because you *may* choose to stick your implicit test
   // things into specific locations (which we need for backward-compat). But you
@@ -80,7 +79,6 @@ export class PreparedEmberHTML {
   javascript: Placeholder;
   styles: Placeholder;
   implicitScripts: Placeholder;
-  implicitStyles: Placeholder;
   testJavascript: Placeholder;
 
   constructor(private asset: EmberAsset) {
@@ -89,14 +87,13 @@ export class PreparedEmberHTML {
     this.javascript = Placeholder.replacing(html.javascript);
     this.styles = Placeholder.replacing(html.styles);
     this.implicitScripts = Placeholder.find(html.implicitScripts);
-    this.implicitStyles = Placeholder.replacing(html.implicitStyles);
     this.testJavascript = html.testJavascript
       ? Placeholder.replacing(html.testJavascript)
       : Placeholder.immediatelyAfter(this.javascript.end);
   }
 
   private placeholders(): Placeholder[] {
-    return [this.javascript, this.styles, this.implicitScripts, this.implicitStyles, this.testJavascript];
+    return [this.javascript, this.styles, this.implicitScripts, this.testJavascript];
   }
 
   clear() {

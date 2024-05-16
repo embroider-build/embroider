@@ -212,7 +212,6 @@ export class CompatAppBuilder {
             javascript: this.compatApp.findAppScript(scripts, entrypoint),
             styles: this.compatApp.findAppStyles(styles, entrypoint),
             implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
-            implicitStyles: this.compatApp.findVendorStyles(styles, entrypoint),
             testJavascript: this.compatApp.findTestScript(scripts),
           };
         },
@@ -462,9 +461,6 @@ export class CompatAppBuilder {
         html.insertScriptTag(html.implicitScripts, script, { tag: 'fastboot-script' });
       }
     }
-
-    // virtual vendor.css entrypoint
-    html.insertStyleLink(html.implicitStyles, '@embroider/core/vendor.css');
 
     if (!asset.fileAsset.includeTests) {
       return;

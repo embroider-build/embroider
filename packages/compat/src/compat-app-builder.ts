@@ -381,12 +381,6 @@ export class CompatAppBuilder {
       });
     }
 
-    // our tests entrypoint already includes a correct module dependency on the
-    // app, so we only insert the app when we're not inserting tests
-    if (!asset.fileAsset.includeTests) {
-      html.insertScriptTag(html.javascript, '@embroider/core/entrypoint', { type: 'module' });
-    }
-
     if (this.fastbootConfig) {
       // any extra fastboot app files get inserted into our html.javascript
       // section, after the app has been inserted.

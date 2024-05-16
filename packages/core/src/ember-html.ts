@@ -84,7 +84,7 @@ export class PreparedEmberHTML {
   constructor(private asset: EmberAsset) {
     this.dom = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
     let html = asset.prepare(this.dom);
-    this.javascript = Placeholder.replacing(html.javascript);
+    this.javascript = Placeholder.find(html.javascript);
     this.styles = Placeholder.replacing(html.styles);
     this.implicitScripts = Placeholder.find(html.implicitScripts);
     this.testJavascript = html.testJavascript

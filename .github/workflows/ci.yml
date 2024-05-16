@@ -49,6 +49,15 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           use_lockfile: false
+      - name: setup windows tmp dir
+        if: runner.os == 'Windows'
+        working-directory: ${{ matrix.dir }}
+        run: 
+          $currentPath=(Get-Item .).FullName;
+          $tmpPath = Join-Path $currentPath "tmp";
+          echo "TMP=$tmpPath" >> "$GITHUB_ENV";
+          echo "TEMP=$tmpPath" >> "$GITHUB_ENV";
+          mkdir "tmp";
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}

@@ -1,7 +1,7 @@
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { AppFiles } from './app-files';
 import type { Resolver } from './module-resolver';
-import { resolve } from 'path/posix';
+import { resolve } from 'path';
 import { compile } from './js-handlebars';
 import { extensionsPattern } from '@embroider/shared-internals';
 import { partition } from 'lodash';

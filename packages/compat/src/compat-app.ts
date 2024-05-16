@@ -727,12 +727,11 @@ export default class CompatApp {
   }
 
   findVendorScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
-    let vendor = scripts.find(
-      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.vendor.js
-    );
+    const vendorScript = '/@embroider/core/vendor.js';
+    let vendor = scripts.find(script => this.withoutRootURL(script.src) === vendorScript);
     return throwIfMissing(
       vendor,
-      this.legacyEmberAppInstance.options.outputPaths.vendor.js,
+      vendorScript,
       scripts.map(s => s.src),
       entrypoint,
       'vendor javascript'

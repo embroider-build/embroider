@@ -27,6 +27,11 @@ export interface EmberHTML {
 }
 
 class Placeholder {
+  static find(node: Node): Placeholder {
+    let placeholder = this.immediatelyAfter(node);
+    return placeholder;
+  }
+
   static replacing(node: Node): Placeholder {
     let placeholder = this.immediatelyAfter(node);
     node.parentElement!.removeChild(node);
@@ -87,7 +92,7 @@ export class PreparedEmberHTML {
     let html = asset.prepare(this.dom);
     this.javascript = Placeholder.replacing(html.javascript);
     this.styles = Placeholder.replacing(html.styles);
-    this.implicitScripts = Placeholder.replacing(html.implicitScripts);
+    this.implicitScripts = Placeholder.find(html.implicitScripts);
     this.implicitStyles = Placeholder.replacing(html.implicitStyles);
     this.testJavascript = html.testJavascript
       ? Placeholder.replacing(html.testJavascript)

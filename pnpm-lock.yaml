@@ -1972,6 +1972,165 @@ importers:
         specifier: ^5.88.2
         version: 5.91.0
 
+  tests/ts-app-template-classic:
+    devDependencies:
+      '@babel/core':
+        specifier: ^7.22.20
+        version: 7.24.5
+      '@babel/eslint-parser':
+        specifier: ^7.21.3
+        version: 7.24.5(@babel/core@7.24.5)(eslint@8.57.0)
+      '@babel/plugin-proposal-decorators':
+        specifier: ^7.21.0
+        version: 7.24.1(@babel/core@7.24.5)
+      '@ember/optional-features':
+        specifier: ^2.0.0
+        version: 2.1.0
+      '@ember/string':
+        specifier: ^3.1.1
+        version: 3.1.1
+      '@ember/test-helpers':
+        specifier: ^3.2.0
+        version: 3.3.0(@glint/template@1.4.0)(ember-source@5.3.0)(webpack@5.91.0)
+      '@embroider/compat':
+        specifier: workspace:*
+        version: link:../../packages/compat
+      '@embroider/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@embroider/router':
+        specifier: workspace:*
+        version: link:../../packages/router
+      '@embroider/test-setup':
+        specifier: workspace:*
+        version: link:../../packages/test-setup
+      '@embroider/vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
+      '@glimmer/component':
+        specifier: ^1.1.2
+        version: 1.1.2(@babel/core@7.24.5)
+      '@glimmer/interfaces':
+        specifier: ^0.84.2
+        version: 0.84.3
+      '@glimmer/reference':
+        specifier: ^0.84.2
+        version: 0.84.3
+      '@glimmer/tracking':
+        specifier: ^1.1.2
+        version: 1.1.2
+      '@glint/environment-ember-loose':
+        specifier: ^1.1.0
+        version: 1.4.0(@glimmer/component@1.1.2)(@glint/template@1.4.0)(ember-cli-htmlbars@6.3.0)(ember-modifier@4.1.0)
+      '@glint/template':
+        specifier: ^1.1.0
+        version: 1.4.0
+      '@rollup/plugin-babel':
+        specifier: ^5.3.1
+        version: 5.3.1(@babel/core@7.24.5)(rollup@3.29.4)
+      '@tsconfig/ember':
+        specifier: ^1.0.0
+        version: 1.0.1
+      '@types/htmlbars-inline-precompile':
+        specifier: ^3.0.0
+        version: 3.0.3
+      '@types/qunit':
+        specifier: ^2.19.6
+        version: 2.19.10
+      '@types/rsvp':
+        specifier: ^4.0.4
+        version: 4.0.9
+      broccoli-asset-rev:
+        specifier: ^3.0.0
+        version: 3.0.0
+      concurrently:
+        specifier: ^8.2.1
+        version: 8.2.2
+      ember-auto-import:
+        specifier: ^2.6.3
+        version: 2.7.2(@glint/template@1.4.0)(webpack@5.91.0)
+      ember-cli:
+        specifier: ~5.3.0
+        version: 5.3.0
+      ember-cli-app-version:
+        specifier: ^6.0.1
+        version: 6.0.1(ember-source@5.3.0)
+      ember-cli-babel:
+        specifier: ^8.0.0
+        version: 8.2.0(@babel/core@7.24.5)
+      ember-cli-clean-css:
+        specifier: ^3.0.0
+        version: 3.0.0
+      ember-cli-dependency-checker:
+        specifier: ^3.3.2
+        version: 3.3.2(ember-cli@5.3.0)
+      ember-cli-htmlbars:
+        specifier: ^6.3.0
+        version: 6.3.0
+      ember-cli-inject-live-reload:
+        specifier: ^2.1.0
+        version: 2.1.0
+      ember-cli-sri:
+        specifier: ^2.1.1
+        version: 2.1.1
+      ember-cli-terser:
+        specifier: ^4.0.2
+        version: 4.0.2
+      ember-load-initializers:
+        specifier: ^2.1.2
+        version: 2.1.2(@babel/core@7.24.5)
+      ember-modifier:
+        specifier: ^4.1.0
+        version: 4.1.0(ember-source@5.3.0)
+      ember-page-title:
+        specifier: ^8.0.0
+        version: 8.2.3(ember-source@5.3.0)
+      ember-qunit:
+        specifier: ^8.0.1
+        version: 8.0.2(@ember/test-helpers@3.3.0)(@glint/template@1.4.0)(ember-source@5.3.0)(qunit@2.20.1)
+      ember-resolver:
+        specifier: ^11.0.1
+        version: 11.0.1(ember-source@5.3.0)
+      ember-source:
+        specifier: ~5.3.0
+        version: 5.3.0(@babel/core@7.24.5)(@glimmer/component@1.1.2)(@glint/template@1.4.0)(webpack@5.91.0)
+      eslint-plugin-n:
+        specifier: ^16.1.0
+        version: 16.6.2(eslint@8.57.0)
+      loader.js:
+        specifier: ^4.7.0
+        version: 4.7.0
+      prettier:
+        specifier: ^3.0.3
+        version: 3.2.5
+      qunit:
+        specifier: ^2.19.4
+        version: 2.20.1
+      qunit-dom:
+        specifier: ^2.0.0
+        version: 2.0.0
+      stylelint:
+        specifier: ^15.10.3
+        version: 15.11.0(typescript@5.4.5)
+      stylelint-config-standard:
+        specifier: ^34.0.0
+        version: 34.0.0(stylelint@15.11.0)
+      stylelint-prettier:
+        specifier: ^4.0.2
+        version: 4.1.0(prettier@3.2.5)(stylelint@15.11.0)
+      tracked-built-ins:
+        specifier: ^3.2.0
+        version: 3.3.0
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
+      vite:
+        specifier: ^5.1.5
+        version: 5.2.11
+      webpack:
+        specifier: ^5.88.2
+        version: 5.91.0
+
   tests/v2-addon-template:
     dependencies:
       '@embroider/addon-shim':
@@ -8171,6 +8330,9 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
     dependencies:
       ajv: 8.13.0
 

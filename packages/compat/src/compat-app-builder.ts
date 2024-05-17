@@ -488,15 +488,7 @@ export class CompatAppBuilder {
 
   private prepareAsset(asset: Asset, prepared: Map<string, InternalAsset>) {
     if (asset.kind === 'ember') {
-      let prior = this.assets.get(asset.relativePath);
-      let parsed: ParsedEmberAsset;
-      if (prior && prior.kind === 'built-ember' && prior.parsedAsset.validFor(asset)) {
-        // we can reuse the parsed html
-        parsed = prior.parsedAsset;
-      } else {
-        parsed = new ParsedEmberAsset(asset);
-      }
-      prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
+      prepared.set(asset.relativePath, new BuiltEmberAsset(asset));
     } else {
       prepared.set(asset.relativePath, asset);
     }
@@ -536,6 +528,7 @@ export class CompatAppBuilder {
     writeFileSync(destination, asset.source, 'utf8');
   }
 
+  // This function is the one writting the index.html in the rewritten-app
   private updateBuiltEmberAsset(asset: BuiltEmberAsset) {
     let destination = join(this.root, asset.relativePath);
     ensureDirSync(dirname(destination));
@@ -832,32 +825,13 @@ interface TreeNames {
 
 type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset;
 
-class ParsedEmberAsset {
-  kind: 'parsed-ember' = 'parsed-ember';
-  relativePath: string;
-  fileAsset: EmberAsset;
-  html: JSDOM;
-
-  constructor(asset: EmberAsset) {
-    this.fileAsset = asset;
-    this.html = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
-    this.relativePath = asset.relativePath;
-  }
-
-  validFor(other: EmberAsset) {
-    return this.fileAsset.mtime === other.mtime && this.fileAsset.size === other.size;
-  }
-}
-
 class BuiltEmberAsset {
   kind: 'built-ember' = 'built-ember';
   relativePath: string;
-  parsedAsset: ParsedEmberAsset;
   source: string;
 
-  constructor(asset: ParsedEmberAsset) {
-    this.parsedAsset = asset;
-    this.source = asset.html.serialize();
+  constructor(asset: EmberAsset) {
+    this.source = new JSDOM(readFileSync(asset.sourcePath, 'utf8')).serialize();
     this.relativePath = asset.relativePath;
   }
 }

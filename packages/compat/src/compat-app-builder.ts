@@ -177,7 +177,6 @@ export class CompatAppBuilder {
           return {
             javascript: this.compatApp.findAppScript(scripts, entrypoint),
             implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
-            testJavascript: this.compatApp.findTestScript(scripts),
           };
         },
       };
@@ -367,13 +366,6 @@ export class CompatAppBuilder {
         html.insertScriptTag(html.implicitScripts, script, { tag: 'fastboot-script' });
       }
     }
-
-    if (!asset.fileAsset.includeTests) {
-      return;
-    }
-
-    // Test-related assets happen below this point
-    html.insertScriptTag(html.javascript, '@embroider/core/test-entrypoint', { type: 'module' });
   }
 
   // recurse to find all active addons that don't cross an engine boundary.

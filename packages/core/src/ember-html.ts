@@ -77,20 +77,16 @@ export class PreparedEmberHTML {
   dom: JSDOM;
   javascript: Placeholder;
   implicitScripts: Placeholder;
-  testJavascript: Placeholder;
 
   constructor(private asset: EmberAsset) {
     this.dom = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
     let html = asset.prepare(this.dom);
     this.javascript = Placeholder.find(html.javascript);
     this.implicitScripts = Placeholder.find(html.implicitScripts);
-    this.testJavascript = html.testJavascript
-      ? Placeholder.replacing(html.testJavascript)
-      : Placeholder.immediatelyAfter(this.javascript.end);
   }
 
   private placeholders(): Placeholder[] {
-    return [this.javascript, this.implicitScripts, this.testJavascript];
+    return [this.javascript, this.implicitScripts];
   }
 
   clear() {

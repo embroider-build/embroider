@@ -738,19 +738,6 @@ export default class CompatApp {
     );
   }
 
-  findAppStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
-    let style = styles.find(
-      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.app.css.app
-    );
-    return throwIfMissing(
-      style,
-      this.legacyEmberAppInstance.options.outputPaths.app.css.app,
-      styles.map(s => s.href),
-      entrypoint,
-      'app css'
-    );
-  }
-
   findVendorScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
     const vendorScript = '/@embroider/core/vendor.js';
     let vendor = scripts.find(script => this.withoutRootURL(script.src) === vendorScript);

@@ -21,7 +21,7 @@ import {
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
 import { resolve as resolvePath } from 'path';
-import type { JSDOM } from 'jsdom';
+import { JSDOM } from 'jsdom';
 import type Options from './options';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
@@ -30,11 +30,19 @@ import flatMap from 'lodash/flatMap';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import bind from 'bind-decorator';
-import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync, realpathSync } from 'fs-extra';
+import {
+  outputJSONSync,
+  readFileSync,
+  readJSONSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+  realpathSync,
+} from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
 import type { InMemoryAsset, OnDiskAsset } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
 import { AppFiles } from '@embroider/core/src/app-files';
@@ -172,13 +180,6 @@ export class CompatAppBuilder {
         mtime: stats.mtime.getTime(),
         size: stats.size,
         rootURL: this.rootURL(),
-        prepare: (dom: JSDOM) => {
-          let scripts = [...dom.window.document.querySelectorAll('script')];
-          return {
-            javascript: this.compatApp.findAppScript(scripts, entrypoint),
-            implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
-          };
-        },
       };
       yield asset;
     }
@@ -492,7 +493,6 @@ export class CompatAppBuilder {
       if (prior && prior.kind === 'built-ember' && prior.parsedAsset.validFor(asset)) {
         // we can reuse the parsed html
         parsed = prior.parsedAsset;
-        parsed.html.clear();
       } else {
         parsed = new ParsedEmberAsset(asset);
       }
@@ -833,11 +833,11 @@ class ParsedEmberAsset {
   kind: 'parsed-ember' = 'parsed-ember';
   relativePath: string;
   fileAsset: EmberAsset;
-  html: PreparedEmberHTML;
+  html: JSDOM;
 
   constructor(asset: EmberAsset) {
     this.fileAsset = asset;
-    this.html = new PreparedEmberHTML(asset);
+    this.html = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
     this.relativePath = asset.relativePath;
   }
 
@@ -854,7 +854,7 @@ class BuiltEmberAsset {
 
   constructor(asset: ParsedEmberAsset) {
     this.parsedAsset = asset;
-    this.source = asset.html.dom.serialize();
+    this.source = asset.html.serialize();
     this.relativePath = asset.relativePath;
   }
 }

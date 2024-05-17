@@ -340,23 +340,6 @@ export class CompatAppBuilder {
 
   private insertEmberApp(asset: ParsedEmberAsset) {
     let html = asset.html;
-
-    if (this.fastbootConfig) {
-      // any extra fastboot app files get inserted into our html.javascript
-      // section, after the app has been inserted.
-      for (let script of this.fastbootConfig.extraAppFiles) {
-        html.insertScriptTag(html.javascript, script, { tag: 'fastboot-script' });
-      }
-    }
-
-    if (this.fastbootConfig) {
-      // any extra fastboot vendor files get inserted into our
-      // html.implicitScripts section, after the regular implicit script
-      // (vendor.js) have been inserted.
-      for (let script of this.fastbootConfig.extraVendorFiles) {
-        html.insertScriptTag(html.implicitScripts, script, { tag: 'fastboot-script' });
-      }
-    }
   }
 
   // recurse to find all active addons that don't cross an engine boundary.
@@ -649,6 +632,7 @@ export class CompatAppBuilder {
     this.addContentForConfig(this.contentForTree.readContents());
     this.addEmberEnvConfig(this.configTree.readConfig().EmberENV);
     this.addAppBoot(this.compatApp.appBoot.readAppBoot());
+    this.addFastbootConfig(this.fastbootConfig);
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     writeFileSync(
@@ -756,6 +740,19 @@ export class CompatAppBuilder {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'ember-env.json'), emberEnvConfig, {
       spaces: 2,
     });
+  }
+
+  private addFastbootConfig(fastbootConfig: any) {
+    if (fastbootConfig) {
+      let { extraAppFiles, extraVendorFiles } = fastbootConfig;
+      outputJSONSync(
+        join(locateEmbroiderWorkingDir(this.compatApp.root), 'fastboot.json'),
+        { extraAppFiles, extraVendorFiles },
+        {
+          spaces: 2,
+        }
+      );
+    }
   }
 
   private addAppBoot(appBoot?: string) {

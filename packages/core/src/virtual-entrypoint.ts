@@ -156,7 +156,6 @@ export function renderEntrypoint(
     Object.assign(params, {
       autoRun: resolver.options.autoRun,
       appBoot,
-      mainModule: './app',
     });
   }
 
@@ -243,21 +242,9 @@ w._embroiderEngineBundles_ = [
 {{/if}}
 
 {{#if autoRun ~}}
-if (!runningTests) {
-  i("{{js-string-escape mainModule}}").default.create(environment.APP);
-}
+  i("./app").default.create(environment.APP);
 {{else  if appBoot ~}}
   {{ appBoot }}
-{{/if}}
-
-{{#if testSuffix ~}}
-  {{!- TODO: both of these suffixes should get dynamically generated so they incorporate
-       any content-for added by addons. -}}
-
-
-  {{!- this is the traditional tests-suffix.js -}}
-  i('../tests/test-helper');
-  EmberENV.TESTS_FILE_LOADED = true;
 {{/if}}
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
@@ -266,8 +253,6 @@ if (!runningTests) {
   eagerModules?: string[];
   autoRun?: boolean;
   appBoot?: string;
-  mainModule?: string;
-  testSuffix?: boolean;
   lazyRoutes?: { names: string[]; path: string }[];
   lazyEngines?: { names: string[]; path: string }[];
   styles?: { path: string }[];

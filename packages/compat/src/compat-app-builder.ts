@@ -338,10 +338,6 @@ export class CompatAppBuilder {
     return portable;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset) {
-    let html = asset.html;
-  }
-
   // recurse to find all active addons that don't cross an engine boundary.
   // Inner engines themselves will be returned, but not those engines' children.
   // The output set's insertion order is the proper ember-cli compatible
@@ -500,7 +496,6 @@ export class CompatAppBuilder {
       } else {
         parsed = new ParsedEmberAsset(asset);
       }
-      this.insertEmberApp(parsed);
       prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
     } else {
       prepared.set(asset.relativePath, asset);

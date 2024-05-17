@@ -20,7 +20,7 @@ import {
   Resolver,
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
-import { resolve as resolvePath, posix } from 'path';
+import { resolve as resolvePath } from 'path';
 import type { JSDOM } from 'jsdom';
 import type Options from './options';
 import type { CompatResolverOptions } from './resolver-transform';
@@ -341,7 +341,7 @@ export class CompatAppBuilder {
     return portable;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>) {
+  private insertEmberApp(asset: ParsedEmberAsset) {
     let html = asset.html;
 
     if (this.fastbootConfig) {
@@ -377,9 +377,7 @@ export class CompatAppBuilder {
     }
 
     // Test-related assets happen below this point
-
-    let testJS = this.testJSEntrypoint(appFiles, prepared);
-    html.insertScriptTag(html.testJavascript, testJS.relativePath, { type: 'module' });
+    html.insertScriptTag(html.javascript, '@embroider/core/test-entrypoint', { type: 'module' });
   }
 
   // recurse to find all active addons that don't cross an engine boundary.
@@ -529,7 +527,7 @@ export class CompatAppBuilder {
     }
   }
 
-  private prepareAsset(asset: Asset, appFiles: AppFiles[], prepared: Map<string, InternalAsset>) {
+  private prepareAsset(asset: Asset, prepared: Map<string, InternalAsset>) {
     if (asset.kind === 'ember') {
       let prior = this.assets.get(asset.relativePath);
       let parsed: ParsedEmberAsset;
@@ -540,17 +538,17 @@ export class CompatAppBuilder {
       } else {
         parsed = new ParsedEmberAsset(asset);
       }
-      this.insertEmberApp(parsed, appFiles, prepared);
+      this.insertEmberApp(parsed);
       prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
     } else {
       prepared.set(asset.relativePath, asset);
     }
   }
 
-  private prepareAssets(requestedAssets: Asset[], appFiles: AppFiles[]): Map<string, InternalAsset> {
+  private prepareAssets(requestedAssets: Asset[]): Map<string, InternalAsset> {
     let prepared: Map<string, InternalAsset> = new Map();
     for (let asset of requestedAssets) {
-      this.prepareAsset(asset, appFiles, prepared);
+      this.prepareAsset(asset, prepared);
     }
     return prepared;
   }
@@ -587,8 +585,8 @@ export class CompatAppBuilder {
     writeFileSync(destination, asset.source, 'utf8');
   }
 
-  private async updateAssets(requestedAssets: Asset[], appFiles: AppFiles[]): Promise<void> {
-    let assets = this.prepareAssets(requestedAssets, appFiles);
+  private async updateAssets(requestedAssets: Asset[]): Promise<void> {
+    let assets = this.prepareAssets(requestedAssets);
     for (let asset of assets.values()) {
       if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
         continue;
@@ -656,7 +654,7 @@ export class CompatAppBuilder {
     let appFiles = this.updateAppJS(inputPaths.appJS);
     let assets = this.gatherAssets(inputPaths);
 
-    await this.updateAssets(assets, appFiles);
+    await this.updateAssets(assets);
 
     let assetPaths = assets.map(asset => asset.relativePath);
 
@@ -801,49 +799,6 @@ export class CompatAppBuilder {
   private addAppBoot(appBoot?: string) {
     writeFileSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'ember-app-boot.js'), appBoot ?? '');
   }
-
-  private importPaths({ engine }: AppFiles, engineRelativePath: string) {
-    let noHBS = engineRelativePath.replace(this.resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
-    return {
-      runtime: `${engine.modulePrefix}/${noHBS}`,
-      buildtime: posix.join(engine.package.name, engineRelativePath),
-    };
-  }
-
-  private testJSEntrypoint(appFiles: AppFiles[], prepared: Map<string, InternalAsset>): InternalAsset {
-    let asset = prepared.get(`assets/test.js`);
-    if (asset) {
-      return asset;
-    }
-
-    // We're only building tests from the first engine (the app). This is the
-    // normal thing to do -- tests from engines don't automatically roll up into
-    // the app.
-    let engine = appFiles[0];
-
-    const myName = 'assets/test.js';
-
-    let amdModules: { runtime: string; buildtime: string }[] = [];
-
-    for (let relativePath of engine.tests) {
-      amdModules.push(this.importPaths(engine, relativePath));
-    }
-
-    let source = entryTemplate({
-      amdModules,
-      testSuffix: true,
-      // this is a backward-compatibility feature: addons can force inclusion of test support modules.
-      defineModulesFrom: './-embroider-implicit-test-modules.js',
-    });
-
-    asset = {
-      kind: 'in-memory',
-      source,
-      relativePath: myName,
-    };
-    prepared.set(asset.relativePath, asset);
-    return asset;
-  }
 }
 
 function defaultAddonPackageRules(): PackageRules[] {
@@ -857,110 +812,6 @@ function defaultAddonPackageRules(): PackageRules[] {
     .filter(Boolean)
     .reduce((a, b) => a.concat(b), []);
 }
-
-const entryTemplate = jsHandlebarsCompile(`
-import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
-let w = window;
-let d = w.define;
-
-{{#if styles}}
-  if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {
-    {{#each styles as |stylePath| ~}}
-      i("{{js-string-escape stylePath.path}}");
-    {{/each}}
-  }
-{{/if}}
-
-{{#if defineModulesFrom ~}}
-  import implicitModules from "{{js-string-escape defineModulesFrom}}";
-
-  for(const [name, module] of Object.entries(implicitModules)) {
-    d(name, function() { return module });
-  }
-{{/if}}
-
-
-import "ember-testing";
-import "@embroider/core/entrypoint";
-
-{{#each amdModules as |amdModule| ~}}
-  d("{{js-string-escape amdModule.runtime}}", function(){ return i("{{js-string-escape amdModule.buildtime}}");});
-{{/each}}
-
-{{#if fastbootOnlyAmdModules}}
-  if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    let fastbootModules = {};
-
-    {{#each fastbootOnlyAmdModules as |amdModule| ~}}
-      fastbootModules["{{js-string-escape amdModule.runtime}}"] = import("{{js-string-escape amdModule.buildtime}}");
-    {{/each}}
-
-    const resolvedValues = await Promise.all(Object.values(fastbootModules));
-
-    Object.keys(fastbootModules).forEach((k, i) => {
-      d(k, function(){ return resolvedValues[i];});
-    })
-  }
-{{/if}}
-
-
-{{#if lazyRoutes}}
-w._embroiderRouteBundles_ = [
-  {{#each lazyRoutes as |route|}}
-  {
-    names: {{json-stringify route.names}},
-    load: function() {
-      return import("{{js-string-escape route.path}}");
-    }
-  },
-  {{/each}}
-]
-{{/if}}
-
-{{#if lazyEngines}}
-w._embroiderEngineBundles_ = [
-  {{#each lazyEngines as |engine|}}
-  {
-    names: {{json-stringify engine.names}},
-    load: function() {
-      return import("{{js-string-escape engine.path}}");
-    }
-  },
-  {{/each}}
-]
-{{/if}}
-
-{{#if autoRun ~}}
-if (!runningTests) {
-  i("{{js-string-escape mainModule}}").default.create({{json-stringify appConfig}});
-}
-{{else  if appBoot ~}}
-  {{ appBoot }}
-{{/if}}
-
-{{#if testSuffix ~}}
-  {{!- TODO: both of these suffixes should get dynamically generated so they incorporate
-       any content-for added by addons. -}}
-
-
-  {{!- this is the traditional tests-suffix.js -}}
-  i('../tests/test-helper');
-  EmberENV.TESTS_FILE_LOADED = true;
-{{/if}}
-`) as (params: {
-  amdModules: { runtime: string; buildtime: string }[];
-  fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];
-  defineModulesFrom?: string;
-  eagerModules?: string[];
-  autoRun?: boolean;
-  appBoot?: string;
-  mainModule?: string;
-  appConfig?: unknown;
-  testSuffix?: boolean;
-  lazyRoutes?: { names: string[]; path: string }[];
-  lazyEngines?: { names: string[]; path: string }[];
-  styles?: { path: string }[];
-}) => string;
 
 function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
   if (typeof a === 'string' && typeof b === 'string') {

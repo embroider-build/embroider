@@ -338,36 +338,6 @@ export class CompatAppBuilder {
     return portable;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset) {
-    let html = asset.html;
-
-    if (this.fastbootConfig) {
-      // ignore scripts like ember-cli-livereload.js which are not really associated with
-      // "the app".
-      let ignoreScripts = html.dom.window.document.querySelectorAll('script');
-      ignoreScripts.forEach(script => {
-        script.setAttribute('data-fastboot-ignore', '');
-      });
-    }
-
-    if (this.fastbootConfig) {
-      // any extra fastboot app files get inserted into our html.javascript
-      // section, after the app has been inserted.
-      for (let script of this.fastbootConfig.extraAppFiles) {
-        html.insertScriptTag(html.javascript, script, { tag: 'fastboot-script' });
-      }
-    }
-
-    if (this.fastbootConfig) {
-      // any extra fastboot vendor files get inserted into our
-      // html.implicitScripts section, after the regular implicit script
-      // (vendor.js) have been inserted.
-      for (let script of this.fastbootConfig.extraVendorFiles) {
-        html.insertScriptTag(html.implicitScripts, script, { tag: 'fastboot-script' });
-      }
-    }
-  }
-
   // recurse to find all active addons that don't cross an engine boundary.
   // Inner engines themselves will be returned, but not those engines' children.
   // The output set's insertion order is the proper ember-cli compatible
@@ -526,7 +496,6 @@ export class CompatAppBuilder {
       } else {
         parsed = new ParsedEmberAsset(asset);
       }
-      this.insertEmberApp(parsed);
       prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
     } else {
       prepared.set(asset.relativePath, asset);

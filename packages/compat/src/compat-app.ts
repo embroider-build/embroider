@@ -716,40 +716,6 @@ export default class CompatApp {
     };
   }
 
-  private withoutRootURL(src: string) {
-    let rootURL = this.config.readConfig().rootURL;
-    if ((src.startsWith(rootURL) && rootURL) || (!rootURL && !src.startsWith('/'))) {
-      src = '/' + src.slice(rootURL.length);
-    } else if (src.startsWith('/' + rootURL)) {
-      src = src.slice(rootURL.length);
-    }
-    return src;
-  }
-
-  findAppScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
-    let moduleName = '/@embroider/core/entrypoint';
-    let appJS = scripts.find(script => this.withoutRootURL(script.src) === moduleName);
-    return throwIfMissing(
-      appJS,
-      moduleName,
-      scripts.map(s => s.src),
-      entrypoint,
-      'app javascript'
-    );
-  }
-
-  findVendorScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
-    const vendorScript = '/@embroider/core/vendor.js';
-    let vendor = scripts.find(script => this.withoutRootURL(script.src) === vendorScript);
-    return throwIfMissing(
-      vendor,
-      vendorScript,
-      scripts.map(s => s.src),
-      entrypoint,
-      'vendor javascript'
-    );
-  }
-
   readonly macrosConfig: MacrosConfig;
 
   constructor(readonly legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
@@ -870,24 +836,4 @@ export default class CompatApp {
 interface Preprocessors {
   preprocessJs(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
   preprocessCss(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
-}
-
-function throwIfMissing<T>(
-  asset: T | undefined,
-  needle: string,
-  haystack: string[],
-  entryfile: string,
-  context: string
-): T {
-  if (!asset) {
-    throw new Error(
-      `Could not find ${context}: "${needle}" in ${entryfile}. Found the following instead:\n${haystack
-        .map(asset => ` - ${asset}`)
-        .join(
-          '\n'
-        )}\n\nFor more information about this error: https://github.com/thoov/stitch/wiki/Could-not-find-asset-in-entry-file-error-help`
-    );
-  }
-
-  return asset;
 }

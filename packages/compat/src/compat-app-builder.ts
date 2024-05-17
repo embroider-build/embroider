@@ -564,13 +564,6 @@ export class CompatAppBuilder {
     this.assets = assets;
   }
 
-  private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
-    // first gather all the assets out of addons
-    let assets: Asset[] = [];
-    // and finally tack on the ones from our app itself
-    return assets.concat(this.extractAssets(inputPaths));
-  }
-
   private firstBuild = true;
 
   async build(inputPaths: OutputPaths<TreeNames>) {
@@ -585,7 +578,7 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
-    let assets = this.gatherAssets(inputPaths);
+    let assets = this.extractAssets(inputPaths);
 
     await this.updateAssets(assets);
 

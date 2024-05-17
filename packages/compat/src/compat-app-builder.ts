@@ -564,30 +564,6 @@ export class CompatAppBuilder {
     this.assets = assets;
   }
 
-  private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
-    // first gather all the assets out of addons
-    let assets: Asset[] = [];
-
-    if (this.activeFastboot) {
-      const source = `
-      (function(){
-        var key = '_embroider_macros_runtime_config';
-        if (!window[key]){ window[key] = [];}
-        window[key].push(function(m) {
-          m.setGlobalConfig('fastboot', Object.assign({}, m.getGlobalConfig().fastboot, { isRunning: true }));
-        });
-      }())`;
-      assets.push({
-        kind: 'in-memory',
-        source,
-        relativePath: 'assets/embroider_macros_fastboot_init.js',
-      });
-    }
-
-    // and finally tack on the ones from our app itself
-    return assets.concat(this.extractAssets(inputPaths));
-  }
-
   private firstBuild = true;
 
   async build(inputPaths: OutputPaths<TreeNames>) {
@@ -602,7 +578,7 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
-    let assets = this.gatherAssets(inputPaths);
+    let assets = this.extractAssets(inputPaths);
 
     await this.updateAssets(assets);
 

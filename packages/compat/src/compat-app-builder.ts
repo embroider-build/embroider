@@ -342,15 +342,6 @@ export class CompatAppBuilder {
     let html = asset.html;
 
     if (this.fastbootConfig) {
-      // ignore scripts like ember-cli-livereload.js which are not really associated with
-      // "the app".
-      let ignoreScripts = html.dom.window.document.querySelectorAll('script');
-      ignoreScripts.forEach(script => {
-        script.setAttribute('data-fastboot-ignore', '');
-      });
-    }
-
-    if (this.fastbootConfig) {
       // any extra fastboot app files get inserted into our html.javascript
       // section, after the app has been inserted.
       for (let script of this.fastbootConfig.extraAppFiles) {

@@ -1,4 +1,4 @@
-import { appScenarios } from './scenarios';
+import { wideAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
@@ -6,7 +6,8 @@ import merge from 'lodash/merge';
 import { dirname } from 'path';
 const { module: Qmodule, test } = QUnit;
 
-appScenarios
+// this test is being used as a "smoke test" to check the widest possible support matrix
+wideAppScenarios
   .map('static-app', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
     project.addDevDependency(emberBootstrap());

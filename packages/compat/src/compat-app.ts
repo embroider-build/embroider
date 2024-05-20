@@ -750,12 +750,6 @@ export default class CompatApp {
     );
   }
 
-  findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(
-      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.tests.js
-    );
-  }
-
   readonly macrosConfig: MacrosConfig;
 
   constructor(readonly legacyEmberAppInstance: EmberAppInstance, _options?: Options) {

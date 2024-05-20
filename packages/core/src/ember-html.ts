@@ -10,7 +10,6 @@ export interface EmberHTML {
 
   // these are mandatory, the Ember app may need to put things into them.
   javascript: Node;
-  styles: Node;
   implicitScripts: Node;
 
   // these are optional because you *may* choose to stick your implicit test
@@ -77,7 +76,6 @@ class Placeholder {
 export class PreparedEmberHTML {
   dom: JSDOM;
   javascript: Placeholder;
-  styles: Placeholder;
   implicitScripts: Placeholder;
   testJavascript: Placeholder;
 
@@ -85,7 +83,6 @@ export class PreparedEmberHTML {
     this.dom = new JSDOM(readFileSync(asset.sourcePath, 'utf8'));
     let html = asset.prepare(this.dom);
     this.javascript = Placeholder.find(html.javascript);
-    this.styles = Placeholder.replacing(html.styles);
     this.implicitScripts = Placeholder.find(html.implicitScripts);
     this.testJavascript = html.testJavascript
       ? Placeholder.replacing(html.testJavascript)
@@ -93,7 +90,7 @@ export class PreparedEmberHTML {
   }
 
   private placeholders(): Placeholder[] {
-    return [this.javascript, this.styles, this.implicitScripts, this.testJavascript];
+    return [this.javascript, this.implicitScripts, this.testJavascript];
   }
 
   clear() {

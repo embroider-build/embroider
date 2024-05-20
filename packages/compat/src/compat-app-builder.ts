@@ -174,10 +174,8 @@ export class CompatAppBuilder {
         rootURL: this.rootURL(),
         prepare: (dom: JSDOM) => {
           let scripts = [...dom.window.document.querySelectorAll('script')];
-          let styles = [...dom.window.document.querySelectorAll('link[rel*="stylesheet"]')] as HTMLLinkElement[];
           return {
             javascript: this.compatApp.findAppScript(scripts, entrypoint),
-            styles: this.compatApp.findAppStyles(styles, entrypoint),
             implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
             testJavascript: this.compatApp.findTestScript(scripts),
           };
@@ -360,8 +358,6 @@ export class CompatAppBuilder {
         html.insertScriptTag(html.javascript, script, { tag: 'fastboot-script' });
       }
     }
-
-    html.insertStyleLink(html.styles, `assets/${this.origAppPackage.name}.css`);
 
     if (this.fastbootConfig) {
       // any extra fastboot vendor files get inserted into our

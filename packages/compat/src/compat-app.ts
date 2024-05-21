@@ -6,7 +6,7 @@ import { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join, dirname, isAbsolute, sep } from 'path';
-import buildFunnel from 'broccoli-funnel';
+import buildFunnel, { Funnel } from 'broccoli-funnel';
 import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
@@ -705,14 +705,31 @@ export default class CompatApp {
     );
 
     trees.push(configReplaced);
+
+    let appOutput = new Funnel(mergeTrees(trees, { overwrite: true }), {
+      destDir: 'app',
+    });
+
+    let finalTrees = [appOutput];
+
+    let testsTrees = [];
+
     if (testsTree) {
-      trees.push(testsTree);
+      testsTrees.push(testsTree);
     }
     if (lintTree) {
-      trees.push(lintTree);
+      testsTrees.push(lintTree);
     }
+
+    if (testsTrees.length > 0) {
+      let testsOutput = new Funnel(mergeTrees(testsTrees, { overwrite: true }), {
+        destDir: 'tests',
+      });
+      finalTrees.push(testsOutput);
+    }
+
     return {
-      appJS: mergeTrees(trees, { overwrite: true }),
+      appJS: mergeTrees(finalTrees),
     };
   }
 

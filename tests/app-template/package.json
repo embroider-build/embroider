@@ -6,6 +6,10 @@
   "repository": "",
   "license": "MIT",
   "author": "",
+  "exports": {
+    "./*": "app/*.js",
+    "./tests/*" : "tests/*.js"
+  },
   "directories": {
     "doc": "doc",
     "test": "tests"

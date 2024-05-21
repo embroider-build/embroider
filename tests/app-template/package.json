@@ -79,5 +79,20 @@
   },
   "ember": {
     "edition": "octane"
+  },
+  "ember-addon": {
+    "type": "app",
+    "version": 2,
+    "assets": [
+      "index.html",
+      "tests/index.html"
+    ],
+    "babel": {
+      "filename": "_babel_config_.js",
+      "isParallelSafe": true,
+      "majorVersion": 7,
+      "fileFilter": "_babel_filter_.js"
+    },
+    "root-url": "/"
   }
 }

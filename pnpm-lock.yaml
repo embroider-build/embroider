@@ -9,6 +9,7 @@ overrides:
   graceful-fs: ^4.0.0
   '@types/eslint': ^8.37.0
   babel-plugin-module-resolver@5.0.1: 5.0.0
+  '@embroider/addon-shim': workspace:*
 
 patchedDependencies:
   ember-source@5.8.0:
@@ -340,7 +341,7 @@ importers:
         version: 16.2.15
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
       '@types/node':
         specifier: ^15.12.2
         version: 15.14.9
@@ -482,7 +483,7 @@ importers:
         version: 16.2.15
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
       '@types/node':
         specifier: ^15.12.2
         version: 15.14.9
@@ -576,7 +577,7 @@ importers:
         version: 7.20.5
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
       '@types/node':
         specifier: ^15.12.2
         version: 15.14.9
@@ -611,7 +612,7 @@ importers:
         specifier: ^3.0.2
         version: 3.1.0
       '@embroider/addon-shim':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../addon-shim
     devDependencies:
       '@babel/core':
@@ -731,7 +732,7 @@ importers:
         version: 1.0.3
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
       '@types/minimatch':
         specifier: ^3.0.4
         version: 3.0.5
@@ -777,7 +778,7 @@ importers:
         version: link:../webpack
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
 
   packages/util:
     dependencies:
@@ -1083,7 +1084,7 @@ importers:
         version: 9.0.13
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
       '@types/mini-css-extract-plugin':
         specifier: ^1.4.3
         version: 1.4.3
@@ -1277,7 +1278,7 @@ importers:
         version: 9.0.13
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
       '@types/node':
         specifier: ^10.5.2
         version: 10.17.60
@@ -1720,7 +1721,7 @@ importers:
         version: 4.0.9
       '@types/lodash':
         specifier: ^4.14.170
-        version: 4.17.1
+        version: 4.17.4
       '@types/node-fetch':
         specifier: ^2.6.11
         version: 2.6.11
@@ -4716,18 +4717,6 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /@embroider/addon-shim@1.8.8:
-    resolution: {integrity: sha512-+SkD/JJqnmCBJpsjPu419iNA9kQdqojNBrldE7f5H80A4FWUGRO9s622+SwdzKiXCaMWcNeww7Ah7CL/YZPoHg==}
-    engines: {node: 12.* || 14.* || >= 16}
-    dependencies:
-      '@embroider/shared-internals': 2.6.0
-      broccoli-funnel: 3.0.8
-      common-ancestor-path: 1.0.1
-      semver: 7.6.2
-    transitivePeerDependencies:
-      - supports-color
-    dev: true
-
   /@embroider/macros@1.16.1(@glint/template@1.4.0):
     resolution: {integrity: sha512-yBavtQBbiCjIW4tTNdoS+5/eu3mckZImrcVFkloRvZ5ZWvs2zqnLJVtfNsPMxhWu6dknFlmLqfuT30+kqnsQbg==}
     engines: {node: 12.* || 14.* || >= 16}
@@ -6272,8 +6261,8 @@ packages:
     resolution: {integrity: sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==}
     dev: true
 
-  /@inquirer/figures@1.0.1:
-    resolution: {integrity: sha512-mtup3wVKia3ZwULPHcbs4Mor8Voi+iIXEWD7wCNbIO6lYR62oPCTQyrddi5OMYVXHzeCSoneZwJuS8sBvlEwDw==}
+  /@inquirer/figures@1.0.2:
+    resolution: {integrity: sha512-4F1MBwVr3c/m4bAUef6LgkvBfSjzwH+OfldgHqcuacWwSUetFebM2wi58WfG9uk1rR98U6GwLed4asLJbwdV5w==}
     engines: {node: '>=18'}
     dev: true
 
@@ -6350,7 +6339,7 @@ packages:
       jest-util: 29.7.0
       jest-validate: 29.7.0
       jest-watcher: 29.7.0
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-ansi: 6.0.1
@@ -6497,7 +6486,7 @@ packages:
       jest-haste-map: 29.7.0
       jest-regex-util: 29.6.3
       jest-util: 29.7.0
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       pirates: 4.0.6
       slash: 3.0.0
       write-file-atomic: 4.0.2
@@ -7734,8 +7723,8 @@ packages:
       '@types/node': 15.14.9
     dev: true
 
-  /@types/lodash@4.17.1:
-    resolution: {integrity: sha512-X+2qazGS3jxLAIz5JDXDzglAF3KpijdhFxlf/V1+hEsOUc+HnWi81L/uv/EvGuV90WY+7mPGFCUDGfQC3Gj95Q==}
+  /@types/lodash@4.17.4:
+    resolution: {integrity: sha512-wYCP26ZLxaT3R39kiN2+HcJ4kTd3U1waI/cY7ivWYqFP6pW3ZNpvi6Wd6PHZx7T/t8z0vlkXMg3QYLa7DZ/IJQ==}
     dev: true
 
   /@types/mime@1.3.5:
@@ -8529,6 +8518,7 @@ packages:
   /are-we-there-yet@3.0.1:
     resolution: {integrity: sha512-QZW4EDmGwlYur0Yyf/b2uGucHQMa8aFUP7eu9ddR73vvhFyt4V0Vl3QHPcTNJ8l6qYOBdxgXdnBXQrHilfRQBg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    deprecated: This package is no longer supported.
     dependencies:
       delegates: 1.0.0
       readable-stream: 3.6.2
@@ -9744,11 +9734,11 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /braces@3.0.2:
-    resolution: {integrity: sha512-b8um+L1RzM3WDSzvhm6gIz1yfTbBt6YTlcEKAvsmqCZZFw46z626lVj9j1yEPW33H5H+lBQpZMP1k8l+78Ha0A==}
+  /braces@3.0.3:
+    resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
     dependencies:
-      fill-range: 7.0.1
+      fill-range: 7.1.1
 
   /broccoli-amd-funnel@2.0.1:
     resolution: {integrity: sha512-VRE+0PYAN4jQfkIq3GKRj4U/4UV9rVpLan5ll6fVYV4ziVg4OEfR5GUnILEg++QtR4xSaugRxCPU5XJLDy3bNQ==}
@@ -10424,8 +10414,8 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
     dependencies:
-      caniuse-lite: 1.0.30001618
-      electron-to-chromium: 1.4.769
+      caniuse-lite: 1.0.30001620
+      electron-to-chromium: 1.4.776
       node-releases: 2.0.14
       update-browserslist-db: 1.0.16(browserslist@4.23.0)
 
@@ -10596,8 +10586,8 @@ packages:
       path-temp: 2.1.0
     dev: true
 
-  /caniuse-lite@1.0.30001618:
-    resolution: {integrity: sha512-p407+D1tIkDvsEAPS22lJxLQQaG8OTBEqo0KhzfABGk0TU4juBNDSfH0hyAp/HRyx+M8L17z/ltyhxh27FTfQg==}
+  /caniuse-lite@1.0.30001620:
+    resolution: {integrity: sha512-WJvYsOjd1/BYUY6SNGUosK9DUidBPDTnOARHp3fSmFO1ekdxaY6nKRttEVrfMmYi80ctS0kz1wiWmm14fVc3ew==}
 
   /capture-exit@2.0.0:
     resolution: {integrity: sha512-PiT/hQmTonHhl/HFGN+Lx3JJUznrVYJ3+AQsnthneZbvW7x+f08Tk7yLJTLEOUvBTbduLeeBkxEaYXUOUrRq6g==}
@@ -10952,6 +10942,7 @@ packages:
 
   /common-ancestor-path@1.0.1:
     resolution: {integrity: sha512-L3sHRo1pXXEqX8VU28kfgUY+YGsk09hPqZiZmLacNib6XNTCM8ubYeT7ryXQw8asB1sKgcU5lkB7ONug08aB8w==}
+    dev: false
 
   /common-path-prefix@3.0.0:
     resolution: {integrity: sha512-QE33hToZseCH3jS0qN96O/bSh3kaw/h+Tq7ngyY9eWDUnTlTNUyqfqvCXioLe5Na5jFsL78ra/wuBU4iuEgd4w==}
@@ -11864,8 +11855,8 @@ packages:
   /ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  /electron-to-chromium@1.4.769:
-    resolution: {integrity: sha512-bZu7p623NEA2rHTc9K1vykl57ektSPQYFFqQir8BOYf6EKOB+yIsbFB9Kpm7Cgt6tsLr9sRkqfqSZUw7LP1XxQ==}
+  /electron-to-chromium@1.4.776:
+    resolution: {integrity: sha512-s694bi3+gUzlliqxjPHpa9NRTlhzTgB34aan+pVKZmOTGy2xoZXl+8E1B8i5p5rtev3PKMK/H4asgNejC+YHNg==}
 
   /ember-asset-loader@0.6.1:
     resolution: {integrity: sha512-e2zafQJBMLhzl69caTG/+mQMH20uMHYrm7KcmdbmnX0oY2dZ48bhm0Wh1SPLXS/6G2T9NsNMWX6J2pVSnI+xyA==}
@@ -13102,7 +13093,7 @@ packages:
       heimdalljs-logger: 0.1.10
       http-proxy: 1.18.1
       inflection: 2.0.1
-      inquirer: 9.2.21
+      inquirer: 9.2.22
       is-git-url: 1.0.0
       is-language-code: 3.1.0
       isbinaryfile: 5.0.2
@@ -13253,7 +13244,7 @@ packages:
       heimdalljs-logger: 0.1.10
       http-proxy: 1.18.1
       inflection: 2.0.1
-      inquirer: 9.2.21
+      inquirer: 9.2.22
       is-git-url: 1.0.0
       is-language-code: 3.1.0
       isbinaryfile: 5.0.2
@@ -13403,7 +13394,7 @@ packages:
       heimdalljs-logger: 0.1.10
       http-proxy: 1.18.1
       inflection: 2.0.1
-      inquirer: 9.2.21
+      inquirer: 9.2.22
       is-git-url: 1.0.0
       is-language-code: 3.1.0
       isbinaryfile: 5.0.2
@@ -13550,7 +13541,7 @@ packages:
       heimdalljs-logger: 0.1.10
       http-proxy: 1.18.1
       inflection: 2.0.1
-      inquirer: 9.2.21
+      inquirer: 9.2.22
       is-git-url: 1.0.0
       is-language-code: 3.1.0
       isbinaryfile: 5.0.2
@@ -13901,11 +13892,9 @@ packages:
     peerDependencies:
       ember-source: ^4.0.0 || ^5.0.0
     dependencies:
-      '@embroider/addon-shim': 1.8.8
+      '@embroider/addon-shim': link:packages/addon-shim
       ember-source: 3.28.12(@babel/core@7.24.5)
       focus-trap: 6.9.4
-    transitivePeerDependencies:
-      - supports-color
     dev: true
 
   /ember-in-element-polyfill@1.0.1:
@@ -14005,7 +13994,7 @@ packages:
       ember-source:
         optional: true
     dependencies:
-      '@embroider/addon-shim': 1.8.8
+      '@embroider/addon-shim': link:packages/addon-shim
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
       ember-source: 3.28.12(@babel/core@7.24.5)
@@ -14021,7 +14010,7 @@ packages:
       ember-source:
         optional: true
     dependencies:
-      '@embroider/addon-shim': 1.8.8
+      '@embroider/addon-shim': link:packages/addon-shim
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
       ember-source: 5.0.0(@babel/core@7.24.5)(@glimmer/component@1.1.2)
@@ -14037,7 +14026,7 @@ packages:
       ember-source:
         optional: true
     dependencies:
-      '@embroider/addon-shim': 1.8.8
+      '@embroider/addon-shim': link:packages/addon-shim
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
       ember-source: 5.3.0(@babel/core@7.24.5)(@glimmer/component@1.1.2)(@glint/template@1.4.0)(webpack@5.91.0)
@@ -14079,11 +14068,9 @@ packages:
     peerDependencies:
       ember-source: '>= 3.28.0'
     dependencies:
-      '@embroider/addon-shim': 1.8.8
+      '@embroider/addon-shim': link:packages/addon-shim
       '@simple-dom/document': 1.4.0
       ember-source: 5.3.0(@babel/core@7.24.5)(@glimmer/component@1.1.2)(@glint/template@1.4.0)(webpack@5.91.0)
-    transitivePeerDependencies:
-      - supports-color
     dev: true
 
   /ember-popper-modifier@2.0.1(@babel/core@7.24.5)(webpack@5.91.0):
@@ -14240,7 +14227,7 @@ packages:
       qunit: ^2.13.0
     dependencies:
       '@ember/test-helpers': 3.3.0(@glint/template@1.4.0)(ember-source@5.3.0)(webpack@5.91.0)
-      '@embroider/addon-shim': 1.8.8
+      '@embroider/addon-shim': link:packages/addon-shim
       '@embroider/macros': 1.16.1(@glint/template@1.4.0)
       ember-cli-test-loader: 3.1.0
       ember-source: 5.3.0(@babel/core@7.24.5)(@glimmer/component@1.1.2)(@glint/template@1.4.0)(webpack@5.91.0)
@@ -14831,7 +14818,7 @@ packages:
       get-stdin: 8.0.0
       globby: 11.1.0
       is-glob: 4.0.3
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       requireindex: 1.2.0
       resolve: 1.22.8
       v8-compile-cache: 2.4.0
@@ -14858,7 +14845,7 @@ packages:
       globby: 13.2.2
       is-glob: 4.0.3
       language-tags: 1.0.9
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       resolve: 1.22.8
       v8-compile-cache: 2.4.0
       yargs: 17.7.2
@@ -14885,7 +14872,7 @@ packages:
       globby: 13.2.2
       is-glob: 4.0.3
       language-tags: 1.0.9
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       resolve: 1.22.8
       v8-compile-cache: 2.4.0
       yargs: 17.7.2
@@ -15160,8 +15147,8 @@ packages:
     resolution: {integrity: sha512-Zf5H2Kxt2xjTvbJvP2ZWLEICxA6j+hAmMzIlypy4xcBg1vKVnx89Wy0GbS+kf5cwCVFFzdCFh2XSCFNULS6csw==}
     engines: {node: '>= 0.4'}
 
-  /es-module-lexer@1.5.2:
-    resolution: {integrity: sha512-l60ETUTmLqbVbVHv1J4/qj+M8nq7AwMzEcg3kmJDt9dCNrTk+yHcYFf/Kw75pMDwd9mPcIGCG5LcS20SxYRzFA==}
+  /es-module-lexer@1.5.3:
+    resolution: {integrity: sha512-i1gCgmR9dCl6Vil6UKPI/trA69s08g/syhiDK9TG0Nf1RJjjFI+AzoWW7sPufzkgYAn861skuCwJa0pIIHYxvg==}
 
   /es-object-atoms@1.0.0:
     resolution: {integrity: sha512-MZ4iQ6JwHOBQjahnjwaC1ZtIBH+2ohjamzAO3oaHcXYup7qxjF2fixyH+Q71voWHeOkI2q/TnJao/KfXYIZWbw==}
@@ -16142,7 +16129,7 @@ packages:
       '@nodelib/fs.walk': 1.2.8
       glob-parent: 5.1.2
       merge2: 1.4.1
-      micromatch: 4.0.5
+      micromatch: 4.0.6
 
   /fast-json-stable-stringify@2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
@@ -16327,8 +16314,8 @@ packages:
       repeat-string: 1.6.1
       to-regex-range: 2.1.1
 
-  /fill-range@7.0.1:
-    resolution: {integrity: sha512-qOo9F+dMUmC2Lcb4BbVvnKJxTPjCm+RRpe4gDuGrzkL7mEVl/djYSu2OdQ2Pa302N4oqkSg9ir6jaLWJ2USVpQ==}
+  /fill-range@7.1.1:
+    resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
     dependencies:
       to-regex-range: 5.0.1
@@ -16439,7 +16426,7 @@ packages:
   /find-yarn-workspace-root@2.0.0:
     resolution: {integrity: sha512-1IMnbjt4KzsQfnhnzNd8wUEgXZ44IzZaZmnLYx7D5FZlaHt2gW20Cri8Q+E/t5tIj4+epTBub+2Zxu/vNILzqQ==}
     dependencies:
-      micromatch: 4.0.5
+      micromatch: 4.0.6
 
   /findup-sync@2.0.0:
     resolution: {integrity: sha512-vs+3unmJT45eczmcAZ6zMJtxN3l/QXeccaXQx5cu/MeJMhewVfoWZqibRkOxPnmoR59+Zy5hjabfQc6JLSah4g==}
@@ -16459,7 +16446,7 @@ packages:
     dependencies:
       detect-file: 1.0.0
       is-glob: 4.0.3
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       resolve-dir: 1.0.1
 
   /findup-sync@5.0.0:
@@ -16468,7 +16455,7 @@ packages:
     dependencies:
       detect-file: 1.0.0
       is-glob: 4.0.3
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       resolve-dir: 1.0.1
     dev: true
 
@@ -16813,6 +16800,7 @@ packages:
   /gauge@4.0.4:
     resolution: {integrity: sha512-f9m+BEN5jkg6a0fZjleidjN51VE1X+mPFQ2DJ0uv1V39oCLCbsGe6yjbBnp7eK7z/+GAon99a3nHuqbuuthyPg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    deprecated: This package is no longer supported.
     dependencies:
       aproba: 2.0.0
       color-support: 1.1.3
@@ -17680,11 +17668,11 @@ packages:
       through: 2.3.8
     dev: true
 
-  /inquirer@9.2.21:
-    resolution: {integrity: sha512-c/dwDruM1FtzeISV+xMHm+JZTmhpmgWPEZI2bU3+Fwu5MhbAX0zMHHxj5warNfttE5NUID3aijrFUpDc2yBvcA==}
+  /inquirer@9.2.22:
+    resolution: {integrity: sha512-SqLLa/Oe5rZUagTR9z+Zd6izyatHglbmbvVofo1KzuVB54YHleWzeHNLoR7FOICGOeQSqeLh1cordb3MzhGcEw==}
     engines: {node: '>=18'}
     dependencies:
-      '@inquirer/figures': 1.0.1
+      '@inquirer/figures': 1.0.2
       '@ljharb/through': 2.3.13
       ansi-escapes: 4.3.2
       chalk: 5.3.0
@@ -18259,7 +18247,7 @@ packages:
       jest-runner: 29.7.0
       jest-util: 29.7.0
       jest-validate: 29.7.0
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       parse-json: 5.2.0
       pretty-format: 29.7.0
       slash: 3.0.0
@@ -18325,7 +18313,7 @@ packages:
       jest-regex-util: 29.6.3
       jest-util: 29.7.0
       jest-worker: 29.7.0
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       walker: 1.0.8
     optionalDependencies:
       fsevents: 2.3.3
@@ -18357,7 +18345,7 @@ packages:
       '@types/stack-utils': 2.0.3
       chalk: 4.1.2
       graceful-fs: 4.2.11
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       pretty-format: 29.7.0
       slash: 3.0.0
       stack-utils: 2.0.6
@@ -18894,15 +18882,15 @@ packages:
     resolution: {integrity: sha512-Ne7wqW7/9Cz54PDt4I3tcV+hAyat8ypyOGzYRJQfdxnnjeWsTxt1cy8pjvvKeI5kfXuyvULyeeAvwvvtAX3ayQ==}
     dev: true
 
-  /language-subtag-registry@0.3.22:
-    resolution: {integrity: sha512-tN0MCzyWnoz/4nHS6uxdlFWoUZT7ABptwKPQ52Ea7URk6vll88bWBVhodtnlfEuCcKWNGoc+uGbw1cwa9IKh/w==}
+  /language-subtag-registry@0.3.23:
+    resolution: {integrity: sha512-0K65Lea881pHotoGEa5gDlMxt3pctLi2RplBb7Ezh4rRdLEOtgi7n4EwK9lamnUCkKBqaeKRVebTq6BAxSkpXQ==}
     dev: true
 
   /language-tags@1.0.9:
     resolution: {integrity: sha512-MbjN408fEndfiQXbFQ1vnd+1NoLDsnQW41410oQBXiyXDMYH5z505juWa4KUE1LqxRC7DgOgZDbKLxHIwm27hA==}
     engines: {node: '>=0.10'}
     dependencies:
-      language-subtag-registry: 0.3.22
+      language-subtag-registry: 0.3.23
     dev: true
 
   /latest-version@5.1.0:
@@ -19533,12 +19521,12 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /micromatch@4.0.5:
-    resolution: {integrity: sha512-DMy+ERcEW2q8Z2Po+WNXuw3c5YaUSFjAO5GsJqfEl7UjvtIuFKO6ZrKvcItdy98dwFI2N1tg3zNIdKaQT+aNdA==}
+  /micromatch@4.0.6:
+    resolution: {integrity: sha512-Y4Ypn3oujJYxJcMacVgcs92wofTHxp9FzfDpQON4msDefoC0lb3ETvQLOdLcbhSwU1bz8HrL/1sygfBIHudrkQ==}
     engines: {node: '>=8.6'}
     dependencies:
-      braces: 3.0.2
-      picomatch: 2.3.1
+      braces: 3.0.3
+      picomatch: 4.0.2
 
   /mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
@@ -20077,6 +20065,7 @@ packages:
   /npmlog@6.0.2:
     resolution: {integrity: sha512-/vBvz5Jfr9dT/aFWd0FIRf+T/Q2WBsLENygUaFUqstqsycmZAP/t5BvFJTK0viFmSUxiUKTUplWy5vt+rvKIxg==}
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
+    deprecated: This package is no longer supported.
     dependencies:
       are-we-there-yet: 3.0.1
       console-control-strings: 1.1.0
@@ -20286,6 +20275,7 @@ packages:
 
   /osenv@0.1.5:
     resolution: {integrity: sha512-0CWcCECdMVc2Rw3U5w9ZjqX6ga6ubk1xDVKxtBQPK7wis/0F2r9T6k4ydGYhecl7YUBxBVxhL5oisPsNxAPe2g==}
+    deprecated: This package is no longer supported.
     dependencies:
       os-homedir: 1.0.2
       os-tmpdir: 1.0.2
@@ -20586,6 +20576,10 @@ packages:
   /picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
+
+  /picomatch@4.0.2:
+    resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
+    engines: {node: '>=12'}
 
   /pidtree@0.3.1:
     resolution: {integrity: sha512-qQbW94hLHEqCg7nhby4yRC7G2+jYHY4Rguc2bjw7Uug4GIJuu1tvf2uHaZv5Q8zdt+WKJ6qK1FOI6amaWUo5FA==}
@@ -21713,7 +21707,7 @@ packages:
       exec-sh: 0.3.6
       execa: 4.1.0
       fb-watchman: 2.0.2
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       minimist: 1.2.8
       walker: 1.0.8
     dev: true
@@ -22549,7 +22543,7 @@ packages:
       known-css-properties: 0.29.0
       mathml-tag-names: 2.1.3
       meow: 10.1.5
-      micromatch: 4.0.5
+      micromatch: 4.0.6
       normalize-path: 3.0.0
       picocolors: 1.0.1
       postcss: 8.4.38
@@ -23046,7 +23040,7 @@ packages:
   /tracked-built-ins@3.3.0:
     resolution: {integrity: sha512-ewKFrW/AQs05oLPM5isOUb/1aOwBRfHfmF408CCzTk21FLAhKrKVOP5Q5ebX+zCT4kvg81PGBGwrBiEGND1nWA==}
     dependencies:
-      '@embroider/addon-shim': 1.8.8
+      '@embroider/addon-shim': link:packages/addon-shim
       ember-tracked-storage-polyfill: 1.0.0
     transitivePeerDependencies:
       - supports-color
@@ -23737,7 +23731,7 @@ packages:
       browserslist: 4.23.0
       chrome-trace-event: 1.0.3
       enhanced-resolve: 5.16.1
-      es-module-lexer: 1.5.2
+      es-module-lexer: 1.5.3
       eslint-scope: 5.1.1
       events: 3.3.0
       glob-to-regexp: 0.4.1

@@ -12,11 +12,8 @@ import {
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
-const root = "node_modules/.embroider/rewritten-app";
-
 export default defineConfig(({ mode }) => {
   return {
-    root,
     // esbuild in vite does not support decorators
     esbuild: false,
     cacheDir: resolve("node_modules", ".vite"),
@@ -51,9 +48,9 @@ export default defineConfig(({ mode }) => {
       outDir: resolve(process.cwd(), "dist"),
       rollupOptions: {
         input: {
-          main: resolve(root, "index.html"),
+          main: "index.html",
           ...(shouldBuildTests(mode)
-            ? { tests: resolve(root, "tests/index.html") }
+            ? { tests: "./tests/index.html" }
             : undefined),
         },
       },

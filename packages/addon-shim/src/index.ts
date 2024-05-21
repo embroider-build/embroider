@@ -163,9 +163,12 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
         }
         autoImport.instance.registerV2Addon(name, root);
       } else {
-        // if we're being used by a v2 addon, it also has this shim and will
-        // forward our registration onward to ember-auto-import
-        (this.parent as EAI2Instance).registerV2Addon(name, root);
+        // This should only be done if we're being consumed by an addon
+        if (this.parent.pkg['ember-addon'].type === 'addon') {
+          // if we're being used by a v2 addon, it also has this shim and will
+          // forward our registration onward to ember-auto-import
+          (this.parent as EAI2Instance).registerV2Addon(name, root);
+        }
       }
     },
   };

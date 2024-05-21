@@ -1,17 +1,8 @@
 import type { Node as BroccoliNode } from 'broccoli-node-api';
-import type {
-  OutputPaths,
-  Asset,
-  EmberAsset,
-  AddonPackage,
-  Engine,
-  AppMeta,
-  TemplateColocationPluginOptions,
-} from '@embroider/core';
+import type { OutputPaths, AddonPackage, Engine, AppMeta, TemplateColocationPluginOptions } from '@embroider/core';
 import {
   explicitRelative,
   extensionsPattern,
-  debug,
   warn,
   jsHandlebarsCompile,
   templateColocationPluginPath,
@@ -21,7 +12,6 @@ import {
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
 import { resolve as resolvePath } from 'path';
-import { JSDOM } from 'jsdom';
 import type Options from './options';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
@@ -30,32 +20,21 @@ import flatMap from 'lodash/flatMap';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import bind from 'bind-decorator';
-import {
-  outputJSONSync,
-  readFileSync,
-  readJSONSync,
-  rmSync,
-  statSync,
-  unlinkSync,
-  writeFileSync,
-  realpathSync,
-} from 'fs-extra';
+import { outputJSONSync, readFileSync, readJSONSync, rmSync, writeFileSync, realpathSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import type { InMemoryAsset, OnDiskAsset } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
 import { AppFiles } from '@embroider/core/src/app-files';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion } from '@embroider/core/src/portable';
-import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import resolve from 'resolve';
 import type ContentForConfig from './content-for-config';
 import type { V1Config } from './v1-config';
 import type { Package, PackageInfo } from '@embroider/core';
-import { ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
+import { readdirSync, pathExistsSync } from 'fs-extra';
 import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import escapeRegExp from 'escape-string-regexp';
@@ -67,9 +46,6 @@ import { SyncDir } from './sync-dir';
 // which also exists during pipeline-construction time.
 
 export class CompatAppBuilder {
-  // for each relativePath, an Asset we have already emitted
-  private assets: Map<string, InternalAsset> = new Map();
-
   constructor(
     private root: string,
     private origAppPackage: Package,
@@ -151,28 +127,17 @@ export class CompatAppBuilder {
     return ['.wasm', '.mjs', '.js', '.json', '.ts', '.hbs', '.hbs.js', '.gjs', '.gts'];
   }
 
-  private *emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
-    let classicEntrypoints = [
-      { entrypoint: 'index.html', includeTests: false },
-      { entrypoint: 'tests/index.html', includeTests: true },
-    ];
+  private addEmberEntrypoints(htmlTreePath: string): string[] {
+    let classicEntrypoints = ['index.html', 'tests/index.html'];
     if (!this.compatApp.shouldBuildTests) {
       classicEntrypoints.pop();
     }
-    for (let { entrypoint, includeTests } of classicEntrypoints) {
+    for (let entrypoint of classicEntrypoints) {
       let sourcePath = join(htmlTreePath, entrypoint);
-      let stats = statSync(sourcePath);
-      let asset: EmberAsset = {
-        kind: 'ember',
-        relativePath: entrypoint,
-        includeTests,
-        sourcePath,
-        mtime: stats.mtime.getTime(),
-        size: stats.size,
-        rootURL: this.rootURL(),
-      };
-      yield asset;
+      let rewrittenAppPath = join(this.root, entrypoint);
+      writeFileSync(rewrittenAppPath, readFileSync(sourcePath));
     }
+    return classicEntrypoints;
   }
 
   private modulePrefix(): string {
@@ -476,84 +441,6 @@ export class CompatAppBuilder {
     }
   }
 
-  private prepareAsset(asset: Asset, prepared: Map<string, InternalAsset>) {
-    if (asset.kind === 'ember') {
-      prepared.set(asset.relativePath, new BuiltEmberAsset(asset));
-    } else {
-      prepared.set(asset.relativePath, asset);
-    }
-  }
-
-  private prepareAssets(requestedAssets: Asset[]): Map<string, InternalAsset> {
-    let prepared: Map<string, InternalAsset> = new Map();
-    for (let asset of requestedAssets) {
-      this.prepareAsset(asset, prepared);
-    }
-    return prepared;
-  }
-
-  private assetIsValid(asset: InternalAsset, prior: InternalAsset | undefined): boolean {
-    if (!prior) {
-      return false;
-    }
-    switch (asset.kind) {
-      case 'on-disk':
-        return prior.kind === 'on-disk' && prior.size === asset.size && prior.mtime === asset.mtime;
-      case 'in-memory':
-        return prior.kind === 'in-memory' && stringOrBufferEqual(prior.source, asset.source);
-      case 'built-ember':
-        return prior.kind === 'built-ember' && prior.source === asset.source;
-    }
-  }
-
-  private updateOnDiskAsset(asset: OnDiskAsset) {
-    let destination = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    copySync(asset.sourcePath, destination, { dereference: true });
-  }
-
-  private updateInMemoryAsset(asset: InMemoryAsset) {
-    let destination = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, 'utf8');
-  }
-
-  // This function is the one writting the index.html in the rewritten-app
-  private updateBuiltEmberAsset(asset: BuiltEmberAsset) {
-    let destination = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, 'utf8');
-  }
-
-  private async updateAssets(requestedAssets: Asset[]): Promise<void> {
-    let assets = this.prepareAssets(requestedAssets);
-    for (let asset of assets.values()) {
-      if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
-        continue;
-      }
-      debug('rebuilding %s', asset.relativePath);
-      switch (asset.kind) {
-        case 'on-disk':
-          this.updateOnDiskAsset(asset);
-          break;
-        case 'in-memory':
-          this.updateInMemoryAsset(asset);
-          break;
-        case 'built-ember':
-          this.updateBuiltEmberAsset(asset);
-          break;
-        default:
-          assertNever(asset);
-      }
-    }
-    for (let oldAsset of this.assets.values()) {
-      if (!assets.has(oldAsset.relativePath)) {
-        unlinkSync(join(this.root, oldAsset.relativePath));
-      }
-    }
-    this.assets = assets;
-  }
-
   private firstBuild = true;
 
   async build(inputPaths: OutputPaths<TreeNames>) {
@@ -568,15 +455,7 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
-
-    let assets: Asset[] = [];
-    for (let asset of this.emberEntrypoints(inputPaths.htmlTree)) {
-      assets.push(asset);
-    }
-
-    await this.updateAssets(assets);
-
-    let assetPaths = assets.map(asset => asset.relativePath);
+    let assetPaths = this.addEmberEntrypoints(inputPaths.htmlTree);
 
     if (this.activeFastboot) {
       // when using fastboot, our own package.json needs to be in the output so fastboot can read it.
@@ -747,16 +626,6 @@ function defaultAddonPackageRules(): PackageRules[] {
     .reduce((a, b) => a.concat(b), []);
 }
 
-function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
-  if (typeof a === 'string' && typeof b === 'string') {
-    return a === b;
-  }
-  if (a instanceof Buffer && b instanceof Buffer) {
-    return Buffer.compare(a, b) === 0;
-  }
-  return false;
-}
-
 const babelFilterTemplate = jsHandlebarsCompile(`
 const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
 module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
@@ -805,17 +674,4 @@ interface TreeNames {
   htmlTree: BroccoliNode;
   publicTree: BroccoliNode | undefined;
   configTree: BroccoliNode;
-}
-
-type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset;
-
-class BuiltEmberAsset {
-  kind: 'built-ember' = 'built-ember';
-  relativePath: string;
-  source: string;
-
-  constructor(asset: EmberAsset) {
-    this.source = new JSDOM(readFileSync(asset.sourcePath, 'utf8')).serialize();
-    this.relativePath = asset.relativePath;
-  }
 }

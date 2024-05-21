@@ -1,17 +1,8 @@
 import type { Node as BroccoliNode } from 'broccoli-node-api';
-import type {
-  OutputPaths,
-  Asset,
-  EmberAsset,
-  AddonPackage,
-  Engine,
-  AppMeta,
-  TemplateColocationPluginOptions,
-} from '@embroider/core';
+import type { OutputPaths, AddonPackage, Engine, AppMeta, TemplateColocationPluginOptions } from '@embroider/core';
 import {
   explicitRelative,
   extensionsPattern,
-  debug,
   warn,
   jsHandlebarsCompile,
   templateColocationPluginPath,
@@ -21,7 +12,6 @@ import {
   locateEmbroiderWorkingDir,
 } from '@embroider/core';
 import { resolve as resolvePath } from 'path';
-import type { JSDOM } from 'jsdom';
 import type Options from './options';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
@@ -30,24 +20,21 @@ import flatMap from 'lodash/flatMap';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import bind from 'bind-decorator';
-import { outputJSONSync, readJSONSync, rmSync, statSync, unlinkSync, writeFileSync, realpathSync } from 'fs-extra';
+import { outputJSONSync, readFileSync, readJSONSync, rmSync, writeFileSync, realpathSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import { PreparedEmberHTML } from '@embroider/core/src/ember-html';
-import type { InMemoryAsset, OnDiskAsset } from '@embroider/core/src/asset';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
 import { AppFiles } from '@embroider/core/src/app-files';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion } from '@embroider/core/src/portable';
-import assertNever from 'assert-never';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import resolve from 'resolve';
 import type ContentForConfig from './content-for-config';
 import type { V1Config } from './v1-config';
 import type { Package, PackageInfo } from '@embroider/core';
-import { ensureDirSync, copySync, readdirSync, pathExistsSync } from 'fs-extra';
+import { readdirSync, pathExistsSync } from 'fs-extra';
 import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import escapeRegExp from 'escape-string-regexp';
@@ -59,9 +46,6 @@ import { SyncDir } from './sync-dir';
 // which also exists during pipeline-construction time.
 
 export class CompatAppBuilder {
-  // for each relativePath, an Asset we have already emitted
-  private assets: Map<string, InternalAsset> = new Map();
-
   constructor(
     private root: string,
     private origAppPackage: Package,
@@ -80,16 +64,6 @@ export class CompatAppBuilder {
     if (pathExistsSync(target)) {
       return target;
     }
-  }
-
-  private extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
-    let assets: Asset[] = [];
-
-    for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
-      assets.push(asset);
-    }
-
-    return assets;
   }
 
   private activeAddonChildren(pkg: Package): AddonPackage[] {
@@ -153,35 +127,17 @@ export class CompatAppBuilder {
     return ['.wasm', '.mjs', '.js', '.json', '.ts', '.hbs', '.hbs.js', '.gjs', '.gts'];
   }
 
-  private *emberEntrypoints(htmlTreePath: string): IterableIterator<Asset> {
-    let classicEntrypoints = [
-      { entrypoint: 'index.html', includeTests: false },
-      { entrypoint: 'tests/index.html', includeTests: true },
-    ];
+  private addEmberEntrypoints(htmlTreePath: string): string[] {
+    let classicEntrypoints = ['index.html', 'tests/index.html'];
     if (!this.compatApp.shouldBuildTests) {
       classicEntrypoints.pop();
     }
-    for (let { entrypoint, includeTests } of classicEntrypoints) {
+    for (let entrypoint of classicEntrypoints) {
       let sourcePath = join(htmlTreePath, entrypoint);
-      let stats = statSync(sourcePath);
-      let asset: EmberAsset = {
-        kind: 'ember',
-        relativePath: entrypoint,
-        includeTests,
-        sourcePath,
-        mtime: stats.mtime.getTime(),
-        size: stats.size,
-        rootURL: this.rootURL(),
-        prepare: (dom: JSDOM) => {
-          let scripts = [...dom.window.document.querySelectorAll('script')];
-          return {
-            javascript: this.compatApp.findAppScript(scripts, entrypoint),
-            implicitScripts: this.compatApp.findVendorScript(scripts, entrypoint),
-          };
-        },
-      };
-      yield asset;
+      let rewrittenAppPath = join(this.root, entrypoint);
+      writeFileSync(rewrittenAppPath, readFileSync(sourcePath));
     }
+    return classicEntrypoints;
   }
 
   private modulePrefix(): string {
@@ -338,36 +294,6 @@ export class CompatAppBuilder {
     return portable;
   }
 
-  private insertEmberApp(asset: ParsedEmberAsset) {
-    let html = asset.html;
-
-    if (this.fastbootConfig) {
-      // ignore scripts like ember-cli-livereload.js which are not really associated with
-      // "the app".
-      let ignoreScripts = html.dom.window.document.querySelectorAll('script');
-      ignoreScripts.forEach(script => {
-        script.setAttribute('data-fastboot-ignore', '');
-      });
-    }
-
-    if (this.fastbootConfig) {
-      // any extra fastboot app files get inserted into our html.javascript
-      // section, after the app has been inserted.
-      for (let script of this.fastbootConfig.extraAppFiles) {
-        html.insertScriptTag(html.javascript, script, { tag: 'fastboot-script' });
-      }
-    }
-
-    if (this.fastbootConfig) {
-      // any extra fastboot vendor files get inserted into our
-      // html.implicitScripts section, after the regular implicit script
-      // (vendor.js) have been inserted.
-      for (let script of this.fastbootConfig.extraVendorFiles) {
-        html.insertScriptTag(html.implicitScripts, script, { tag: 'fastboot-script' });
-      }
-    }
-  }
-
   // recurse to find all active addons that don't cross an engine boundary.
   // Inner engines themselves will be returned, but not those engines' children.
   // The output set's insertion order is the proper ember-cli compatible
@@ -515,117 +441,6 @@ export class CompatAppBuilder {
     }
   }
 
-  private prepareAsset(asset: Asset, prepared: Map<string, InternalAsset>) {
-    if (asset.kind === 'ember') {
-      let prior = this.assets.get(asset.relativePath);
-      let parsed: ParsedEmberAsset;
-      if (prior && prior.kind === 'built-ember' && prior.parsedAsset.validFor(asset)) {
-        // we can reuse the parsed html
-        parsed = prior.parsedAsset;
-        parsed.html.clear();
-      } else {
-        parsed = new ParsedEmberAsset(asset);
-      }
-      this.insertEmberApp(parsed);
-      prepared.set(asset.relativePath, new BuiltEmberAsset(parsed));
-    } else {
-      prepared.set(asset.relativePath, asset);
-    }
-  }
-
-  private prepareAssets(requestedAssets: Asset[]): Map<string, InternalAsset> {
-    let prepared: Map<string, InternalAsset> = new Map();
-    for (let asset of requestedAssets) {
-      this.prepareAsset(asset, prepared);
-    }
-    return prepared;
-  }
-
-  private assetIsValid(asset: InternalAsset, prior: InternalAsset | undefined): boolean {
-    if (!prior) {
-      return false;
-    }
-    switch (asset.kind) {
-      case 'on-disk':
-        return prior.kind === 'on-disk' && prior.size === asset.size && prior.mtime === asset.mtime;
-      case 'in-memory':
-        return prior.kind === 'in-memory' && stringOrBufferEqual(prior.source, asset.source);
-      case 'built-ember':
-        return prior.kind === 'built-ember' && prior.source === asset.source;
-    }
-  }
-
-  private updateOnDiskAsset(asset: OnDiskAsset) {
-    let destination = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    copySync(asset.sourcePath, destination, { dereference: true });
-  }
-
-  private updateInMemoryAsset(asset: InMemoryAsset) {
-    let destination = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, 'utf8');
-  }
-
-  private updateBuiltEmberAsset(asset: BuiltEmberAsset) {
-    let destination = join(this.root, asset.relativePath);
-    ensureDirSync(dirname(destination));
-    writeFileSync(destination, asset.source, 'utf8');
-  }
-
-  private async updateAssets(requestedAssets: Asset[]): Promise<void> {
-    let assets = this.prepareAssets(requestedAssets);
-    for (let asset of assets.values()) {
-      if (this.assetIsValid(asset, this.assets.get(asset.relativePath))) {
-        continue;
-      }
-      debug('rebuilding %s', asset.relativePath);
-      switch (asset.kind) {
-        case 'on-disk':
-          this.updateOnDiskAsset(asset);
-          break;
-        case 'in-memory':
-          this.updateInMemoryAsset(asset);
-          break;
-        case 'built-ember':
-          this.updateBuiltEmberAsset(asset);
-          break;
-        default:
-          assertNever(asset);
-      }
-    }
-    for (let oldAsset of this.assets.values()) {
-      if (!assets.has(oldAsset.relativePath)) {
-        unlinkSync(join(this.root, oldAsset.relativePath));
-      }
-    }
-    this.assets = assets;
-  }
-
-  private gatherAssets(inputPaths: OutputPaths<TreeNames>): Asset[] {
-    // first gather all the assets out of addons
-    let assets: Asset[] = [];
-
-    if (this.activeFastboot) {
-      const source = `
-      (function(){
-        var key = '_embroider_macros_runtime_config';
-        if (!window[key]){ window[key] = [];}
-        window[key].push(function(m) {
-          m.setGlobalConfig('fastboot', Object.assign({}, m.getGlobalConfig().fastboot, { isRunning: true }));
-        });
-      }())`;
-      assets.push({
-        kind: 'in-memory',
-        source,
-        relativePath: 'assets/embroider_macros_fastboot_init.js',
-      });
-    }
-
-    // and finally tack on the ones from our app itself
-    return assets.concat(this.extractAssets(inputPaths));
-  }
-
   private firstBuild = true;
 
   async build(inputPaths: OutputPaths<TreeNames>) {
@@ -640,11 +455,7 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
-    let assets = this.gatherAssets(inputPaths);
-
-    await this.updateAssets(assets);
-
-    let assetPaths = assets.map(asset => asset.relativePath);
+    let assetPaths = this.addEmberEntrypoints(inputPaths.htmlTree);
 
     if (this.activeFastboot) {
       // when using fastboot, our own package.json needs to be in the output so fastboot can read it.
@@ -801,16 +612,6 @@ function defaultAddonPackageRules(): PackageRules[] {
     .reduce((a, b) => a.concat(b), []);
 }
 
-function stringOrBufferEqual(a: string | Buffer, b: string | Buffer): boolean {
-  if (typeof a === 'string' && typeof b === 'string') {
-    return a === b;
-  }
-  if (a instanceof Buffer && b instanceof Buffer) {
-    return Buffer.compare(a, b) === 0;
-  }
-  return false;
-}
-
 const babelFilterTemplate = jsHandlebarsCompile(`
 const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
 module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
@@ -859,36 +660,4 @@ interface TreeNames {
   htmlTree: BroccoliNode;
   publicTree: BroccoliNode | undefined;
   configTree: BroccoliNode;
-}
-
-type InternalAsset = OnDiskAsset | InMemoryAsset | BuiltEmberAsset;
-
-class ParsedEmberAsset {
-  kind: 'parsed-ember' = 'parsed-ember';
-  relativePath: string;
-  fileAsset: EmberAsset;
-  html: PreparedEmberHTML;
-
-  constructor(asset: EmberAsset) {
-    this.fileAsset = asset;
-    this.html = new PreparedEmberHTML(asset);
-    this.relativePath = asset.relativePath;
-  }
-
-  validFor(other: EmberAsset) {
-    return this.fileAsset.mtime === other.mtime && this.fileAsset.size === other.size;
-  }
-}
-
-class BuiltEmberAsset {
-  kind: 'built-ember' = 'built-ember';
-  relativePath: string;
-  parsedAsset: ParsedEmberAsset;
-  source: string;
-
-  constructor(asset: ParsedEmberAsset) {
-    this.parsedAsset = asset;
-    this.source = asset.html.dom.serialize();
-    this.relativePath = asset.relativePath;
-  }
 }

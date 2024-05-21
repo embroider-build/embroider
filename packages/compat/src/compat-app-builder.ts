@@ -90,16 +90,6 @@ export class CompatAppBuilder {
     }
   }
 
-  private extractAssets(treePaths: OutputPaths<TreeNames>): Asset[] {
-    let assets: Asset[] = [];
-
-    for (let asset of this.emberEntrypoints(treePaths.htmlTree)) {
-      assets.push(asset);
-    }
-
-    return assets;
-  }
-
   private activeAddonChildren(pkg: Package): AddonPackage[] {
     let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
       // When looking for child addons, we want to ignore 'peerDependencies' of
@@ -578,7 +568,11 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
-    let assets = this.extractAssets(inputPaths);
+
+    let assets: Asset[] = [];
+    for (let asset of this.emberEntrypoints(inputPaths.htmlTree)) {
+      assets.push(asset);
+    }
 
     await this.updateAssets(assets);
 

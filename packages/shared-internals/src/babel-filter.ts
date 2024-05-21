@@ -12,7 +12,7 @@ export default function babelFilter(skipBabel: { package: string; semverRange?: 
     if (owner) {
       for (let { package: pkg, semverRange } of skipBabel) {
         if (owner.name === pkg && (semverRange == null || semver.satisfies(owner.version, semverRange))) {
-          if (owner.isEmberPackage()) {
+          if (owner.isEmberAddon()) {
             throw new Error(
               `You can't use skipBabel to disable transpilation of Ember addons, it only works for non-Ember third-party packages`
             );

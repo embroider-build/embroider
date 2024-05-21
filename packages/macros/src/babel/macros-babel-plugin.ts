@@ -228,7 +228,7 @@ export default function main(context: typeof Babel): unknown {
         state.opts.hideRequires &&
         path.node.name === 'require' &&
         !path.scope.hasBinding('require') &&
-        state.owningPackage().isEmberPackage()
+        state.owningPackage().isEmberAddon()
       ) {
         // Our importSync macro has been compiled to `require`. But we want to
         // distinguish that from any pre-existing, user-written `require` in an

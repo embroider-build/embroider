@@ -228,8 +228,8 @@ class WrappedPackage implements PackageTheGoodParts {
     return this.plainPkg.meta;
   }
 
-  isEmberPackage() {
-    return this.plainPkg.isEmberPackage();
+  isEmberAddon() {
+    return this.plainPkg.isEmberAddon();
   }
 
   isEngine() {

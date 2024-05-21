@@ -19,23 +19,4 @@ export interface InMemoryAsset extends BaseAsset {
   source: string | Buffer;
 }
 
-// This represents an HTML entrypoint to the Ember app
-export interface EmberAsset extends BaseAsset {
-  kind: 'ember';
-
-  // absolute path to where we will find the html file
-  sourcePath: string;
-
-  // these describe the file at sourcePath so we can avoid rebuilding when it
-  // hasn't changed
-  mtime: number;
-  size: number;
-
-  // whether we should include the test suite (in addition to the ember app)
-  includeTests: boolean;
-
-  // the rootURL at which this Ember app expects to be hosted.
-  rootURL: string;
-}
-
-export type Asset = OnDiskAsset | InMemoryAsset | EmberAsset;
+export type Asset = OnDiskAsset | InMemoryAsset;

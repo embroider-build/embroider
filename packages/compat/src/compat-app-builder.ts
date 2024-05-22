@@ -4,7 +4,6 @@ import {
   explicitRelative,
   extensionsPattern,
   warn,
-  jsHandlebarsCompile,
   templateColocationPluginPath,
   cacheBustingPluginVersion,
   cacheBustingPluginPath,
@@ -581,11 +580,6 @@ export class CompatAppBuilder {
       `module.exports = ${JSON.stringify(pconfig.config, null, 2)}`,
       'utf8'
     );
-    writeFileSync(
-      join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_filter_.js'),
-      babelFilterTemplate({ skipBabel: [], appRoot: this.origAppPackage.root }),
-      'utf8'
-    );
   }
 
   private addResolverConfig(config: CompatResolverOptions) {
@@ -655,11 +649,6 @@ function defaultAddonPackageRules(): PackageRules[] {
     .filter(Boolean)
     .reduce((a, b) => a.concat(b), []);
 }
-
-const babelFilterTemplate = jsHandlebarsCompile(`
-const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
-module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
-`) as (params: { skipBabel: string[]; appRoot: string }) => string;
 
 function combinePackageJSON(...layers: object[]) {
   function custom(objValue: any, srcValue: any, key: string, _object: any, _source: any, stack: { size: number }) {

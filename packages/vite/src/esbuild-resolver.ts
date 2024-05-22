@@ -75,9 +75,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         }
         let { src } = virtualContent(path, resolverLoader.resolver);
         if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
+          macrosConfig = readJSONSync(resolve(locateEmbroiderWorkingDir(root), 'macros-config.json')) as PluginItem;
         }
         return { contents: runMacros(src, path, macrosConfig) };
       });
@@ -120,9 +118,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           src = readFileSync(path, 'utf8');
         }
         if (!macrosConfig) {
-          macrosConfig = readJSONSync(
-            resolve(locateEmbroiderWorkingDir(root), 'rewritten-app', 'macros-config.json')
-          ) as PluginItem;
+          macrosConfig = readJSONSync(resolve(locateEmbroiderWorkingDir(root), 'macros-config.json')) as PluginItem;
         }
         return { contents: runMacros(src, path, macrosConfig) };
       });

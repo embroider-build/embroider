@@ -1,4 +1,4 @@
-import { readFileSync, readJSONSync } from 'fs-extra';
+import { existsSync, readFileSync, readJSONSync } from 'fs-extra';
 import { join, resolve as resolvePath, dirname } from 'path';
 import type { AppMeta, ResolverOptions } from '@embroider/core';
 import { explicitRelative, hbsToJS, locateEmbroiderWorkingDir, Resolver, RewrittenPackageCache } from '@embroider/core';
@@ -153,8 +153,14 @@ export class Audit {
 
   @Memoize()
   private get babelConfig() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let config = require(join(this.movedAppRoot, this.meta.babel.filename));
+    // Depending on how the app builds, the babel config is not at the same location
+    let embroiderLocation = join(locateEmbroiderWorkingDir(this.originAppRoot), '_babel_config_.js');
+    let config = existsSync(embroiderLocation)
+      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require(embroiderLocation)
+      : // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require(join(this.movedAppRoot, this.meta.babel.filename));
+
     config = Object.assign({}, config);
     config.plugins = config.plugins.filter((p: any) => !isMacrosPlugin(p));
 

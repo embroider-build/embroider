@@ -565,7 +565,7 @@ export class CompatAppBuilder {
       warn('Your build is slower because some babel plugins are non-serializable');
     }
     writeFileSync(
-      join(this.root, '_babel_config_.js'),
+      join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_config_.js'),
       `module.exports = ${JSON.stringify(pconfig.config, null, 2)}`,
       'utf8'
     );

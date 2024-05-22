@@ -10,7 +10,7 @@ let config;
 if (process.env.EMBROIDER_PREBUILD || process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic') {
   config = {};
 } else {
-  config = require('./node_modules/.embroider/rewritten-app/_babel_config_');
+  config = require('./node_modules/.embroider/_babel_config_');
 }
 
 module.exports = config;

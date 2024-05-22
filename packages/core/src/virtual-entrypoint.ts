@@ -349,7 +349,7 @@ function shouldSplitRoute(routeName: string, splitAtRoutes: (RegExp | string)[] 
 
 export function getAppFiles(appRoot: string): Set<string> {
   const files: string[] = walkSync(appRoot, {
-    ignore: ['_babel_config_.js', '_babel_filter_.js', 'app.js', 'assets', 'testem.js', 'node_modules'],
+    ignore: ['_babel_filter_.js', 'app.js', 'assets', 'testem.js', 'node_modules'],
   });
   return new Set(files);
 }

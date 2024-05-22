@@ -583,7 +583,7 @@ export class CompatAppBuilder {
     );
     writeFileSync(
       join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_filter_.js'),
-      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.origAppPackage.root }),
+      babelFilterTemplate({ skipBabel: [], appRoot: this.origAppPackage.root }),
       'utf8'
     );
   }
@@ -659,7 +659,7 @@ function defaultAddonPackageRules(): PackageRules[] {
 const babelFilterTemplate = jsHandlebarsCompile(`
 const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
 module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
-`) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
+`) as (params: { skipBabel: string[]; appRoot: string }) => string;
 
 function combinePackageJSON(...layers: object[]) {
   function custom(objValue: any, srcValue: any, key: string, _object: any, _source: any, stack: { size: number }) {

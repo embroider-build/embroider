@@ -331,19 +331,6 @@ stage2Scenarios
       amdCompatibility: {
         es: [['not-a-resolvable-package', ['default']]],
       },
-      skipBabel: [
-        {
-          package: 'babel-filter-test1',
-        },
-        {
-          package: 'babel-filter-test2',
-          semverRange: '^4.0.0',
-        },
-        {
-          package: 'babel-filter-test3',
-          semverRange: '^2.0.0',
-        },
-      ],
       staticAppPaths: ['static-dir', 'top-level-static.js'],
       packageRules: [
         {
@@ -404,11 +391,6 @@ stage2Scenarios
           });
 
           return prebuild(app, {
-            skipBabel: [
-              {
-                package: 'qunit',
-              },
-            ],
             ...opts
           });
         };
@@ -778,26 +760,6 @@ stage2Scenarios
       test('cjs require in non-ember package does not get rewritten to window.require', function () {
         let assertFile = expectFile('node_modules/babel-filter-test4/index.js').transform(build.transpile);
         assertFile.matches(/return require\(['"]some-package['"]\)/, 'should find plain cjs require');
-      });
-
-      test('transpilation runs for ember addons', async function (assert) {
-        assert.ok(build.shouldTranspile('node_modules/my-addon/components/has-relative-template.js'));
-      });
-
-      test('transpilation is skipped when package matches skipBabel', async function (assert) {
-        assert.ok(!build.shouldTranspile('node_modules/babel-filter-test1/index.js'));
-      });
-
-      test('transpilation is skipped when package and version match skipBabel', async function (assert) {
-        assert.ok(!build.shouldTranspile('node_modules/babel-filter-test2/index.js'));
-      });
-
-      test('transpilation runs when package version does not match skipBabel', async function (assert) {
-        assert.ok(build.shouldTranspile('node_modules/babel-filter-test3/index.js'));
-      });
-
-      test('transpilation runs for non-ember package that is not explicitly skipped', async function (assert) {
-        assert.ok(build.shouldTranspile('node_modules/babel-filter-test4/index.js'));
       });
 
       test(`app's babel plugins ran`, async function () {

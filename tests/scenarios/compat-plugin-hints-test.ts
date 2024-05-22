@@ -31,11 +31,6 @@ appScenarios
         });
 
         return maybeEmbroider(app, {
-          skipBabel: [
-            {
-              package: 'qunit',
-            },
-          ],
           pluginHints: [
             {
               resolve: ["${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}"],

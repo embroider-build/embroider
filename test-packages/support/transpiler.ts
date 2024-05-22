@@ -34,7 +34,11 @@ export class Transpiler {
   }
 
   shouldTranspile(relativePath: string) {
-    let shouldTranspile = require(join(this.appOutputPath, '_babel_filter_'));
+    // Depending on how the app builds, the babel filter is not at the same location
+    let embroiderLocation = join(locateEmbroiderWorkingDir(this.appDir), '_babel_filter_.js');
+    let shouldTranspile = existsSync(embroiderLocation)
+      ? require(embroiderLocation)
+      : require(join(this.appOutputPath, '_babel_filter_'));
     return shouldTranspile(join(this.appDir, getRewrittenLocation(this.appDir, relativePath))) as boolean;
   }
 

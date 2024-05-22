@@ -570,7 +570,7 @@ export class CompatAppBuilder {
       'utf8'
     );
     writeFileSync(
-      join(this.root, '_babel_filter_.js'),
+      join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_filter_.js'),
       babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.origAppPackage.root }),
       'utf8'
     );

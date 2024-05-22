@@ -483,9 +483,6 @@ export class CompatAppBuilder {
       'root-url': this.rootURL(),
     };
 
-    // all compat apps are auto-upgraded, there's no v2 app format here
-    meta['auto-upgraded'] = true;
-
     let pkg = this.combinePackageJSON(meta);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 

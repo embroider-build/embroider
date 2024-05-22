@@ -86,7 +86,7 @@ appScenarios
         // and is equivalent to visiting the app's /tests page
         let devBuildResult = await app.execute(`pnpm build`);
         assert.equal(devBuildResult.exitCode, 0, devBuildResult.output);
-        let testRunResult = await app.execute(`pnpm test:dist --path dist`);
+        let testRunResult = await app.execute(`pnpm test:ember --path dist`);
         assert.equal(testRunResult.exitCode, 0, testRunResult.output);
       });
     });

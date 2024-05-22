@@ -217,7 +217,7 @@ appScenarios
       });
 
       test('virtual styles are included in the CSS of the test build', async function (assert) {
-        let result = await app.execute('pnpm test:dist');
+        let result = await app.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
 
         // TODO: replace with an Audit when it's ready to take any given dist

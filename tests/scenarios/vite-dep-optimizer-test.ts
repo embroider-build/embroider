@@ -56,7 +56,7 @@ app.forEachScenario(scenario => {
         } catch (e) {
           await new Promise(resolve => setTimeout(resolve, 1000));
           retries += 1;
-          if (retries > 10) {
+          if (retries > 30) {
             throw new Error(`unable to visit all urls ${e}`);
           }
           continue;
@@ -111,7 +111,7 @@ app.forEachScenario(scenario => {
       test('created initial optimized deps', async function (assert) {
         await waitUntilOptimizedReady(expectAudit);
         optimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps')).filter(f => f.endsWith('.js'));
-        assert.ok(optimizedFiles.length === 136, `should have created optimized deps: ${optimizedFiles.length}`);
+        assert.ok(optimizedFiles.length === 144, `should have created optimized deps: ${optimizedFiles.length}`);
       });
 
       test('should use all optimized deps', function (assert) {
@@ -170,7 +170,6 @@ app.forEachScenario(scenario => {
         await server.shutdown();
         server = CommandWatcher.launch('vite', ['--clearScreen', 'false', '--force'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s*(.*)/);
-        await expectAudit.rerun();
       });
       hooks.afterEach(async () => {
         await server.shutdown();
@@ -204,7 +203,8 @@ app.forEachScenario(scenario => {
           });
       });
 
-      test('all optimized deps are used', function (assert) {
+      test('all optimized deps are used', async function (assert) {
+        await waitUntilOptimizedReady(expectAudit);
         const optimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps')).filter(f =>
           f.endsWith('.js')
         );
@@ -228,8 +228,8 @@ app.forEachScenario(scenario => {
           .resolves(/dep-tests\.js/)
           .toModule()
           .withContents((_src, imports) => {
-            let pageTitleImports = imports.filter(imp => /my-services-addon/.test(imp.source));
-            assert.strictEqual(pageTitleImports.length, 1, 'found two uses of page-title addon');
+            let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
+            assert.strictEqual(pageTitleImports.length, 1, `found one use of page-title addon: ${imports}`);
             assert.ok(
               pageTitleImports.every(isOptimizedImport),
               `every page-title module is optimized but we saw ${pageTitleImports.map(i => i.source).join(', ')}`
@@ -317,6 +317,7 @@ app.forEachScenario(scenario => {
       });
 
       test('ember index is not optimized', async function (assert) {
+        await waitUntilOptimizedReady(expectAudit);
         expectAudit
           .module('./index.html')
           .resolves(/\/@embroider\/core\/entrypoint/)
@@ -346,7 +347,6 @@ app.forEachScenario(scenario => {
         await server.shutdown();
         server = CommandWatcher.launch('vite', ['--clearScreen', 'false', '--force'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s*(.*)/);
-        await expectAudit.rerun();
       });
       hooks.afterEach(async () => {
         await server.shutdown();

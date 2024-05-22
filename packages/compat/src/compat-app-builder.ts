@@ -488,10 +488,7 @@ export class CompatAppBuilder {
     this.addAppBoot(this.compatApp.appBoot.readAppBoot());
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
-    writeFileSync(
-      join(this.root, 'macros-config.json'),
-      JSON.stringify(this.compatApp.macrosConfig.babelPluginConfig()[0], null, 2)
-    );
+    this.addMacrosConfig(this.compatApp.macrosConfig.babelPluginConfig()[0]);
   }
 
   private combinePackageJSON(meta: AppMeta): object {
@@ -591,6 +588,12 @@ export class CompatAppBuilder {
 
   private addEmberEnvConfig(emberEnvConfig: any) {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'ember-env.json'), emberEnvConfig, {
+      spaces: 2,
+    });
+  }
+
+  private addMacrosConfig(macrosConfig: any) {
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'macros-config.json'), macrosConfig, {
       spaces: 2,
     });
   }

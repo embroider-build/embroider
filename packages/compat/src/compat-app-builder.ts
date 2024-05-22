@@ -508,6 +508,12 @@ export class CompatAppBuilder {
     }
     // but our own new v2 app metadata takes precedence over both
     pkgLayers.push({ 'ember-addon': meta });
+    // add a default package exports
+    pkgLayers.push({
+      exports: {
+        './*': './*.js',
+      },
+    });
     return combinePackageJSON(...pkgLayers);
   }
 

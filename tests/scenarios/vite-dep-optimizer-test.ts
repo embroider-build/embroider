@@ -120,6 +120,25 @@ app.forEachScenario(scenario => {
         allDepFilesAreUsed(expectAudit, assert, optimizedFiles);
       });
 
+      test('all deps are optimized', function (assert) {
+        const allow = [
+          "vite/dist/client/env.mjs",
+          "@babel+runtime",
+          ".css",
+          "@embroider/macros",
+          "ember-source/ember/index.js",
+        ];
+        const notOptimized = Object.keys(expectAudit.modules).filter(m => {
+          const isOptimized = m.includes('.vite/deps');
+          if (!isOptimized) {
+            if (m.startsWith('.')) return false
+            if (allow.some(a => m.includes(a))) return false
+            return true;
+          }
+        });
+        assert.ok(notOptimized.length === 0, `not all are optimized: ${notOptimized}`)
+      });
+
       test('should use optimized files for deps', function (assert) {
         expectAudit
           .module('./index.html')
@@ -335,7 +354,7 @@ app.forEachScenario(scenario => {
         rmSync(join(app.dir, 'app/dep-tests.js'), { force: true });
       });
 
-      test(`should optimize newly added deps`, async function (assert) {
+      test(`addon should be able to import app files`, async function (assert) {
         writeFileSync(
           join(app.dir, 'app/dep-tests.js'),
           `import 'my-services-addon/services/service';`

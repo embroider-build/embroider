@@ -5,8 +5,8 @@
     },
     "@embroider/addon-shim": {
       "impact": "patch",
-      "oldVersion": "1.8.7",
-      "newVersion": "1.8.8",
+      "oldVersion": "1.8.8",
+      "newVersion": "1.8.9",
       "constraints": [
         {
           "impact": "patch",
@@ -19,16 +19,7 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "3.4.9",
-      "newVersion": "3.5.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "3.5.0"
     },
     "@embroider/core": {
       "oldVersion": "3.4.9"
@@ -43,16 +34,7 @@
       "oldVersion": "0.1.0"
     },
     "@embroider/router": {
-      "impact": "patch",
-      "oldVersion": "2.1.6",
-      "newVersion": "2.1.7",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "oldVersion": "2.1.7"
     },
     "@embroider/shared-internals": {
       "oldVersion": "2.6.0"
@@ -70,5 +52,5 @@
       "oldVersion": "4.0.0"
     }
   },
-  "description": "## Release (2024-05-08)\n\n@embroider/addon-shim 1.8.8 (patch)\n@embroider/compat 3.5.0 (minor)\n@embroider/router 2.1.7 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/compat`\n  * [#1907](https://github.com/embroider-build/embroider/pull/1907) Make ember-source compat adapter tolerant of upcoming ember-source changes ([@ef4](https://github.com/ef4))\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#1904](https://github.com/embroider-build/embroider/pull/1904) Fix getRoute override ([@jembezmamy](https://github.com/jembezmamy))\n* `@embroider/addon-shim`\n  * [#1901](https://github.com/embroider-build/embroider/pull/1901) [addon-shim]: Narrowed down broccoli trees for optimized file watching ([@simonihmig](https://github.com/simonihmig))\n\n#### :house: Internal\n* `@embroider/test-scenarios`\n  * [#1908](https://github.com/embroider-build/embroider/pull/1908) update tests to follow newer babel-plugin-ember-template-compiilation ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Paweł Bator ([@jembezmamy](https://github.com/jembezmamy))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2024-05-22)\n\n@embroider/addon-shim 1.8.9 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-shim`\n  * [#1940](https://github.com/embroider-build/embroider/pull/1940) only register v2 addons with parent addons ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* [#1938](https://github.com/embroider-build/embroider/pull/1938) remove v* prefix GitHub Actions builds ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

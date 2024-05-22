@@ -9,7 +9,7 @@ import { join } from 'path';
 
 const { module: Qmodule, test } = QUnit;
 
-let app = appScenarios.map('vite-dep-optimizer', (project) => {
+let app = appScenarios.map('vite-dep-optimizer', project => {
   let myServicesAddon = baseAddon();
   myServicesAddon.pkg.name = 'my-services-addon';
   myServicesAddon.mergeFiles({
@@ -39,8 +39,6 @@ app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
     let appURL: string;
-
-
 
     hooks.before(async () => {
       app = await scenario.prepare();
@@ -122,21 +120,22 @@ app.forEachScenario(scenario => {
 
       test('all deps are optimized', function (assert) {
         const allow = [
-          "vite/dist/client/env.mjs",
-          "@babel+runtime",
-          ".css",
-          "@embroider/macros",
-          "ember-source/ember/index.js",
+          'vite/dist/client/env.mjs',
+          '@babel+runtime',
+          '.css',
+          '@embroider/macros',
+          'ember-source/ember/index.js',
         ];
         const notOptimized = Object.keys(expectAudit.modules).filter(m => {
           const isOptimized = m.includes('.vite/deps');
           if (!isOptimized) {
-            if (m.startsWith('.')) return false
-            if (allow.some(a => m.includes(a))) return false
+            if (m.startsWith('.')) return false;
+            if (allow.some(a => m.includes(a))) return false;
             return true;
           }
+          return false;
         });
-        assert.ok(notOptimized.length === 0, `not all are optimized: ${notOptimized}`)
+        assert.ok(notOptimized.length === 0, `not all are optimized: ${notOptimized}`);
       });
 
       test('should use optimized files for deps', function (assert) {
@@ -355,10 +354,7 @@ app.forEachScenario(scenario => {
       });
 
       test(`addon should be able to import app files`, async function (assert) {
-        writeFileSync(
-          join(app.dir, 'app/dep-tests.js'),
-          `import 'my-services-addon/services/service';`
-        );
+        writeFileSync(join(app.dir, 'app/dep-tests.js'), `import 'my-services-addon/services/service';`);
         await server.waitFor(/page reload/);
         await waitUntilOptimizedReady(expectAudit);
 
@@ -377,7 +373,7 @@ app.forEachScenario(scenario => {
             );
             return true;
           });
-        })
-      })
+      });
+    });
   });
 });

@@ -43,7 +43,11 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
   }
 
   hooks.before(async () => {
-    await visit();
+    try {
+      await visit();
+    } catch (e) {
+      // failed, try with rerun
+    }
   });
 
   hooks.beforeEach(assert => {

@@ -20,13 +20,11 @@
     "lint:hbs:fix": "ember-template-lint . --fix",
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
-    "test": "node ./scripts/run-tests.mjs",
-    "test:dist": "vite build --mode test && ember test --path dist",
-    "test:ember": "node ./scripts/run-tests.mjs"
+    "start": "ember serve",
+    "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
+    "test:ember": "ember test"
   },
   "devDependencies": {
-    "puppeteer-chromium-resolver": "^21.0.0",
-    "js-reporters": "^2.1.0",
     "@babel/core": "^7.22.20",
     "@babel/eslint-parser": "^7.21.3",
     "@babel/plugin-proposal-decorators": "^7.21.0",

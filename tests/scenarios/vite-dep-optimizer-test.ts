@@ -354,7 +354,14 @@ app.forEachScenario(scenario => {
       });
 
       test(`addon should be able to import app files`, async function (assert) {
-        writeFileSync(join(app.dir, 'app/dep-tests.js'), `import 'my-services-addon/services/service';`);
+        await waitUntilOptimizedReady(expectAudit);
+        writeFileSync(
+          join(app.dir, 'app/dep-tests.js'),
+          `
+        import * as service from 'my-services-addon/services/service';
+        console.log(service);
+        `
+        );
         await server.waitFor(/page reload/);
         await waitUntilOptimizedReady(expectAudit);
 
@@ -364,13 +371,11 @@ app.forEachScenario(scenario => {
           .toModule()
           .resolves(/dep-tests\.js/)
           .toModule()
+          .resolves(/my-services-addon/)
+          .toModule()
           .withContents((_src, imports) => {
-            let pageTitleImports = imports.filter(imp => /my-services-addon/.test(imp.source));
-            assert.strictEqual(pageTitleImports.length, 1, 'found two uses of page-title addon');
-            assert.ok(
-              pageTitleImports.every(isOptimizedImport),
-              `every page-title module is optimized but we saw ${pageTitleImports.map(i => i.source).join(', ')}`
-            );
+            const appImport = imports.find(i => i.source.endsWith('app.js'));
+            assert.ok(appImport, 'should import app: ' + imports.map(i => i.source));
             return true;
           });
       });

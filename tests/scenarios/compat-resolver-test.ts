@@ -105,14 +105,14 @@ Scenarios.fromProject(() => new Project())
           };
 
           givenFiles({
-            '_babel_config.js': `
+            'node_modules/.embroider/_babel_config_.js': `
             module.exports = {
               plugins: ${JSON.stringify([
                 [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
                 [require.resolve('@embroider/compat/src/babel-plugin-adjust-imports'), { appRoot: app.dir }],
               ])}
             }`,
-            '_babel_filter.js': `
+            'node_modules/.embroider/_babel_filter.js': `
               module.exports = function(filename) { return true }
             `,
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),

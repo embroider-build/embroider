@@ -81,6 +81,10 @@ export default class Package {
     return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'app';
   }
 
+  needsLooseResolving(): boolean {
+    return this.isV2App() || ((this.isV2Addon() && this.meta['auto-upgraded']) ?? false);
+  }
+
   isV2Addon(): this is V2AddonPackage {
     return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'addon';
   }

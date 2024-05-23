@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2024-05-22)
+
+@embroider/addon-shim 1.8.9 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-shim`
+  * [#1940](https://github.com/embroider-build/embroider/pull/1940) only register v2 addons with parent addons ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#1938](https://github.com/embroider-build/embroider/pull/1938) remove v* prefix GitHub Actions builds ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-05-08)
 
 @embroider/addon-shim 1.8.8 (patch)

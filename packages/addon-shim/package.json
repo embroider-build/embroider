@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-shim",
-  "version": "1.8.8",
+  "version": "1.8.9",
   "description": "Make v2 addons work in non-Embroider apps.",
   "keywords": [],
   "main": "./src/index.js",

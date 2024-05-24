@@ -76,6 +76,12 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           if (result.type === 'not_found') {
             return null;
           }
+          if (result.result.path?.includes('rewritten-app')) {
+            return {
+              external: true,
+              path: result.result.path,
+            };
+          }
           return result.result;
         }
         delete (args as any).path;
@@ -105,6 +111,14 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         }
         if (res.path.includes('rewritten-app')) {
           res.external = false;
+          res.namespace = 'file';
+        }
+        if (
+          res.path.includes('rewritten-app') &&
+          importer.includes('node_modules') &&
+          !importer.includes('rewritten-app')
+        ) {
+          res.external = true;
           res.namespace = 'file';
         }
         if (args.importer?.includes('rewritten-app') && res.path.includes('-embroider-implicit-')) {

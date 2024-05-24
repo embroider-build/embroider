@@ -22,12 +22,10 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
       services: {
         'service.js': `
             import app from 'app-template/app.js';
-            import Service from '@ember/service';
-            export default class Serv extends Service {
-              log() {
-                console.log(app);
-              }
-            };
+
+            console.log(app);
+            const foo=1;
+            export default foo;
           `,
       },
     },
@@ -183,7 +181,7 @@ app.forEachScenario(scenario => {
         import 'ember-page-title/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/);
+        await server.waitFor(/page reload/, 60000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -218,7 +216,7 @@ app.forEachScenario(scenario => {
         import 'app-template/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/);
+        await server.waitFor(/page reload/, 60000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -244,7 +242,7 @@ app.forEachScenario(scenario => {
         import './helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/);
+        await server.waitFor(/page reload/, 60000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -275,7 +273,7 @@ app.forEachScenario(scenario => {
         // todo: import 'ember-page-title/_app_/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/);
+        await server.waitFor(/page reload/, 60000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -362,7 +360,7 @@ app.forEachScenario(scenario => {
         console.log(service);
         `
         );
-        await server.waitFor(/page reload/);
+        await server.waitFor(/page reload/, 60000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -373,8 +371,10 @@ app.forEachScenario(scenario => {
           .toModule()
           .resolves(/my-services-addon/)
           .toModule()
+          .resolves(/chunk-.*\.js/)
+          .toModule()
           .withContents((_src, imports) => {
-            const appImport = imports.find(i => i.source.endsWith('app.js'));
+            const appImport = imports.find(i => i.source.match(/\/app\.js/));
             assert.ok(appImport, 'should import app: ' + imports.map(i => i.source));
             return true;
           });

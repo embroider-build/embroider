@@ -11,7 +11,7 @@ import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import ContentForConfig from './content-for-config';
-import { V1Config, WriteV1Config } from './v1-config';
+import { V1Config } from './v1-config';
 import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync, writeFileSync } from 'fs-extra';
@@ -690,13 +690,6 @@ export default class CompatApp {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.testConfig);
-    let patterns = this.configReplacePatterns;
-    let configReplaced = new this.configReplace(config, this.configTree, {
-      configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),
-      files: ['config/environment.js'],
-      patterns,
-    });
 
     let trees: BroccoliNode[] = [];
     trees.push(appTree);
@@ -704,7 +697,6 @@ export default class CompatApp {
       new SynthesizeTemplateOnlyComponents(appTree, { allowedPaths: ['components'], templateExtensions: ['.hbs'] })
     );
 
-    trees.push(configReplaced);
     if (testsTree) {
       trees.push(testsTree);
     }

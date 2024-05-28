@@ -1,10 +1,12 @@
 import { virtualContent } from './virtual-content';
-import { dirname, resolve, isAbsolute } from 'path';
-import { explicitRelative } from '@embroider/shared-internals';
+import { dirname, join } from 'path';
+import { packageName as getPackageName } from '@embroider/shared-internals';
 import assertNever from 'assert-never';
+import { exports as resolveExports } from 'resolve.exports';
 
 // these would be circular, but they're type-only so it's fine
 import type { ModuleRequest, Resolution, Resolver } from './module-resolver';
+import { existsSync } from 'fs-extra';
 
 export class NodeModuleRequest implements ModuleRequest {
   constructor(
@@ -102,12 +104,24 @@ export class NodeModuleRequest implements ModuleRequest {
     // We can do the path adjustments before doing require.resolve.
     let { specifier } = request;
     let fromDir = dirname(request.fromFile);
-    if (!isAbsolute(specifier) && specifier.startsWith('.')) {
-      let targetPath = resolve(fromDir, specifier);
-      let newFromDir = dirname(targetPath);
-      if (fromDir !== newFromDir) {
-        specifier = explicitRelative(newFromDir, targetPath);
-        fromDir = newFromDir;
+
+    let packageName = getPackageName(request.specifier);
+
+    let pkg = this.resolver.packageCache.ownerOfFile(request.fromFile);
+
+    // check for self reference
+    if (packageName && pkg?.name === packageName && pkg.packageJSON.exports) {
+      let found = resolveExports(pkg.packageJSON, request.specifier, {
+        browser: true,
+        conditions: ['default', 'imports'],
+      });
+      if (found?.[0]) {
+        let filename = join(pkg.root, found?.[0]);
+
+        // only resolve to this file if it exists, otherwise fallback to other behaviour
+        if (existsSync(filename)) {
+          return { type: 'found', filename, result: { type: 'real' as 'real', filename }, isVirtual: false };
+        }
       }
     }
 

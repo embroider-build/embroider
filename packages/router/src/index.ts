@@ -11,6 +11,7 @@ interface GlobalConfig {
 }
 
 type EngineInfoByRoute = Record<string, { name: string }>;
+type EngineSeenByRoute = Record<string, boolean>;
 
 let Router: typeof EmberRouter;
 
@@ -20,6 +21,7 @@ interface GetRoute {
 }
 
 interface Internals {
+  _seenByRoute: object;
   _routerMicrolib: {
     getRoute: GetRoute;
   };
@@ -66,8 +68,11 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
     // Unfortunately the stock query parameter behavior pulls on routes just to
     // check what their previous QP values were.
     _getQPMeta(handlerInfo: { name: string }, ...rest: unknown[]) {
-      let bundle = this.lazyBundle(handlerInfo.name);
-      if (bundle && !bundle.loaded) {
+      let lazy_bundle = this.lazyBundle(handlerInfo.name);
+      let engineInfoByRoute = (this as unknown as { _engineInfoByRoute: EngineInfoByRoute })._engineInfoByRoute;
+      let seenByRoute = (this as unknown as { _seenByRoute: EngineSeenByRoute })._seenByRoute;
+      let eager_bundle = engineInfoByRoute[handlerInfo.name];
+      if ((lazy_bundle || (!lazy_bundle && eager_bundle)) && !seenByRoute[handlerInfo.name]) {
         return undefined;
       }
       // @ts-expect-error extending private method
@@ -80,6 +85,9 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
       // @ts-expect-error extending private method
       let isSetup = super.setupRouter(...args);
       let microLib = this._routerMicrolib;
+      if (!this._seenByRoute) {
+        this._seenByRoute = Object.create(null);
+      }
       if (!microLib.getRoute.isEmbroiderRouterHandler) {
         microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
       }
@@ -89,6 +97,8 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
     private _handlerResolver(original: (name: string) => unknown) {
       let handler = ((name: string) => {
         const bundle = this.lazyBundle(name);
+        let seenByRoute = (this as unknown as { _seenByRoute: EngineSeenByRoute })._seenByRoute;
+        seenByRoute[name] = true;
         if (!bundle || bundle.loaded) {
           return original(name);
         }

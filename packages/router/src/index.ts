@@ -10,9 +10,6 @@ interface GlobalConfig {
   '@embroider/core'?: { active: boolean };
 }
 
-type EngineInfoByRoute = Record<string, { name: string }>;
-type EngineSeenByRoute = Record<string, boolean>;
-
 let Router: typeof EmberRouter;
 
 interface GetRoute {
@@ -21,26 +18,40 @@ interface GetRoute {
 }
 
 interface Internals {
-  _seenByRoute: object;
+  _engineInfoByRoute: Record<string, { name: string }>;
   _routerMicrolib: {
     getRoute: GetRoute;
   };
+}
+
+interface EmbroiderBundle {
+  names: string[];
+  loaded?: true;
+  load: () => Promise<void>;
 }
 
 if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ?? false)) {
   const waiter = buildWaiter('@embroider/router:lazy-route-waiter');
 
   function embroiderBundles(): {
-    _embroiderEngineBundles_?: { names: string[]; loaded?: true; load: () => Promise<void> }[];
-    _embroiderRouteBundles_?: { names: string[]; loaded?: true; load: () => Promise<void> }[];
+    _embroiderEngineBundles_?: EmbroiderBundle[];
+    _embroiderRouteBundles_?: EmbroiderBundle[];
   } {
     return window as ReturnType<typeof embroiderBundles>;
   }
 
   class EmbroiderRouter extends EmberRouter {
-    private lazyBundle(routeName: string) {
-      let engineInfoByRoute = (this as unknown as { _engineInfoByRoute: EngineInfoByRoute })._engineInfoByRoute;
+    private seenByRoute = new Set<string>();
 
+    private lazyRoute(this: this & Internals, routeName: string): EmbroiderBundle | undefined {
+      let bundles = embroiderBundles();
+      if (bundles._embroiderRouteBundles_) {
+        return bundles._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
+      }
+      return undefined;
+    }
+
+    private lazyEngine(this: this & Internals, routeName: string): EmbroiderBundle | undefined {
       // Here we map engine names to route names. We need to do this because
       // engines can be specified with "as" such as:
       //
@@ -50,31 +61,42 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
       // router is dynamic and the string could be defined as anything. Luckly, this._engineInfoByRoute contains
       // mappings from routeName to the engines "original name" (which we know at build time).
       let bundles = embroiderBundles();
-      let engine = engineInfoByRoute[routeName];
+      let engine = this._engineInfoByRoute[routeName];
       if (engine && bundles._embroiderEngineBundles_) {
         let engineName = engine.name;
         return bundles._embroiderEngineBundles_.find(bundle => bundle.names.indexOf(engineName) !== -1);
       }
+      return undefined;
+    }
 
-      if (bundles._embroiderRouteBundles_) {
-        return bundles._embroiderRouteBundles_.find(bundle => bundle.names.indexOf(routeName) !== -1);
-      }
-
-      return false;
+    private isEngine(this: this & Internals, name: string): boolean {
+      return Boolean(this._engineInfoByRoute[name]);
     }
 
     // This is necessary in order to prevent the premature loading of lazy routes
     // when we are merely trying to render a link-to that points at them.
     // Unfortunately the stock query parameter behavior pulls on routes just to
     // check what their previous QP values were.
-    _getQPMeta(handlerInfo: { name: string }, ...rest: unknown[]) {
-      let lazy_bundle = this.lazyBundle(handlerInfo.name);
-      let engineInfoByRoute = (this as unknown as { _engineInfoByRoute: EngineInfoByRoute })._engineInfoByRoute;
-      let seenByRoute = (this as unknown as { _seenByRoute: EngineSeenByRoute })._seenByRoute;
-      let eager_bundle = engineInfoByRoute[handlerInfo.name];
-      if ((lazy_bundle || (!lazy_bundle && eager_bundle)) && !seenByRoute[handlerInfo.name]) {
+    _getQPMeta(this: this & Internals, handlerInfo: { name: string }, ...rest: unknown[]) {
+      let bundle = this.lazyRoute(handlerInfo.name);
+      if (bundle && !bundle.loaded) {
+        // unloaded split routes
         return undefined;
       }
+
+      if (this.isEngine(handlerInfo.name) && !this.seenByRoute.has(handlerInfo.name)) {
+        // unvisited engines, whether loaded or not, because the same bundle
+        // could by mounted multiple places and engines expect to only run the
+        // super._getQPMeta after they've been visited.
+        return undefined;
+      }
+
+      bundle = this.lazyEngine(handlerInfo.name);
+      if (bundle && !bundle.loaded) {
+        // unloaded lazy engines
+        return undefined;
+      }
+
       // @ts-expect-error extending private method
       return super._getQPMeta(handlerInfo, ...rest);
     }
@@ -85,20 +107,16 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
       // @ts-expect-error extending private method
       let isSetup = super.setupRouter(...args);
       let microLib = this._routerMicrolib;
-      if (!this._seenByRoute) {
-        this._seenByRoute = Object.create(null);
-      }
       if (!microLib.getRoute.isEmbroiderRouterHandler) {
         microLib.getRoute = this._handlerResolver(microLib.getRoute.bind(microLib));
       }
       return isSetup;
     }
 
-    private _handlerResolver(original: (name: string) => unknown) {
+    private _handlerResolver(this: this & Internals, original: (name: string) => unknown) {
       let handler = ((name: string) => {
-        const bundle = this.lazyBundle(name);
-        let seenByRoute = (this as unknown as { _seenByRoute: EngineSeenByRoute })._seenByRoute;
-        seenByRoute[name] = true;
+        const bundle = this.lazyRoute(name) ?? this.lazyEngine(name);
+        this.seenByRoute.add(name);
         if (!bundle || bundle.loaded) {
           return original(name);
         }

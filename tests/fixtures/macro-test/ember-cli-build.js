@@ -13,6 +13,7 @@ module.exports = function (defaults) {
           items: [{ name: 'Arthur', awesome: true }],
           description: null,
         },
+        EXPECTED_VERSION: process.env.EXPECTED_VERSION || 'four',
       },
       setConfig: {
         'ember-source': {

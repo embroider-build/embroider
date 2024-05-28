@@ -70,7 +70,13 @@ module('Integration | Macro | getConfig', function(hooks) {
   test('macroGetOwnConfig emits complex pojo', async function(assert) {
     assert.expect(1);
     function myAssertion(value) {
-      assert.deepEqual(value, {
+      assert.deepEqual({
+        ...value, 
+        // this isn't what this test is actually checking for, we need to reuse this fixture between
+        // different tests that this value will be different so it's easier to just remove from the
+        // pojo
+        EXPECTED_VERSION: null 
+      }, {
         mode: 'amazing',
         count: 42,
         inner: {
@@ -78,7 +84,8 @@ module('Integration | Macro | getConfig', function(hooks) {
             { name: 'Arthur', awesome: true }
           ],
           description: null
-        }
+        },
+        EXPECTED_VERSION: null,
       });
     }
     await render(precompileTemplate(`{{myAssertion (macroGetOwnConfig) }}`, {

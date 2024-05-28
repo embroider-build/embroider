@@ -1,7 +1,7 @@
 import { module, test } from 'qunit';
 import { visit, currentURL } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
-import ENV from 'app-template/config/environment';
+import { getOwnConfig } from '@embroider/macros';
 
 module('Acceptance | smoke tests', function (hooks) {
   setupApplicationTest(hooks);
@@ -62,6 +62,6 @@ module('Acceptance | smoke tests', function (hooks) {
   test('dependency satisfies works correctly', async function (assert) {
     await visit('/');
     assert.equal(currentURL(), '/');
-    assert.equal(this.element.querySelector('[data-test-version]').textContent.trim(), ENV.EXPECTED_VERSION);
+    assert.equal(this.element.querySelector('[data-test-version]').textContent.trim(), getOwnConfig().EXPECTED_VERSION);
   });
 });

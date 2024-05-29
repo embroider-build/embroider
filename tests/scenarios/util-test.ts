@@ -14,8 +14,6 @@ supportMatrix(Scenarios.fromDir(dirname(require.resolve('@embroider/util/package
       'test.js': `
         const { module: QModule, test } = require("qunit");
         const semver = require("semver");
-        const { PackageCache } = require("@embroider/shared-internals");
-
         QModule("shared-internals", function () {
           test("testing on node 12", function (assert) {
             assert.ok(

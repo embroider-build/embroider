@@ -2,7 +2,7 @@ import Package from './package';
 import { existsSync, realpathSync } from 'fs';
 import { getOrCreate } from './get-or-create';
 import resolvePackagePath from 'resolve-package-path';
-import { dirname, sep } from 'path';
+import { basename, dirname, join, resolve } from 'path';
 
 const realpathSyncCache = new Map<string, string>();
 
@@ -67,25 +67,29 @@ export default class PackageCache {
   }
 
   ownerOfFile(filename: string): Package | undefined {
-    let segments = filename.split(sep);
+    let candidate = filename;
 
     // first we look through our cached packages for any that are rooted right
     // at or above the file.
-    for (let length = segments.length; length >= 0; length--) {
-      if (segments[length - 1] === 'node_modules' || segments[length - 1] === '') {
-        // once we hit a node_modules or the filesystem root, we're leaving the
+    while (true) {
+      if (basename(candidate) === 'node_modules') {
+        // once we hit a node_modules, we're leaving the
         // package we were in, so any higher caches don't apply to us
         break;
       }
 
-      let usedSegments = segments.slice(0, length);
-      let candidate = usedSegments.join(sep);
       if (this.rootCache.has(candidate)) {
         return this.rootCache.get(candidate);
       }
-      if (getCachedExists([...usedSegments, 'package.json'].join(sep))) {
+      if (getCachedExists(join(candidate, 'package.json'))) {
         return this.get(candidate);
       }
+      let nextCandidate = resolve(candidate, '..');
+      if (nextCandidate === candidate) {
+        // got to the top
+        break;
+      }
+      candidate = nextCandidate;
     }
   }
 

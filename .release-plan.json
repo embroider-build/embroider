@@ -10,65 +10,34 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.5.0",
-      "newVersion": "3.5.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "3.5.1"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.9",
-      "newVersion": "3.4.10",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.4.10"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.16.1",
-      "newVersion": "1.16.2",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.2"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
     },
     "@embroider/router": {
-      "oldVersion": "2.1.7"
-    },
-    "@embroider/shared-internals": {
       "impact": "patch",
-      "oldVersion": "2.6.0",
-      "newVersion": "2.6.1",
+      "oldVersion": "2.1.7",
+      "newVersion": "2.1.8",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "pkgJSONPath": "./packages/router/package.json"
+    },
+    "@embroider/shared-internals": {
+      "oldVersion": "2.6.1"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -80,17 +49,8 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.0.0",
-      "newVersion": "4.0.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.1"
     }
   },
-  "description": "## Release (2024-05-29)\n\n@embroider/compat 3.5.1 (patch)\n@embroider/core 3.4.10 (patch)\n@embroider/macros 1.16.2 (patch)\n@embroider/shared-internals 2.6.1 (patch)\n@embroider/webpack 4.0.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/shared-internals`, `@embroider/test-support`, `@embroider/test-scenarios`\n  * [#1949](https://github.com/embroider-build/embroider/pull/1949) Fix ownerOfFile bug on windows ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2024-05-29)\n\n@embroider/router 2.1.8 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#1945](https://github.com/embroider-build/embroider/pull/1945) avoid loading of lazy engines when generating linkto urls for routes ([@void-mAlex](https://github.com/void-mAlex))\n\n#### Committers: 1\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n"
 }

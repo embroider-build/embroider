@@ -2,6 +2,17 @@
 
 ## Release (2024-05-29)
 
+@embroider/router 2.1.8 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#1945](https://github.com/embroider-build/embroider/pull/1945) avoid loading of lazy engines when generating linkto urls for routes ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
+## Release (2024-05-29)
+
 @embroider/compat 3.5.1 (patch)
 @embroider/core 3.4.10 (patch)
 @embroider/macros 1.16.2 (patch)

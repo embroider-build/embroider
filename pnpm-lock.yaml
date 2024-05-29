@@ -367,6 +367,12 @@ importers:
         specifier: ^5.4.5
         version: 5.4.5
 
+  packages/config-meta-loader:
+    devDependencies:
+      typescript:
+        specifier: ^5.4.5
+        version: 5.4.5
+
   packages/core:
     dependencies:
       '@babel/core':
@@ -1310,6 +1316,9 @@ importers:
 
   tests/addon-template:
     dependencies:
+      '@embroider/config-meta-loader':
+        specifier: workspace:*
+        version: link:../../packages/config-meta-loader
       ember-cli-babel:
         specifier: ^7.26.11
         version: 7.26.11

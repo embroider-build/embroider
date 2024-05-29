@@ -32,6 +32,10 @@
     "test-packages/*/node_modules",
     "tmp",
     "tests/scenarios/output",
+    "packages/config-meta-loader/src",
     "packages/router/src"
+  ],
+  "references": [
+    { "path": "packages/config-meta-loader" }
   ]
 }

@@ -4,31 +4,53 @@
       "oldVersion": "4.3.1"
     },
     "@embroider/addon-shim": {
-      "impact": "patch",
-      "oldVersion": "1.8.8",
-      "newVersion": "1.8.9",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-shim/package.json"
+      "oldVersion": "1.8.9"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.5.0"
+      "impact": "patch",
+      "oldVersion": "3.5.0",
+      "newVersion": "3.5.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.9"
+      "impact": "patch",
+      "oldVersion": "3.4.9",
+      "newVersion": "3.4.10",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.1"
+      "impact": "patch",
+      "oldVersion": "1.16.1",
+      "newVersion": "1.16.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -37,7 +59,16 @@
       "oldVersion": "2.1.7"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.6.0"
+      "impact": "patch",
+      "oldVersion": "2.6.0",
+      "newVersion": "2.6.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -49,8 +80,17 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "oldVersion": "4.0.0"
+      "impact": "patch",
+      "oldVersion": "4.0.0",
+      "newVersion": "4.0.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2024-05-22)\n\n@embroider/addon-shim 1.8.9 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-shim`\n  * [#1940](https://github.com/embroider-build/embroider/pull/1940) only register v2 addons with parent addons ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* [#1938](https://github.com/embroider-build/embroider/pull/1938) remove v* prefix GitHub Actions builds ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2024-05-29)\n\n@embroider/compat 3.5.1 (patch)\n@embroider/core 3.4.10 (patch)\n@embroider/macros 1.16.2 (patch)\n@embroider/shared-internals 2.6.1 (patch)\n@embroider/webpack 4.0.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/shared-internals`, `@embroider/test-support`, `@embroider/test-scenarios`\n  * [#1949](https://github.com/embroider-build/embroider/pull/1949) Fix ownerOfFile bug on windows ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

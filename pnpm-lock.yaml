@@ -9,7 +9,6 @@ overrides:
   graceful-fs: ^4.0.0
   '@types/eslint': ^8.37.0
   babel-plugin-module-resolver@5.0.1: 5.0.0
-  '@embroider/shared-internals': workspace:*
 
 patchedDependencies:
   ember-source@5.8.0:
@@ -118,7 +117,7 @@ importers:
   packages/addon-shim:
     dependencies:
       '@embroider/shared-internals':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../shared-internals
       broccoli-funnel:
         specifier: ^3.0.8

@@ -1,5 +1,31 @@
 # Embroider Changelog
 
+## Release (2024-05-29)
+
+@embroider/router 2.1.8 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#1945](https://github.com/embroider-build/embroider/pull/1945) avoid loading of lazy engines when generating linkto urls for routes ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
+## Release (2024-05-29)
+
+@embroider/compat 3.5.1 (patch)
+@embroider/core 3.4.10 (patch)
+@embroider/macros 1.16.2 (patch)
+@embroider/shared-internals 2.6.1 (patch)
+@embroider/webpack 4.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`, `@embroider/test-support`, `@embroider/test-scenarios`
+  * [#1949](https://github.com/embroider-build/embroider/pull/1949) Fix ownerOfFile bug on windows ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2024-05-22)
 
 @embroider/addon-shim 1.8.9 (patch)

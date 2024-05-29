@@ -10,7 +10,7 @@ async function githubMatrix() {
   let dir = resolve(__dirname, '..', '..', 'tests', 'scenarios');
   let { stdout } = await execa(
     'scenario-tester',
-    ['list', '--require', 'ts-node/register', '--files', '*-test.ts', '--matrix', 'pnpm run test --filter %s'],
+    ['list', '--require', 'ts-node/register', '--files', '*-test.ts', '--matrix', 'pnpm run test --filter "/^%s/"'],
     {
       cwd: dir,
       preferLocal: true,

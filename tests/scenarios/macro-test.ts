@@ -213,6 +213,9 @@ function dummyAppScenarioSetup(project: Project) {
       this._super.included.apply(this, arguments);
     },
     contentFor(type, config, contents) {
+      // This if block is used only by macro-sample-addon-classic, which does not build with Embroider.
+      // When building with Embroider, the responsibility for the config is moved to the app.
+      // Therefore, macro-sample-addon scenario defines 'fromConfigModule' differently using fixtures.
       if (type === 'config-module') {
         const originalContents = contents.join('');
         contents.splice(0, contents.length);

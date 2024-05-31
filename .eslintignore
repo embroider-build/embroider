@@ -4,6 +4,8 @@
 /packages/shared-internals/**/*.d.ts
 /packages/compat/**/*.js
 /packages/compat/**/*.d.ts
+/packages/config-meta-loader/**/*.js
+/packages/config-meta-loader/**/*.d.ts
 /packages/macros/**/*.js
 /packages/macros/**/*.d.ts
 /packages/util/src/**/*.js

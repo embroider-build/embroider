@@ -22,7 +22,6 @@ import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/nod
 import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
-import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic, isInlinePrecompilePlugin } from './detect-babel-plugins';
 import loadAstPlugins from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
@@ -693,9 +692,6 @@ export default class CompatApp {
 
     let trees: BroccoliNode[] = [];
     trees.push(appTree);
-    trees.push(
-      new SynthesizeTemplateOnlyComponents(appTree, { allowedPaths: ['components'], templateExtensions: ['.hbs'] })
-    );
 
     if (testsTree) {
       trees.push(testsTree);

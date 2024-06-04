@@ -16,7 +16,7 @@ export function convertLegacyAddons(compatApp: CompatApp) {
 
   let appPackage = compatApp.appPackage();
 
-  let violations = validatePeerDependencies(appPackage).filter(({ dep }) => dep.isEmberPackage() && !dep.isV2Ember());
+  let violations = validatePeerDependencies(appPackage).filter(({ dep }) => dep.isEmberAddon() && !dep.isV2Ember());
   if (violations.length > 0) {
     if (process.env.I_HAVE_BAD_PEER_DEPS_AND_WANT_A_BROKEN_BUILD) {
       console.warn(
@@ -116,7 +116,7 @@ function findV1Addons(pkg: Package, seen: Set<Package> = new Set(), output: Set<
       continue;
     }
     seen.add(dep);
-    if (dep.isEmberPackage()) {
+    if (dep.isEmberAddon()) {
       if (!dep.isV2Addon()) {
         output.add(dep);
       }

@@ -1163,7 +1163,7 @@ export class Resolver {
     if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
         let dep = this.packageCache.resolve(packageName, logicalPackage);
-        if (!dep.isEmberPackage()) {
+        if (!dep.isEmberAddon()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
           return this.external('v1 package without auto-import', request, specifier);

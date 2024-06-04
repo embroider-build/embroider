@@ -54,7 +54,7 @@ export function validatePeerDependencies(appPackage: Package): PeerDepViolation[
           for (let ancestor of ancestors.slice().reverse()) {
             if (ancestor.hasDependency(dep.name)) {
               let ancestorsDep = ancestor.dependencies.find(d => d.name === dep.name)!;
-              if (ancestorsDep !== dep && dep.isEmberPackage()) {
+              if (ancestorsDep !== dep && dep.isEmberAddon()) {
                 violations.push({ pkg, dep, ancestors, ancestor, ancestorsDep });
               }
               continue;

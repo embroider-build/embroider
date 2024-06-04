@@ -499,7 +499,7 @@ export class CompatAppBuilder {
       pkgLayers.push(fastbootConfig.packageJSON);
     }
     // but our own new v2 app metadata takes precedence over both
-    pkgLayers.push({ keywords: ['ember-addon'], 'ember-addon': meta });
+    pkgLayers.push({ 'ember-addon': meta });
     return combinePackageJSON(...pkgLayers);
   }
 

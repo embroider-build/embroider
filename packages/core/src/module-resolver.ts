@@ -11,6 +11,7 @@ import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-inter
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import reversePackageExports from '@embroider/reverse-exports';
+import { exports as resolveExports } from 'resolve.exports';
 
 import {
   virtualExternalESModule,
@@ -946,13 +947,10 @@ export class Resolver {
             .withMeta({ originalFromFile: request.fromFile })
             .rehome(resolve(originalRequestingPkg.root, 'package.json'))
         );
-      }
-      // TODO is this the right check for this?
-      else if (packageName !== requestingPkg.name) {
+      } else {
         // requesting package was moved and we failed to find its target. We
         // can't let that accidentally succeed in the defaultResolve because we
         // could escape the moved package system.
-        // and it's not a self reference
         return logTransition('missing outbound request from moved package', request, request.notFound());
       }
     }
@@ -1018,6 +1016,26 @@ export class Resolver {
           request,
           request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
         );
+      } else {
+        // v2 packages are supposed to use package.json `exports` to enable
+        // self-imports, but not all build tools actually follow the spec. This
+        // is a workaround for badly behaved packagers.
+        //
+        // Known upstream bugs this works around:
+        // - https://github.com/vitejs/vite/issues/9731
+        if (pkg.packageJSON.exports) {
+          let found = resolveExports(pkg.packageJSON, request.specifier, {
+            browser: true,
+            conditions: ['default', 'imports'],
+          });
+          if (found?.[0]) {
+            return logTransition(
+              `v2 self-import with package.json exports`,
+              request,
+              request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
+            );
+          }
+        }
       }
     }
 

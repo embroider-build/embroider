@@ -4,7 +4,7 @@
   "main": "index.mjs",
   "peerDependencies": {
     "@embroider/core": "workspace:^",
-    "vite": "^4.3.9 || ^5.0.0"
+    "vite": "^5.2.0"
   },
   "scripts": {
     "test": "jest"
@@ -31,8 +31,8 @@
     "@types/debug": "^4.1.5",
     "@types/jsdom": "^16.2.11",
     "@types/fs-extra": "^9.0.12",
-    "rollup": "^3.23.0",
-    "vite": "^4.3.9"
+    "rollup": "^4.0.0",
+    "vite": "^5.2.0"
   },
   "files": [
     "index.mjs",

@@ -1176,17 +1176,16 @@ export class Resolver {
     }
 
     // assertions on what native v2 addons can import
-    if (!pkg.meta['auto-upgraded']) {
-      if (
-        !pkg.meta['auto-upgraded'] &&
-        !appImportInAppTree(pkg, logicalPackage, packageName) &&
-        !reliablyResolvable(pkg, packageName)
-      ) {
-        throw new Error(
-          `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
-        );
-      }
+    if (
+      !pkg.needsLooseResolving() &&
+      !appImportInAppTree(pkg, logicalPackage, packageName) &&
+      !reliablyResolvable(pkg, packageName)
+    ) {
+      throw new Error(
+        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+      );
     }
+
     return request;
   }
 
@@ -1326,7 +1325,7 @@ export class Resolver {
     }
 
     // auto-upgraded packages can fall back to the set of known active addons
-    if (pkg.meta['auto-upgraded']) {
+    if (pkg.needsLooseResolving()) {
       let addon = this.locateActiveAddon(packageName);
       if (addon) {
         const rehomed = request.rehome(addon.canResolveFromFile);
@@ -1362,7 +1361,7 @@ export class Resolver {
       }
     }
 
-    if (pkg.meta['auto-upgraded'] && (request.meta?.runtimeFallback ?? true)) {
+    if (pkg.needsLooseResolving() && (request.meta?.runtimeFallback ?? true)) {
       // auto-upgraded packages can fall back to attempting to find dependencies at
       // runtime. Native v2 packages can only get this behavior in the
       // isExplicitlyExternal case above because they need to explicitly ask for

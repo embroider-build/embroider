@@ -475,9 +475,6 @@ export class CompatAppBuilder {
       'root-url': this.rootURL(),
     };
 
-    // all compat apps are auto-upgraded, there's no v2 app format here
-    meta['auto-upgraded'] = true;
-
     let pkg = this.combinePackageJSON(meta);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 
@@ -500,6 +497,12 @@ export class CompatAppBuilder {
     }
     // but our own new v2 app metadata takes precedence over both
     pkgLayers.push({ 'ember-addon': meta });
+    // add a default package exports
+    pkgLayers.push({
+      exports: {
+        './*': './*.js',
+      },
+    });
     return combinePackageJSON(...pkgLayers);
   }
 

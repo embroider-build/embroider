@@ -252,6 +252,10 @@ class WrappedPackage implements PackageTheGoodParts {
     return this.plainPkg.isV2Addon();
   }
 
+  needsLooseResolving(): boolean {
+    return this.plainPkg.needsLooseResolving();
+  }
+
   // it's important that we're calling this.dependencies here at this level, not
   // plainPkg.dependencies, which wouldn't be correct
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {

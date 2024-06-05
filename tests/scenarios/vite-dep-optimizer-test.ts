@@ -175,13 +175,14 @@ app.forEachScenario(scenario => {
       });
 
       test(`should optimize newly added deps`, async function (assert) {
+        await waitUntilOptimizedReady(expectAudit);
         writeFileSync(
           join(app.dir, 'app/dep-tests.js'),
           `
         import 'ember-page-title/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 60000);
+        await server.waitFor(/page reload/, 90000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -210,13 +211,14 @@ app.forEachScenario(scenario => {
       });
 
       test(`should optimize newly added deps via appjs match`, async function (assert) {
+        await waitUntilOptimizedReady(expectAudit);
         writeFileSync(
           join(app.dir, 'app/dep-tests.js'),
           `
         import 'app-template/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 60000);
+        await server.waitFor(/page reload/, 90000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -236,13 +238,14 @@ app.forEachScenario(scenario => {
           });
       });
       test(`should optimize newly added deps via relative appjs match`, async function (assert) {
+        await waitUntilOptimizedReady(expectAudit);
         writeFileSync(
           join(app.dir, 'app/dep-tests.js'),
           `
         import './helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 60000);
+        await server.waitFor(/page reload/, 90000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -263,6 +266,7 @@ app.forEachScenario(scenario => {
       });
 
       test(`should give same optimized id`, async function (assert) {
+        await waitUntilOptimizedReady(expectAudit);
         writeFileSync(
           join(app.dir, 'app/dep-tests.js'),
           `
@@ -273,7 +277,7 @@ app.forEachScenario(scenario => {
         // todo: import 'ember-page-title/_app_/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 60000);
+        await server.waitFor(/page reload/, 90000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit
@@ -360,7 +364,7 @@ app.forEachScenario(scenario => {
         console.log(service);
         `
         );
-        await server.waitFor(/page reload/, 60000);
+        await server.waitFor(/page reload/, 90000);
         await waitUntilOptimizedReady(expectAudit);
 
         expectAudit

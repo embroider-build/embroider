@@ -16,6 +16,17 @@ let stage2Scenarios = appScenarios.map('compat-stage2-build', app => {
   renameApp(app, 'my-app');
 });
 
+function resolveEntryPoint(expectAudit: ReturnType<typeof setupAuditTest>) {
+  return expectAudit
+    .module('./tmp/rewritten-app/index.html')
+    .resolves('/app-boot.js')
+    .toModule()
+    .resolves('./app')
+    .toModule()
+    .resolves('@embroider/core/entrypoint')
+    .toModule();
+}
+
 stage2Scenarios
   .map('in-repo-addons-of-addons', app => {
     app.mergeFiles({
@@ -129,20 +140,14 @@ stage2Scenarios
         expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
 
         // check that the app trees with in repo addon are combined correctly
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
+        resolveEntryPoint(expectAudit)
           .resolves('./service/in-repo.js')
           .to('./node_modules/dep-b/lib/in-repo-c/_app_/service/in-repo.js');
       });
 
       test('incorporates in-repo-addons of in-repo-addons correctly', function () {
         // secondary in-repo-addon was correctly detected and activated
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
+        resolveEntryPoint(expectAudit)
           .resolves('./services/secondary.js')
           .to('./lib/secondary-in-repo-addon/_app_/services/secondary.js');
 
@@ -205,47 +210,32 @@ stage2Scenarios
       let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
 
       test('verifies that the correct lexigraphically sorted addons win', function () {
-        let expectModule = expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule();
+        let expectModule = resolveEntryPoint(expectAudit);
         expectModule.resolves('./service/in-repo.js').to('./lib/in-repo-b/_app_/service/in-repo.js');
         expectModule.resolves('./service/addon.js').to('./node_modules/dep-b/_app_/service/addon.js');
         expectModule.resolves('./service/dev-addon.js').to('./node_modules/dev-c/_app_/service/dev-addon.js');
       });
 
       test('addons declared as dependencies should win over devDependencies', function () {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
+        resolveEntryPoint(expectAudit)
           .resolves('./service/dep-wins-over-dev.js')
           .to('./node_modules/dep-b/_app_/service/dep-wins-over-dev.js');
       });
 
       test('in repo addons declared win over dependencies', function () {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
+        resolveEntryPoint(expectAudit)
           .resolves('./service/in-repo-over-deps.js')
           .to('./lib/in-repo-a/_app_/service/in-repo-over-deps.js');
       });
 
       test('ordering with before specified', function () {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
+        resolveEntryPoint(expectAudit)
           .resolves('./service/test-before.js')
           .to('./node_modules/dev-d/_app_/service/test-before.js');
       });
 
       test('ordering with after specified', function () {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
+        resolveEntryPoint(expectAudit)
           .resolves('./service/test-after.js')
           .to('./node_modules/dev-b/_app_/service/test-after.js');
       });
@@ -671,57 +661,41 @@ stage2Scenarios
       });
 
       test('non-static other paths are included in the entrypoint', function (assert) {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .withContents(contents => {
-            const result = /import \* as (\w+) from "\.\/non-static-dir\/another-library.js";/.exec(contents);
+        resolveEntryPoint(expectAudit).withContents(contents => {
+          const result = /import \* as (\w+) from "\.\/non-static-dir\/another-library.js";/.exec(contents);
 
-            if (!result) {
-              throw new Error('Could not find import for non-static-dir/another-library');
-            }
+          if (!result) {
+            throw new Error('Could not find import for non-static-dir/another-library');
+          }
 
-            const [, amdModule] = result;
+          const [, amdModule] = result;
 
-            assert.codeContains(
-              contents,
-              `d("my-app/non-static-dir/another-library", function () {
+          assert.codeContains(
+            contents,
+            `d("my-app/non-static-dir/another-library", function () {
               return ${amdModule};
             });`
-            );
-            return true;
-          });
+          );
+          return true;
+        });
       });
 
       test('static other paths are not included in the entrypoint', function () {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .withContents(content => {
-            return !/\.\/static-dir\/my-library\.js"/.test(content);
-          });
+        resolveEntryPoint(expectAudit).withContents(content => {
+          return !/\.\/static-dir\/my-library\.js"/.test(content);
+        });
       });
 
       test('top-level static other paths are not included in the entrypoint', function () {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .withContents(content => {
-            return !content.includes('./top-level-static.js');
-          });
+        resolveEntryPoint(expectAudit).withContents(content => {
+          return !content.includes('./top-level-static.js');
+        });
       });
 
       test('staticAppPaths do not match partial path segments', function () {
-        expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .withContents(content => {
-            return content.includes('./static-dir-not-really/something.js');
-          });
+        resolveEntryPoint(expectAudit).withContents(content => {
+          return content.includes('./static-dir-not-really/something.js');
+        });
       });
 
       test('invokes rule on appTemplates produces synthetic import', function () {

@@ -65,6 +65,29 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
   });
 });
 
+function checkContents(
+  expectAudit: ReturnType<typeof setupAuditTest>,
+  fn: (contents: string) => void,
+  entrypointFiles?: RegExp[]
+) {
+  let resolved = expectAudit
+    .module('./index.html')
+    .resolves('/app-boot.js')
+    .toModule()
+    .resolves(/\/app\.[jt]s.*/)
+    .toModule()
+    .resolves(/.*\/-embroider-entrypoint.js/);
+
+  entrypointFiles?.forEach(entrypointFile => {
+    resolved = resolved.toModule().resolves(entrypointFile);
+  });
+
+  resolved.toModule().withContents(contents => {
+    fn(contents);
+    return true;
+  });
+}
+
 scenarios
   .map('staticComponent-false', app => {
     merge(app.files, {
@@ -113,13 +136,9 @@ scenarios
       }));
 
       test(`app's colocated template is associated with JS`, function (assert) {
-        expectAudit
-          .module('./index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .resolves(/has-colocated-template/)
-          .toModule()
-          .withContents(contents => {
+        checkContents(
+          expectAudit,
+          contents => {
             assert.ok(
               /import TEMPLATE from ['"]\/components\/has-colocated-template.hbs.*['"];/.test(contents),
               'imported template'
@@ -129,18 +148,15 @@ scenarios
               /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/.test(contents),
               'default export is wrapped'
             );
-            return true;
-          });
+          },
+          [/has-colocated-template/]
+        );
       });
 
       test(`app's template-only component JS is synthesized`, function (assert) {
-        expectAudit
-          .module('./index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .resolves(/components\/template-only-component/)
-          .toModule()
-          .withContents(contents => {
+        checkContents(
+          expectAudit,
+          contents => {
             assert.ok(
               /import TEMPLATE from ['"]\/components\/template-only-component.hbs.*['"];/.test(contents),
               'imported template'
@@ -152,45 +168,35 @@ scenarios
               /export default setComponentTemplate\(TEMPLATE, templateOnly\(\)\)/.test(contents),
               'default export is wrapped'
             );
-            return true;
-          });
+          },
+          [/components\/template-only-component/]
+        );
       });
 
       test(`app's colocated components are implicitly included correctly`, function (assert) {
-        expectAudit
-          .module('./index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .withContents(contents => {
-            const result = /import \* as (\w+) from "\/components\/has-colocated-template.js.*";/.exec(contents);
+        checkContents(expectAudit, contents => {
+          const result = /import \* as (\w+) from "\/components\/has-colocated-template.js.*";/.exec(contents);
 
-            if (!result) {
-              console.log(contents);
-              throw new Error('Missing import of has-colocated-template');
-            }
+          if (!result) {
+            console.log(contents);
+            throw new Error('Missing import of has-colocated-template');
+          }
 
-            const [, amdModule] = result;
+          const [, amdModule] = result;
 
-            assert.codeContains(
-              contents,
-              `d("my-app/components/has-colocated-template", function () {
+          assert.codeContains(
+            contents,
+            `d("my-app/components/has-colocated-template", function () {
               return ${amdModule};
             });`
-            );
-            return true;
-          });
+          );
+        });
       });
 
       test(`addon's colocated template is associated with JS`, function (assert) {
-        expectAudit
-          .module('./index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .resolves(/components\/has-colocated-template/)
-          .toModule()
-          .resolves(/components\/component-one/)
-          .toModule()
-          .withContents(contents => {
+        checkContents(
+          expectAudit,
+          contents => {
             assert.ok(
               /import __COLOCATED_TEMPLATE__ from ['"]\.\/component-one.hbs['"];/.test(contents),
               'imported template'
@@ -200,20 +206,15 @@ scenarios
               /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/.test(contents),
               'default export is wrapped'
             );
-            return true;
-          });
+          },
+          [/components\/has-colocated-template/, /components\/component-one/]
+        );
       });
 
       test(`addon's template-only component JS is synthesized`, function (assert) {
-        expectAudit
-          .module('./index.html')
-          .resolves('/@embroider/core/entrypoint')
-          .toModule()
-          .resolves(/components\/has-colocated-template/)
-          .toModule()
-          .resolves(/components\/component-two/)
-          .toModule()
-          .withContents(contents => {
+        checkContents(
+          expectAudit,
+          contents => {
             assert.ok(
               /import __COLOCATED_TEMPLATE__ from ['"]\.\/component-two.hbs['"];/.test(contents),
               'imported template'
@@ -224,8 +225,9 @@ scenarios
               /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/.test(contents),
               'default export is wrapped'
             );
-            return true;
-          });
+          },
+          [/components\/has-colocated-template/, /components\/component-two/]
+        );
       });
 
       test(`addon's colocated components are correct in implicit-modules`, function () {
@@ -262,7 +264,11 @@ scenarios
       test(`app's colocated components are not implicitly included`, function (assert) {
         expectAudit
           .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
+          .resolves('/app-boot.js')
+          .toModule()
+          .resolves('./app')
+          .toModule()
+          .resolves('@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
             assert.notOk(/import \* as (\w+) from "\.\/components\/has-colocated-component.js"/.test(content));
@@ -355,7 +361,11 @@ appScenarios
       test(`app's pod components and templates are implicitly included correctly`, function (assert) {
         expectAudit
           .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
+          .resolves('/app-boot.js')
+          .toModule()
+          .resolves('./app')
+          .toModule()
+          .resolves('@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
             let result = /import \* as (\w+) from "\.\/components\/pod-component\/component.js"/.exec(content);

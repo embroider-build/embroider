@@ -75,7 +75,11 @@ appScenarios
         // but not be picked up in the entrypoint
         expectAudit
           .module('./tmp/rewritten-app/index.html')
-          .resolves('/@embroider/core/entrypoint')
+          .resolves('/app-boot.js')
+          .toModule()
+          .resolves('./app')
+          .toModule()
+          .resolves('@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
             assert.notOk(/app-template\/\.foobar/.test(content), '.foobar is not in the entrypoint');

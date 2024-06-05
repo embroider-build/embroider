@@ -32,7 +32,7 @@ appScenarios
 
     // <script ... src=".../vendor.js"> => <script ... src=".../vendor.js" data-original-filename="vendor.js">
     indexHtml = indexHtml.replace('vendor.js">', 'vendor.js" data-original-filename="vendor.js">');
-    indexHtml = indexHtml.replace('entrypoint" ', 'entrypoint" data-original-filename="entrypoint" ');
+    indexHtml = indexHtml.replace('/app-boot.js" ', '/app-boot.js" data-original-filename="entrypoint" ');
 
     // <script ... => <script defer ...
     indexHtml = indexHtml.replace(/<script /g, '<script defer ');

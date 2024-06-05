@@ -240,12 +240,6 @@ w._embroiderEngineBundles_ = [
   {{/each}}
 ]
 {{/if}}
-
-{{#if autoRun ~}}
-  i("./app").default.create(environment.APP);
-{{else  if appBoot ~}}
-  {{ appBoot }}
-{{/if}}
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];

@@ -4,11 +4,10 @@ import type { Resolver } from './module-resolver';
 import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
 import { join } from 'path';
-import { extensionsPattern, locateEmbroiderWorkingDir } from '@embroider/shared-internals';
+import { extensionsPattern } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
-import { readFileSync } from 'fs-extra';
 import escapeRegExp from 'escape-string-regexp';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
@@ -146,19 +145,6 @@ export function renderEntrypoint(
     defineModulesFrom: './-embroider-implicit-modules.js',
   };
 
-  // for the top-level entry template we need to pass extra params to the template
-  // this is new, it used to be passed into the appJS function instead
-  if (isApp) {
-    const appBoot = readFileSync(join(locateEmbroiderWorkingDir(resolver.options.appRoot), 'ember-app-boot.js'), {
-      encoding: 'utf-8',
-    });
-
-    Object.assign(params, {
-      autoRun: resolver.options.autoRun,
-      appBoot,
-    });
-  }
-
   return {
     src: entryTemplate(params),
     watches: [],
@@ -245,8 +231,6 @@ w._embroiderEngineBundles_ = [
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];
   defineModulesFrom?: string;
   eagerModules?: string[];
-  autoRun?: boolean;
-  appBoot?: string;
   lazyRoutes?: { names: string[]; path: string }[];
   lazyEngines?: { names: string[]; path: string }[];
   styles?: { path: string }[];

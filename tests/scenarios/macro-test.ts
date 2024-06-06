@@ -235,7 +235,7 @@ function dummyAppScenarioSetup(project: Project) {
           'if (!runningTests) {',
           "  require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
           '}',
-          'window.LoadedFromCustomAppBoot = true',
+          'window.LoadedFromClassicCustomAppBoot = true',
         ]
           .join('')
           .replace(/\{\{MODULE_PREFIX\}\}/g, prefix)

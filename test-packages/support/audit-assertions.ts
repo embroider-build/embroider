@@ -2,12 +2,13 @@ import type { AuditBuildOptions, Finding, Module } from '../../packages/compat/s
 import { httpAudit, type HTTPAuditOptions } from '../../packages/compat/src/http-audit';
 import type { Import } from '../../packages/compat/src/module-visitor';
 import { Audit } from '../../packages/compat/src/audit';
-import { explicitRelative } from '../../packages/shared-internals';
+import { cleanUrl, explicitRelative } from '../../packages/shared-internals';
 import { install as installCodeEqualityAssertions } from 'code-equality-assertions/qunit';
 import { posix } from 'path';
 import { distance } from 'fastest-levenshtein';
 import { sortBy } from 'lodash';
 import { getRewrittenLocation } from './rewritten-path';
+import { Memoize } from 'typescript-memoize';
 
 export { Import };
 
@@ -113,8 +114,14 @@ export class ExpectAuditResults {
 export class ExpectModule {
   constructor(private expectAudit: ExpectAuditResults, private inputName: string) {}
 
+  @Memoize()
   private get module() {
     let outputName = this.expectAudit.toRewrittenPath(this.inputName);
+    for (let [key, value] of Object.entries(this.expectAudit.result.modules)) {
+      if (cleanUrl(key) === outputName) {
+        return value;
+      }
+    }
     return this.expectAudit.result.modules[outputName];
   }
 

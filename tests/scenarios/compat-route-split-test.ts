@@ -4,6 +4,9 @@ import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 import QUnit from 'qunit';
+import CommandWatcher from './helpers/command-watcher';
+import fetch from 'node-fetch';
+
 const { module: Qmodule, test } = QUnit;
 
 let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
@@ -62,9 +65,7 @@ function checkContents(
   fn: (contents: string) => void,
   entrypointFile?: string
 ) {
-  let resolved = expectAudit
-    .module('./node_modules/.embroider/rewritten-app/index.html')
-    .resolves('/@embroider/core/entrypoint');
+  let resolved = expectAudit.module('./index.html').resolves('/@embroider/core/entrypoint');
 
   if (entrypointFile) {
     resolved = resolved.toModule().resolves(entrypointFile);
@@ -155,15 +156,24 @@ splitScenarios
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
 
-      let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
 
-      hooks.before(async assert => {
-        app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+      hooks.before(async () => {
+        let app = await scenario.prepare();
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
       let notInEntrypoint = notInEntrypointFunction(expectAudit);
       let inEntrypoint = inEntrypointFunction(expectAudit);
 
@@ -234,28 +244,24 @@ splitScenarios
         notInEntrypoint('auto-focus', '@embroider/core/route/people');
       });
 
-      Qmodule('audit', function (hooks) {
-        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+      test('has no issues', function () {
+        expectAudit.hasNoFindings();
+      });
 
-        test('has no issues', function () {
-          expectAudit.hasNoFindings();
-        });
+      test('helper is consumed only from the template that uses it', function () {
+        expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
+      });
 
-        test('helper is consumed only from the template that uses it', function () {
-          expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
-        });
+      test('component is consumed only from the template that uses it', function () {
+        expectAudit.module('./components/one-person.js').hasConsumers(['./templates/people/show.hbs']);
+      });
 
-        test('component is consumed only from the template that uses it', function () {
-          expectAudit.module('./components/one-person.js').hasConsumers(['./templates/people/show.hbs']);
-        });
+      test('modifier is consumed only from the template that uses it', function () {
+        expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./templates/people/edit.hbs']);
+      });
 
-        test('modifier is consumed only from the template that uses it', function () {
-          expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./templates/people/edit.hbs']);
-        });
-
-        test('does not include unused component', function () {
-          expectAudit.module('./components/unused.hbs').doesNotExist();
-        });
+      test('does not include unused component', function () {
+        expectAudit.module('./components/unused.hbs').doesNotExist();
       });
     });
   });

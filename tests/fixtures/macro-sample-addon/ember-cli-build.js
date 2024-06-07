@@ -16,6 +16,7 @@ module.exports = function(defaults) {
   */
 
   return maybeEmbroider(app, {
+    useAddonAppBoot: false,
     skipBabel: [
       {
         package: 'qunit',

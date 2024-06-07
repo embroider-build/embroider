@@ -482,10 +482,14 @@ export class CompatAppBuilder {
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 
     let resolverConfig = this.resolverConfig(appFiles);
+    let config = this.configTree.readConfig();
+    let contentForConfig = this.contentForTree.readContents();
+
     this.addResolverConfig(resolverConfig);
-    this.addContentForConfig(this.contentForTree.readContents());
-    this.addEmberEnvConfig(this.configTree.readConfig().EmberENV);
+    this.addContentForConfig(contentForConfig);
+    this.addEmberEnvConfig(config.EmberENV);
     this.addAppBoot(this.compatApp.appBoot.readAppBoot());
+    this.outputAppBootError(config.modulePrefix, config.APP, contentForConfig);
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     this.addMacrosConfig(this.compatApp.macrosConfig.babelPluginConfig()[0]);
@@ -600,6 +604,39 @@ export class CompatAppBuilder {
 
   private addAppBoot(appBoot?: string) {
     writeFileSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'ember-app-boot.js'), appBoot ?? '');
+  }
+
+  // Classic addons providing custom content-for "app-boot" is no longer supported.
+  // The purpose of this error message is to help developers to move the classic addons code.
+  // Developers can deactivate it with useAddonAppBoot build option.
+  private outputAppBootError(modulePrefix: string, appConfig: any, contentForConfig: any) {
+    if (!this.compatApp.options.useAddonAppBoot) {
+      return;
+    }
+
+    // This is the default script provided by
+    // https://github.com/ember-cli/ember-cli/blob/master/lib/utilities/ember-app-utils.js#L103
+    const defaultAppBoot = `
+      if (!runningTests) {
+        require("${modulePrefix}/app")["default"].create(${JSON.stringify(appConfig || {})});
+      }
+    `.replace(/\s/g, '');
+
+    const appBoot = contentForConfig['/index.html']['app-boot'];
+    const diff = appBoot.replace(/\s/g, '').replace(defaultAppBoot, '');
+
+    if (diff.length) {
+      throw new Error(`
+        Your app uses at least one classic addon that provides content-for 'app-boot'. This is no longer supported.
+        With Embroider, you have full control over the app-boot script, so classic addons no longer need to modify it under the hood.
+        The following code is used for your app boot:
+
+        ${appBoot}
+
+        1. If you want to keep the same behavior, copy and paste it to your /app/app-boot.js:
+        2. Once /app/app-boot.js has the content you need, remove the present error by setting "useAddonAppBoot" to false in the build options.
+      `);
+    }
   }
 }
 

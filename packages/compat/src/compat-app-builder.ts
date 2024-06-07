@@ -596,6 +596,26 @@ export class CompatAppBuilder {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'content-for.json'), contentForConfig, {
       spaces: 2,
     });
+
+    // In addition to outputting content-for.json, we also want to check if content-for 'config-module' has a custom content.
+    // If so, it means some classic addons used to provide this custom content, which is no longer supported.
+    let modulePrefix = this.configTree.readConfig().modulePrefix;
+    // This is the default script provided by https://github.com/ember-cli/ember-cli/blob/master/lib/utilities/ember-app-utils.js#L84
+    // When storeConfigInMeta is true, this content is always present in the config-module key of content-for.json
+    const defaultConfigModule = `var prefix = '${modulePrefix}';\ntry {\n  var metaName = prefix + '/config/environment';\n  var rawConfig = document.querySelector('meta[name=\"' + metaName + '\"]').getAttribute('content');\n  var config = JSON.parse(decodeURIComponent(rawConfig));\n\n  var exports = { 'default': config };\n\n  Object.defineProperty(exports, '__esModule', { value: true });\n\n  return exports;\n}\ncatch(err) {\n  throw new Error('Could not read config from meta tag with name \"' + metaName + '\".');\n}\n`;
+    const diff = contentForConfig['/index.html']['config-module'].replace(defaultConfigModule, '');
+    if (diff.length) {
+      console.warn(`
+        Your app uses at least one classic addon that provides content-for 'config-module'. This is no longer supported.
+        In classic builds, the following code was included in the config via content-for 'config-module':
+
+        ${diff}
+
+        With Embroider, you have full control over the config module, so classic addons no longer need to modify it under the hood.
+        If the code above is still required, you should add it to your ${this.compatApp.name}/app/environment.js.
+        Once the required code is moved, you can remove the present warning by setting "useAddonConfigModule" to false in the build options.
+      `);
+    }
   }
 
   private addEmberEnvConfig(emberEnvConfig: any) {

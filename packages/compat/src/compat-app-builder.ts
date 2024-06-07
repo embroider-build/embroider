@@ -488,7 +488,6 @@ export class CompatAppBuilder {
     this.addResolverConfig(resolverConfig);
     this.addContentForConfig(contentForConfig);
     this.addEmberEnvConfig(config.EmberENV);
-    this.addAppBoot(this.compatApp.appBoot.readAppBoot());
     this.outputAppBootError(config.modulePrefix, config.APP, contentForConfig);
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
@@ -600,10 +599,6 @@ export class CompatAppBuilder {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'macros-config.json'), macrosConfig, {
       spaces: 2,
     });
-  }
-
-  private addAppBoot(appBoot?: string) {
-    writeFileSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'ember-app-boot.js'), appBoot ?? '');
   }
 
   // Classic addons providing custom content-for "app-boot" is no longer supported.

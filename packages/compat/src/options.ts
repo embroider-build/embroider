@@ -108,6 +108,11 @@ export default interface Options extends CoreOptions {
   // switching to Embroider, but is no longer necessary once content-for
   // 'app-boot' code has been properly moved to the app-side.
   useAddonAppBoot?: boolean;
+
+  // content-for 'config-module'. This warning brings awareness for developers
+  // switching to Embroider, but is no longer necessary once content-for
+  // 'config-module' code has been properly moved to the app-side.
+  useAddonConfigModule?: boolean;
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -121,6 +126,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   allowUnsafeDynamicComponents: false,
   availableContentForTypes: [],
   useAddonAppBoot: true,
+  useAddonConfigModule: true,
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

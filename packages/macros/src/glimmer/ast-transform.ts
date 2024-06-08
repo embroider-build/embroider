@@ -72,7 +72,7 @@ export function makeFirstTransform(opts: FirstTransformParams) {
       name: '@embroider/macros/first',
 
       visitor: {
-        Program: {
+        Block: {
           enter(node: any) {
             if (node.blockParams.length > 0) {
               scopeStack.push(node.blockParams);

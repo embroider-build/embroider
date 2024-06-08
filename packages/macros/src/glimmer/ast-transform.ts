@@ -88,9 +88,13 @@ export function makeFirstTransform(opts: FirstTransformParams) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          let head = 'head' in node.path ? node.path.head : node.path.parts[0];
+
+          if (inScope(scopeStack, head)) {
             return;
           }
+
           if (node.path.original === 'macroGetOwnConfig') {
             return literal(
               getConfig(node, opts.configs, opts.packageRoot, moduleName, true, packageCache),
@@ -120,7 +124,10 @@ export function makeFirstTransform(opts: FirstTransformParams) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          let head = 'head' in node.path ? node.path.head : node.path.parts[0];
+
+          if (inScope(scopeStack, head)) {
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
@@ -166,7 +173,7 @@ export function makeSecondTransform() {
       name: '@embroider/macros/second',
 
       visitor: {
-        Program: {
+        Block: {
           enter(node: any) {
             if (node.blockParams.length > 0) {
               scopeStack.push(node.blockParams);
@@ -182,7 +189,10 @@ export function makeSecondTransform() {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          let head = 'head' in node.path ? node.path.head : node.path.parts[0];
+
+          if (inScope(scopeStack, head)) {
             return;
           }
           if (node.path.original === 'if') {
@@ -196,7 +206,10 @@ export function makeSecondTransform() {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          let head = 'head' in node.path ? node.path.head : node.path.parts[0];
+
+          if (inScope(scopeStack, head)) {
             return;
           }
           if (node.path.original === 'if') {
@@ -234,7 +247,10 @@ export function makeSecondTransform() {
             if (modifier.path.type !== 'PathExpression') {
               return true;
             }
-            if (inScope(scopeStack, modifier.path.parts[0])) {
+
+            let head = 'head' in node.path ? node.path.head : node.path.parts[0];
+
+            if (inScope(scopeStack, head)) {
               return true;
             }
             if (modifier.path.original === 'macroMaybeAttrs') {
@@ -248,7 +264,10 @@ export function makeSecondTransform() {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          let head = 'head' in node.path ? node.path.head : node.path.parts[0];
+
+          if (inScope(scopeStack, head)) {
             return;
           }
           if (node.path.original === 'if') {

@@ -72,7 +72,7 @@ export function makeFirstTransform(opts: FirstTransformParams) {
       name: '@embroider/macros/first',
 
       visitor: {
-        Template: {
+        [rootVisitorKey(env)]: {
           enter(node: any) {
             if (node.blockParams.length > 0) {
               scopeStack.push(node.blockParams);
@@ -169,7 +169,7 @@ export function makeSecondTransform() {
       name: '@embroider/macros/second',
 
       visitor: {
-        Template: {
+        [rootVisitorKey(env)]: {
           enter(node: any) {
             if (node.blockParams.length > 0) {
               scopeStack.push(node.blockParams);
@@ -293,4 +293,15 @@ function headOf(path: any) {
   if (!path) return;
 
   return 'head' in path ? path.head : path.parts[0];
+}
+
+/**
+ * Template is available in ember-source 3.17+
+ * Program is deprecated in ember-source 5.9+
+ */
+function rootVisitorKey(env: any) {
+  let hasTemplate = 'template' in env.syntax.builders;
+  let rootKey = hasTemplate ? 'Template' : 'Program';
+
+  return rootKey;
 }

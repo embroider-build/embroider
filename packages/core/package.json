@@ -32,7 +32,7 @@
     "broccoli-plugin": "^4.0.7",
     "broccoli-source": "^3.0.1",
     "debug": "^4.3.2",
-    "fast-sourcemap-concat": "^1.4.0",
+    "fast-sourcemap-concat": "^2.1.1",
     "filesize": "^10.0.7",
     "fs-extra": "^9.1.0",
     "fs-tree-diff": "^2.0.1",

@@ -271,7 +271,15 @@ export class ExpectModule {
       this.emitMissingModule();
       return;
     }
-    this.expectAudit.assert.deepEqual(this.module.consumedFrom, paths.map(this.expectAudit.toRewrittenPath));
+
+    let consumedFrom = this.module.consumedFrom.map(m => {
+      if (typeof m === 'string') {
+        return cleanUrl(m);
+      }
+      return m;
+    });
+
+    this.expectAudit.assert.deepEqual(consumedFrom, paths.map(this.expectAudit.toRewrittenPath));
   }
 }
 

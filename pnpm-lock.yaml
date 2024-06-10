@@ -254,8 +254,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       fast-sourcemap-concat:
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: ^2.1.1
+        version: 2.1.1
       fs-extra:
         specifier: ^9.1.0
         version: 9.1.0
@@ -417,8 +417,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       fast-sourcemap-concat:
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: ^2.1.1
+        version: 2.1.1
       filesize:
         specifier: ^10.0.7
         version: 10.1.2
@@ -8359,9 +8359,6 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependenciesMeta:
-      ajv:
-        optional: true
     dependencies:
       ajv: 8.13.0
 
@@ -16155,6 +16152,7 @@ packages:
       sourcemap-validator: 1.1.1
     transitivePeerDependencies:
       - supports-color
+    dev: true
 
   /fast-sourcemap-concat@2.1.1:
     resolution: {integrity: sha512-7h9/x25c6AQwdU3mA8MZDUMR3UCy50f237egBrBkuwjnUZSmfu4ptCf91PZSKzON2Uh5VvIHozYKWcPPgcjxIw==}
@@ -18727,6 +18725,7 @@ packages:
   /jsesc@0.3.0:
     resolution: {integrity: sha512-UHQmAeTXV+iwEk0aHheJRqo6Or90eDxI6KIYpHSjKLXKuKlPt1CQ7tGBerFcFA8uKU5mYxiPMlckmFptd5XZzA==}
     hasBin: true
+    dev: true
 
   /jsesc@0.5.0:
     resolution: {integrity: sha512-uZz5UnB7u4T9LvwmFqXii7pZSouaRPorGs5who1Ip7VO0wxanFvBL7GkM6dTHlgX+jhBApRetaWpnDabOeTcnA==}
@@ -19103,6 +19102,7 @@ packages:
 
   /lodash.foreach@4.5.0:
     resolution: {integrity: sha512-aEXTF4d+m05rVOAUG3z4vZZ4xVexLKZGF0lIxuHZ1Hplpk/3B6Z1+/ICICYRLm7c41Z2xiejbkCkJoTlypoXhQ==}
+    dev: true
 
   /lodash.isarguments@3.1.0:
     resolution: {integrity: sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==}
@@ -22099,6 +22099,7 @@ packages:
     engines: {node: '>=0.8.0'}
     dependencies:
       amdefine: 1.0.1
+    dev: true
 
   /source-map@0.4.4:
     resolution: {integrity: sha512-Y8nIfcb1s/7DcobUz1yOO1GSp7gyL+D9zLHDehT7iRESqGSxjJ448Sg7rvfgsRJCnKLdSl11uGf0s9X80cH0/A==}
@@ -22126,6 +22127,7 @@ packages:
       lodash.foreach: 4.5.0
       lodash.template: 4.5.0
       source-map: 0.1.43
+    dev: true
 
   /spawn-args@0.2.0:
     resolution: {integrity: sha512-73BoniQDcRWgnLAf/suKH6V5H54gd1KLzwYN9FB6J/evqTV33htH9xwV/4BHek+++jzxpVlZQKKZkqstPQPmQg==}

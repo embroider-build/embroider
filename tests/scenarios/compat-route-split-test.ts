@@ -63,7 +63,7 @@ let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
 function checkContents(
   expectAudit: ReturnType<typeof setupAuditTest>,
   fn: (contents: string) => void,
-  entrypointFile?: string
+  entrypointFile?: string | RegExp
 ) {
   let resolved = expectAudit.module('./index.html').resolves('/@embroider/core/entrypoint');
 
@@ -77,7 +77,7 @@ function checkContents(
 }
 
 function notInEntrypointFunction(expectAudit: ReturnType<typeof setupAuditTest>) {
-  return function (text: string[] | string, entrypointFile?: string) {
+  return function (text: string[] | string, entrypointFile?: string | RegExp) {
     checkContents(
       expectAudit,
       contents => {
@@ -100,7 +100,7 @@ function notInEntrypointFunction(expectAudit: ReturnType<typeof setupAuditTest>)
 }
 
 function inEntrypointFunction(expectAudit: ReturnType<typeof setupAuditTest>) {
-  return function (text: string[] | string, entrypointFile?: string) {
+  return function (text: string[] | string | RegExp, entrypointFile?: string | RegExp) {
     checkContents(
       expectAudit,
       contents => {
@@ -110,6 +110,11 @@ function inEntrypointFunction(expectAudit: ReturnType<typeof setupAuditTest>) {
               throw new Error(`${t} should be found in entrypoint`);
             }
           });
+        } else if (text instanceof RegExp) {
+          if (!text.test(contents)) {
+            console.log(contents);
+            throw new Error(`Entrypoint should match ${text}`);
+          }
         } else {
           if (!contents.includes(text)) {
             console.log(contents);
@@ -214,34 +219,43 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint('import("@embroider/core/route/people");');
+        inEntrypoint(/import\("\/@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has split controllers in route entrypoint', function () {
-        inEntrypoint(['controllers/people', 'controllers/people/show'], '@embroider/core/route/people');
+        inEntrypoint(
+          ['controllers/people', 'controllers/people/show'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has split route templates in route entrypoint', function () {
         inEntrypoint(
           ['templates/people', 'templates/people/index', 'templates/people/show'],
-          '@embroider/core/route/people'
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split routes in route entrypoint', function () {
-        inEntrypoint(['routes/people', 'routes/people/show'], '@embroider/core/route/people');
+        inEntrypoint(
+          ['routes/people', 'routes/people/show'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has no components in route entrypoint', function () {
-        notInEntrypoint(['all-people', 'welcome', 'unused'], '@embroider/core/route/people');
+        notInEntrypoint(
+          ['all-people', 'welcome', 'unused'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('capitalize', '@embroider/core/route/people');
+        notInEntrypoint('capitalize', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('auto-focus', '@embroider/core/route/people');
+        notInEntrypoint('auto-focus', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no issues', function () {

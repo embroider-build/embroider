@@ -228,7 +228,7 @@ export function makeSecondTransform() {
             ) {
               modifier.path = macroUnlessExpression(modifier.path, env.syntax.builders);
               if (modifier.path.type === 'UndefinedLiteral') {
-                return true;
+                return false;
               }
             }
             if (modifier.path.type !== 'PathExpression') {

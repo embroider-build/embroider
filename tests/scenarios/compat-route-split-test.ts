@@ -1,4 +1,3 @@
-import type { PreparedApp } from 'scenario-tester';
 import { appScenarios, renameApp } from './scenarios';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
@@ -337,15 +336,24 @@ splitScenarios
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
 
-      let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
 
-      hooks.before(async assert => {
-        app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+      hooks.before(async () => {
+        let app = await scenario.prepare();
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
       let notInEntrypoint = notInEntrypointFunction(expectAudit);
       let inEntrypoint = inEntrypointFunction(expectAudit);
 
@@ -386,58 +394,63 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint('import("@embroider/core/route/people")');
+        inEntrypoint(/import\("\/@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people\?import"\)/);
       });
 
       test('has split controllers in route entrypoint', function () {
-        inEntrypoint(['pods/people/controller', 'pods/people/show/controller'], '@embroider/core/route/people');
+        inEntrypoint(
+          ['pods/people/controller', 'pods/people/show/controller'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has split route templates in route entrypoint', function () {
         inEntrypoint(
           ['pods/people/template', 'pods/people/index/template', 'pods/people/show/template'],
-          '@embroider/core/route/people'
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split routes in route entrypoint', function () {
-        inEntrypoint(['pods/people/route', 'pods/people/show/route'], '@embroider/core/route/people');
+        inEntrypoint(
+          ['pods/people/route', 'pods/people/show/route'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has no components in route entrypoint', function () {
-        notInEntrypoint(['all-people', 'welcome', 'unused'], '@embroider/core/route/people');
+        notInEntrypoint(
+          ['all-people', 'welcome', 'unused'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('capitalize', '@embroider/core/route/people');
+        notInEntrypoint('capitalize', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no modifiers in route entrypoint', function () {
-        notInEntrypoint('auto-focus', '@embroider/core/route/people');
+        notInEntrypoint('auto-focus', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
       });
 
-      Qmodule('audit', function (hooks) {
-        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+      test('has no issues', function () {
+        expectAudit.hasNoFindings();
+      });
 
-        test('has no issues', function () {
-          expectAudit.hasNoFindings();
-        });
+      test('helper is consumed only from the template that uses it', function () {
+        expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
+      });
 
-        test('helper is consumed only from the template that uses it', function () {
-          expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
-        });
+      test('component is consumed only from the template that uses it', function () {
+        expectAudit.module('./components/one-person.js').hasConsumers(['./pods/people/show/template.hbs']);
+      });
 
-        test('component is consumed only from the template that uses it', function () {
-          expectAudit.module('./components/one-person.js').hasConsumers(['./pods/people/show/template.hbs']);
-        });
+      test('modifier is consumed only from the template that uses it', function () {
+        expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./pods/people/edit/template.hbs']);
+      });
 
-        test('modifier is consumed only from the template that uses it', function () {
-          expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./pods/people/edit/template.hbs']);
-        });
-
-        test('does not include unused component', function () {
-          expectAudit.module('./components/unused.hbs').doesNotExist();
-        });
+      test('does not include unused component', function () {
+        expectAudit.module('./components/unused.hbs').doesNotExist();
       });
     });
   });
@@ -499,15 +512,24 @@ splitScenarios
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
 
-      let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
 
-      hooks.before(async assert => {
-        app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+      hooks.before(async () => {
+        let app = await scenario.prepare();
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
       let notInEntrypoint = notInEntrypointFunction(expectAudit);
       let inEntrypoint = inEntrypointFunction(expectAudit);
 
@@ -548,58 +570,63 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint('import("@embroider/core/route/people")');
+        inEntrypoint(/import\("\/@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people\?import"\)/);
       });
 
       test('has split controllers in route entrypoint', function () {
-        inEntrypoint(['routes/people/controller', 'routes/people/show/controller'], '@embroider/core/route/people');
+        inEntrypoint(
+          ['routes/people/controller', 'routes/people/show/controller'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has split route templates in route entrypoint', function () {
         inEntrypoint(
           ['routes/people/template', 'routes/people/index/template', 'routes/people/show/template'],
-          '@embroider/core/route/people'
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split routes in route entrypoint', function () {
-        inEntrypoint(['routes/people/route', 'routes/people/show/route'], '@embroider/core/route/people');
+        inEntrypoint(
+          ['routes/people/route', 'routes/people/show/route'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has no components in route entrypoint', function () {
-        notInEntrypoint(['all-people', 'welcome', 'unused'], '@embroider/core/route/people');
+        notInEntrypoint(
+          ['all-people', 'welcome', 'unused'],
+          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+        );
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('capitalize', '@embroider/core/route/people');
+        notInEntrypoint('capitalize', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no modifiers in route entrypoint', function () {
-        notInEntrypoint('auto-focus', '@embroider/core/route/people');
+        notInEntrypoint('auto-focus', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
       });
 
-      Qmodule('audit', function (hooks) {
-        let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+      test('has no issues', function () {
+        expectAudit.hasNoFindings();
+      });
 
-        test('has no issues', function () {
-          expectAudit.hasNoFindings();
-        });
+      test('helper is consumed only from the template that uses it', function () {
+        expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
+      });
 
-        test('helper is consumed only from the template that uses it', function () {
-          expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
-        });
+      test('component is consumed only from the template that uses it', function () {
+        expectAudit.module('./components/one-person.js').hasConsumers(['./routes/people/show/template.hbs']);
+      });
 
-        test('component is consumed only from the template that uses it', function () {
-          expectAudit.module('./components/one-person.js').hasConsumers(['./routes/people/show/template.hbs']);
-        });
+      test('modifier is consumed only from the template that uses it', function () {
+        expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./routes/people/edit/template.hbs']);
+      });
 
-        test('modifier is consumed only from the template that uses it', function () {
-          expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./routes/people/edit/template.hbs']);
-        });
-
-        test('does not include unused component', function () {
-          expectAudit.module('./components/unused.hbs').doesNotExist();
-        });
+      test('does not include unused component', function () {
+        expectAudit.module('./components/unused.hbs').doesNotExist();
       });
     });
   });

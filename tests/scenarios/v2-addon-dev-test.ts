@@ -393,7 +393,7 @@ export { SingleFileComponent as default };
           let expectNoNamespaceFile = expectFilesAt(inDependency(app, 'v2-addon-no-namespace').dir, { qunit: assert });
 
           expectFile('package.json').json('ember-addon.public-assets').deepEquals({
-            './public/thing.txt': '/v2-addon/public/thing.txt',
+            './public/thing.txt': '/v2-addon/thing.txt',
           });
           expectNoNamespaceFile('package.json').json('ember-addon.public-assets').deepEquals({
             './public/other.txt': '/other.txt',

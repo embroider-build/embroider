@@ -18,12 +18,12 @@ module('Integration | Macro | getConfig', function(hooks) {
   });
 
   test('macroGetOwnConfig in subexpression position', async function(assert) {
-    await render(hbs`{{#with (macroGetOwnConfig "mode") as |m|}}{{m}}{{/with}}`);
+    await render(hbs`{{#let (macroGetOwnConfig "mode") as |m|}}{{m}}{{/let}}`);
     assert.equal(this.element.textContent.trim(), 'amazing');
   });
 
   test('macroGetConfig in subexpression position', async function(assert) {
-    await render(hbs`{{#with (macroGetConfig "ember-source" "color") as |m|}}{{m}}{{/with}}`);
+    await render(hbs`{{#let (macroGetConfig "ember-source" "color") as |m|}}{{m}}{{/let}}`);
     assert.equal(this.element.textContent.trim(), 'orange');
   });
 

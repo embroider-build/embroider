@@ -10,31 +10,49 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.5.1"
+      "impact": "patch",
+      "oldVersion": "3.5.1",
+      "newVersion": "3.5.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.10"
+      "impact": "patch",
+      "oldVersion": "3.4.10",
+      "newVersion": "3.4.11",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.2"
-    },
-    "@embroider/reverse-exports": {
-      "oldVersion": "0.1.0"
-    },
-    "@embroider/router": {
       "impact": "patch",
-      "oldVersion": "2.1.7",
-      "newVersion": "2.1.8",
+      "oldVersion": "1.16.2",
+      "newVersion": "1.16.3",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "pkgJSONPath": "./packages/macros/package.json"
+    },
+    "@embroider/reverse-exports": {
+      "oldVersion": "0.1.0"
+    },
+    "@embroider/router": {
+      "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
       "oldVersion": "2.6.1"
@@ -49,8 +67,17 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "oldVersion": "4.0.1"
+      "impact": "patch",
+      "oldVersion": "4.0.1",
+      "newVersion": "4.0.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2024-05-29)\n\n@embroider/router 2.1.8 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#1945](https://github.com/embroider-build/embroider/pull/1945) avoid loading of lazy engines when generating linkto urls for routes ([@void-mAlex](https://github.com/void-mAlex))\n\n#### Committers: 1\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n"
+  "description": "## Release (2024-06-11)\n\n@embroider/compat 3.5.2 (patch)\n@embroider/core 3.4.11 (patch)\n@embroider/macros 1.16.3 (patch)\n@embroider/webpack 4.0.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#1967](https://github.com/embroider-build/embroider/pull/1967) Address these issues in new apps (5.9): ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/webpack`\n  * [#1978](https://github.com/embroider-build/embroider/pull/1978) Webpack: close the compiler ([@ef4](https://github.com/ef4))\n* `@embroider/macros`, `@embroider/test-fixtures`\n  * [#1977](https://github.com/embroider-build/embroider/pull/1977) Fix modifier removal for \"unless (macroCondition ...)\" ([@ef4](https://github.com/ef4))\n* `@embroider/macros`, `@embroider/test-fixtures`, `@embroider/test-scenarios`\n  * [#1975](https://github.com/embroider-build/embroider/pull/1975) Stop using \"#with\" in macro tests ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

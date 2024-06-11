@@ -72,18 +72,7 @@ export function makeFirstTransform(opts: FirstTransformParams) {
       name: '@embroider/macros/first',
 
       visitor: {
-        [rootVisitorKey(env)]: {
-          enter(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
-          },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
-          },
-        },
+        ...scopeVisitors(env, scopeStack),
         SubExpression(node: any, walker: { parent: { node: any } }) {
           if (node.path.type !== 'PathExpression') {
             return;
@@ -169,18 +158,7 @@ export function makeSecondTransform() {
       name: '@embroider/macros/second',
 
       visitor: {
-        [rootVisitorKey(env)]: {
-          enter(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
-          },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
-          },
-        },
+        ...scopeVisitors(env, scopeStack),
         BlockStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
             return;
@@ -292,16 +270,30 @@ function inScope(scopeStack: string[][], name: string) {
 function headOf(path: any) {
   if (!path) return;
 
-  return 'head' in path ? path.head : path.parts[0];
+  return 'head' in path ? path.head.name : path.parts[0];
 }
 
-/**
- * Template is available in ember-source 3.17+
- * Program is deprecated in ember-source 5.9+
- */
-function rootVisitorKey(env: any) {
-  let hasTemplate = 'template' in env.syntax.builders;
-  let rootKey = hasTemplate ? 'Template' : 'Program';
+function scopeVisitors(env: any, scopeStack: string[][]) {
+  function enter(node: any) {
+    if (node.blockParams.length > 0) {
+      scopeStack.push(node.blockParams);
+    }
+  }
+  function exit(node: any) {
+    if (node.blockParams.length > 0) {
+      scopeStack.pop();
+    }
+  }
 
-  return rootKey;
+  let hasTemplate = 'template' in env.syntax.builders;
+  if (hasTemplate) {
+    return {
+      Template: { enter, exit },
+      Block: { enter, exit },
+    };
+  } else {
+    return {
+      Program: { enter, exit },
+    };
+  }
 }

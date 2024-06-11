@@ -1,10 +1,10 @@
 import type { Plugin as EsBuildPlugin } from 'esbuild';
 import { type PluginItem, transform } from '@babel/core';
-import { ResolverLoader, virtualContent, locateEmbroiderWorkingDir } from '@embroider/core';
+import { ResolverLoader, virtualContent, locateEmbroiderWorkingDir, explicitRelative } from '@embroider/core';
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { resolve } from 'path';
+import { dirname, isAbsolute, resolve } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
@@ -32,10 +32,11 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         let firstFailure;
 
         for (let candidate of candidates(path)) {
-          let result = await build.resolve(candidate, {
+          let { specifier, fromFile } = adjustVirtualImport(candidate, importer);
+          let result = await build.resolve(specifier, {
             namespace,
             resolveDir,
-            importer,
+            importer: fromFile,
             kind,
             pluginData: { ...pluginData, embroiderExtensionSearch: true },
           });
@@ -52,7 +53,8 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         return firstFailure;
       });
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
+        let { specifier, fromFile } = adjustVirtualImport(path, importer);
+        let request = EsBuildModuleRequest.from(build, kind, specifier, fromFile, pluginData);
         if (!request) {
           return null;
         }
@@ -131,4 +133,29 @@ function runMacros(src: string, filename: string, macrosConfig: PluginItem): str
     filename,
     plugins: [macrosConfig],
   })!.code!;
+}
+
+// esbuild's resolve does not like when we resolve from virtual paths. That is,
+// a request like "../thing.js" from "/a/real/path/VIRTUAL_SUBDIR/virtual.js"
+// has an unambiguous target of "/a/real/path/thing.js", but esbuild won't do
+// that path adjustment until after checking whether VIRTUAL_SUBDIR actually
+// exists.
+//
+// We can do the path adjustments before doing resolve.
+function adjustVirtualImport(specifier: string, fromFile: string): { specifier: string; fromFile: string } {
+  let fromDir = dirname(fromFile);
+  if (!isAbsolute(specifier) && specifier.startsWith('.')) {
+    let targetPath = resolve(fromDir, specifier);
+    let newFromDir = dirname(targetPath);
+    if (fromDir !== newFromDir) {
+      return {
+        specifier: explicitRelative(newFromDir, targetPath),
+        // we're resolving *from* the destination, because we need to resolve
+        // from a file that exists, and we know that (if this was supposed to
+        // succeed at all) that file definitely does
+        fromFile: targetPath,
+      };
+    }
+  }
+  return { specifier, fromFile };
 }

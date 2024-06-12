@@ -564,7 +564,16 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
               })
             );
           }
-          resolve(stats);
+          webpack.close(err => {
+            if (err) {
+              if (stats) {
+                this.consoleWrite(stats.toString());
+              }
+              throw err;
+            }
+
+            resolve(stats);
+          });
         } catch (e) {
           reject(e);
         }

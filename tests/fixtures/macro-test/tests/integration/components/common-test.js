@@ -7,7 +7,7 @@ module('Integration | Macro | common', function(hooks) {
   setupRenderingTest(hooks);
 
   test('our macros do not shadow local variables', async function(assert) {
-    await render(hbs`{{#with "hello" as |macroDependencySatisfies|}} {{macroDependencySatisfies}} {{/with}}`);
+    await render(hbs`{{#let "hello" as |macroDependencySatisfies|}} {{macroDependencySatisfies}} {{/let}}`);
     assert.equal(this.element.textContent.trim(), 'hello');
   });
 

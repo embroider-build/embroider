@@ -29,12 +29,12 @@ describe(`macroGetConfig`, function () {
     });
 
     test('macroGetOwnConfig in subexpression position', function () {
-      let code = transform(`{{#with (macroGetOwnConfig "mode") as |m|}}{{m}}{{/with}}`);
+      let code = transform(`{{#let (macroGetOwnConfig "mode") as |m|}}{{m}}{{/let}}`);
       expect(code).toMatch(/\{\{#with ["']amazing["'] as |m|\}\}/);
     });
 
     test('macroGetConfig in subexpression position', function () {
-      let code = transform(`{{#with (macroGetConfig "scenario-tester" "color") as |m|}}{{m}}{{/with}}`);
+      let code = transform(`{{#let (macroGetConfig "scenario-tester" "color") as |m|}}{{m}}{{/let}}`);
       expect(code).toMatch(/\{\{#with ["']orange["'] as |m|\}\}/);
     });
 

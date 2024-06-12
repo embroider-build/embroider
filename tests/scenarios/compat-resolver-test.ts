@@ -1160,8 +1160,8 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `
         {{outlet}}
         {{yield bar}}
-        {{#with (hash submit=(action doit)) as |thing| }}
-        {{/with}}
+        {{#let (hash submit=(action doit)) as |thing| }}
+        {{/let}}
         <LinkTo @route="index"/>
         <form {{on "submit" doit}}></form>
       `,
@@ -1170,7 +1170,7 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import { on } from "@ember/modifier";
-        export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
+        export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#let (hash submit=(action doit)) as |thing|}}\\n        {{/let}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
             on,

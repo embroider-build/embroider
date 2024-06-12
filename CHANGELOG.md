@@ -1,5 +1,37 @@
 # Embroider Changelog
 
+## Release (2024-06-12)
+
+@embroider/webpack 4.0.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/webpack`
+  * [#1981](https://github.com/embroider-build/embroider/pull/1981) Revert "Webpack: close the compiler" ([@krasnoukhov](https://github.com/krasnoukhov))
+
+#### Committers: 1
+- Dmitry Krasnoukhov ([@krasnoukhov](https://github.com/krasnoukhov))
+
+## Release (2024-06-11)
+
+@embroider/compat 3.5.2 (patch)
+@embroider/core 3.4.11 (patch)
+@embroider/macros 1.16.3 (patch)
+@embroider/webpack 4.0.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1967](https://github.com/embroider-build/embroider/pull/1967) Address these issues in new apps (5.9): ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/webpack`
+  * [#1978](https://github.com/embroider-build/embroider/pull/1978) Webpack: close the compiler ([@ef4](https://github.com/ef4))
+* `@embroider/macros`, `@embroider/test-fixtures`
+  * [#1977](https://github.com/embroider-build/embroider/pull/1977) Fix modifier removal for "unless (macroCondition ...)" ([@ef4](https://github.com/ef4))
+* `@embroider/macros`, `@embroider/test-fixtures`, `@embroider/test-scenarios`
+  * [#1975](https://github.com/embroider-build/embroider/pull/1975) Stop using "#with" in macro tests ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2024-05-29)
 
 @embroider/router 2.1.8 (patch)

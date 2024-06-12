@@ -114,7 +114,7 @@ module('Integration | Macro | macroCondition + {{unless}}', function (hooks) {
     await click('button');
   });
 
-  test('macroCondition in modifier position when true with no alternate', async function (assert) {
+  test('macroCondition in modifier position when true with no alternate should do nothing', async function (assert) {
     assert.expect(0);
     this.doThing = function () {
       assert.ok(true, 'it ran');

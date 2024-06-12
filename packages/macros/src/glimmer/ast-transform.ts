@@ -72,25 +72,16 @@ export function makeFirstTransform(opts: FirstTransformParams) {
       name: '@embroider/macros/first',
 
       visitor: {
-        Program: {
-          enter(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
-          },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
-          },
-        },
+        ...scopeVisitors(env, scopeStack),
         SubExpression(node: any, walker: { parent: { node: any } }) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          if (inScope(scopeStack, headOf(node.path))) {
             return;
           }
+
           if (node.path.original === 'macroGetOwnConfig') {
             return literal(
               getConfig(node, opts.configs, opts.packageRoot, moduleName, true, packageCache),
@@ -120,7 +111,8 @@ export function makeFirstTransform(opts: FirstTransformParams) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          if (inScope(scopeStack, headOf(node.path))) {
             return;
           }
           if (node.path.original === 'macroGetOwnConfig') {
@@ -166,23 +158,13 @@ export function makeSecondTransform() {
       name: '@embroider/macros/second',
 
       visitor: {
-        Program: {
-          enter(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.push(node.blockParams);
-            }
-          },
-          exit(node: any) {
-            if (node.blockParams.length > 0) {
-              scopeStack.pop();
-            }
-          },
-        },
+        ...scopeVisitors(env, scopeStack),
         BlockStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          if (inScope(scopeStack, headOf(node.path))) {
             return;
           }
           if (node.path.original === 'if') {
@@ -196,7 +178,8 @@ export function makeSecondTransform() {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          if (inScope(scopeStack, headOf(node.path))) {
             return;
           }
           if (node.path.original === 'if') {
@@ -228,13 +211,14 @@ export function makeSecondTransform() {
             ) {
               modifier.path = macroUnlessExpression(modifier.path, env.syntax.builders);
               if (modifier.path.type === 'UndefinedLiteral') {
-                return true;
+                return false;
               }
             }
             if (modifier.path.type !== 'PathExpression') {
               return true;
             }
-            if (inScope(scopeStack, modifier.path.parts[0])) {
+
+            if (inScope(scopeStack, headOf(node.path))) {
               return true;
             }
             if (modifier.path.original === 'macroMaybeAttrs') {
@@ -248,7 +232,8 @@ export function makeSecondTransform() {
           if (node.path.type !== 'PathExpression') {
             return;
           }
-          if (inScope(scopeStack, node.path.parts[0])) {
+
+          if (inScope(scopeStack, headOf(node.path))) {
             return;
           }
           if (node.path.original === 'if') {
@@ -280,4 +265,35 @@ function inScope(scopeStack: string[][], name: string) {
     }
   }
   return false;
+}
+
+function headOf(path: any) {
+  if (!path) return;
+
+  return 'head' in path ? path.head.name : path.parts[0];
+}
+
+function scopeVisitors(env: any, scopeStack: string[][]) {
+  function enter(node: any) {
+    if (node.blockParams.length > 0) {
+      scopeStack.push(node.blockParams);
+    }
+  }
+  function exit(node: any) {
+    if (node.blockParams.length > 0) {
+      scopeStack.pop();
+    }
+  }
+
+  let hasTemplate = 'template' in env.syntax.builders;
+  if (hasTemplate) {
+    return {
+      Template: { enter, exit },
+      Block: { enter, exit },
+    };
+  } else {
+    return {
+      Program: { enter, exit },
+    };
+  }
 }

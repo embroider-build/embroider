@@ -125,8 +125,7 @@ scenarios
           });
       });
 
-      // TODO make sure that app files picks up the template-only-component
-      QUnit.skip(`app's template-only component JS is synthesized`, function (assert) {
+      test(`app's template-only component JS is synthesized`, function (assert) {
         expectAudit
           .module('./index.html')
           .resolves('/@embroider/core/entrypoint')
@@ -139,10 +138,10 @@ scenarios
               'imported template'
             );
             assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
-            assert.ok(/import templateOnlyComponent/.test(contents), 'found templateOnlyComponent');
+            assert.ok(/import templateOnly/.test(contents), 'found templateOnly');
 
             assert.ok(
-              /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/.test(contents),
+              /export default setComponentTemplate\(TEMPLATE, templateOnly\(\)\)/.test(contents),
               'default export is wrapped'
             );
             return true;

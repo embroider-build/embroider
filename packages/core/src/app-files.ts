@@ -83,12 +83,23 @@ export class AppFiles {
       }
 
       if (relativePath.startsWith('components/')) {
-        // hbs files are resolvable, but not when they're used via co-location.
+        // hbs files are not resolvable when they're used via co-location with
+        // an associated js file because it's the js that is resolvable.
         // An hbs file is used via colocation when it's inside the components
         // directory, and also not named "template.hbs" (because that is an
         // older pattern used with pods-like layouts).
-        if (!relativePath.endsWith('.hbs') || relativePath.endsWith('/template.hbs')) {
+        let isHbs = relativePath.endsWith('.hbs');
+        if (!isHbs || relativePath.endsWith('/template.hbs')) {
           components.push(relativePath);
+        } else if (isHbs) {
+          // template-only components will be compiled as js files during the
+          // build process, so we push a virtual path to js in the list of files
+          // because the resolver will be able to recognize a template-only and
+          // give a correct answer in the end.
+          let jsPath = relativePath.replace(/\.hbs$/, '.js');
+          if (!combinedFiles.has(jsPath)) {
+            components.push(jsPath);
+          }
         }
         continue;
       }

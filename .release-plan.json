@@ -10,43 +10,16 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.5.1",
-      "newVersion": "3.5.2",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "3.5.2"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.10",
-      "newVersion": "3.4.11",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.4.11"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.16.2",
-      "newVersion": "1.16.3",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.3"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -68,8 +41,8 @@
     },
     "@embroider/webpack": {
       "impact": "patch",
-      "oldVersion": "4.0.1",
-      "newVersion": "4.0.2",
+      "oldVersion": "4.0.2",
+      "newVersion": "4.0.3",
       "constraints": [
         {
           "impact": "patch",
@@ -79,5 +52,5 @@
       "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2024-06-11)\n\n@embroider/compat 3.5.2 (patch)\n@embroider/core 3.4.11 (patch)\n@embroider/macros 1.16.3 (patch)\n@embroider/webpack 4.0.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#1967](https://github.com/embroider-build/embroider/pull/1967) Address these issues in new apps (5.9): ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/webpack`\n  * [#1978](https://github.com/embroider-build/embroider/pull/1978) Webpack: close the compiler ([@ef4](https://github.com/ef4))\n* `@embroider/macros`, `@embroider/test-fixtures`\n  * [#1977](https://github.com/embroider-build/embroider/pull/1977) Fix modifier removal for \"unless (macroCondition ...)\" ([@ef4](https://github.com/ef4))\n* `@embroider/macros`, `@embroider/test-fixtures`, `@embroider/test-scenarios`\n  * [#1975](https://github.com/embroider-build/embroider/pull/1975) Stop using \"#with\" in macro tests ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2024-06-12)\n\n@embroider/webpack 4.0.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/webpack`\n  * [#1981](https://github.com/embroider-build/embroider/pull/1981) Revert \"Webpack: close the compiler\" ([@krasnoukhov](https://github.com/krasnoukhov))\n\n#### Committers: 1\n- Dmitry Krasnoukhov ([@krasnoukhov](https://github.com/krasnoukhov))\n"
 }

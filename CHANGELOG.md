@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-06-12)
+
+@embroider/webpack 4.0.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/webpack`
+  * [#1981](https://github.com/embroider-build/embroider/pull/1981) Revert "Webpack: close the compiler" ([@krasnoukhov](https://github.com/krasnoukhov))
+
+#### Committers: 1
+- Dmitry Krasnoukhov ([@krasnoukhov](https://github.com/krasnoukhov))
+
 ## Release (2024-06-11)
 
 @embroider/compat 3.5.2 (patch)

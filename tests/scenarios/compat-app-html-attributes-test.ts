@@ -51,7 +51,7 @@ appScenarios
         let app = await scenario.prepare();
         let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
-        expectFile = expectFilesAt(join(app.dir, 'node_modules', '.embroider', 'rewritten-app'), { qunit: assert });
+        expectFile = expectFilesAt(join(app.dir, 'tmp', 'rewritten-app'), { qunit: assert });
       });
 
       test('custom HTML attributes are passed through', () => {

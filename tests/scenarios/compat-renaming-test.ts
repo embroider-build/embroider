@@ -255,7 +255,7 @@ appScenarios
       });
       test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
         expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .module('./tmp/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .resolves('./-embroider-implicit-modules.js')

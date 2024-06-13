@@ -12,7 +12,7 @@ import {
 import { resolve } from "path";
 import { babel } from "@rollup/plugin-babel";
 
-const root = "node_modules/.embroider/rewritten-app";
+const root = "tmp/rewritten-app";
 
 export default defineConfig(({ mode }) => {
   return {
@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 4200,
       watch: {
-        ignored: ["!**/node_modules/.embroider/rewritten-app/**"],
+        ignored: ["!**/tmp/rewritten-app/**"],
       },
     },
     // If the "app" is a classic addon dummy app, the public directory is tests/dummy/public,

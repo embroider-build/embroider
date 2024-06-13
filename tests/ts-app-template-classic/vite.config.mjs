@@ -3,7 +3,7 @@ import { resolver, hbs, scripts, templateTag, optimizeDeps, compatPrebuild, cont
 import { resolve } from 'path';
 import { babel } from '@rollup/plugin-babel';
 
-const root = 'node_modules/.embroider/rewritten-app';
+const root = 'tmp/rewritten-app';
 
 export default defineConfig({
   root,
@@ -32,7 +32,7 @@ export default defineConfig({
   server: {
     port: 4200,
     watch: {
-      ignored: ['!**/node_modules/.embroider/rewritten-app/**'],
+      ignored: ['!**/tmp/rewritten-app/**'],
     },
   },
   build: {

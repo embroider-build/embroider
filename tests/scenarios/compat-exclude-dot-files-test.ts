@@ -74,7 +74,7 @@ appScenarios
 
         // but not be picked up in the entrypoint
         expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .module('./tmp/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {

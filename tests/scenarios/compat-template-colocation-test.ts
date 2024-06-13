@@ -72,9 +72,9 @@ function checkContents(
 ) {
   let resolved = expectAudit
     .module('./index.html')
-    .resolves('/app-boot.js')
+    .resolves(/\/index.html.*/) // in-html app-boot script
     .toModule()
-    .resolves(/\/app\.[jt]s.*/)
+    .resolves(/\/app\.js.*/)
     .toModule()
     .resolves(/.*\/-embroider-entrypoint.js/);
 
@@ -247,28 +247,38 @@ scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
       let expectFile: ExpectFile;
 
-      hooks.before(async assert => {
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
       hooks.beforeEach(assert => {
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
 
       test(`app's colocated components are not implicitly included`, function (assert) {
         expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/app-boot.js')
+          .module('./index.html')
+          .resolves(/\/index.html.*/) // in-html app-boot script
           .toModule()
-          .resolves('./app')
+          .resolves(/\/app\.js.*/)
           .toModule()
-          .resolves('@embroider/core/entrypoint')
+          .resolves(/.*\/-embroider-entrypoint.js/)
           .toModule()
           .withContents(content => {
             assert.notOk(/import \* as (\w+) from "\.\/components\/has-colocated-component.js"/.test(content));
@@ -349,26 +359,36 @@ appScenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
 
-      hooks.before(async assert => {
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
 
       test(`app's pod components and templates are implicitly included correctly`, function (assert) {
         expectAudit
-          .module('./tmp/rewritten-app/index.html')
-          .resolves('/app-boot.js')
+          .module('./index.html')
+          .resolves(/\/index.html.*/) // in-html app-boot script
           .toModule()
-          .resolves('./app')
+          .resolves(/\/app\.js.*/)
           .toModule()
-          .resolves('@embroider/core/entrypoint')
+          .resolves(/.*\/-embroider-entrypoint.js/)
           .toModule()
           .withContents(content => {
-            let result = /import \* as (\w+) from "\.\/components\/pod-component\/component.js"/.exec(content);
+            let result = /import \* as (\w+) from "\/components\/pod-component\/component\.js"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component');
@@ -383,7 +403,7 @@ appScenarios
             });`
             );
 
-            result = /import \* as (\w+) from "\.\/components\/pod-component\/template.hbs"/.exec(content);
+            result = /import \* as (\w+) from "\/components\/pod-component\/template\.hbs.*"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component template');
@@ -398,7 +418,7 @@ appScenarios
             });`
             );
 
-            result = /import \* as (\w+) from "\.\/components\/template-only\/template.hbs"/.exec(content);
+            result = /import \* as (\w+) from "\/components\/template-only\/template\.hbs.*"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find template only component');

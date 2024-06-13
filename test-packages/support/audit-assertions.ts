@@ -56,7 +56,7 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
       await visit();
       prepareResult(expectAudit.assert);
     },
-    module(name: string) {
+    module(name: string | RegExp) {
       return expectAudit.module(name);
     },
     get findings() {
@@ -94,7 +94,7 @@ export class ExpectAuditResults {
     readonly toRewrittenPath: (path: string) => string
   ) {}
 
-  module(inputName: string): PublicAPI<ExpectModule> {
+  module(inputName: string | RegExp): PublicAPI<ExpectModule> {
     return new ExpectModule(this, inputName);
   }
 
@@ -112,28 +112,43 @@ export class ExpectAuditResults {
 }
 
 export class ExpectModule {
-  constructor(private expectAudit: ExpectAuditResults, private inputName: string) {}
+  constructor(private expectAudit: ExpectAuditResults, private inputName: string | RegExp) {}
+
+  @Memoize()
+  private get outputName() {
+    if (typeof this.inputName === 'string') {
+      return this.expectAudit.toRewrittenPath(this.inputName);
+    } else {
+      return this.inputName.toString();
+    }
+  }
 
   @Memoize()
   private get module() {
-    let outputName = this.expectAudit.toRewrittenPath(this.inputName);
     for (let [key, value] of Object.entries(this.expectAudit.result.modules)) {
-      if (cleanUrl(key) === outputName) {
-        return value;
+      if (typeof this.inputName === 'string') {
+        if (cleanUrl(key) === this.outputName) {
+          return value;
+        }
+      } else {
+        if (this.inputName.test(cleanUrl(key))) {
+          return value;
+        }
       }
     }
-    return this.expectAudit.result.modules[outputName];
+    return this.expectAudit.result.modules[this.outputName];
   }
 
   private emitMissingModule() {
-    let outputName = this.expectAudit.toRewrittenPath(this.inputName);
     const showNearMisses = 4;
-    let actuals = sortBy(Object.keys(this.expectAudit.result.modules), candidate => distance(candidate, outputName));
+    let actuals = sortBy(Object.keys(this.expectAudit.result.modules), candidate =>
+      distance(candidate, this.outputName)
+    );
     this.expectAudit.assert.pushResult({
       result: false,
       actual:
         actuals.length > showNearMisses ? actuals.slice(0, showNearMisses).join(', ') + '...' : actuals.join(', '),
-      expected: outputName,
+      expected: this.outputName,
       message: `Can't locate module ${this.inputName}`,
     });
   }
@@ -250,7 +265,7 @@ export class ExpectModule {
     return new ExpectResolution(this.expectAudit, target, resolution);
   }
 
-  // this is testing explicitly for the template-only component moduels that we
+  // this is testing explicitly for the template-only component modules that we
   // synthesize in our module-resolver
   isTemplateOnlyComponent(template: string, message?: string) {
     if (!this.module) {

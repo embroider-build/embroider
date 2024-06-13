@@ -628,8 +628,8 @@ export class CompatAppBuilder {
 
         ${appBoot}
 
-        1. If you want to keep the same behavior, copy and paste it to your /app/app-boot.js:
-        2. Once /app/app-boot.js has the content you need, remove the present error by setting "useAddonAppBoot" to false in the build options.
+        1. If you want to keep the same behavior, copy and paste it to the app-boot script included in app/index.html.
+        2. Once app/index.html has the content you need, remove the present error by setting "useAddonAppBoot" to false in the build options.
       `);
     }
   }

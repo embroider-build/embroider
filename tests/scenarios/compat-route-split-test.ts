@@ -66,9 +66,9 @@ function checkContents(
 ) {
   let resolved = expectAudit
     .module('./index.html')
-    .resolves('/app-boot.js')
+    .resolves(/\/index.html.*/) // in-html app-boot script
     .toModule()
-    .resolves(/\/app\.[jt]s.*/)
+    .resolves(/\/app\.js.*/)
     .toModule()
     .resolves(/.*\/-embroider-entrypoint.js/);
 

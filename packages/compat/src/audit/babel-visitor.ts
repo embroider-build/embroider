@@ -73,8 +73,8 @@ export function auditJS(rawSource: string, filename: string, babelConfig: Transf
             codeFrameIndex: saveCodeFrame(arg),
             specifiers: [],
           });
-        } else if (arg.type === 'BinaryExpression') {
-          // ignore binary expressions. Vite uses these (somehow) in the `@vite/client` import
+        } else if (arg.leadingComments?.find(c => /@vite-ignore/.test(c.value))) {
+          // this is vite internals that we should ignore too
         } else {
           problems.push({
             message: `audit tool is unable to understand this usage of ${

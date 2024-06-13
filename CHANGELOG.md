@@ -1,5 +1,17 @@
 # Embroider Changelog
 
+## Release (2024-06-13)
+
+@embroider/compat 3.5.3 (patch)
+@embroider/core 3.4.12 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/sample-transforms`
+  * [#1969](https://github.com/embroider-build/embroider/pull/1969) Update `fast-sourcemap-concat` to remove dependency `lodash.template` for consumer apps (security vulnerability) ([@mkszepp](https://github.com/mkszepp))
+
+#### Committers: 1
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
 ## Release (2024-06-12)
 
 @embroider/webpack 4.0.3 (patch)

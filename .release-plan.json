@@ -10,10 +10,28 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.5.2"
+      "impact": "patch",
+      "oldVersion": "3.5.2",
+      "newVersion": "3.5.3",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.11"
+      "impact": "patch",
+      "oldVersion": "3.4.11",
+      "newVersion": "3.4.12",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
@@ -40,17 +58,8 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.0.2",
-      "newVersion": "4.0.3",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.3"
     }
   },
-  "description": "## Release (2024-06-12)\n\n@embroider/webpack 4.0.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/webpack`\n  * [#1981](https://github.com/embroider-build/embroider/pull/1981) Revert \"Webpack: close the compiler\" ([@krasnoukhov](https://github.com/krasnoukhov))\n\n#### Committers: 1\n- Dmitry Krasnoukhov ([@krasnoukhov](https://github.com/krasnoukhov))\n"
+  "description": "## Release (2024-06-13)\n\n@embroider/compat 3.5.3 (patch)\n@embroider/core 3.4.12 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/core`, `@embroider/sample-transforms`\n  * [#1969](https://github.com/embroider-build/embroider/pull/1969) Update `fast-sourcemap-concat` to remove dependency `lodash.template` for consumer apps (security vulnerability) ([@mkszepp](https://github.com/mkszepp))\n\n#### Committers: 1\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
 }

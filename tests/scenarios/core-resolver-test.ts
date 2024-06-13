@@ -58,13 +58,20 @@ Scenarios.fromProject(() => new Project())
         podModulePrefix?: string;
         renamePackages?: Record<string, string>;
         addonMeta?: Partial<AddonMeta>;
+        addonDependencies?: Record<string, string>;
         fastbootFiles?: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
       }
 
       let configure: (opts?: ConfigureOpts) => Promise<void>;
       let app: PreparedApp;
 
-      function addonPackageJSON(name = 'my-addon', addonMeta?: Partial<AddonMeta>) {
+      function addonPackageJSON(
+        name = 'my-addon',
+        addonMeta?: Partial<AddonMeta>,
+        dependencies: Record<string, string> = {
+          'ember-auto-import': '^2.0.0',
+        }
+      ) {
         return JSON.stringify(
           (() => {
             let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true, ...(addonMeta ?? {}) };
@@ -72,9 +79,7 @@ Scenarios.fromProject(() => new Project())
               name,
               keywords: ['ember-addon'],
               'ember-addon': meta,
-              dependencies: {
-                'ember-auto-import': '^2.0.0',
-              },
+              dependencies,
             };
           })(),
           null,
@@ -146,7 +151,11 @@ Scenarios.fromProject(() => new Project())
               module.exports = function(filename) { return true }
             `,
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
-            'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
+            'node_modules/my-addon/package.json': addonPackageJSON(
+              'my-addon',
+              opts?.addonMeta,
+              opts?.addonDependencies
+            ),
           });
 
           expectAudit = await assert.audit({ app: app.dir, 'reuse-build': true });
@@ -840,6 +849,63 @@ Scenarios.fromProject(() => new Project())
               './node_modules/.embroider/rewritten-packages/a-v1-addon.1234/node_modules/a-v1-addon/_app_/components/i-am-implicit.js'
             );
         });
+
+        test('v1 package without auto-import gets renaming support even when it has a dependency', async function () {
+          givenFiles({
+            'node_modules/my-addon/index.js': 'import "renamed-interior"',
+            'node_modules/interior/index.js': '',
+            'node_modules/interior/package.json': addonPackageJSON('interior'),
+            'node_modules/renamed-interior/index.js': '',
+            'node_modules/renamed-interior/package.json': addonPackageJSON('renamed-interior'),
+            'app.js': `import "my-addon"`,
+          });
+
+          await configure({
+            renamePackages: {
+              'renamed-interior': 'interior',
+            },
+            addonDependencies: {
+              interior: '^1.0.0',
+              'renamed-interior': '^1.0.0',
+            },
+          });
+
+          expectAudit
+            .module('./app.js')
+            .resolves('my-addon')
+            .toModule()
+            .resolves('renamed-interior')
+            .to('./node_modules/interior/index.js');
+        });
+      });
+
+      test('v1 package with auto-import does not get renaming support for a dependency', async function () {
+        givenFiles({
+          'node_modules/my-addon/index.js': 'import "renamed-interior"',
+          'node_modules/interior/index.js': '',
+          'node_modules/interior/package.json': addonPackageJSON('interior'),
+          'node_modules/renamed-interior/index.js': '',
+          'node_modules/renamed-interior/package.json': addonPackageJSON('renamed-interior'),
+          'app.js': `import "my-addon"`,
+        });
+
+        await configure({
+          renamePackages: {
+            'renamed-interior': 'interior',
+          },
+          addonDependencies: {
+            interior: '^1.0.0',
+            'renamed-interior': '^1.0.0',
+            'ember-auto-import': '^2.0.0',
+          },
+        });
+
+        expectAudit
+          .module('./app.js')
+          .resolves('my-addon')
+          .toModule()
+          .resolves('renamed-interior')
+          .to('./node_modules/renamed-interior/index.js');
       });
     });
   });

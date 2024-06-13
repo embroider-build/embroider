@@ -222,7 +222,7 @@ app.forEachScenario(scenario => {
 
       hooks.beforeEach(assert => {
         assertRewrittenFile = (rewrittenPath: string) => {
-          let fullPath = path.join(app.dir, 'node_modules', '.embroider', 'rewritten-app', ...rewrittenPath.split('/'));
+          let fullPath = path.join(app.dir, 'tmp', 'rewritten-app', ...rewrittenPath.split('/'));
           let file = new File(rewrittenPath, fullPath);
           return new AssertFile(assert, file);
         };

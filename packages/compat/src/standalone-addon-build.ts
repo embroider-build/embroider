@@ -92,14 +92,14 @@ function buildAddonIndex(compatApp: CompatApp, appPackage: Package, packages: Se
   // yet. This directory lives outside our rewritten-pacakges directory because
   // it's produced by a separate build stage, and it's easier to have them
   // writing into separate directories.
-  content.packages[compatApp.root] = join('..', 'rewritten-app');
+  content.packages[compatApp.root] = join('..', '..', '..', 'tmp', 'rewritten-app');
 
   let nonResolvableDeps = appPackage.nonResolvableDeps;
   if (nonResolvableDeps) {
     let extraRoots = [...nonResolvableDeps.values()].map(v => v.root);
 
     // the app gets extraResolutions support just like every addon does
-    content.extraResolutions[join('..', 'rewritten-app')] = extraRoots;
+    content.extraResolutions[join('..', '..', '..', 'tmp', 'rewritten-app')] = extraRoots;
 
     // but it also gets extraResolutions registered against its *original*
     // location, because the app is unique because stage2 needs a Package

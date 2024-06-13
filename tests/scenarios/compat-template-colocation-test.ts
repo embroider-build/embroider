@@ -261,7 +261,7 @@ scenarios
 
       test(`app's colocated components are not implicitly included`, function (assert) {
         expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .module('./tmp/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {
@@ -354,7 +354,7 @@ appScenarios
 
       test(`app's pod components and templates are implicitly included correctly`, function (assert) {
         expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
+          .module('./tmp/rewritten-app/index.html')
           .resolves('/@embroider/core/entrypoint')
           .toModule()
           .withContents(content => {

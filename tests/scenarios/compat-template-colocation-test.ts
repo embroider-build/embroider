@@ -28,6 +28,8 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
       components: {
         'has-colocated-template.js': `
           import Component from '@glimmer/component';
+          import ComponentOne from 'my-addon/components/component-one';
+          import ComponentTwo from 'my-addon/components/component-two';
           export default class extends Component {}
           `,
         'has-colocated-template.hbs': `<div>{{this.title}}</div>`,
@@ -85,13 +87,19 @@ scenarios
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
 
+      let app: PreparedApp;
       let server: CommandWatcher;
       let appURL: string;
+      let expectFile: ExpectFile;
 
       hooks.before(async () => {
-        let app = await scenario.prepare();
+        app = await scenario.prepare();
         server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+      });
+
+      hooks.beforeEach(async assert => {
+        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
       hooks.after(async () => {
@@ -148,12 +156,6 @@ scenarios
           });
       });
 
-      // TODO uncomment (or delete) the remaning commented tests
-      // test(`app's colocated TS component is NOT synthesized`, function () {
-      //   let assertFile = expectFile('components/has-colocated-ts-template.js');
-      //   assertFile.doesNotExist('component stub was not created');
-      // });
-
       test(`app's colocated components are implicitly included correctly`, function (assert) {
         expectAudit
           .module('./index.html')
@@ -179,34 +181,60 @@ scenarios
           });
       });
 
-      // test(`addon's colocated template is associated with JS`, function () {
-      //   let assertFile = expectFile('./node_modules/my-addon/components/component-one.js').transform(build.transpile);
-      //   assertFile.matches(/import TEMPLATE from ['"]\.\/component-one.hbs['"];/, 'imported template');
-      //   assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
-      //   assertFile.matches(
-      //     /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
-      //     'default export is wrapped'
-      //   );
-      // });
+      test(`addon's colocated template is associated with JS`, function (assert) {
+        expectAudit
+          .module('./index.html')
+          .resolves('/@embroider/core/entrypoint')
+          .toModule()
+          .resolves(/components\/has-colocated-template/)
+          .toModule()
+          .resolves(/components\/component-one/)
+          .toModule()
+          .withContents(contents => {
+            assert.ok(
+              /import __COLOCATED_TEMPLATE__ from ['"]\.\/component-one.hbs['"];/.test(contents),
+              'imported template'
+            );
+            assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
+            assert.ok(
+              /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/.test(contents),
+              'default export is wrapped'
+            );
+            return true;
+          });
+      });
 
-      // test(`addon's template-only component JS is synthesized`, function () {
-      //   let assertFile = expectFile('./node_modules/my-addon/components/component-two.js').transform(build.transpile);
-      //   assertFile.matches(/import TEMPLATE from ['"]\.\/component-two.hbs['"];/, 'imported template');
-      //   assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
-      //   assertFile.matches(/import templateOnlyComponent/, 'found templateOnlyComponent');
-      //   assertFile.matches(
-      //     /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/,
-      //     'default export is wrapped'
-      //   );
-      // });
+      test(`addon's template-only component JS is synthesized`, function (assert) {
+        expectAudit
+          .module('./index.html')
+          .resolves('/@embroider/core/entrypoint')
+          .toModule()
+          .resolves(/components\/has-colocated-template/)
+          .toModule()
+          .resolves(/components\/component-two/)
+          .toModule()
+          .withContents(contents => {
+            assert.ok(
+              /import __COLOCATED_TEMPLATE__ from ['"]\.\/component-two.hbs['"];/.test(contents),
+              'imported template'
+            );
+            assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
+            assert.ok(/import templateOnlyComponent/.test(contents), 'found templateOnlyComponent');
+            assert.ok(
+              /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/.test(contents),
+              'default export is wrapped'
+            );
+            return true;
+          });
+      });
 
-      // test(`addon's colocated components are correct in implicit-modules`, function () {
-      //   let assertFile = expectFile('./node_modules/my-addon/package.json').json();
-      //   assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-one');
-      //   assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-two');
-      //   assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-one.hbs');
-      //   assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-two.hbs');
-      // });
+      test(`addon's colocated components are correct in implicit-modules`, function () {
+        let assertFile = expectFile('./node_modules/my-addon/package.json').json();
+        assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-one');
+        assertFile.get(['ember-addon', 'implicit-modules']).includes('./components/component-two');
+        assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-one.hbs');
+        assertFile.get(['ember-addon', 'implicit-modules']).doesNotInclude('./components/component-two.hbs');
+      });
     });
   });
 

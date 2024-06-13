@@ -26,6 +26,7 @@ export interface AddonMeta {
   main?: string;
   'order-index'?: number;
   'lazy-engine'?: boolean;
+  'is-dynamic'?: boolean;
 
   'auto-upgraded'?: true;
   'app-js'?: { [appName: string]: Filename };

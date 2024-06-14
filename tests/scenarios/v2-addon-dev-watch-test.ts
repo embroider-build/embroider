@@ -50,8 +50,8 @@ Scenarios.fromProject(() => baseV2Addon())
           output: addon.output(),
 
           plugins: [
-            addon.publicEntrypoints(['components/**/*.{gts,js}']),
-            addon.appReexports(['components/**/*.{gts,js}']),
+            addon.publicEntrypoints(['components/**/*.js']),
+            addon.appReexports(['components/**/*.js']),
             addon.clean(),
             addon.gjs(),
             addon.hbs(),
@@ -142,42 +142,46 @@ Scenarios.fromProject(() => baseV2Addon())
 
           await watcher.start();
 
-          let someFile = path.join(addon.dir, 'src/components/demo.hbs');
+          let demoHbs = path.join(addon.dir, 'src/components/demo.hbs');
+          let demoJs = path.join(addon.dir, 'src/components/demo.js');
           let distPath = path.join(addon.dir, 'dist/components/test.js');
-          let srcPathDemo = path.join(addon.dir, 'src/components/demo.hbs');
           let distPathDemoComp = path.join(addon.dir, 'dist/components/demo.js');
           let srcPathButton = path.join(addon.dir, 'src/components/other.hbs');
           let distPathButton = path.join(addon.dir, 'dist/_app_/components/other.js');
 
           assert.strictEqual(existsSync(distPathButton), true, `Expected ${distPathButton} to exist`);
           let origContent = await fs.readFile(srcPathButton);
-          let demoContent = await fs.readFile(srcPathDemo);
+          let demoContent = await fs.readFile(demoHbs);
 
+          // deleting a component from src should delete it from dist
           await fs.rm(srcPathButton);
           await watcher?.nextBuild();
           assert.strictEqual(existsSync(distPathButton), false, `Expected ${distPathButton} to be deleted`);
 
+          // create a component in src should create it in dist
           await fs.writeFile(srcPathButton, origContent);
           await watcher?.nextBuild();
           assert.strictEqual(existsSync(distPathButton), true, `Expected ${distPathButton} to exist`);
 
+          // updating hbs modifies colocated js
           await becomesModified({
             filePath: distPathDemoComp,
             assert,
             // Update a component
             fn: async () => {
-              let someContent = await fs.readFile(srcPathDemo);
+              let someContent = await fs.readFile(demoHbs);
 
               // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
               await aBit(10);
-              await fs.writeFile(srcPathDemo, someContent + `\n`);
+              await fs.writeFile(demoHbs, someContent + `\n`);
               await watcher?.nextBuild();
             },
           });
 
+          // removing hbs modifies colocated js to not import hbs anymore
           await becomesModified({
             filePath: distPathDemoComp,
             assert,
@@ -188,65 +192,82 @@ Scenarios.fromProject(() => baseV2Addon())
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
               await aBit(10);
-              await fs.rm(srcPathDemo);
+              await fs.rm(demoHbs);
               await watcher?.nextBuild();
             },
           });
 
-          await fs.writeFile(srcPathDemo, demoContent);
+          await fs.writeFile(demoHbs, demoContent);
+          await watcher?.nextBuild();
 
+          // updating hbs content should not update unrelated files
           await isNotModified({
             filePath: distPath,
             assert,
             // Update a component
             fn: async () => {
-              let someContent = await fs.readFile(someFile);
+              let someContent = await fs.readFile(demoHbs);
 
               // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
+              await fs.writeFile(demoHbs, someContent + `\n\n`);
               await aBit(10);
-              await fs.writeFile(someFile, someContent + `\n`);
               await watcher?.nextBuild();
             },
           });
 
+          // updating hbs content should update resulting app re-exported component
           distPath = path.join(addon.dir, 'dist/_app_/components/test.js');
           await isNotModified({
             filePath: distPath,
             assert,
             // Update a component
             fn: async () => {
-              let someContent = await fs.readFile(someFile);
+              let someContent = await fs.readFile(demoHbs);
 
               // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
               await aBit(10);
-              await fs.writeFile(someFile, someContent + `\n`);
+              await fs.writeFile(demoHbs, someContent + `\n`);
               await watcher?.nextBuild();
             },
           });
 
+          // updating template only hbs should update the dist output
           distPath = path.join(addon.dir, 'dist/components/button.js');
           await isNotModified({
             filePath: distPath,
             assert,
             // Update a component
             fn: async () => {
-              let someContent = await fs.readFile(someFile);
+              let someContent = await fs.readFile(demoHbs);
 
               // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
               await aBit(10);
-              await fs.writeFile(someFile, someContent + `\n`);
+              await fs.writeFile(demoHbs, someContent + `\n`);
               await watcher?.nextBuild();
             },
           });
+
+          // deleting demo.js should make demo a template only component
+          const demoJsContent = await fs.readFile(demoJs);
+          await fs.rm(demoJs);
+          await watcher?.nextBuild();
+          let distPathDemoCompContent = await fs.readFile(distPathDemoComp);
+          assert.ok(distPathDemoCompContent.includes('templateOnly'));
+
+          // creating demo.js should make demo a template colocated component
+          await fs.writeFile(demoJs, demoJsContent);
+          await watcher?.nextBuild();
+          distPathDemoCompContent = await fs.readFile(distPathDemoComp);
+          assert.ok(!distPathDemoCompContent.includes('templateOnly'));
         });
 
         test('the package.json is not updated since it would be the same', async function (assert) {

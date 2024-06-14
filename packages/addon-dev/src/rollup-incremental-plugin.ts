@@ -88,13 +88,6 @@ export default function incremental(): Plugin {
     name: 'clean',
     transform(_code, id) {
       changed.add(id);
-      // support colocation changes
-      // could also be done directly in the babel plugin
-      // by passing rollup context into it
-      let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
-      if (hbsFilename !== id && existsSync(hbsFilename)) {
-        this.addWatchFile(hbsFilename);
-      }
     },
     generateBundle(options, bundle) {
       if (firstTime) {

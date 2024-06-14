@@ -32,11 +32,10 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         let firstFailure;
 
         for (let candidate of candidates(path)) {
-          let { specifier, fromFile } = adjustVirtualImport(candidate, importer);
-          let result = await build.resolve(specifier, {
+          let result = await build.resolve(candidate, {
             namespace,
             resolveDir,
-            importer: fromFile,
+            importer,
             kind,
             pluginData: { ...pluginData, embroiderExtensionSearch: true },
           });
@@ -53,8 +52,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         return firstFailure;
       });
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let { specifier, fromFile } = adjustVirtualImport(path, importer);
-        let request = EsBuildModuleRequest.from(build, kind, specifier, fromFile, pluginData);
+        let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
         if (!request) {
           return null;
         }
@@ -69,6 +67,32 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
             throw assertNever(resolution);
         }
       });
+
+      build.onResolve({ filter: /./ }, async args => {
+        let { path, importer, namespace, resolveDir, kind  } = args;
+        let { specifier, fromFile } = adjustVirtualImport(path, importer);
+        if (specifier === path) {
+          return null;
+        }
+
+        let result = await build.resolve(specifier, {
+          namespace,
+          resolveDir,
+          importer: fromFile,
+          kind,
+          pluginData: {
+            embroiderExtensionSearch: true,
+            embroider: {
+              enableCustomResolver: false,
+            }
+          },
+        });
+
+        if (result.errors.length === 0) {
+          return result;
+        }
+        return null;
+      })
 
       build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
         // We don't want esbuild to try loading virtual CSS files

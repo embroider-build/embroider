@@ -94,7 +94,7 @@ app.forEachScenario(scenario => {
     Qmodule(`initial dep scan`, function (hooks) {
       let server: CommandWatcher;
       hooks.before(async () => {
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        server = CommandWatcher.launch('vite', ['--force', '--clearScreen', 'false'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s*(.*)/);
       });
       let expectAudit = setupAuditTest(hooks, () => ({
@@ -306,7 +306,7 @@ app.forEachScenario(scenario => {
     Qmodule(`should ignore configured ignored deps`, function (hooks) {
       let server: CommandWatcher;
       hooks.before(async () => {
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        server = CommandWatcher.launch('vite', ['--force', '--clearScreen', 'false'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s*(.*)/);
       });
       let expectAudit = setupAuditTest(hooks, () => ({

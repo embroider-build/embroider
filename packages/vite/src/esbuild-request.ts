@@ -145,9 +145,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
       };
     }
 
-    let from = this.fromFile;
     let result = await this.context.resolve(request.specifier, {
-      importer: from,
+      importer: request.fromFile,
       resolveDir: dirname(request.fromFile),
       kind: this.kind,
       pluginData: {

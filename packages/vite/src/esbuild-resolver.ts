@@ -29,7 +29,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         }
 
         // from our app, not pre-bundle phase
-        if (!importer.includes('node_modules') || importer.includes('rewritten-app')) {
+        if (!importer.includes('node_modules')) {
           return null;
         }
 
@@ -65,7 +65,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           return null;
         }
         // during pre bundle we enter node modules, and then there are no user defined vite plugins
-        if (importer.includes('node_modules') && !importer.includes('rewritten-app')) {
+        if (importer.includes('node_modules')) {
           if (excluded && excluded.some((addon: string) => path?.startsWith(addon))) {
             return {
               external: true,
@@ -75,12 +75,6 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           let result = await resolverLoader.resolver.resolve(request);
           if (result.type === 'not_found') {
             return null;
-          }
-          if (result.result.path?.includes('rewritten-app')) {
-            return {
-              external: true,
-              path: result.result.path,
-            };
           }
           return result.result;
         }
@@ -109,19 +103,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         if (res.path.includes('rewritten-packages')) {
           res.external = true;
         }
-        if (res.path.includes('rewritten-app')) {
-          res.external = false;
-          res.namespace = 'file';
-        }
-        if (
-          res.path.includes('rewritten-app') &&
-          importer.includes('node_modules') &&
-          !importer.includes('rewritten-app')
-        ) {
-          res.external = true;
-          res.namespace = 'file';
-        }
-        if (args.importer?.includes('rewritten-app') && res.path.includes('-embroider-implicit-')) {
+        if (res.path.includes('-embroider-implicit-')) {
           res.namespace = 'embroider';
         }
         return res;

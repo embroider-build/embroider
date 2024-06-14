@@ -74,6 +74,12 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           if (result.type === 'not_found') {
             return null;
           }
+          if (!result.result.path?.includes('node_modules') && result.result.path?.includes(resolverLoader.appRoot)) {
+            return {
+              external: true,
+              path: result.result.path,
+            };
+          }
           return result.result;
         }
         delete (args as any).path;

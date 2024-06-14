@@ -1,28 +1,5 @@
-import { Project, Scenario, Scenarios } from 'scenario-tester';
+import { Scenarios, Project } from 'scenario-tester';
 import { dirname } from 'path';
-import { exec } from 'child_process';
-
-let prepare = Scenario.prototype.prepare;
-Scenario.prototype.prepare = async function (...args) {
-  function execPromise(command: string): Promise<string> {
-    return new Promise(function (resolve, reject) {
-      exec(command, (error, stdout) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        resolve(stdout.trim());
-      });
-    });
-  }
-  let app = await prepare.call(this, ...args);
-  if (process.platform === 'win32') {
-    const command = `powershell.exe -command "(Get-Item -LiteralPath '${app.dir}').FullName"`;
-    app.dir = await execPromise(command);
-  }
-  console.log(app.dir);
-  return app;
-};
 
 export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });

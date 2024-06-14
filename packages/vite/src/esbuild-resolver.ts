@@ -108,7 +108,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       });
 
       build.onResolve({ filter: /./ }, async args => {
-        let { path, importer, namespace, resolveDir, kind  } = args;
+        let { path, importer, namespace, resolveDir, kind } = args;
         let { specifier, fromFile } = adjustVirtualImport(path, importer);
         if (specifier === path) {
           return null;
@@ -123,7 +123,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
             embroiderExtensionSearch: true,
             embroider: {
               enableCustomResolver: false,
-            }
+            },
           },
         });
 
@@ -131,7 +131,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           return result;
         }
         return null;
-      })
+      });
 
       build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
         // We don't want esbuild to try loading virtual CSS files

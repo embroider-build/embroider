@@ -20,7 +20,7 @@ export function templateTag({ inline_source_map } = { inline_source_map: false }
         return null;
       }
       for (let candidate of candidates(id)) {
-        resolution = await this.resolve(candidate, importer, {
+        let resolution = await this.resolve(candidate, importer, {
           skipSelf: true,
           custom: {
             embroider: {

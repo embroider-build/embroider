@@ -202,14 +202,18 @@ appScenarios
       },
       app: {
         components: {
+          'component-with-index': {
+            'index.gts': '<template></template>',
+          },
           old: {
             'component.js': `import Component from '@glimmer/component';
+            import ComponentWithIndex from './component-with-index';
 
             export default class extends Component {
               message = 'hi';
             }
             `,
-            'component.hbs': `<div>hey {{@message}} <Fancy /></div>`,
+            'component.hbs': `<div>hey {{@message}} <Fancy /> <ComponentWithIndex/> </div>`,
           },
           'example.hbs': `<div>hey {{@message}} <Fancy /></div>`,
           'example.js': `import Component from '@glimmer/component';

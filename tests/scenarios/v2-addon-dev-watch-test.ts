@@ -175,8 +175,8 @@ Scenarios.fromProject(() => baseV2Addon())
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
-              await aBit(10);
               await fs.writeFile(demoHbs, someContent + `\n`);
+              await aBit(10);
               await watcher?.nextBuild();
             },
           });
@@ -191,8 +191,8 @@ Scenarios.fromProject(() => baseV2Addon())
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
-              await aBit(10);
               await fs.rm(demoHbs);
+              await aBit(10);
               await watcher?.nextBuild();
             },
           });
@@ -231,8 +231,8 @@ Scenarios.fromProject(() => baseV2Addon())
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
-              await aBit(10);
               await fs.writeFile(demoHbs, someContent + `\n`);
+              await aBit(10);
               await watcher?.nextBuild();
             },
           });
@@ -250,8 +250,8 @@ Scenarios.fromProject(() => baseV2Addon())
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
-              await aBit(10);
               await fs.writeFile(demoHbs, someContent + `\n`);
+              await aBit(10);
               await watcher?.nextBuild();
             },
           });

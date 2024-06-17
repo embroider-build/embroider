@@ -19,12 +19,6 @@ export function templateTag({ inline_source_map } = { inline_source_map: false }
       if (options.custom?.embroider?.isExtensionSearch) {
         return null;
       }
-      let resolution = await this.resolve(id, importer, {
-        skipSelf: true,
-      });
-      if (resolution) {
-        return resolution;
-      }
       for (let candidate of candidates(id)) {
         resolution = await this.resolve(candidate, importer, {
           skipSelf: true,

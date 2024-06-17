@@ -7,6 +7,7 @@ export interface OptimizeDeps {
 
 export function optimizeDeps(): OptimizeDeps {
   return {
+    disabled: true,
     exclude: ['@embroider/macros'],
     extensions: ['.hbs', '.gjs', '.gts'],
     esbuildOptions: {

@@ -28,19 +28,23 @@ export function templateTag({ inline_source_map } = { inline_source_map: false }
         }
       }
       for (let candidate of candidates(id)) {
-        let resolution = await this.resolve(candidate, importer, {
-          skipSelf: true,
-          custom: {
-            embroider: {
-              isExtensionSearch: true,
-              enableCustomResolver: false,
+        try {
+          let resolution = await this.resolve(candidate, importer, {
+            skipSelf: true,
+            custom: {
+              embroider: {
+                isExtensionSearch: true,
+                enableCustomResolver: false,
+              },
             },
-          },
-        });
-        if (resolution) {
-          return {
-            id: resolution.id,
-          };
+          });
+          if (resolution) {
+            return {
+              id: resolution.id,
+            };
+          }
+        } catch (e) {
+         // skip
         }
       }
     },

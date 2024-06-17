@@ -19,6 +19,14 @@ export function templateTag({ inline_source_map } = { inline_source_map: false }
       if (options.custom?.embroider?.isExtensionSearch) {
         return null;
       }
+      if (id.endsWith('.gjs') || id.endsWith('.gts')) {
+        let resolution = await this.resolve(id, importer, {
+          skipSelf: true,
+        });
+        if (resolution) {
+          return resolution;
+        }
+      }
       for (let candidate of candidates(id)) {
         let resolution = await this.resolve(candidate, importer, {
           skipSelf: true,

@@ -218,7 +218,7 @@ Scenarios.fromProject(() => baseV2Addon())
             },
           });
 
-          // updating hbs content should update resulting app re-exported component
+          // updating hbs content should not update resulting app re-exported component
           distPath = path.join(addon.dir, 'dist/_app_/components/test.js');
           await isNotModified({
             filePath: distPath,

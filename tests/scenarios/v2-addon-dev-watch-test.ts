@@ -261,7 +261,7 @@ Scenarios.fromProject(() => baseV2Addon())
           await fs.rm(demoJs);
           await watcher?.nextBuild();
           let distPathDemoCompContent = await fs.readFile(distPathDemoComp);
-          assert.ok(distPathDemoCompContent.includes('templateOnly'));
+          assert.true(distPathDemoCompContent.includes('templateOnly'));
 
           // creating demo.js should make demo a template colocated component
           await fs.writeFile(demoJs, demoJsContent);

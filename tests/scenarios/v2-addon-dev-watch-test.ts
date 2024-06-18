@@ -267,7 +267,7 @@ Scenarios.fromProject(() => baseV2Addon())
           await fs.writeFile(demoJs, demoJsContent);
           await watcher?.nextBuild();
           distPathDemoCompContent = await fs.readFile(distPathDemoComp);
-          assert.ok(!distPathDemoCompContent.includes('templateOnly'));
+          assert.false(distPathDemoCompContent.includes('templateOnly'));
         });
 
         test('the package.json is not updated since it would be the same', async function (assert) {

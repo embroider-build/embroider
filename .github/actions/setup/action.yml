@@ -23,7 +23,7 @@ runs:
         run_install: false
     - uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 20
         cache: pnpm
     - run: pnpm install ${{ fromJSON('{"false":"--no-lockfile", "true":"--frozen-lockfile"}')[inputs.use_lockfile] }}
       shell: bash

@@ -28,8 +28,9 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           return null;
         }
 
+        const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
         // from our app, not pre-bundle phase
-        if (!importer.includes('node_modules')) {
+        if (!importer.includes('/node_modules/') && importer.includes(appRoot)) {
           return null;
         }
 
@@ -62,8 +63,9 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         if (!request) {
           return null;
         }
+        const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
         // during pre bundle we enter node modules, and then there are no user defined vite plugins
-        if (importer.includes('node_modules')) {
+        if (importer.replace(appRoot, '').includes('/node_modules/')) {
           if (excluded && excluded.some((addon: string) => path?.startsWith(addon))) {
             return {
               external: true,
@@ -74,7 +76,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           if (result.type === 'not_found') {
             return null;
           }
-          if (!result.result.path?.includes('node_modules') && result.result.path?.includes(resolverLoader.appRoot)) {
+          if (!result.result.path?.includes('/node_modules/') && result.result.path?.includes(appRoot)) {
             return {
               external: true,
               path: result.result.path,
@@ -104,9 +106,6 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         path = alias.specifier;
         let res = (await build.resolve(path, args)) as any;
         if (!res) return null;
-        if (res.path.includes('rewritten-packages')) {
-          res.external = true;
-        }
         if (res.path.includes('-embroider-implicit-')) {
           res.namespace = 'embroider';
         }

@@ -11,24 +11,24 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.5.2",
-      "newVersion": "3.5.3",
+      "oldVersion": "3.5.3",
+      "newVersion": "3.5.4",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.4.11",
-      "newVersion": "3.4.12",
+      "oldVersion": "3.4.12",
+      "newVersion": "3.4.13",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
@@ -37,7 +37,16 @@
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.3"
+      "impact": "patch",
+      "oldVersion": "1.16.3",
+      "newVersion": "1.16.4",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -61,5 +70,5 @@
       "oldVersion": "4.0.3"
     }
   },
-  "description": "## Release (2024-06-13)\n\n@embroider/compat 3.5.3 (patch)\n@embroider/core 3.4.12 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/core`, `@embroider/sample-transforms`\n  * [#1969](https://github.com/embroider-build/embroider/pull/1969) Update `fast-sourcemap-concat` to remove dependency `lodash.template` for consumer apps (security vulnerability) ([@mkszepp](https://github.com/mkszepp))\n\n#### Committers: 1\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
+  "description": "## Release (2024-06-20)\n\n@embroider/compat 3.5.4 (patch)\n@embroider/core 3.4.13 (patch)\n@embroider/macros 1.16.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#1994](https://github.com/embroider-build/embroider/pull/1994) MacrosConfig should sync globalConfigs between copies ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* [#1993](https://github.com/embroider-build/embroider/pull/1993) update node to latest LTS for CI ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

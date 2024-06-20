@@ -17,6 +17,8 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   let macrosConfig: PluginItem | undefined;
   let preprocessor = new Preprocessor();
 
+  let nodeModulesRegex = /[\\\/]node_modules[\\\/]/;
+
   return {
     name: 'embroider-esbuild-resolver',
     setup(build) {
@@ -30,7 +32,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
 
         const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
         // from our app, not pre-bundle phase
-        if (!importer.includes('/node_modules/') && importer.includes(appRoot)) {
+        if (!nodeModulesRegex.test(importer) && importer.includes(appRoot)) {
           return null;
         }
 
@@ -65,8 +67,9 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         }
         const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
         // during pre bundle we enter node modules, and then there are no user defined vite plugins
-        if (importer.replace(appRoot, '').includes('/node_modules/')) {
-          if (excluded && excluded.some((addon: string) => path?.startsWith(addon))) {
+        if (nodeModulesRegex.test(importer.replace(appRoot, ''))) {
+          let alias = await resolverLoader.resolver.resolveAlias(request);
+          if (excluded && excluded.some((addon: string) => alias.specifier?.startsWith(addon))) {
             return {
               external: true,
               path,
@@ -76,7 +79,8 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           if (result.type === 'not_found') {
             return null;
           }
-          if (!result.result.path?.includes('/node_modules/') && result.result.path?.includes(appRoot)) {
+          path = result.result.path?.replace(/\\/g, '/');
+          if (path && !nodeModulesRegex.test(path) && path.includes(appRoot)) {
             return {
               external: true,
               path: result.result.path,
@@ -94,7 +98,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         // so it can do its import analysis
         // this is something like what vite needs to do for aliases
         let alias = await resolverLoader.resolver.resolveAlias(request);
-        if (excluded && excluded.some((addon: string) => path?.startsWith(addon))) {
+        if (excluded && excluded.some((addon: string) => alias.specifier?.startsWith(addon))) {
           // just mark directly as external and do not tell vite
           return {
             external: true,

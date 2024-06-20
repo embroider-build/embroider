@@ -79,8 +79,8 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           if (result.type === 'not_found') {
             return null;
           }
-          path = result.result.path?.replace(/\\/g, '/');
-          if (path && !nodeModulesRegex.test(path) && path.includes(appRoot)) {
+          let fixedPath = result.result.path?.replace(/\\/g, '/');
+          if (fixedPath && !nodeModulesRegex.test(fixedPath) && path.includes(appRoot)) {
             return {
               external: true,
               path: result.result.path,

@@ -22,16 +22,16 @@ export type Merger = (
   }
 ) => object;
 
+interface GlobalSharedEntry {
+  configs: Map<string, object[]>;
+  globalConfigs: Record<string, string>;
+  configSources: WeakMap<object, string>;
+  mergers: Map<string, { merger: Merger; fromPath: string }>;
+}
+
 // Do not change this type signature without pondering deeply the mysteries of
 // being compatible with unwritten future versions of this library.
-type GlobalSharedState = WeakMap<
-  any,
-  {
-    configs: Map<string, object[]>;
-    configSources: WeakMap<object, string>;
-    mergers: Map<string, { merger: Merger; fromPath: string }>;
-  }
->;
+type GlobalSharedState = WeakMap<any, GlobalSharedEntry>;
 
 // this is a module-scoped cache. If multiple callers ask _this copy_ of
 // @embroider/macros for a shared MacrosConfig, they'll all get the same one.
@@ -93,25 +93,29 @@ export default class MacrosConfig {
       if (!shared.configSources) {
         shared.configSources = new WeakMap();
       }
+
+      // earlier versions did not include this -- we may need to upgrade the
+      // format here
+      if (!shared.globalConfigs) {
+        shared.globalConfigs = {};
+      }
     } else {
       shared = {
         configs: new Map(),
+        globalConfigs: {},
         configSources: new WeakMap(),
         mergers: new Map(),
       };
       g.__embroider_macros_global__.set(key, shared);
     }
 
-    let config = new MacrosConfig(appRoot);
-    config.configs = shared.configs;
-    config.configSources = shared.configSources;
-    config.mergers = shared.mergers;
+    let config = new MacrosConfig(appRoot, shared);
     localSharedState.set(key, config);
     return config;
   }
 
   private mode: 'compile-time' | 'run-time' = 'compile-time';
-  private globalConfig: { [key: string]: unknown } = {};
+  private globalConfig: { [key: string]: unknown };
 
   private isDevelopingPackageRoots: Set<string> = new Set();
 
@@ -150,7 +154,12 @@ export default class MacrosConfig {
     this._importSyncImplementation = value;
   }
 
-  private constructor(private origAppRoot: string) {
+  private constructor(private origAppRoot: string, shared: GlobalSharedEntry) {
+    this.configs = shared.configs;
+    this.globalConfig = shared.globalConfigs;
+    this.configSources = shared.configSources;
+    this.mergers = shared.mergers;
+
     // this uses globalConfig because these things truly are global. Even if a
     // package doesn't have a dep or peerDep on @embroider/macros, it's legit
     // for them to want to know the answer to these questions, and there is only
@@ -179,9 +188,9 @@ export default class MacrosConfig {
   }
 
   private _configWritable = true;
-  private configs: Map<string, object[]> = new Map();
-  private configSources: WeakMap<object, string> = new WeakMap();
-  private mergers: Map<string, { merger: Merger; fromPath: string }> = new Map();
+  private configs: Map<string, object[]>;
+  private configSources: WeakMap<object, string>;
+  private mergers: Map<string, { merger: Merger; fromPath: string }>;
 
   // Registers a new source of configuration to be given to the named package.
   // Your config type must be json-serializable. You must always set fromPath to

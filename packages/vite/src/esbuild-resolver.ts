@@ -80,7 +80,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
             return null;
           }
           let fixedPath = result.result.path?.replace(/\\/g, '/');
-          if (fixedPath && !nodeModulesRegex.test(fixedPath) && path.includes(appRoot)) {
+          if (fixedPath && !nodeModulesRegex.test(fixedPath) && fixedPath.includes(appRoot)) {
             return {
               external: true,
               path: result.result.path,

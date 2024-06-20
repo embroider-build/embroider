@@ -72,7 +72,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           if (excluded && excluded.some((addon: string) => alias.specifier?.startsWith(addon))) {
             return {
               external: true,
-              path,
+              path: alias.specifier,
             };
           }
           let result = await resolverLoader.resolver.resolve(request);
@@ -88,6 +88,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           }
           return result.result;
         }
+
         delete (args as any).path;
         args.pluginData = args.pluginData || {};
         args.pluginData.embroider = {
@@ -102,7 +103,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           // just mark directly as external and do not tell vite
           return {
             external: true,
-            path,
+            path: alias.specifier,
           };
         }
         alias = resolverLoader.resolver.makeResolvable(alias);
@@ -113,12 +114,17 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         if (res.path.includes('-embroider-implicit-')) {
           res.namespace = 'embroider';
         }
+        if (res.path.includes('/-embroider-entrypoint.js')) {
+          res.namespace = 'embroider';
+          res.external = false;
+        }
         return res;
       });
 
       build.onResolve({ filter: /./ }, async args => {
         let { path, importer, namespace, resolveDir, kind } = args;
         let { specifier, fromFile } = adjustVirtualImport(path, importer);
+
         if (specifier === path) {
           return null;
         }

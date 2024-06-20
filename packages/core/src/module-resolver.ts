@@ -1286,7 +1286,12 @@ export class Resolver {
     };
     let isVirtual = request.isVirtual;
     let path = request.specifier;
-    if (path.startsWith('.') || path.startsWith('#') || engineNames.some(packageName => path.startsWith(packageName))) {
+    if (
+      path.startsWith('/@embroider/core/') ||
+      path.startsWith('.') ||
+      path.startsWith('#') ||
+      engineNames.some(packageName => path.startsWith(packageName))
+    ) {
       let resolved = await this.beforeResolve(request);
       if (resolved.isVirtual) {
         isVirtual = true;
@@ -1317,8 +1322,11 @@ export class Resolver {
       }
     }
     if (!isVirtual) {
-      const extNameRegex = new RegExp(`\\${extname(res.path)}$`);
-      res.path = res.path.replace(extNameRegex, '');
+      const ext = extname(res.path);
+      const extNameRegex = new RegExp(`\\${ext}$`);
+      if (this.options.resolvableExtensions.includes(`.${ext}`)) {
+        res.path = res.path.replace(extNameRegex, '');
+      }
     }
     return request.alias(res.path).rehome(res.importer);
   }
@@ -1330,7 +1338,6 @@ export class Resolver {
         fromPkg =
           this.packageCache.ownerOfFile(request.fromFile) || this.packageCache.ownerOfFile(this.options.appRoot)!;
       } catch (e) {
-        console.log(e);
         fromPkg = this.packageCache.ownerOfFile(this.options.appRoot)!;
       }
 
@@ -1406,7 +1413,6 @@ export class Resolver {
     if (movedPkg !== pkg && !movedPkg.isV2App()) {
       let originalFromFile = request.meta?.originalFromFile;
       if (typeof originalFromFile !== 'string') {
-        console.log(pkg, movedPkg, request.specifier);
         throw new Error(`bug: embroider resolver's meta is not propagating`);
       }
       request = request.rehome(originalFromFile);

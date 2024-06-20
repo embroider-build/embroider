@@ -109,7 +109,7 @@ app.forEachScenario(scenario => {
       test('created initial optimized deps', async function (assert) {
         await waitUntilOptimizedReady(expectAudit);
         optimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps')).filter(f => f.endsWith('.js'));
-        assert.ok(optimizedFiles.length === 136, `should have created optimized deps: ${optimizedFiles.length}`);
+        assert.ok(optimizedFiles.length === 138, `should have created optimized deps: ${optimizedFiles.length}`);
       });
 
       test('should use all optimized deps', function (assert) {

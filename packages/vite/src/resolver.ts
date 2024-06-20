@@ -58,7 +58,7 @@ export function resolver(): Plugin {
             );
             if (pkg) {
               pkg = resolverLoader.resolver.packageCache.maybeMoved(pkg) || pkg;
-              optimizedDeps.set(res.id, pkg.root);
+              optimizedDeps.set(res.id.split('?')[0], pkg.root);
             }
           }
           return resolution.result;

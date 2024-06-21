@@ -17,12 +17,6 @@ async function updateVersions() {
     console.info(`Setting version of ${workspace}`);
     await setVersion(sha, workspace);
   }
-
-  // Update each dependency to use the new versions
-  for (let workspace of publicWorkspaces) {
-    console.info(`Updating dependencies of ${workspace}`);
-    await updateDependencies(workspace);
-  }
 }
 
 updateVersions();
@@ -41,26 +35,6 @@ async function setVersion(sha, filePath) {
   json.version = `${major}.${minor}.${parseInt(patch) + 1}-unstable.${sha}`;
 
   NEW_VERSIONS[json.name] = json.version;
-
-  await fse.writeJSON(filePath, json, { spaces: 2 });
-}
-
-async function updateDependencies(filePath) {
-  let json = await fse.readJSON(filePath);
-
-  for (let [dep, version] of Object.entries(NEW_VERSIONS)) {
-    if ((json.dependencies || {})[dep]) {
-      json.dependencies[dep] = version;
-    }
-
-    if ((json.devDependencies || {})[dep]) {
-      json.devDependencies[dep] = version;
-    }
-
-    if ((json.peerDependencies || {})[dep]) {
-      json.peerDependencies[dep] = version;
-    }
-  }
 
   await fse.writeJSON(filePath, json, { spaces: 2 });
 }

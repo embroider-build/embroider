@@ -10,7 +10,9 @@ async function publish() {
   for (let workspace of publicWorkspaces) {
     console.info(`Publishing ${workspace}`);
     try {
-      await execaCommand('npm publish --tag=unstable --verbose --access=public', { cwd: dirname(workspace) });
+      await execaCommand('pnpm publish --no-git-checks --tag=unstable --verbose --access=public', {
+        cwd: dirname(workspace),
+      });
     } catch (err) {
       console.info(`Publishing ${workspace} has failed. A full list of errors will be printed at the end of this run`);
       errors.push(err);

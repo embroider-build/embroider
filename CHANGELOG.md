@@ -1,5 +1,34 @@
 # Embroider Changelog
 
+## Release (2024-06-20)
+
+@embroider/compat 3.5.4 (patch)
+@embroider/core 3.4.13 (patch)
+@embroider/macros 1.16.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1994](https://github.com/embroider-build/embroider/pull/1994) MacrosConfig should sync globalConfigs between copies ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#1993](https://github.com/embroider-build/embroider/pull/1993) update node to latest LTS for CI ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2024-06-13)
+
+@embroider/compat 3.5.3 (patch)
+@embroider/core 3.4.12 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/sample-transforms`
+  * [#1969](https://github.com/embroider-build/embroider/pull/1969) Update `fast-sourcemap-concat` to remove dependency `lodash.template` for consumer apps (security vulnerability) ([@mkszepp](https://github.com/mkszepp))
+
+#### Committers: 1
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
 ## Release (2024-06-12)
 
 @embroider/webpack 4.0.3 (patch)

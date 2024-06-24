@@ -158,6 +158,9 @@ Thanks to the [Embroider Initiative](https://mainmatter.com/embroider-initiative
 
 - [Intercom](https://www.intercom.com/)
 - [Ticketsolve](https://www.ticketsolve.com/)
+- [Crowdstrike](https://www.crowdstrike.com/)
+- [Auditboard](https://auditboard.com/)
 - [HashiCorp](https://www.hashicorp.com/)
 - [OTA Insight](https://www.otainsight.com/)
 - [XBE](https://www.x-b-e.com/)
+- [Teamtailor](https://www.teamtailor.com/)

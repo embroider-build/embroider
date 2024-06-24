@@ -20,7 +20,7 @@ runs:
       name: Install pnpm
     - uses: actions/setup-node@v4
       with:
-        node-version: 16
+        node-version: 20
         cache: pnpm
     - run: pnpm install ${{ fromJSON('{"false":"--no-lockfile", "true":"--frozen-lockfile"}')[inputs.use_lockfile] }}
       shell: bash

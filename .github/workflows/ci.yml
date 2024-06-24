@@ -49,7 +49,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           use_lockfile: false
-      - name: Work around https://github.com/actions/runner-images/issues/712
+      - name: Work around windows short path alias # https://github.com/actions/runner-images/issues/712
         if: runner.os == 'Windows'
         run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
       - name: suite

@@ -146,22 +146,35 @@ Scenarios.fromProject(() => baseV2Addon())
           let demoJs = path.join(addon.dir, 'src/components/demo.js');
           let distPath = path.join(addon.dir, 'dist/components/test.js');
           let distPathDemoComp = path.join(addon.dir, 'dist/components/demo.js');
-          let srcPathButton = path.join(addon.dir, 'src/components/other.hbs');
-          let distPathButton = path.join(addon.dir, 'dist/_app_/components/other.js');
+          let srcPathOther = path.join(addon.dir, 'src/components/other.hbs');
+          let distPathOther = path.join(addon.dir, 'dist/components/other.js');
+          let distAppReExportPathOther = path.join(addon.dir, 'dist/_app_/components/other.js');
 
-          assert.strictEqual(existsSync(distPathButton), true, `Expected ${distPathButton} to exist`);
-          let origContent = await fs.readFile(srcPathButton);
+          assert.strictEqual(
+            existsSync(distAppReExportPathOther),
+            true,
+            `Expected ${distAppReExportPathOther} to exist`
+          );
+          let origContent = await fs.readFile(srcPathOther);
           let demoContent = await fs.readFile(demoHbs);
 
           // deleting a component from src should delete it from dist
-          await fs.rm(srcPathButton);
+          await fs.rm(srcPathOther);
           await watcher?.nextBuild();
-          assert.strictEqual(existsSync(distPathButton), false, `Expected ${distPathButton} to be deleted`);
+          assert.strictEqual(
+            existsSync(distAppReExportPathOther),
+            false,
+            `Expected ${distAppReExportPathOther} to be deleted`
+          );
 
           // create a component in src should create it in dist
-          await fs.writeFile(srcPathButton, origContent);
+          await fs.writeFile(srcPathOther, origContent);
           await watcher?.nextBuild();
-          assert.strictEqual(existsSync(distPathButton), true, `Expected ${distPathButton} to exist`);
+          assert.strictEqual(
+            existsSync(distAppReExportPathOther),
+            true,
+            `Expected ${distAppReExportPathOther} to exist`
+          );
 
           // updating hbs modifies colocated js
           await becomesModified({
@@ -237,20 +250,19 @@ Scenarios.fromProject(() => baseV2Addon())
             },
           });
 
-          // updating template only hbs should update the dist output
-          distPath = path.join(addon.dir, 'dist/components/button.js');
-          await isNotModified({
-            filePath: distPath,
+          // updating template only should update the dist output
+          await becomesModified({
+            filePath: distPathOther,
             assert,
             // Update a component
             fn: async () => {
-              let someContent = await fs.readFile(demoHbs);
+              let someContent = await fs.readFile(srcPathOther);
 
               // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
               // to guess for how long it'll take for the file system to update our file.
               //
               // the `stat` is measured in `ms`, so it's still pretty fast
-              await fs.writeFile(demoHbs, someContent + `\n`);
+              await fs.writeFile(srcPathOther, someContent + `\n`);
               await aBit(10);
               await watcher?.nextBuild();
             },

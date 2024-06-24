@@ -5,6 +5,7 @@ import { locateEmbroiderWorkingDir, RewrittenPackageCache, WaitForTrees } from '
 import TreeSync from 'tree-sync';
 import type CompatApp from './compat-app';
 import { convertLegacyAddons } from './standalone-addon-build';
+import { ensureSymlinkSync, writeFileSync, existsSync } from 'fs-extra';
 
 // This build stage expects to be run with broccoli memoization enabled in order
 // to get good rebuild performance. We turn it on by default here, but you can
@@ -47,11 +48,9 @@ export default class CompatAddons implements Stage {
     },
     changedMap: Map<string, boolean>
   ) {
+    let rewrittenPackages = resolve(locateEmbroiderWorkingDir(this.compatApp.root), 'rewritten-packages');
     if (!this.treeSync) {
-      this.treeSync = new TreeSync(
-        addons,
-        resolve(locateEmbroiderWorkingDir(this.compatApp.root), 'rewritten-packages')
-      );
+      this.treeSync = new TreeSync(addons, rewrittenPackages);
     }
 
     if (
@@ -60,6 +59,28 @@ export default class CompatAddons implements Stage {
     ) {
       this.treeSync.sync();
       RewrittenPackageCache.shared('embroider', this.compatApp.root).invalidateIndex();
+    }
+    const resolvableRewrittenPackages = resolve(
+      locateEmbroiderWorkingDir(this.compatApp.root),
+      '..',
+      '@embroider',
+      'rewritten-packages'
+    );
+    const embroiderDir = resolve(locateEmbroiderWorkingDir(this.compatApp.root), 'rewritten-packages');
+    console.log('link', embroiderDir, resolvableRewrittenPackages, existsSync(embroiderDir));
+    if (existsSync(embroiderDir)) {
+      ensureSymlinkSync(embroiderDir, resolvableRewrittenPackages, 'dir');
+      writeFileSync(
+        resolve(resolvableRewrittenPackages, 'package.json'),
+        JSON.stringify(
+          {
+            name: '@embroider/rewritten-packages',
+            main: 'moved-package-target.js',
+          },
+          null,
+          2
+        )
+      );
     }
     this.didBuild = true;
   }

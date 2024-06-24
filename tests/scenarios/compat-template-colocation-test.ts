@@ -8,6 +8,8 @@ import merge from 'lodash/merge';
 import QUnit from 'qunit';
 import CommandWatcher from './helpers/command-watcher';
 import fetch from 'node-fetch';
+import { readFileSync, writeFileSync } from 'fs-extra';
+import { resolve } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 let scenarios = appScenarios.map('compat-template-colocation', app => {
@@ -94,6 +96,10 @@ scenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
+        let viteConfigPath = resolve(app.dir, 'vite.config.mjs');
+        let viteConfig = readFileSync(viteConfigPath).toString();
+        viteConfig = viteConfig.replace('force: true', 'disabled: true');
+        writeFileSync(viteConfigPath, viteConfig);
         server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });

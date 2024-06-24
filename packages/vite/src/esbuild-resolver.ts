@@ -3,7 +3,6 @@ import { type PluginItem, transform } from '@babel/core';
 import { ResolverLoader, virtualContent, locateEmbroiderWorkingDir, explicitRelative } from '@embroider/core';
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
-import assertNever from 'assert-never';
 import { dirname, isAbsolute, resolve } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
@@ -11,8 +10,6 @@ import { Preprocessor } from 'content-tag';
 function* candidates(path: string) {
   yield path;
   yield path + '.hbs';
-  yield path + '.gjs';
-  yield path + '.gts';
 }
 
 export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
@@ -20,23 +17,32 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
   let macrosConfig: PluginItem | undefined;
   let preprocessor = new Preprocessor();
 
+  let nodeModulesRegex = /[\\\/]node_modules[\\\/]/;
+
   return {
     name: 'embroider-esbuild-resolver',
     setup(build) {
       // This resolver plugin is designed to test candidates for extensions and interoperates with our other embroider specific plugin
+      // this is required for pre bundle phase, where our vite plugins do not take part and we do have rewritten-addons that still contain
+      // hbs files
       build.onResolve({ filter: /./ }, async ({ path, importer, namespace, resolveDir, pluginData, kind }) => {
         if (pluginData?.embroiderExtensionSearch) {
+          return null;
+        }
+
+        const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
+        // from our app, not pre-bundle phase
+        if (!nodeModulesRegex.test(importer) && importer.includes(appRoot)) {
           return null;
         }
 
         let firstFailure;
 
         for (let candidate of candidates(path)) {
-          let { specifier, fromFile } = adjustVirtualImport(candidate, importer);
-          let result = await build.resolve(specifier, {
+          let result = await build.resolve(candidate, {
             namespace,
             resolveDir,
-            importer: fromFile,
+            importer,
             kind,
             pluginData: { ...pluginData, embroiderExtensionSearch: true },
           });
@@ -50,24 +56,95 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
           }
         }
 
-        return firstFailure;
+        return null;
       });
-      build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let { specifier, fromFile } = adjustVirtualImport(path, importer);
-        let request = EsBuildModuleRequest.from(build, kind, specifier, fromFile, pluginData);
+      build.onResolve({ filter: /./ }, async args => {
+        let excluded = resolverLoader.resolver.options.makeAbsolutePathToRwPackages;
+        let { path, importer, pluginData, kind } = args;
+        let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
         if (!request) {
           return null;
         }
-        let resolution = await resolverLoader.resolver.resolve(request);
-        switch (resolution.type) {
-          case 'found':
-          case 'ignored':
-            return resolution.result;
-          case 'not_found':
-            return resolution.err;
-          default:
-            throw assertNever(resolution);
+        const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
+        // during pre bundle we enter node modules, and then there are no user defined vite plugins
+        if (nodeModulesRegex.test(importer.replace(appRoot, ''))) {
+          let alias = await resolverLoader.resolver.resolveAlias(request);
+          if (excluded && excluded.some((addon: string) => alias.specifier?.startsWith(addon))) {
+            return {
+              external: true,
+              path: alias.specifier,
+            };
+          }
+          let result = await resolverLoader.resolver.resolve(request);
+          if (result.type === 'not_found') {
+            return null;
+          }
+          let fixedPath = result.result.path?.replace(/\\/g, '/');
+          if (fixedPath && !nodeModulesRegex.test(fixedPath) && fixedPath.includes(appRoot)) {
+            return {
+              external: true,
+              path: result.result.path,
+            };
+          }
+          return result.result;
         }
+
+        delete (args as any).path;
+        args.pluginData = args.pluginData || {};
+        args.pluginData.embroider = {
+          enableCustomResolver: false,
+          meta: request.meta,
+        };
+        // during dep scan we need to pass vite the actual bare import
+        // so it can do its import analysis
+        // this is something like what vite needs to do for aliases
+        let alias = await resolverLoader.resolver.resolveAlias(request);
+        if (alias.isVirtual) {
+          return {
+            namespace: 'embroider',
+            path: alias.specifier,
+          };
+        }
+        let isExcluded = false;
+        if (excluded && excluded.some((addon: string) => alias.specifier?.startsWith(addon))) {
+          isExcluded = true;
+        }
+        alias = resolverLoader.resolver.makeResolvable(alias);
+        args.importer = alias.fromFile || importer;
+        path = alias.specifier;
+        let res = (await build.resolve(path, args)) as any;
+        // if its excluded we want to scan its dependencies
+        if (res && isExcluded) {
+          res.external = false;
+        }
+        return res;
+      });
+
+      build.onResolve({ filter: /./ }, async args => {
+        let { path, importer, namespace, resolveDir, kind } = args;
+        let { specifier, fromFile } = adjustVirtualImport(path, importer);
+
+        if (specifier === path) {
+          return null;
+        }
+
+        let result = await build.resolve(specifier, {
+          namespace,
+          resolveDir,
+          importer: fromFile,
+          kind,
+          pluginData: {
+            embroiderExtensionSearch: true,
+            embroider: {
+              enableCustomResolver: false,
+            },
+          },
+        });
+
+        if (result.errors.length === 0) {
+          return result;
+        }
+        return null;
       });
 
       build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {

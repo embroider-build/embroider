@@ -134,12 +134,13 @@ export class EsBuildModuleRequest implements ModuleRequest {
         isVirtual: this.isVirtual,
       };
     }
+
     if (request.isNotFound) {
-      // todo: make sure this looks correct to users
       return {
-        type: 'not_found',
-        err: {
-          errors: [{ text: `module not found ${request.specifier}` }],
+        type: 'ignored',
+        result: {
+          external: true,
+          namespace: '',
         },
       };
     }
@@ -156,7 +157,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
       },
     });
     if (result.errors.length > 0) {
-      return { type: 'not_found', err: result };
+      return { type: 'ignored', result };
     } else if (result.external) {
       return { type: 'ignored', result };
     } else {

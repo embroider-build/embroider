@@ -40,6 +40,9 @@ stage2Scenarios
         'check-resolution-target.js': 'export {}',
       },
     });
+
+    (depC.pkg['ember-addon'] as any).before = ['dep-a', 'dep-b', 'in-repo-d', 'in-repo-a'];
+
     merge(depA.files, {
       addon: {
         'check-resolution.js': `

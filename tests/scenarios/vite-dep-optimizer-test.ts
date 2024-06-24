@@ -4,7 +4,7 @@ import QUnit from 'qunit';
 import CommandWatcher from './helpers/command-watcher';
 import { setupAuditTest, type Import } from '@embroider/test-support/audit-assertions';
 import fetch from 'node-fetch';
-import { writeFileSync, readdirSync, rmSync } from 'fs-extra';
+import { writeFileSync, readdirSync, rmSync, existsSync } from 'fs-extra';
 import { join } from 'path';
 
 const { module: Qmodule, test } = QUnit;
@@ -91,7 +91,40 @@ app.forEachScenario(scenario => {
       );
     }
 
-    Qmodule(`initial dep scan`, function (hooks) {
+    Qmodule('vite esbuild dep scan', function (hooks) {
+      let server: CommandWatcher;
+      hooks.before(async () => {
+        server = CommandWatcher.launch('vite', ['--force', '--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s*(.*)/);
+      });
+      hooks.after(async () => {
+        await server.shutdown();
+      });
+      test('initial dep scan', async function (assert) {
+        // wait until deps are generated without accessing any API
+        let esbuildScanOptimizedDeps = [];
+        while (true) {
+          if (existsSync(join(app.dir, 'node_modules', '.vite'))) {
+            const deps = readdirSync(join(app.dir, 'node_modules', '.vite'))[0];
+            let currentOptimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', deps)).filter(f =>
+              f.endsWith('.js')
+            );
+            if (
+              currentOptimizedFiles.length !== 0 &&
+              currentOptimizedFiles.length === esbuildScanOptimizedDeps.length
+            ) {
+              break;
+            }
+            esbuildScanOptimizedDeps.length = 0;
+            esbuildScanOptimizedDeps.push(...currentOptimizedFiles);
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        assert.equal(esbuildScanOptimizedDeps.length, 132);
+      });
+    });
+
+    Qmodule(`vite dep tests`, function (hooks) {
       let server: CommandWatcher;
       hooks.before(async () => {
         server = CommandWatcher.launch('vite', ['--force', '--clearScreen', 'false'], { cwd: app.dir });
@@ -109,7 +142,7 @@ app.forEachScenario(scenario => {
       test('created initial optimized deps', async function (assert) {
         await waitUntilOptimizedReady(expectAudit);
         optimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps')).filter(f => f.endsWith('.js'));
-        assert.ok(optimizedFiles.length === 138, `should have created optimized deps: ${optimizedFiles.length}`);
+        assert.ok(optimizedFiles.length === 132, `should have created optimized deps: ${optimizedFiles.length}`);
       });
 
       test('should use all optimized deps', function (assert) {

@@ -47,6 +47,9 @@ export default defineConfig(({ mode }) => {
         ignored: ["!**/tmp/**"],
       },
     },
+    resolve: {
+      extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
+    },
     build: {
       outDir: resolve(process.cwd(), "dist"),
       rollupOptions: {

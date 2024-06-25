@@ -1223,7 +1223,7 @@ export class Resolver {
       }
       if (!entry) {
         throw new Error(
-          `A module tried to resolve "${request.specifier}" and didn't find it (${label}).
+          `[${request.debugType}] A module tried to resolve "${request.specifier}" and didn't find it (${label}).
 
  - Maybe a dependency declaration is missing?
  - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.

@@ -82,7 +82,12 @@ appScenarios
               {{content-for "custom"}}
           
               <script src="/@embroider/core/vendor.js"></script>
-              <script src="/@embroider/core/entrypoint" type="module"></script>
+              <script type="module">
+                import Application from './app';
+                import environment from './config/environment';
+
+                Application.create(environment.APP);
+              </script>
           
               {{content-for "body-footer"}}
             </body>

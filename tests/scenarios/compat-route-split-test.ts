@@ -64,7 +64,13 @@ function checkContents(
   fn: (contents: string) => void,
   entrypointFile?: string | RegExp
 ) {
-  let resolved = expectAudit.module('./index.html').resolves('/@embroider/core/entrypoint');
+  let resolved = expectAudit
+    .module('./index.html')
+    .resolves(/\/index.html.*/) // in-html app-boot script
+    .toModule()
+    .resolves(/\/app\.js.*/)
+    .toModule()
+    .resolves(/.*\/-embroider-entrypoint.js/);
 
   if (entrypointFile) {
     resolved = resolved.toModule().resolves(entrypointFile);

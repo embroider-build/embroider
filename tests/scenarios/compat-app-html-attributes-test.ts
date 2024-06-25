@@ -32,7 +32,7 @@ appScenarios
 
     // <script ... src=".../vendor.js"> => <script ... src=".../vendor.js" data-original-filename="vendor.js">
     indexHtml = indexHtml.replace('vendor.js">', 'vendor.js" data-original-filename="vendor.js">');
-    indexHtml = indexHtml.replace('entrypoint" ', 'entrypoint" data-original-filename="entrypoint" ');
+    indexHtml = indexHtml.replace(' type="module">', ' data-original-filename="entrypoint" type="module">');
 
     // <script ... => <script defer ...
     indexHtml = indexHtml.replace(/<script /g, '<script defer ');
@@ -72,7 +72,7 @@ appScenarios
           'has data-original-filename vendor.js'
         );
         expectFile('./index.html').matches(
-          '" data-original-filename="entrypoint" type="module">',
+          ' data-original-filename="entrypoint" type="module">',
           'has data-original-filename entrypoint'
         );
       });

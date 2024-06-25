@@ -235,7 +235,7 @@ function dummyAppScenarioSetup(project: Project) {
           'if (!runningTests) {',
           "  require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
           '}',
-          'window.LoadedFromCustomAppBoot = true',
+          'window.LoadedFromClassicCustomAppBoot = true',
         ]
           .join('')
           .replace(/\{\{MODULE_PREFIX\}\}/g, prefix)
@@ -282,6 +282,42 @@ dummyAppScenarios
       test(`pnpm test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
         let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test');
         assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });
+
+dummyAppScenarios
+  .map('macro-sample-addon-useAddonAppBoot', project => {
+    dummyAppScenarioSetup(project);
+    project.mergeFiles({
+      'ember-cli-build.js': `
+        'use strict';
+        const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
+        const { maybeEmbroider } = require('@embroider/test-setup');
+        module.exports = function(defaults) {
+          let app = new EmberAddon(defaults, {});
+          return maybeEmbroider(app, {
+            useAddonAppBoot: true,
+          });
+        };
+      `,
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let addon: PreparedApp;
+
+      hooks.before(async () => {
+        addon = await scenario.prepare();
+      });
+
+      test(`pnpm test`, async function (assert) {
+        let result = await addon.execute('pnpm test');
+        assert.equal(result.exitCode, 1, 'tests exit with errors');
+        assert.true(
+          result.output.includes(`Your app uses at least one classic addon that provides content-for 'app-boot'.`),
+          'the output contains the error message about migrating custom app-boot code'
+        );
       });
     });
   });

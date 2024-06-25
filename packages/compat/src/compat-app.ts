@@ -12,7 +12,6 @@ import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import ContentForConfig from './content-for-config';
 import { V1Config } from './v1-config';
-import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
 import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo } from '@embroider/core';
 import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync, writeFileSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
@@ -162,22 +161,6 @@ export default class CompatApp {
 
   get autoRun(): boolean {
     return this.legacyEmberAppInstance.options.autoRun;
-  }
-
-  @Memoize()
-  get appBoot(): ReadV1AppBoot {
-    let env = this.legacyEmberAppInstance.env;
-    let appBootContentTree = new WriteV1AppBoot();
-
-    let patterns = this.configReplacePatterns;
-
-    appBootContentTree = new this.configReplace(appBootContentTree, this.configTree, {
-      configPath: join('environments', `${env}.json`),
-      files: ['config/app-boot.js'],
-      patterns,
-    });
-
-    return new ReadV1AppBoot(appBootContentTree);
   }
 
   private get storeConfigInMeta(): boolean {
@@ -747,7 +730,6 @@ export default class CompatApp {
       publicTree,
       configTree,
       contentForTree,
-      appBootTree: this.appBoot,
       prevStageTree,
     };
   }

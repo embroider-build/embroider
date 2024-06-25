@@ -11,9 +11,13 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.5.3",
-      "newVersion": "3.5.4",
+      "oldVersion": "3.5.4",
+      "newVersion": "3.5.5",
       "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -23,9 +27,13 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.4.12",
-      "newVersion": "3.4.13",
+      "oldVersion": "3.4.13",
+      "newVersion": "3.4.14",
       "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -38,12 +46,12 @@
     },
     "@embroider/macros": {
       "impact": "patch",
-      "oldVersion": "1.16.3",
-      "newVersion": "1.16.4",
+      "oldVersion": "1.16.4",
+      "newVersion": "1.16.5",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
@@ -55,7 +63,16 @@
       "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.6.1"
+      "impact": "patch",
+      "oldVersion": "2.6.1",
+      "newVersion": "2.6.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -67,8 +84,17 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "oldVersion": "4.0.3"
+      "impact": "patch",
+      "oldVersion": "4.0.3",
+      "newVersion": "4.0.4",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2024-06-20)\n\n@embroider/compat 3.5.4 (patch)\n@embroider/core 3.4.13 (patch)\n@embroider/macros 1.16.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#1994](https://github.com/embroider-build/embroider/pull/1994) MacrosConfig should sync globalConfigs between copies ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* [#1993](https://github.com/embroider-build/embroider/pull/1993) update node to latest LTS for CI ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2024-06-24)\n\n@embroider/compat 3.5.5 (patch)\n@embroider/core 3.4.14 (patch)\n@embroider/macros 1.16.5 (patch)\n@embroider/shared-internals 2.6.2 (patch)\n@embroider/webpack 4.0.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#2005](https://github.com/embroider-build/embroider/pull/2005) unique-id helper import based on ember-source version ([@void-mAlex](https://github.com/void-mAlex))\n\n#### :house: Internal\n* `@embroider/shared-internals`\n  * [#2000](https://github.com/embroider-build/embroider/pull/2000) Update typescript and fix issues with Typescript 5.5 ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

@@ -82,7 +82,7 @@ function hasFastboot(emberApp: EmberAppInstance | EmberAppInstance) {
 
 function defaultVariants(emberApp: EmberAppInstance): Variant[] {
   let variants: Variant[] = [];
-  if (emberApp.env === 'production') {
+  if (emberApp.isProduction) {
     variants.push({
       name: 'browser',
       runtime: 'browser',

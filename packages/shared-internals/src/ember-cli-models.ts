@@ -39,6 +39,7 @@ export interface EmberCliPreprocessRegistry {
 
 export interface EmberAppInstance {
   env: 'development' | 'test' | 'production';
+  isProduction: boolean;
   name: string;
   _scriptOutputFiles: OutputFileToInputFileMap;
   _styleOutputFiles: OutputFileToInputFileMap;

@@ -65,6 +65,10 @@ export default class CompatApp {
     return this.legacyEmberAppInstance.env;
   }
 
+  get isProduction(): boolean {
+    return this.legacyEmberAppInstance.isProduction;
+  }
+
   @Memoize()
   get root(): string {
     if (this.isDummy) {
@@ -693,7 +697,7 @@ export default class CompatApp {
     this.options = optionsWithDefaults(_options);
 
     this.macrosConfig = MacrosConfig.for(legacyEmberAppInstance, this.root);
-    if (this.env !== 'production') {
+    if (!this.isProduction) {
       this.macrosConfig.enablePackageDevelopment(this.root);
       this.macrosConfig.enableRuntimeMode();
       if (this.isDummy) {

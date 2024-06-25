@@ -181,7 +181,6 @@ import environment from './config/environment';
 
 {{#each amdModules as |amdModule index| ~}}
   import * as amdModule{{index}} from "{{js-string-escape amdModule.buildtime}}"
-  d("{{js-string-escape amdModule.runtime}}", function(){ return amdModule{{index}}; });
 {{/each}}
 
 {{#if fastbootOnlyAmdModules}}
@@ -226,6 +225,12 @@ w._embroiderEngineBundles_ = [
   {{/each}}
 ]
 {{/if}}
+
+export default {
+  {{#each amdModules as |amdModule index| ~}}
+    "{{js-string-escape amdModule.runtime}}": amdModule{{index}},
+  {{/each}}
+};
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];

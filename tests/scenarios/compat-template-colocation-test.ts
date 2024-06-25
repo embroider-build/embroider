@@ -183,12 +183,9 @@ scenarios
           }
 
           const [, amdModule] = result;
-
-          assert.codeContains(
-            contents,
-            `d("my-app/components/has-colocated-template", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/components/has-colocated-template": ${amdModule}`),
+            'expected module is in the export list'
           );
         });
       });
@@ -395,12 +392,9 @@ appScenarios
             }
 
             const [, podComponentAmd] = result;
-
-            assert.codeContains(
-              content,
-              `d("my-app/components/pod-component/component", function () {
-              return ${podComponentAmd};
-            });`
+            assert.ok(
+              content.includes(`"my-app/components/pod-component/component": ${podComponentAmd}`),
+              'expected module is in the export list'
             );
 
             result = /import \* as (\w+) from "\/components\/pod-component\/template\.hbs.*"/.exec(content);
@@ -410,12 +404,9 @@ appScenarios
             }
 
             const [, podComponentTemplateAmd] = result;
-
-            assert.codeContains(
-              content,
-              `d("my-app/components/pod-component/template", function () {
-              return ${podComponentTemplateAmd};
-            });`
+            assert.ok(
+              content.includes(`"my-app/components/pod-component/template": ${podComponentTemplateAmd}`),
+              'expected module is in the export list'
             );
 
             result = /import \* as (\w+) from "\/components\/template-only\/template\.hbs.*"/.exec(content);
@@ -425,12 +416,9 @@ appScenarios
             }
 
             const [, templateOnlyAmd] = result;
-
-            assert.codeContains(
-              content,
-              `d("my-app/components/template-only/template", function () {
-                return ${templateOnlyAmd};
-              });`
+            assert.ok(
+              content.includes(`"my-app/components/template-only/template": ${templateOnlyAmd}`),
+              'expected module is in the export list'
             );
 
             return true;

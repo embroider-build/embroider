@@ -168,12 +168,7 @@ import environment from './config/environment';
 
 {{#if defineModulesFrom ~}}
   import implicitModules from "{{js-string-escape defineModulesFrom}}";
-
-  for(const [name, module] of Object.entries(implicitModules)) {
-    d(name, function() { return module });
-  }
 {{/if}}
-
 
 {{#each eagerModules as |eagerModule| ~}}
   import "{{js-string-escape eagerModule}}";
@@ -226,11 +221,15 @@ w._embroiderEngineBundles_ = [
 ]
 {{/if}}
 
-export default {
-  {{#each amdModules as |amdModule index| ~}}
-    "{{js-string-escape amdModule.runtime}}": amdModule{{index}},
-  {{/each}}
-};
+export default Object.assign(
+  {},
+  {
+    {{#each amdModules as |amdModule index| ~}}
+      "{{js-string-escape amdModule.runtime}}": amdModule{{index}},
+    {{/each}}
+  },
+  implicitModules
+);
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];

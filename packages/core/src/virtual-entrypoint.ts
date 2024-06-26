@@ -154,7 +154,6 @@ export function renderEntrypoint(
 const entryTemplate = compile(`
 import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
 let w = window;
-let d = w.define;
 
 import environment from './config/environment';
 
@@ -178,6 +177,8 @@ import environment from './config/environment';
   import * as amdModule{{index}} from "{{js-string-escape amdModule.buildtime}}"
 {{/each}}
 
+let exportFastbootModules = {};
+
 {{#if fastbootOnlyAmdModules}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
     let fastbootModules = {};
@@ -189,7 +190,7 @@ import environment from './config/environment';
     const resolvedValues = await Promise.all(Object.values(fastbootModules));
 
     Object.keys(fastbootModules).forEach((k, i) => {
-      d(k, function(){ return resolvedValues[i];});
+      exportFasbootModules[k] = resolvedValues[i];
     })
   }
 {{/if}}
@@ -223,12 +224,13 @@ w._embroiderEngineBundles_ = [
 
 export default Object.assign(
   {},
+  implicitModules,
   {
     {{#each amdModules as |amdModule index| ~}}
       "{{js-string-escape amdModule.runtime}}": amdModule{{index}},
     {{/each}}
   },
-  implicitModules
+  exportFastbootModules
 );
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];

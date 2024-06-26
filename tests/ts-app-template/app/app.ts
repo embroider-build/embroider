@@ -1,11 +1,9 @@
 import Application from '@ember/application';
-// @ts-ignore
 import compatModules from '@embroider/core/entrypoint';
 import Resolver from 'ember-resolver';
 import loadInitializers from 'ember-load-initializers';
 import config from 'ts-app-template/config/environment';
 
-// @ts-ignore
 let d = window.define;
 
 for (const [name, module] of Object.entries(compatModules)) {

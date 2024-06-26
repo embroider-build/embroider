@@ -152,8 +152,7 @@ export function renderEntrypoint(
 }
 
 const entryTemplate = compile(`
-import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
-let w = window;
+import { macroCondition, getGlobalConfig } from '@embroider/macros';
 
 import environment from './config/environment';
 
@@ -197,7 +196,7 @@ let exportFastbootModules = {};
 
 
 {{#if lazyRoutes}}
-w._embroiderRouteBundles_ = [
+window._embroiderRouteBundles_ = [
   {{#each lazyRoutes as |route|}}
   {
     names: {{json-stringify route.names}},
@@ -210,7 +209,7 @@ w._embroiderRouteBundles_ = [
 {{/if}}
 
 {{#if lazyEngines}}
-w._embroiderEngineBundles_ = [
+window._embroiderEngineBundles_ = [
   {{#each lazyEngines as |engine|}}
   {
     names: {{json-stringify engine.names}},

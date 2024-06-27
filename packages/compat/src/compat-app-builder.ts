@@ -364,6 +364,14 @@ export class CompatAppBuilder {
     return this.activeAddonChildren(this.appPackageWithMovedDeps).find(a => a.name === 'ember-cli-fastboot');
   }
 
+  private emberVersion() {
+    let pkg = this.activeAddonChildren(this.appPackageWithMovedDeps).find(a => a.name === 'ember-source');
+    if (!pkg) {
+      throw new Error('no ember version!');
+    }
+    return pkg.version;
+  }
+
   @Memoize()
   private get fastbootConfig():
     | { packageJSON: PackageInfo; extraAppFiles: string[]; extraVendorFiles: string[] }
@@ -523,6 +531,7 @@ export class CompatAppBuilder {
     ) {
       let opts: ResolverTransformOptions = {
         appRoot: resolverConfig.appRoot,
+        emberVersion: this.emberVersion(),
       };
       transforms.push([require.resolve('./resolver-transform'), opts]);
     }

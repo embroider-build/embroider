@@ -18,6 +18,7 @@ import { Resolver, cleanUrl, locateEmbroiderWorkingDir } from '@embroider/core';
 import type CompatOptions from './options';
 import type { AuditMessage, Loc } from './audit';
 import { camelCase, mergeWith } from 'lodash';
+import { satisfies } from 'semver';
 
 type Env = WithJSUtils<ASTPluginEnvironment> & {
   filename: string;
@@ -41,6 +42,7 @@ export interface CompatResolverOptions extends CoreResolverOptions {
 
 export interface Options {
   appRoot: string;
+  emberVersion: string;
 }
 
 type BuiltIn = {
@@ -49,67 +51,73 @@ type BuiltIn = {
   importableModifier?: [string, string];
 };
 
-const builtInKeywords: Record<string, BuiltIn | undefined> = {
-  '-get-dynamic-var': {},
-  '-in-element': {},
-  '-with-dynamic-vars': {},
-  action: {},
-  array: {
-    importableHelper: ['array', '@ember/helper'],
-  },
-  component: {},
-  concat: {
-    importableHelper: ['concat', '@ember/helper'],
-  },
-  debugger: {},
-  'each-in': {},
-  each: {},
-  fn: {
-    importableHelper: ['fn', '@ember/helper'],
-  },
-  get: {
-    importableHelper: ['get', '@ember/helper'],
-  },
-  'has-block-params': {},
-  'has-block': {},
-  hasBlock: {},
-  hasBlockParams: {},
-  hash: {
-    importableHelper: ['hash', '@ember/helper'],
-  },
-  helper: {},
-  if: {},
-  'in-element': {},
-  input: {
-    importableComponent: ['Input', '@ember/component'],
-  },
-  let: {},
-  'link-to': {
-    importableComponent: ['LinkTo', '@ember/routing'],
-  },
-  loc: {},
-  log: {},
-  modifier: {},
-  mount: {},
-  mut: {},
-  on: {
-    importableModifier: ['on', '@ember/modifier'],
-  },
-  outlet: {},
-  partial: {},
-  'query-params': {},
-  readonly: {},
-  textarea: {
-    importableComponent: ['Textarea', '@ember/component'],
-  },
-  unbound: {},
-  'unique-id': {
-    importableHelper: ['uniqueId', '@ember/helper'],
-  },
-  unless: {},
-  with: {},
-  yield: {},
-};
+function builtInKeywords(emberVersion: string): Record<string, BuiltIn | undefined> {
+  const builtInKeywords: Record<string, BuiltIn | undefined> = {
+    '-get-dynamic-var': {},
+    '-in-element': {},
+    '-with-dynamic-vars': {},
+    action: {},
+    array: {
+      importableHelper: ['array', '@ember/helper'],
+    },
+    component: {},
+    concat: {
+      importableHelper: ['concat', '@ember/helper'],
+    },
+    debugger: {},
+    'each-in': {},
+    each: {},
+    fn: {
+      importableHelper: ['fn', '@ember/helper'],
+    },
+    get: {
+      importableHelper: ['get', '@ember/helper'],
+    },
+    'has-block-params': {},
+    'has-block': {},
+    hasBlock: {},
+    hasBlockParams: {},
+    hash: {
+      importableHelper: ['hash', '@ember/helper'],
+    },
+    helper: {},
+    if: {},
+    'in-element': {},
+    input: {
+      importableComponent: ['Input', '@ember/component'],
+    },
+    let: {},
+    'link-to': {
+      importableComponent: ['LinkTo', '@ember/routing'],
+    },
+    loc: {},
+    log: {},
+    modifier: {},
+    mount: {},
+    mut: {},
+    on: {
+      importableModifier: ['on', '@ember/modifier'],
+    },
+    outlet: {},
+    partial: {},
+    'query-params': {},
+    readonly: {},
+    textarea: {
+      importableComponent: ['Textarea', '@ember/component'],
+    },
+    unbound: {},
+    'unique-id': {},
+    unless: {},
+    with: {},
+    yield: {},
+  };
+  if (satisfies(emberVersion, '>=5.2')) {
+    builtInKeywords['unique-id'] = {
+      importableHelper: ['uniqueId', '@ember/helper'],
+    };
+  }
+  return builtInKeywords;
+}
 
 interface ComponentResolution {
   type: 'component';
@@ -167,7 +175,11 @@ class TemplateResolver implements ASTPlugin {
 
   private moduleResolver: Resolver;
 
-  constructor(private env: Env, private config: CompatResolverOptions) {
+  constructor(
+    private env: Env,
+    private config: CompatResolverOptions,
+    private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>
+  ) {
     this.moduleResolver = new Resolver(config);
     if ((globalThis as any).embroider_audit) {
       this.auditHandler = (globalThis as any).embroider_audit;
@@ -403,7 +415,7 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    const builtIn = builtInKeywords[name];
+    const builtIn = this.builtInsForEmberVersion[name];
 
     if (builtIn?.importableComponent) {
       let [importedName, specifier] = builtIn.importableComponent;
@@ -486,7 +498,7 @@ class TemplateResolver implements ASTPlugin {
     // globally-named helpers. It throws an error. So it's fine for us to
     // prioritize the builtIns here without bothering to resolve a user helper
     // of the same name.
-    const builtIn = builtInKeywords[path];
+    const builtIn = this.builtInsForEmberVersion[path];
 
     if (builtIn?.importableHelper) {
       let [importedName, specifier] = builtIn.importableHelper;
@@ -571,7 +583,7 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    let builtIn = builtInKeywords[path];
+    let builtIn = this.builtInsForEmberVersion[path];
 
     if (builtIn?.importableComponent) {
       let [importedName, specifier] = builtIn.importableComponent;
@@ -660,7 +672,7 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    const builtIn = builtInKeywords[path];
+    const builtIn = this.builtInsForEmberVersion[path];
     if (builtIn?.importableModifier) {
       let [importedName, specifier] = builtIn.importableModifier;
       return {
@@ -963,7 +975,7 @@ class TemplateResolver implements ASTPlugin {
 }
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-export default function makeResolverTransform({ appRoot }: Options) {
+export default function makeResolverTransform({ appRoot, emberVersion }: Options) {
   let config: CompatResolverOptions = readJSONSync(join(locateEmbroiderWorkingDir(appRoot), 'resolver.json'));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     if (env.strictMode) {
@@ -972,7 +984,7 @@ export default function makeResolverTransform({ appRoot }: Options) {
         visitor: {},
       };
     }
-    return new TemplateResolver(env, config);
+    return new TemplateResolver(env, config, builtInKeywords(emberVersion));
   };
   (resolverTransform as any).parallelBabel = {
     requireFile: __filename,

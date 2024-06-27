@@ -246,33 +246,24 @@ stage2Scenarios
         expectModule.withContents(contents => {
           const result = /import \* as (\w+) from ".*in-repo-b\/_app_\/service\/in-repo.js.*/.exec(contents) ?? [];
           const [, amdModule] = result;
-          assert.codeContains(
-            contents,
-            `d("my-app/service/in-repo", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/service/in-repo": ${amdModule}`),
+            'expected module is in the export list'
           );
           return true;
         }, 'module imports from the correct place');
         expectModule.withContents(contents => {
           const result = /import \* as (\w+) from ".*dep-b\/_app_\/service\/addon.js.*/.exec(contents) ?? [];
           const [, amdModule] = result;
-          assert.codeContains(
-            contents,
-            `d("my-app/service/addon", function () {
-              return ${amdModule};
-            });`
-          );
+          assert.ok(contents.includes(`"my-app/service/addon": ${amdModule}`), 'expected module is in the export list');
           return true;
         }, 'module imports from the correct place');
         expectModule.withContents(contents => {
           const result = /import \* as (\w+) from ".*dev-c\/_app_\/service\/dev-addon.js.*/.exec(contents) ?? [];
           const [, amdModule] = result;
-          assert.codeContains(
-            contents,
-            `d("my-app/service/dev-addon", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/service/dev-addon": ${amdModule}`),
+            'expected module is in the export list'
           );
           return true;
         }, 'module imports from the correct place');
@@ -283,11 +274,9 @@ stage2Scenarios
           const result =
             /import \* as (\w+) from ".*dep-b\/_app_\/service\/dep-wins-over-dev.js.*/.exec(contents) ?? [];
           const [, amdModule] = result;
-          assert.codeContains(
-            contents,
-            `d("my-app/service/dep-wins-over-dev", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/service/dep-wins-over-dev": ${amdModule}`),
+            'expected module is in the export list'
           );
           return true;
         });
@@ -298,11 +287,9 @@ stage2Scenarios
           const result =
             /import \* as (\w+) from ".*in-repo-a\/_app_\/service\/in-repo-over-deps.js.*/.exec(contents) ?? [];
           const [, amdModule] = result;
-          assert.codeContains(
-            contents,
-            `d("my-app/service/in-repo-over-deps", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/service/in-repo-over-deps": ${amdModule}`),
+            'expected module is in the export list'
           );
           return true;
         });
@@ -312,11 +299,9 @@ stage2Scenarios
         resolveEntryPoint(expectAudit).withContents(contents => {
           const result = /import \* as (\w+) from ".*dev-d\/_app_\/service\/test-before.js.*/.exec(contents) ?? [];
           const [, amdModule] = result;
-          assert.codeContains(
-            contents,
-            `d("my-app/service/test-before", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/service/test-before": ${amdModule}`),
+            'expected module is in the export list'
           );
           return true;
         });
@@ -326,11 +311,9 @@ stage2Scenarios
         resolveEntryPoint(expectAudit).withContents(contents => {
           const result = /import \* as (\w+) from ".*dev-b\/_app_\/service\/test-after.js.*/.exec(contents) ?? [];
           const [, amdModule] = result;
-          assert.codeContains(
-            contents,
-            `d("my-app/service/test-after", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/service/test-after": ${amdModule}`),
+            'expected module is in the export list'
           );
           return true;
         });
@@ -845,12 +828,9 @@ stage2Scenarios
           }
 
           const [, amdModule] = result;
-
-          assert.codeContains(
-            contents,
-            `d("my-app/non-static-dir/another-library", function () {
-              return ${amdModule};
-            });`
+          assert.ok(
+            contents.includes(`"my-app/non-static-dir/another-library": ${amdModule}`),
+            'expected module is in the export list'
           );
           return true;
         });

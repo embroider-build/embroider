@@ -152,9 +152,7 @@ export function renderEntrypoint(
 }
 
 const entryTemplate = compile(`
-import { importSync as i, macroCondition, getGlobalConfig } from '@embroider/macros';
-let w = window;
-let d = w.define;
+import { macroCondition, getGlobalConfig } from '@embroider/macros';
 
 import environment from './config/environment';
 
@@ -168,12 +166,7 @@ import environment from './config/environment';
 
 {{#if defineModulesFrom ~}}
   import implicitModules from "{{js-string-escape defineModulesFrom}}";
-
-  for(const [name, module] of Object.entries(implicitModules)) {
-    d(name, function() { return module });
-  }
 {{/if}}
-
 
 {{#each eagerModules as |eagerModule| ~}}
   import "{{js-string-escape eagerModule}}";
@@ -181,8 +174,9 @@ import environment from './config/environment';
 
 {{#each amdModules as |amdModule index| ~}}
   import * as amdModule{{index}} from "{{js-string-escape amdModule.buildtime}}"
-  d("{{js-string-escape amdModule.runtime}}", function(){ return amdModule{{index}}; });
 {{/each}}
+
+let exportFastbootModules = {};
 
 {{#if fastbootOnlyAmdModules}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
@@ -195,14 +189,14 @@ import environment from './config/environment';
     const resolvedValues = await Promise.all(Object.values(fastbootModules));
 
     Object.keys(fastbootModules).forEach((k, i) => {
-      d(k, function(){ return resolvedValues[i];});
+      exportFasbootModules[k] = resolvedValues[i];
     })
   }
 {{/if}}
 
 
 {{#if lazyRoutes}}
-w._embroiderRouteBundles_ = [
+window._embroiderRouteBundles_ = [
   {{#each lazyRoutes as |route|}}
   {
     names: {{json-stringify route.names}},
@@ -215,7 +209,7 @@ w._embroiderRouteBundles_ = [
 {{/if}}
 
 {{#if lazyEngines}}
-w._embroiderEngineBundles_ = [
+window._embroiderEngineBundles_ = [
   {{#each lazyEngines as |engine|}}
   {
     names: {{json-stringify engine.names}},
@@ -226,6 +220,17 @@ w._embroiderEngineBundles_ = [
   {{/each}}
 ]
 {{/if}}
+
+export default Object.assign(
+  {},
+  implicitModules,
+  {
+    {{#each amdModules as |amdModule index| ~}}
+      "{{js-string-escape amdModule.runtime}}": amdModule{{index}},
+    {{/each}}
+  },
+  exportFastbootModules
+);
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];

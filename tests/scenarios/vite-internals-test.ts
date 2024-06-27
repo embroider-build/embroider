@@ -35,7 +35,11 @@ appScenarios
       test(`dep optimization of a v2 addon`, async function (assert) {
         expectAudit
           .module('./index.html')
-          .resolves('/@embroider/core/entrypoint')
+          .resolves(/\/index.html.*/) // in-html app-boot script
+          .toModule()
+          .resolves(/\/app\.js.*/)
+          .toModule()
+          .resolves(/.*\/-embroider-entrypoint.js/)
           .toModule()
           .withContents((_src, imports) => {
             let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));

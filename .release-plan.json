@@ -1,7 +1,16 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "4.3.1"
+      "impact": "major",
+      "oldVersion": "4.3.1",
+      "newVersion": "5.0.0",
+      "constraints": [
+        {
+          "impact": "major",
+          "reason": "Appears in changelog section :boom: Breaking Change"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.9"
@@ -10,51 +19,16 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.5.4",
-      "newVersion": "3.5.5",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "3.5.5"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.13",
-      "newVersion": "3.4.14",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.4.14"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.16.4",
-      "newVersion": "1.16.5",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.5"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -63,16 +37,7 @@
       "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "impact": "patch",
-      "oldVersion": "2.6.1",
-      "newVersion": "2.6.2",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "2.6.2"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -84,17 +49,8 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.0.3",
-      "newVersion": "4.0.4",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.4"
     }
   },
-  "description": "## Release (2024-06-24)\n\n@embroider/compat 3.5.5 (patch)\n@embroider/core 3.4.14 (patch)\n@embroider/macros 1.16.5 (patch)\n@embroider/shared-internals 2.6.2 (patch)\n@embroider/webpack 4.0.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#2005](https://github.com/embroider-build/embroider/pull/2005) unique-id helper import based on ember-source version ([@void-mAlex](https://github.com/void-mAlex))\n\n#### :house: Internal\n* `@embroider/shared-internals`\n  * [#2000](https://github.com/embroider-build/embroider/pull/2000) Update typescript and fix issues with Typescript 5.5 ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2024-06-27)\n\n@embroider/addon-dev 5.0.0 (major)\n\n#### :boom: Breaking Change\n* `@embroider/addon-dev`\n  * [#2007](https://github.com/embroider-build/embroider/pull/2007) Add just the necessary files to rollup watch mode ([@vstefanovic97](https://github.com/vstefanovic97))\n\n#### Committers: 1\n- Vuk ([@vstefanovic97](https://github.com/vstefanovic97))\n"
 }

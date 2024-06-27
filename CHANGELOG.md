@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-06-27)
+
+@embroider/addon-dev 5.0.0 (major)
+
+#### :boom: Breaking Change
+* `@embroider/addon-dev`
+  * [#2007](https://github.com/embroider-build/embroider/pull/2007) Add just the necessary files to rollup watch mode ([@vstefanovic97](https://github.com/vstefanovic97))
+
+#### Committers: 1
+- Vuk ([@vstefanovic97](https://github.com/vstefanovic97))
+
 ## Release (2024-06-24)
 
 @embroider/compat 3.5.5 (patch)

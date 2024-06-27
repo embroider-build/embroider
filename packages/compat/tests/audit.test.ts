@@ -62,6 +62,7 @@ describe('audit', function () {
 
     let transformOpts: ResolverTransformOptions = {
       appRoot: resolverConfig.appRoot,
+      emberVersion: '*', // since no packages are declared ember version can be anything so * is valid
     };
     let transform: Transform = [require.resolve('../src/resolver-transform'), transformOpts];
 

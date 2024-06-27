@@ -1,5 +1,25 @@
 # Embroider Changelog
 
+## Release (2024-06-24)
+
+@embroider/compat 3.5.5 (patch)
+@embroider/core 3.4.14 (patch)
+@embroider/macros 1.16.5 (patch)
+@embroider/shared-internals 2.6.2 (patch)
+@embroider/webpack 4.0.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2005](https://github.com/embroider-build/embroider/pull/2005) unique-id helper import based on ember-source version ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :house: Internal
+* `@embroider/shared-internals`
+  * [#2000](https://github.com/embroider-build/embroider/pull/2000) Update typescript and fix issues with Typescript 5.5 ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-06-20)
 
 @embroider/compat 3.5.4 (patch)

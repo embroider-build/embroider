@@ -1011,15 +1011,21 @@ export class Resolver {
         // supported fancy package.json exports features so this direct mapping
         // to the root is always right.
 
-        // "my-package/foo" -> "./foo"
-        // "my-package" -> "./" (this can't be just "." because node's require.resolve doesn't reliable support that)
-        let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
+        // "my-app/foo" -> "./foo" from app's package.json
+        // "my-addon/foo" -> "my-addon/foo" from a package that's guaranteed to be able to resolve my-addon
 
-        return logTransition(
-          `v1 self-import`,
-          request,
-          request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
-        );
+        let owningEngine = this.owningEngine(pkg);
+        let addonConfig = owningEngine.activeAddons.find(a => a.root === pkg.root);
+        if (addonConfig) {
+          return logTransition(`v1 addon self-import`, request, request.rehome(addonConfig.canResolveFromFile));
+        } else {
+          let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
+          return logTransition(
+            `v1 app self-import`,
+            request,
+            request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
+          );
+        }
       } else {
         // v2 packages are supposed to use package.json `exports` to enable
         // self-imports, but not all build tools actually follow the spec. This

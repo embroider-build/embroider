@@ -16,7 +16,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
       return;
     }
 
-    if (source && importer && source[0] !== '\0') {
+    if (source && importer && source[0] !== '\0' && !source.startsWith('virtual-module:')) {
       let fromFile = cleanUrl(importer);
       return new EsBuildModuleRequest(
         context,

@@ -51,7 +51,7 @@ jobs:
           use_lockfile: false
       - name: Work around windows short path alias # https://github.com/actions/runner-images/issues/712
         if: runner.os == 'Windows'
-        run: echo "TEMP=$env:USERPROFILE\AppData\Local\Temp" >> $env:GITHUB_ENV
+        run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}

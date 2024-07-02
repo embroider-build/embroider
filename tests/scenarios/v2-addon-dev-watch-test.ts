@@ -52,13 +52,14 @@ Scenarios.fromProject(() => baseV2Addon())
           plugins: [
             addon.publicEntrypoints(['components/**/*.js']),
             addon.appReexports(['components/**/*.js']),
-            addon.clean(),
             addon.gjs(),
             addon.hbs(),
             addon.dependencies(),
             addon.publicAssets('custom-public'),
 
             babel({ babelHelpers: 'bundled' }),
+
+            addon.clean(),
           ],
         };
       `,

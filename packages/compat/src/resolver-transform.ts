@@ -126,12 +126,14 @@ interface ComponentResolution {
   yieldsComponents: Required<ComponentRules>['yieldsSafeComponents'];
   yieldsArguments: Required<ComponentRules>['yieldsArguments'];
   argumentsAreComponents: string[];
-  nameHint: string;
+  nameHint?: string;
+  namedImport?: string;
 }
 
 type HelperResolution = {
   type: 'helper';
-  nameHint: string;
+  nameHint?: string;
+  namedImport?: string;
   specifier: string;
   importedName: string;
 };

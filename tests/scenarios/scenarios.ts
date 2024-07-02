@@ -1,4 +1,4 @@
-import { Project, Scenarios } from 'scenario-tester';
+import { Scenarios, Project } from 'scenario-tester';
 import { dirname } from 'path';
 
 export async function lts_3_28(project: Project) {

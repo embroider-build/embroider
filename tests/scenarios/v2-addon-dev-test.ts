@@ -73,8 +73,6 @@ appScenarios
               exclude: ['**/-excluded/**/*'],
             }),
 
-            addon.clean(),
-
             addon.hbs({
               excludeColocation: ['**/just-a-template.hbs'],
             }),
@@ -83,6 +81,8 @@ appScenarios
             addon.publicAssets('public'),
 
             babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
+
+            addon.clean(),
           ],
         };
       `,

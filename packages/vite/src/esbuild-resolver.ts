@@ -1,7 +1,7 @@
 import type { Plugin as EsBuildPlugin } from 'esbuild';
 import { type PluginItem, transform } from '@babel/core';
 import { ResolverLoader, virtualContent, locateEmbroiderWorkingDir, explicitRelative } from '@embroider/core';
-import { readFileSync, readJSONSync } from 'fs-extra';
+import { existsSync, readFileSync, readJSONSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
 import { dirname, isAbsolute, resolve } from 'path';
@@ -100,15 +100,7 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
 
       build.onLoad({ filter: /\.hbs$/ }, async ({ path: filename }) => {
         const code = readFileSync(filename, 'utf8');
-
-        const result = transform(hbsToJS(code), { filename });
-
-        if (!result || !result.code) {
-          throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
-        }
-
-        const contents = result.code;
-
+        const contents = handleHbs(code, filename);
         return { contents };
       });
 
@@ -116,8 +108,11 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         let src: string;
         if (namespace === 'embroider') {
           src = virtualContent(path, resolverLoader.resolver).src;
-        } else {
+        } else if (existsSync(path)) {
           src = readFileSync(path, 'utf8');
+        } else {
+          const hbsPath = path.replace(/\.[jt]s$/, '.hbs');
+          src = handleHbs(readFileSync(hbsPath, 'utf8'), hbsPath);
         }
         if (!macrosConfig) {
           macrosConfig = readJSONSync(resolve(locateEmbroiderWorkingDir(root), 'macros-config.json')) as PluginItem;
@@ -126,6 +121,16 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
       });
     },
   };
+}
+
+function handleHbs(code: string, filename: string) {
+  const result = transform(hbsToJS(code), { filename });
+
+  if (!result || !result.code) {
+    throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
+  }
+
+  return result.code;
 }
 
 function runMacros(src: string, filename: string, macrosConfig: PluginItem): string {

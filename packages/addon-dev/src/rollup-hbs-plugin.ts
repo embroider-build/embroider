@@ -30,9 +30,24 @@ export default function rollupHbsPlugin({
       }
     },
 
+    transform(code: string, id: string) {
+      let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
+      if (hbsFilename !== id) {
+        this.addWatchFile(hbsFilename);
+      }
+      if (hbsFilter(id)) {
+        let basename = id.replace(/\.\w{1,3}$/, '');
+        this.addWatchFile(basename + '.ts');
+        this.addWatchFile(basename + '.js');
+        return {
+          code: hbsToJS(code),
+        };
+      }
+    },
+
     load(id: string) {
       if (hbsFilter(id)) {
-        return getHbsToJSCode(id);
+        return null;
       }
       let meta = getMeta(this, id);
       if (meta) {

@@ -210,12 +210,12 @@ appScenarios
               exclude: ['**/-excluded/**/*'],
             }),
 
+            addon.clean(),
+
             addon.hbs(),
             addon.publicAssets('public', { namespace: '' }),
 
             babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
-
-            addon.clean(),
           ],
         };
       `,

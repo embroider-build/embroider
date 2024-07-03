@@ -1647,7 +1647,7 @@ importers:
         version: 2.2.5
       bootstrap:
         specifier: ^4.3.1
-        version: 4.6.2
+        version: 4.6.2(popper.js@1.16.1)
       broccoli-funnel:
         specifier: ^3.0.5
         version: 3.0.8
@@ -1720,6 +1720,9 @@ importers:
       execa:
         specifier: ^5.1.1
         version: 5.1.1
+      popper.js:
+        specifier: ^1.16.1
+        version: 1.16.1
       tslib:
         specifier: ^2.6.0
         version: 2.6.3
@@ -7992,6 +7995,9 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
     dependencies:
       ajv: 8.16.0
 
@@ -9318,11 +9324,13 @@ packages:
     resolution: {integrity: sha512-JZOSA7Mo9sNGB8+UjSgzdLtokWAky1zbztM3WRLCbZ70/3cTANmQmOdR7y2g+J0e2WXywy1yS468tY+IruqEww==}
     dev: true
 
-  /bootstrap@4.6.2:
+  /bootstrap@4.6.2(popper.js@1.16.1):
     resolution: {integrity: sha512-51Bbp/Uxr9aTuy6ca/8FbFloBUJZLHwnhTcnjIeRn2suQWsWzcuJhGjKDB5eppVte/8oCdOL3VuwxvZDUggwGQ==}
     peerDependencies:
       jquery: 1.9.1 - 3
       popper.js: ^1.16.1
+    dependencies:
+      popper.js: 1.16.1
     dev: true
 
   /bower-config@1.4.3:
@@ -20224,6 +20232,11 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       find-up: 3.0.0
+
+  /popper.js@1.16.1:
+    resolution: {integrity: sha512-Wb4p1J4zyFTbM+u6WuO4XstYx4Ky9Cewe4DWrel7B0w6VVICvPwdOpotjzcf6eD8TsckVnIMNONQyPIUFOUbCQ==}
+    deprecated: You can find the new Popper v2 at @popperjs/core, this package is dedicated to the legacy v1
+    dev: true
 
   /portfinder@1.0.32:
     resolution: {integrity: sha512-on2ZJVVDXRADWE6jnQaX0ioEylzgBpQk8r55NE4wjXW1ZxO+BgDlY6DXwj20i0V8eB4SenDQ00WEaxfiIQPcxg==}

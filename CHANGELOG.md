@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-07-03)
+
+@embroider/compat 3.5.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2012](https://github.com/embroider-build/embroider/pull/2012) Empty packages as valid v2 addons ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 1
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
 ## Release (2024-06-27)
 
 @embroider/addon-dev 5.0.0 (major)

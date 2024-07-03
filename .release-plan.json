@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "major",
-      "oldVersion": "4.3.1",
-      "newVersion": "5.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "5.0.0"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.9"
@@ -19,7 +10,16 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.5.5"
+      "impact": "patch",
+      "oldVersion": "3.5.5",
+      "newVersion": "3.5.6",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
       "oldVersion": "3.4.14"
@@ -52,5 +52,5 @@
       "oldVersion": "4.0.4"
     }
   },
-  "description": "## Release (2024-06-27)\n\n@embroider/addon-dev 5.0.0 (major)\n\n#### :boom: Breaking Change\n* `@embroider/addon-dev`\n  * [#2007](https://github.com/embroider-build/embroider/pull/2007) Add just the necessary files to rollup watch mode ([@vstefanovic97](https://github.com/vstefanovic97))\n\n#### Committers: 1\n- Vuk ([@vstefanovic97](https://github.com/vstefanovic97))\n"
+  "description": "## Release (2024-07-03)\n\n@embroider/compat 3.5.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2012](https://github.com/embroider-build/embroider/pull/2012) Empty packages as valid v2 addons ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### Committers: 1\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
 }

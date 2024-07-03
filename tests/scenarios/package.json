@@ -20,7 +20,7 @@
     "qunit": "^2.16.0",
     "resolve": "^1.20.0",
     "rollup": "^3.23.0",
-    "scenario-tester": "^2.1.2",
+    "scenario-tester": "^4.0.0",
     "semver": "^7.3.8",
     "ts-node": "^10.9.1"
   },
@@ -81,6 +81,7 @@
     "ember-source-latest": "npm:ember-source@latest",
     "ember-truth-helpers": "^3.0.0",
     "execa": "^5.1.1",
+    "popper.js": "^1.16.1",
     "tslib": "^2.6.0",
     "typescript": "^5.1.6"
   }

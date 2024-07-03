@@ -1,3 +1,4 @@
+export { loadLegacyPlugins } from './babel';
 export { default as App } from './compat-app';
 export { default as Addons } from './compat-addons';
 export { default as Options, recommendedOptions } from './options';

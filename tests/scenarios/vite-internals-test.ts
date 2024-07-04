@@ -53,5 +53,11 @@ appScenarios
             return true;
           });
       });
+
+      test('vite optimize should succeed', async function (assert) {
+        let result = await app.execute('pnpm vite optimize --force');
+
+        assert.equal(result.exitCode, 0, result.output);
+      });
     });
   });

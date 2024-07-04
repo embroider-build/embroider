@@ -9,7 +9,18 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .only('canary')
-  .map('vite-internals', () => {})
+  .map('vite-internals', app => {
+    app.mergeFiles({
+      app: {
+        components: {
+          'fancy-button.hbs': `<h1>I'm fancy</h1>`,
+        },
+        templates: {
+          'application.hbs': '<FancyButton />',
+        },
+      },
+    });
+  })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;

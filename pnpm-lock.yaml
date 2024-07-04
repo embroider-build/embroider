@@ -1460,6 +1460,15 @@ importers:
       '@babel/plugin-proposal-decorators':
         specifier: ^7.22.5
         version: 7.24.7(@babel/core@7.24.7)
+      '@babel/plugin-transform-class-properties':
+        specifier: 7.24.7
+        version: 7.24.7(@babel/core@7.24.7)
+      '@babel/plugin-transform-private-methods':
+        specifier: 7.24.7
+        version: 7.24.7(@babel/core@7.24.7)
+      '@babel/plugin-transform-private-property-in-object':
+        specifier: ^7.24.7
+        version: 7.24.7(@babel/core@7.24.7)
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.1.0

@@ -1,16 +1,65 @@
 // eslint-disable-next-line n/no-missing-require
+const { loadLegacyPlugins } = require('@embroider/compat');
 
-let config;
-
-// TODO - remove this once we have the better solution for injecting stage1 babel config into a real config file
-// this is needed because there are things (like ember-composible-helpers) that are now finding our babel config during
-// their stage1 build and historically they will never (99% of the time) have found any babel config.
-// we might need to keep something like this so that prebuild will never apply babel configs during stage1 i.e. a util
-// function that wraps your whole babel config
-if (process.env.EMBROIDER_PREBUILD || process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic') {
-  config = {};
-} else {
-  config = require('./node_modules/.embroider/_babel_config_');
-}
-
-module.exports = config;
+module.exports = {
+  babelrc: false,
+  highlightCode: false,
+  plugins: [
+    // Spread plugins coming from classic (v1) addons
+    ...loadLegacyPlugins(),
+    ['@babel/plugin-transform-typescript', { allowDeclareFields: true }],
+    ['@babel/plugin-transform-class-static-block', { legacy: true }],
+    ['@babel/plugin-proposal-decorators', { legacy: true }],
+    ['@babel/plugin-transform-private-property-in-object', { loose: false }],
+    ['@babel/plugin-transform-private-methods', { loose: false }],
+    ['@babel/plugin-transform-class-properties', { loose: false }],
+    [
+      require.resolve('babel-plugin-debug-macros'),
+      {
+        flags: [
+          {
+            source: '@glimmer/env',
+            flags: {
+              DEBUG: true,
+              CI: false,
+            },
+          },
+        ],
+        debugTools: {
+          isDebug: true,
+          source: '@ember/debug',
+          assertPredicateIndex: 1,
+        },
+        externalizeHelpers: {
+          module: '@ember/debug',
+        },
+      },
+      '@ember/debug stripping',
+    ],
+    [
+      require.resolve('babel-plugin-debug-macros'),
+      {
+        externalizeHelpers: {
+          module: '@ember/application/deprecations',
+        },
+        debugTools: {
+          isDebug: true,
+          source: '@ember/application/deprecations',
+          assertPredicateIndex: 1,
+        },
+      },
+      '@ember/application/deprecations stripping',
+    ],
+  ],
+  presets: [
+    [
+      '@babel/preset-env',
+      {
+        modules: false,
+        targets: {
+          browsers: ['last 1 Chrome versions', 'last 1 Firefox versions', 'last 1 Safari versions'],
+        },
+      },
+    ],
+  ],
+};

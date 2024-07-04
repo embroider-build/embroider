@@ -225,21 +225,8 @@ export default class CompatApp {
 
   @Memoize()
   babelConfig(): TransformOptions {
-    // this finds all the built-in babel configuration that comes with ember-cli-babel
-    const babelAddon = (this.legacyEmberAppInstance.project as any).findAddonByName('ember-cli-babel');
-    const babelConfig = babelAddon.buildBabelOptions({
-      'ember-cli-babel': {
-        ...this.legacyEmberAppInstance.options['ember-cli-babel'],
-        includeExternalHelpers: true,
-        compileModules: false,
-        disableDebugTooling: false,
-        disablePresetEnv: false,
-        disableEmberModulesAPIPolyfill: false,
-      },
-    });
-
-    let plugins = babelConfig.plugins as any[];
-    let presets = babelConfig.presets;
+    let plugins: any[] = [];
+    let presets: any[] = [];
 
     // this finds any custom babel configuration that's on the app (either
     // because the app author explicitly added some, or because addons have

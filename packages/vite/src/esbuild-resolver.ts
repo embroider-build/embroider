@@ -16,7 +16,7 @@ export function esBuildResolver(): EsBuildPlugin {
 
   function transformAndAssert(src: string, filename: string): string {
     const result = transform(src, { filename });
-    if (!result || !result.code) {
+    if (!result || result.code == null) {
       throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
     }
     return result.code!;

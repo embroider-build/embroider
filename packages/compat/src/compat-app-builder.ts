@@ -605,20 +605,25 @@ export class CompatAppBuilder {
 
       // This is the default script provided by https://github.com/ember-cli/ember-cli/blob/master/lib/utilities/ember-app-utils.js#L84
       // When storeConfigInMeta is true, this content is always present in the config-module key of content-for.json
-      const defaultConfigModule = `var prefix = '${modulePrefix}';\ntry {\n  var metaName = prefix + '/config/environment';\n  var rawConfig = document.querySelector('meta[name=\"' + metaName + '\"]').getAttribute('content');\n  var config = JSON.parse(decodeURIComponent(rawConfig));\n\n  var exports = { 'default': config };\n\n  Object.defineProperty(exports, '__esModule', { value: true });\n\n  return exports;\n}\ncatch(err) {\n  throw new Error('Could not read config from meta tag with name \"' + metaName + '\".');\n}\n`;
+      const defaultConfigModule =
+        `var prefix = '${modulePrefix}';\ntry {\n  var metaName = prefix + '/config/environment';\n  var rawConfig = document.querySelector('meta[name=\"' + metaName + '\"]').getAttribute('content');\n  var config = JSON.parse(decodeURIComponent(rawConfig));\n\n  var exports = { 'default': config };\n\n  Object.defineProperty(exports, '__esModule', { value: true });\n\n  return exports;\n}\ncatch(err) {\n  throw new Error('Could not read config from meta tag with name \"' + metaName + '\".');\n}\n`.replace(
+          /\s/g,
+          ''
+        );
 
-      const diff = contentForConfig['/index.html']['config-module'].replace(defaultConfigModule, '');
+      const configModule = contentForConfig['/index.html']['config-module'];
+      const diff = configModule.replace(/\s/g, '').replace(defaultConfigModule, '');
 
       if (diff.length) {
-        console.warn(`
+        throw new Error(`
           Your app uses at least one classic addon that provides content-for 'config-module'. This is no longer supported.
-          In classic builds, the following code was included in the config via content-for 'config-module':
-
-          ${diff}
-
           With Embroider, you have full control over the config module, so classic addons no longer need to modify it under the hood.
-          If the code above is still required, you should add it to your ${this.compatApp.name}/app/environment.js.
-          Once the required code is moved, you can remove the present warning by setting "useAddonConfigModule" to false in the build options.
+          The following code is included via content-for 'config-module':
+
+          ${configModule}
+          
+          1. If you want to keep the same behavior, add it to the app/environment.js.
+          2. Once app/environment.js has the content you need, remove the present error by setting "useAddonConfigModule" to false in the build options.
         `);
       }
     }

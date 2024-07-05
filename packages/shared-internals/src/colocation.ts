@@ -7,7 +7,7 @@ export function syntheticJStoHBS(source: string): string | null {
   // explicit js is the only case we care about here. Synthetic template JS is
   // only ever JS (never TS or anything else). And extensionless imports are
   // handled by the default resolving system doing extension search.
-  if (cleanUrl(source, true).endsWith('.js')) {
+  if (cleanUrl(source).endsWith('.js')) {
     return source.replace(/.js(\?.*)?/, '.hbs$1');
   }
 
@@ -19,7 +19,7 @@ export function needsSyntheticComponentJS(
   foundFile: string,
   packageCache: Pick<PackageCache, 'ownerOfFile'>
 ): string | null {
-  requestedSpecifier = cleanUrl(requestedSpecifier, true);
+  requestedSpecifier = cleanUrl(requestedSpecifier);
   foundFile = cleanUrl(foundFile);
   if (
     discoveredImplicitHBS(requestedSpecifier, foundFile) &&

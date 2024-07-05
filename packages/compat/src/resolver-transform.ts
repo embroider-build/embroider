@@ -385,7 +385,7 @@ class TemplateResolver implements ASTPlugin {
   private findRules(absPath: string): PreprocessedComponentRule | undefined {
     // when babel is invoked by vite our filenames can have query params still
     // hanging off them. That would break rule matching.
-    absPath = cleanUrl(absPath, true);
+    absPath = cleanUrl(absPath);
 
     let fileRules = this.rules.files.get(absPath);
     let componentRules: PreprocessedComponentRule | undefined;

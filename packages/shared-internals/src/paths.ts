@@ -44,23 +44,17 @@ export function unrelativize(pkg: Package, specifier: string, fromFile: string) 
 
 const postfixRE = /[?#].*$/s;
 
-// this pattern includes URL query params (ex: ?direct)
-// but excludes specifiers starting with # (ex: @embroider/virtuals/components/fancy)
-// so when using this pattern, @embroider/virtual/fancy would be consider a pathname
-// without any params.
-const postfixREQueryParams = /[?].*$/s;
-
 // this is the same implementation Vite uses internally to keep its
 // cache-busting query params from leaking where they shouldn't.
 // includeHashSign true means #my-specifier is considered part of the pathname
-export function cleanUrl(url: string, includeHashSign = false): string {
-  const regexp = includeHashSign ? postfixREQueryParams : postfixRE;
+export function cleanUrl(url: string): string {
+  const regexp = postfixRE;
   return url.replace(regexp, '');
 }
 
 // includeHashSign true means #my-specifier is considered part of the pathname
-export function getUrlQueryParams(url: string, includeHashSign = false): string {
-  const regexp = includeHashSign ? postfixREQueryParams : postfixRE;
+export function getUrlQueryParams(url: string): string {
+  const regexp = postfixRE;
   return url.match(regexp)?.[0] ?? '';
 }
 

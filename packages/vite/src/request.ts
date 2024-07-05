@@ -29,8 +29,8 @@ export class RollupModuleRequest implements ModuleRequest {
       // strip query params off the source but keep track of them
       // we use regexp-based methods over a URL object because the
       // source can be a relative path.
-      let cleanSource = cleanUrl(source, true);
-      let queryParams = getUrlQueryParams(source, true);
+      let cleanSource = cleanUrl(source);
+      let queryParams = getUrlQueryParams(source);
 
       return new RollupModuleRequest(
         context,

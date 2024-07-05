@@ -1,10 +1,9 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult } from 'esbuild';
 import { transform } from '@babel/core';
-import { ResolverLoader, virtualContent, explicitRelative, needsSyntheticComponentJS } from '@embroider/core';
+import { ResolverLoader, virtualContent, needsSyntheticComponentJS } from '@embroider/core';
 import { readFileSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, isAbsolute, resolve } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
@@ -49,8 +48,7 @@ export function esBuildResolver(): EsBuildPlugin {
     setup(build) {
       // Embroider Resolver
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let { specifier, fromFile } = adjustVirtualImport(path, importer);
-        let request = EsBuildModuleRequest.from(build, kind, specifier, fromFile, pluginData);
+        let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
         if (!request) {
           return null;
         }
@@ -104,29 +102,4 @@ export function esBuildResolver(): EsBuildPlugin {
       build.onLoad({ filter: /\.g?[jt]s$/ }, onLoad);
     },
   };
-}
-
-// esbuild's resolve does not like when we resolve from virtual paths. That is,
-// a request like "../thing.js" from "/a/real/path/VIRTUAL_SUBDIR/virtual.js"
-// has an unambiguous target of "/a/real/path/thing.js", but esbuild won't do
-// that path adjustment until after checking whether VIRTUAL_SUBDIR actually
-// exists.
-//
-// We can do the path adjustments before doing resolve.
-function adjustVirtualImport(specifier: string, fromFile: string): { specifier: string; fromFile: string } {
-  let fromDir = dirname(fromFile);
-  if (!isAbsolute(specifier) && specifier.startsWith('.')) {
-    let targetPath = resolve(fromDir, specifier);
-    let newFromDir = dirname(targetPath);
-    if (fromDir !== newFromDir) {
-      return {
-        specifier: explicitRelative(newFromDir, targetPath),
-        // we're resolving *from* the destination, because we need to resolve
-        // from a file that exists, and we know that (if this was supposed to
-        // succeed at all) that file definitely does
-        fromFile: targetPath,
-      };
-    }
-  }
-  return { specifier, fromFile };
 }

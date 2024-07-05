@@ -191,14 +191,12 @@ function sharedGlobalState() {
 }
 
 function requestStatus(id: string): void {
-  console.log(`Requesting status: ${id}`);
   sharedGlobalState().set(id, 'pending');
 }
 
 export function writeStatus(id: string, status: 'found' | 'not_found'): void {
   let channel = sharedGlobalState();
   if (channel.get(id) === 'pending') {
-    console.log(`Reporting status: ${id} ${status}`);
     channel.set(id, status);
   }
 }
@@ -207,6 +205,5 @@ function readStatus(id: string): 'pending' | 'not_found' | 'found' {
   let channel = sharedGlobalState();
   let result = channel.get(id) ?? 'pending';
   channel.delete(id);
-  console.log(`Reading status: ${id} ${result}`);
   return result;
 }

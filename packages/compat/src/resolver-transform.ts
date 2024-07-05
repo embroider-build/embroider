@@ -440,7 +440,7 @@ class TemplateResolver implements ASTPlugin {
     let componentRules = this.rules.components.get(name);
     return {
       type: 'component',
-      specifier: `#embroider_compat/components/${name}`,
+      specifier: `@embroider/virtual/components/${name}`,
       importedName: 'default',
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
@@ -516,7 +516,7 @@ class TemplateResolver implements ASTPlugin {
 
     return {
       type: 'helper',
-      specifier: `#embroider_compat/helpers/${path}`,
+      specifier: `@embroider/virtual/helpers/${path}`,
       importedName: 'default',
       nameHint: this.nameHint(path),
     };
@@ -658,7 +658,7 @@ class TemplateResolver implements ASTPlugin {
     let componentRules = this.rules.components.get(path);
     return {
       type: 'component',
-      specifier: `#embroider_compat/ambiguous/${path}`,
+      specifier: `@embroider/virtual/ambiguous/${path}`,
       importedName: 'default',
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
@@ -689,7 +689,7 @@ class TemplateResolver implements ASTPlugin {
 
     return {
       type: 'modifier',
-      specifier: `#embroider_compat/modifiers/${path}`,
+      specifier: `@embroider/virtual/modifiers/${path}`,
       importedName: 'default',
       nameHint: this.nameHint(path),
     };

@@ -45,8 +45,8 @@ export function unrelativize(pkg: Package, specifier: string, fromFile: string) 
 const postfixRE = /[?#].*$/s;
 
 // this pattern includes URL query params (ex: ?direct)
-// but excludes specifiers starting with # (ex: #embroider_compats/components/fancy)
-// so when using this pattern, #embroider_compat/fancy would be consider a pathname
+// but excludes specifiers starting with # (ex: @embroider/virtuals/components/fancy)
+// so when using this pattern, @embroider/virtual/fancy would be consider a pathname
 // without any params.
 const postfixREQueryParams = /[?].*$/s;
 

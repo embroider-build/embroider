@@ -21,7 +21,7 @@ export function needsSyntheticComponentJS(
 }
 
 function discoveredImplicitHBS(source: string, id: string): boolean {
-  return source.endsWith('.hbs') && id.endsWith('.hbs');
+  return !source.endsWith('.hbs') && id.endsWith('.hbs');
 }
 
 function correspondingJSExists(id: string): boolean {

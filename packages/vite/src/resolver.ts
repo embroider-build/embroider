@@ -5,7 +5,7 @@ import assertNever from 'assert-never';
 import makeDebug from 'debug';
 import { resolve } from 'path';
 import { writeStatus } from './esbuild-request';
-import { PluginContext } from 'rollup';
+import type { PluginContext } from 'rollup';
 
 const debug = makeDebug('embroider:vite');
 

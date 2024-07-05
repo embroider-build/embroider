@@ -23,11 +23,10 @@ export function esBuildResolver(): EsBuildPlugin {
   }
 
   function onLoad({ path, namespace }: { path: string; namespace: string }): OnLoadResult {
-    if (namespace === 'embroider-template-only-component') {
-      return { contents: templateOnlyComponent };
-    }
     let src: string;
-    if (namespace === 'embroider-virtual') {
+    if (namespace === 'embroider-template-only-component') {
+      src = templateOnlyComponent;
+    } else if (namespace === 'embroider-virtual') {
       src = virtualContent(path, resolverLoader.resolver).src;
     } else {
       src = readFileSync(path, 'utf8');

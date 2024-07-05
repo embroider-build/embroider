@@ -43,7 +43,7 @@ appScenarios
         await server?.shutdown();
       });
 
-      QUnit.skip(`dep optimization of a v2 addon`, async function (assert) {
+      test(`dep optimization of a v2 addon`, async function (assert) {
         expectAudit
           .module('./index.html')
           .resolves(/\/index.html.*/) // in-html app-boot script

@@ -16,7 +16,13 @@ appScenarios
           'fancy-button.hbs': `<h1>I'm fancy</h1>`,
         },
         templates: {
-          'application.hbs': '<FancyButton />',
+          // 'application.hbs': '<FancyButton />',
+          'application.hbs': null,
+          'application.js': `
+            import FancyButton from '../components/fancy-button';
+            import { precompileTemplate } from "@ember/template-compilation";
+            export default precompileTemplate("<FancyButton />", { strictMode: true, scope: () => ({ FancyButton}) });
+          `,
         },
       },
     });

@@ -20,6 +20,18 @@ export default defineConfig(({ mode }) => {
     // esbuild in vite does not support decorators
     esbuild: false,
     cacheDir: resolve("node_modules", ".vite"),
+    resolve: {
+      extensions: [
+        ".mjs",
+        ".gjs",
+        ".js",
+        ".mts",
+        ".gts",
+        ".ts",
+        ".hbs",
+        ".json",
+      ],
+    },
     plugins: [
       hbs(),
       templateTag(),

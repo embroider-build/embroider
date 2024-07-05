@@ -130,7 +130,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
       return {
         type: 'found',
         filename: request.specifier,
-        result: { path: request.specifier, namespace: 'embroider' },
+        result: { path: request.specifier, namespace: 'embroider-virtual' },
         isVirtual: this.isVirtual,
       };
     }

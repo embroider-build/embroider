@@ -643,11 +643,13 @@ export class Resolver {
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
+      console.log(`resolveComponent: about to check template candidate ${candidateSpecifier}`);
       let resolution = await this.resolve(
         request.alias(candidateSpecifier).rehome(target.from).withMeta({
           runtimeFallback: false,
         })
       );
+      console.log(`resolveComponent: finished template candidate ${candidateSpecifier} ${resolution.type}`);
 
       if (resolution.type === 'found') {
         hbsModule = resolution;
@@ -659,11 +661,13 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
+      console.log(`resolveComponent: about to check js candidate ${candidateSpecifier}`);
       let resolution = await this.resolve(
         request.alias(candidateSpecifier).rehome(target.from).withMeta({
           runtimeFallback: false,
         })
       );
+      console.log(`resolveComponent: finished js candidate ${candidateSpecifier} ${resolution.type}`);
 
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means

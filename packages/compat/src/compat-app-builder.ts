@@ -20,7 +20,7 @@ import flatMap from 'lodash/flatMap';
 import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import bind from 'bind-decorator';
-import { outputJSONSync, readFileSync, readJSONSync, rmSync, writeFileSync, realpathSync } from 'fs-extra';
+import { outputJSONSync, readFileSync, readJSONSync, rmSync, writeFileSync, realpathSync, existsSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
@@ -457,8 +457,10 @@ export class CompatAppBuilder {
     this.compatApp.macrosConfig.finalize();
 
     // on first build, clear the output directory completely
-    if (this.firstBuild) {
-      rmSync(this.root, { recursive: true, force: true });
+    if (this.firstBuild && existsSync(this.root)) {
+      for (const path of readdirSync(this.root)) {
+        rmSync(join(this.root, path), { recursive: true, force: true });
+      }
       this.firstBuild = false;
     }
 

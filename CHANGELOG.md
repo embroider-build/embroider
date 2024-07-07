@@ -1,5 +1,187 @@
 # Embroider Changelog
 
+## Release (2024-07-03)
+
+@embroider/compat 3.5.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2012](https://github.com/embroider-build/embroider/pull/2012) Empty packages as valid v2 addons ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 1
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+## Release (2024-06-27)
+
+@embroider/addon-dev 5.0.0 (major)
+
+#### :boom: Breaking Change
+* `@embroider/addon-dev`
+  * [#2007](https://github.com/embroider-build/embroider/pull/2007) Add just the necessary files to rollup watch mode ([@vstefanovic97](https://github.com/vstefanovic97))
+
+#### Committers: 1
+- Vuk ([@vstefanovic97](https://github.com/vstefanovic97))
+
+## Release (2024-06-24)
+
+@embroider/compat 3.5.5 (patch)
+@embroider/core 3.4.14 (patch)
+@embroider/macros 1.16.5 (patch)
+@embroider/shared-internals 2.6.2 (patch)
+@embroider/webpack 4.0.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2005](https://github.com/embroider-build/embroider/pull/2005) unique-id helper import based on ember-source version ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :house: Internal
+* `@embroider/shared-internals`
+  * [#2000](https://github.com/embroider-build/embroider/pull/2000) Update typescript and fix issues with Typescript 5.5 ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2024-06-20)
+
+@embroider/compat 3.5.4 (patch)
+@embroider/core 3.4.13 (patch)
+@embroider/macros 1.16.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1994](https://github.com/embroider-build/embroider/pull/1994) MacrosConfig should sync globalConfigs between copies ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#1993](https://github.com/embroider-build/embroider/pull/1993) update node to latest LTS for CI ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2024-06-13)
+
+@embroider/compat 3.5.3 (patch)
+@embroider/core 3.4.12 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/sample-transforms`
+  * [#1969](https://github.com/embroider-build/embroider/pull/1969) Update `fast-sourcemap-concat` to remove dependency `lodash.template` for consumer apps (security vulnerability) ([@mkszepp](https://github.com/mkszepp))
+
+#### Committers: 1
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
+## Release (2024-06-12)
+
+@embroider/webpack 4.0.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/webpack`
+  * [#1981](https://github.com/embroider-build/embroider/pull/1981) Revert "Webpack: close the compiler" ([@krasnoukhov](https://github.com/krasnoukhov))
+
+#### Committers: 1
+- Dmitry Krasnoukhov ([@krasnoukhov](https://github.com/krasnoukhov))
+
+## Release (2024-06-11)
+
+@embroider/compat 3.5.2 (patch)
+@embroider/core 3.4.11 (patch)
+@embroider/macros 1.16.3 (patch)
+@embroider/webpack 4.0.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#1967](https://github.com/embroider-build/embroider/pull/1967) Address these issues in new apps (5.9): ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/webpack`
+  * [#1978](https://github.com/embroider-build/embroider/pull/1978) Webpack: close the compiler ([@ef4](https://github.com/ef4))
+* `@embroider/macros`, `@embroider/test-fixtures`
+  * [#1977](https://github.com/embroider-build/embroider/pull/1977) Fix modifier removal for "unless (macroCondition ...)" ([@ef4](https://github.com/ef4))
+* `@embroider/macros`, `@embroider/test-fixtures`, `@embroider/test-scenarios`
+  * [#1975](https://github.com/embroider-build/embroider/pull/1975) Stop using "#with" in macro tests ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2024-05-29)
+
+@embroider/router 2.1.8 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#1945](https://github.com/embroider-build/embroider/pull/1945) avoid loading of lazy engines when generating linkto urls for routes ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
+## Release (2024-05-29)
+
+@embroider/compat 3.5.1 (patch)
+@embroider/core 3.4.10 (patch)
+@embroider/macros 1.16.2 (patch)
+@embroider/shared-internals 2.6.1 (patch)
+@embroider/webpack 4.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`, `@embroider/test-support`, `@embroider/test-scenarios`
+  * [#1949](https://github.com/embroider-build/embroider/pull/1949) Fix ownerOfFile bug on windows ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2024-05-22)
+
+@embroider/addon-shim 1.8.9 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-shim`
+  * [#1940](https://github.com/embroider-build/embroider/pull/1940) only register v2 addons with parent addons ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#1938](https://github.com/embroider-build/embroider/pull/1938) remove v* prefix GitHub Actions builds ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2024-05-08)
+
+@embroider/addon-shim 1.8.8 (patch)
+@embroider/compat 3.5.0 (minor)
+@embroider/router 2.1.7 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#1907](https://github.com/embroider-build/embroider/pull/1907) Make ember-source compat adapter tolerant of upcoming ember-source changes ([@ef4](https://github.com/ef4))
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#1904](https://github.com/embroider-build/embroider/pull/1904) Fix getRoute override ([@jembezmamy](https://github.com/jembezmamy))
+* `@embroider/addon-shim`
+  * [#1901](https://github.com/embroider-build/embroider/pull/1901) [addon-shim]: Narrowed down broccoli trees for optimized file watching ([@simonihmig](https://github.com/simonihmig))
+
+#### :house: Internal
+* `@embroider/test-scenarios`
+  * [#1908](https://github.com/embroider-build/embroider/pull/1908) update tests to follow newer babel-plugin-ember-template-compiilation ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Paweł Bator ([@jembezmamy](https://github.com/jembezmamy))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2024-04-30)
+
+@embroider/compat 3.4.9 (patch)
+@embroider/core 3.4.9 (patch)
+@embroider/macros 1.16.1 (patch)
+@embroider/util 1.13.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`, `@embroider/util`
+  * [#1891](https://github.com/embroider-build/embroider/pull/1891) Revert "Update to `ember-cli-babel` v8" ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-04-18)
 
 @embroider/compat 3.4.8 (patch)

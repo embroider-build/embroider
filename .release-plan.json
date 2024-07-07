@@ -1,96 +1,56 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "4.3.1"
+      "oldVersion": "5.0.0"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "1.8.7"
+      "oldVersion": "1.8.9"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.4.7",
-      "newVersion": "3.4.8",
+      "oldVersion": "3.5.5",
+      "newVersion": "3.5.6",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
-    },
-    "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.7",
-      "newVersion": "3.4.8",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "pkgJSONPath": "./packages/compat/package.json"
+    },
+    "@embroider/core": {
+      "oldVersion": "3.4.14"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.15.1",
-      "newVersion": "1.16.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.5"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
     },
     "@embroider/router": {
-      "oldVersion": "2.1.6"
+      "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.6.0"
+      "oldVersion": "2.6.2"
     },
     "@embroider/test-setup": {
-      "impact": "major",
-      "oldVersion": "3.0.3",
-      "newVersion": "4.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Has peer dependency `workspace:^` on @embroider/webpack"
-        }
-      ],
-      "pkgJSONPath": "./packages/test-setup/package.json"
+      "oldVersion": "4.0.0"
     },
     "@embroider/util": {
-      "oldVersion": "1.13.0"
+      "oldVersion": "1.13.1"
     },
     "@embroider/vite": {
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "impact": "major",
-      "oldVersion": "3.2.3",
-      "newVersion": "4.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.4"
     }
   },
-  "description": "## Release (2024-04-18)\n\n@embroider/compat 3.4.8 (patch)\n@embroider/core 3.4.8 (patch)\n@embroider/macros 1.16.0 (minor)\n@embroider/test-setup 4.0.0 (major)\n@embroider/webpack 4.0.0 (major)\n\n#### :boom: Breaking Change\n* `@embroider/webpack`\n  * [#1868](https://github.com/embroider-build/embroider/pull/1868) Adjusting `@embroider/webpack` to use `@babel/preset-env` to avoid critical security audit ([@lupestro](https://github.com/lupestro))\n\n#### :rocket: Enhancement\n* `@embroider/macros`, `@embroider/test-fixtures`\n  * [#1858](https://github.com/embroider-build/embroider/pull/1858) Add support for `{{unless}}` to the `macroCondition` macro ([@Windvis](https://github.com/Windvis))\n\n#### :bug: Bug Fix\n* `@embroider/core`, `@embroider/test-scenarios`\n  * [#1885](https://github.com/embroider-build/embroider/pull/1885) Fix pre support in portable babel launcher ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Ralph Mack ([@lupestro](https://github.com/lupestro))\n- Sam Van Campenhout ([@Windvis](https://github.com/Windvis))\n"
+  "description": "## Release (2024-07-03)\n\n@embroider/compat 3.5.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2012](https://github.com/embroider-build/embroider/pull/2012) Empty packages as valid v2 addons ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### Committers: 1\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
 }

@@ -43,7 +43,6 @@
     "@babel/runtime": "^7.18.6",
     "@ember/legacy-built-in-components": "^0.4.1",
     "@ember/string": "^3.0.0",
-    "@ember/test-helpers-3": "npm:@ember/test-helpers@^3.2.0",
     "@ember/test-waiters": "^3.0.2",
     "@embroider/addon-shim": "workspace:*",
     "@embroider/macros": "workspace:*",

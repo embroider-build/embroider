@@ -923,7 +923,7 @@ class TemplateResolver implements ASTPlugin {
       if (isThisHead(node.path)) {
         return;
       }
-      if (node.path.data === true) {
+      if (isAtHead(node.path)) {
         return;
       }
       if (node.path.parts.length > 1) {
@@ -1172,4 +1172,14 @@ function isThisHead(path: any) {
   }
 
   return path.this === true;
+}
+
+function isAtHead(path: any) {
+  if (!path) return;
+
+  if ('head' in path) {
+    return path.head.type === 'AtHead';
+  }
+
+  return path.data === true;
 }

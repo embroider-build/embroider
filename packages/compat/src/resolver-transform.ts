@@ -777,7 +777,7 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.type !== 'PathExpression') {
         return;
       }
-      let rootName = node.path.parts[0];
+      let rootName = headOf(node.path);
       if (this.scopeStack.inScope(rootName, path)) {
         return;
       }
@@ -819,7 +819,7 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.this === true) {
         return;
       }
-      if (this.scopeStack.inScope(node.path.parts[0], path)) {
+      if (this.scopeStack.inScope(headOf(node.path), path)) {
         return;
       }
       if (node.path.original === 'component' && node.params.length > 0) {
@@ -855,7 +855,7 @@ class TemplateResolver implements ASTPlugin {
         if (node.path.type !== 'PathExpression') {
           return;
         }
-        let rootName = node.path.parts[0];
+        let rootName = headOf(node.path);
         if (this.scopeStack.inScope(rootName, path)) {
           return;
         }
@@ -917,7 +917,7 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.type !== 'PathExpression') {
         return;
       }
-      if (this.scopeStack.inScope(node.path.parts[0], path)) {
+      if (this.scopeStack.inScope(headOf(node.path), path)) {
         return;
       }
       if (node.path.this === true) {
@@ -1156,4 +1156,10 @@ function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {
     return objValue.concat(srcValue);
   }
+}
+
+function headOf(path: any) {
+  if (!path) return;
+
+  return 'head' in path ? path.head.name : path.parts[0];
 }

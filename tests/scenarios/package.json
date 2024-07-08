@@ -96,6 +96,7 @@
     "ember-truth-helpers": "^3.0.0",
     "execa": "^5.1.1",
     "node-fetch": "2.7.0",
+    "popper.js": "^1.16.1",
     "strip-ansi": "^6.0.0",
     "tslib": "^2.6.0",
     "typescript": "^5.4.5",

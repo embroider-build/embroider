@@ -784,7 +784,7 @@ class TemplateResolver implements ASTPlugin {
       if (isThisHead(node.path)) {
         return;
       }
-      if (node.path.parts.length > 1) {
+      if (parts(node.path).length > 1) {
         // paths with a dot in them (which therefore split into more than
         // one "part") are classically understood by ember to be contextual
         // components, which means there's nothing to resolve at this
@@ -862,7 +862,7 @@ class TemplateResolver implements ASTPlugin {
         if (isThisHead(node.path)) {
           return;
         }
-        if (node.path.parts.length > 1) {
+        if (parts(node.path).length > 1) {
           // paths with a dot in them (which therefore split into more than
           // one "part") are classically understood by ember to be contextual
           // components, which means there's nothing to resolve at this
@@ -926,7 +926,7 @@ class TemplateResolver implements ASTPlugin {
       if (isAtHead(node.path)) {
         return;
       }
-      if (node.path.parts.length > 1) {
+      if (parts(node.path).length > 1) {
         // paths with a dot in them (which therefore split into more than
         // one "part") are classically understood by ember to be contextual
         // components. With the introduction of `Template strict mode` in Ember 3.25
@@ -1182,4 +1182,10 @@ function isAtHead(path: any) {
   }
 
   return path.data === true;
+}
+
+function parts(path: any) {
+  if (!path) return;
+
+  return 'original' in path ? path.original.split('.') : path.parts;
 }

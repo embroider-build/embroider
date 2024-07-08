@@ -781,7 +781,7 @@ class TemplateResolver implements ASTPlugin {
       if (this.scopeStack.inScope(rootName, path)) {
         return;
       }
-      if (node.path.this === true) {
+      if (isThisHead(node.path)) {
         return;
       }
       if (node.path.parts.length > 1) {
@@ -816,7 +816,7 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.type !== 'PathExpression') {
         return;
       }
-      if (node.path.this === true) {
+      if (isThisHead(node.path)) {
         return;
       }
       if (this.scopeStack.inScope(headOf(node.path), path)) {
@@ -859,7 +859,7 @@ class TemplateResolver implements ASTPlugin {
         if (this.scopeStack.inScope(rootName, path)) {
           return;
         }
-        if (node.path.this === true) {
+        if (isThisHead(node.path)) {
           return;
         }
         if (node.path.parts.length > 1) {
@@ -920,7 +920,7 @@ class TemplateResolver implements ASTPlugin {
       if (this.scopeStack.inScope(headOf(node.path), path)) {
         return;
       }
-      if (node.path.this === true) {
+      if (isThisHead(node.path)) {
         return;
       }
       if (node.path.data === true) {
@@ -1162,4 +1162,14 @@ function headOf(path: any) {
   if (!path) return;
 
   return 'head' in path ? path.head.name : path.parts[0];
+}
+
+function isThisHead(path: any) {
+  if (!path) return;
+
+  if ('head' in path) {
+    return path.head.type === 'ThisHead';
+  }
+
+  return path.this === true;
 }

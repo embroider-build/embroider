@@ -1,11 +1,10 @@
 import walkSync from 'walk-sync';
 import { rmSync } from 'fs';
 import { join } from 'path';
-import type { OutputAsset, Plugin } from 'rollup';
+import type { Plugin } from 'rollup';
 import { existsSync } from 'fs-extra';
 
 export default function incremental(): Plugin {
-  const changed = new Set();
   const generatedAssets = new Map();
   const generatedFiles = new Set<string>();
 
@@ -47,48 +46,24 @@ export default function incremental(): Plugin {
   }
 
   function syncFiles(bundle: Record<string, any>) {
-    for (const key of Object.keys(bundle)) {
-      let checkKey = key;
-      if (key.endsWith('.js.map')) {
-        checkKey = key.replace('.js.map', '.js');
-        if (!bundle[checkKey]) {
-          delete bundle[key];
-          continue;
-        }
-      }
-      if (bundle[checkKey]?.type === 'asset') {
+    for (const checkKey of Object.keys(bundle)) {
+      if (bundle[checkKey]) {
+        let module = bundle[checkKey] as any;
+        let code = module.source || module.code;
         if (
           generatedAssets.has(checkKey) &&
-          isEqual(
-            (bundle[checkKey] as OutputAsset).source,
-            generatedAssets.get(checkKey)
-          )
+          isEqual(code, generatedAssets.get(checkKey))
         ) {
-          delete bundle[key];
-          continue;
+          delete bundle[checkKey];
         } else {
-          generatedAssets.set(
-            checkKey,
-            (bundle[checkKey] as OutputAsset).source
-          );
+          generatedAssets.set(checkKey, code);
         }
       }
-      if (
-        (bundle[checkKey] as any)?.moduleIds?.every(
-          (m: string) => !changed.has(m)
-        )
-      ) {
-        delete bundle[key];
-      }
     }
-    changed.clear();
   }
 
   return {
-    name: 'clean',
-    transform(_code, id) {
-      changed.add(id);
-    },
+    name: 'incremental',
     generateBundle(options, bundle) {
       if (firstTime) {
         firstTime = false;

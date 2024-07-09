@@ -36,9 +36,9 @@ export default function rollupHbsPlugin({
         this.addWatchFile(hbsFilename);
       }
       if (hbsFilter(id)) {
-        let basename = id.replace(/\.\w{1,3}$/, '');
-        this.addWatchFile(basename + '.ts');
-        this.addWatchFile(basename + '.js');
+        // rollup looses watch of deleted files
+        // this.addWatchFile(id.replace(/\.hbs$/, '.js'));
+        // this.addWatchFile(id.replace(/\.hbs$/, '.ts'));
         return {
           code: hbsToJS(code),
         };

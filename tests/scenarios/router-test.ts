@@ -38,11 +38,6 @@ function setupScenario(project: Project) {
             staticHelpers: true,
             staticModifiers: true,
             splitAtRoutes: ['split-me'],
-            skipBabel: [
-              {
-                package: 'qunit',
-              },
-            ],
           });
         };
       `,

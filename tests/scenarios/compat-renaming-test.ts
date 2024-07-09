@@ -24,11 +24,6 @@ appScenarios
         return maybeEmbroider(app, {
           staticAddonTrees: false,
           staticComponents: false,
-          skipBabel: [
-            {
-              package: 'qunit',
-            },
-          ],
           // TODO remove this when we virtualise the entrypoint
           amdCompatibility: {
             es: [

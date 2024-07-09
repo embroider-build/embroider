@@ -23,11 +23,6 @@ appScenarios
 
         return maybeEmbroider(app, {
           staticAddonTrees: false,
-          skipBabel: [
-            {
-              package: 'qunit',
-            },
-          ],
         });
       };
       `,

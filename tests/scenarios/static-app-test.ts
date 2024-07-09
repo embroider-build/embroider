@@ -397,10 +397,6 @@ wideAppScenarios
                 },
               },
             ],
-            skipBabel: [
-              { package: 'qunit' },
-              { package: 'macro-decorators' },
-            ],
           });
         };
       `,

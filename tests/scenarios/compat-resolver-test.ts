@@ -120,9 +120,6 @@ Scenarios.fromProject(() => new Project())
                 [require.resolve('@embroider/compat/src/babel-plugin-adjust-imports'), { appRoot: app.dir }],
               ])}
             }`,
-            'node_modules/.embroider/_babel_filter.js': `
-              module.exports = function(filename) { return true }
-            `,
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
           });
         };

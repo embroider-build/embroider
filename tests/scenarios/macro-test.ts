@@ -269,6 +269,7 @@ dummyAppScenarios
 dummyAppScenarios
   .map('macro-sample-addon-classic', project => {
     dummyAppScenarioSetup(project);
+    project.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
     merge(project.files, loadFromFixtureData('macro-sample-addon-classic'));
   })
   .forEachScenario(scenario => {

@@ -18,6 +18,12 @@ export default class extends Plugin {
       writeJSONSync(join(this.outputPath, 'package.json'), {
         name: this.originalPackage.name,
         version: this.originalPackage.version,
+        keywords: ['ember-addon'],
+        'ember-addon': {
+          version: 2,
+          type: 'addon',
+          'auto-upgraded': true,
+        },
         '//': 'This empty package was created by embroider. See https://github.com/embroider-build/embroider/blob/main/docs/empty-package-output.md',
       });
     }

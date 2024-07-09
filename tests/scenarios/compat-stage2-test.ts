@@ -1,7 +1,7 @@
 import type { Options } from '@embroider/compat';
 import type { PreparedApp, Project } from 'scenario-tester';
 import { appScenarios, baseAddon, dummyAppScenarios, renameApp } from './scenarios';
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 import { Transpiler } from '@embroider/test-support';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
@@ -11,6 +11,7 @@ import fetch from 'node-fetch';
 import QUnit from 'qunit';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 import CommandWatcher from './helpers/command-watcher';
+import { readJsonSync, writeJsonSync } from 'fs-extra';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -40,9 +41,6 @@ stage2Scenarios
     let depA = addAddon(app, 'dep-a');
     let depB = addAddon(app, 'dep-b');
     let depC = addAddon(app, 'dep-c');
-
-    depA.linkDependency('dep-c', { project: depC });
-    depB.linkDependency('dep-c', { project: depC });
 
     addInRepoAddon(depC, 'in-repo-d', {
       app: { service: { 'in-repo.js': '//in-repo-d' } },
@@ -118,6 +116,28 @@ stage2Scenarios
         app = await scenario.prepare();
         server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+        // There is a bug in node-fixturify-project that means project.linkDependency() will cause
+        // strange resolutions of dependencies. It is a timing issue where the peer depenceny checker
+        // runs before the linked dependency has been fully written to disk and ends up giving us the
+        // wrong answers. We are trying to recreate the same behaviour as linking a dependency with
+        // this addDependency function because we still need to test this behaviour.
+        //
+        // when https://github.com/stefanpenner/node-fixturify-project/issues/100 is fixed we should
+        // be able to go back to using depA.linkDependency()
+        function addDependency(fromPkg: string, toPkg: string, projectDirectory: string) {
+          let filename = join(projectDirectory, 'node_modules', fromPkg, 'package.json');
+          let json = readJsonSync(filename);
+          json.dependencies = {
+            ...json.dependencies,
+            [toPkg]: '*',
+          };
+
+          writeJsonSync(filename, json);
+        }
+
+        addDependency('dep-a', 'dep-c', app.dir);
+        addDependency('dep-b', 'dep-c', app.dir);
       });
 
       hooks.beforeEach(assert => {

@@ -34,7 +34,36 @@ stage2Scenarios
   .map('in-repo-addons-of-addons', app => {
     app.mergeFiles({
       app: {
-        'lib.js': 'import "dep-a/check-resolution.js"',
+        'lib.js': 'export {default} from "dep-a/check-resolution.js"',
+      },
+      tests: {
+        unit: {
+          'in-repo-addons-of-addons.js': `import { module, test } from 'qunit';
+
+          import libJS from 'my-app/lib';
+          import inRepo from 'my-app/service/in-repo';
+          import secondaryService from 'my-app/services/secondary';
+          import primaryService from 'my-app/services/primary';
+
+          module('Unit | basics', function () {
+            test('libJS resolution comes from the right place', async function (assert) {
+              assert.strictEqual(libJS, 'in-repo-a|check-resolution-target.js');
+            });
+
+            test('inRepo resolution comes from the right place', async function (assert) {
+              assert.strictEqual(inRepo, 'in-repo-c|service|in-repo.js');
+            });
+
+            test('secondaryService resolution comes from the right place', async function (assert) {
+              assert.strictEqual(secondaryService, 'secondary-in-repo-addon|service|secondary.js');
+            });
+
+            test('primaryService resolution comes from the right place', async function (assert) {
+              assert.strictEqual(primaryService, 'secondary-in-repo-addon|component|secondary.js');
+            });
+          })
+          `,
+        },
       },
     });
 
@@ -43,26 +72,26 @@ stage2Scenarios
     let depC = addAddon(app, 'dep-c');
 
     addInRepoAddon(depC, 'in-repo-d', {
-      app: { service: { 'in-repo.js': '//in-repo-d' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-d|service|in-repo.js";' } },
     });
     addInRepoAddon(depA, 'in-repo-a', {
-      app: { service: { 'in-repo.js': '//in-repo-a' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-a|service|in-repo.js";' } },
       addon: {
-        'check-resolution-target.js': 'export {}',
+        'check-resolution-target.js': 'export default "in-repo-a|check-resolution-target.js";',
       },
     });
     merge(depA.files, {
       addon: {
         'check-resolution.js': `
-          import 'in-repo-a/check-resolution-target';
+          export { default } from 'in-repo-a/check-resolution-target';
         `,
       },
     });
     addInRepoAddon(depB, 'in-repo-b', {
-      app: { service: { 'in-repo.js': '//in-repo-b' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-b|service|in-repo.js";' } },
     });
     addInRepoAddon(depB, 'in-repo-c', {
-      app: { service: { 'in-repo.js': '//in-repo-c' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-c|service|in-repo.js";' } },
     });
 
     // make an in-repo addon with a dependency on a secondary in-repo-addon
@@ -80,7 +109,7 @@ stage2Scenarios
       ),
       app: {
         services: {
-          'primary.js': `import "secondary-in-repo-addon/components/secondary"`,
+          'primary.js': `export {default} from "secondary-in-repo-addon/components/secondary"`,
         },
       },
     });
@@ -90,12 +119,12 @@ stage2Scenarios
     addInRepoAddon(app, 'secondary-in-repo-addon', {
       app: {
         services: {
-          'secondary.js': '// secondary',
+          'secondary.js': 'export default "secondary-in-repo-addon|service|secondary.js";',
         },
       },
       addon: {
         components: {
-          'secondary.js': '// secondary component',
+          'secondary.js': 'export default "secondary-in-repo-addon|component|secondary.js";',
         },
       },
     });
@@ -108,15 +137,9 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let server: CommandWatcher;
-      let appURL: string;
-      let expectFile: ExpectFile;
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-
         // There is a bug in node-fixturify-project that means project.linkDependency() will cause
         // strange resolutions of dependencies. It is a timing issue where the peer depenceny checker
         // runs before the linked dependency has been fully written to disk and ends up giving us the
@@ -140,62 +163,9 @@ stage2Scenarios
         addDependency('dep-b', 'dep-c', app.dir);
       });
 
-      hooks.beforeEach(assert => {
-        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
-      });
-
-      hooks.after(async () => {
-        await server?.shutdown();
-      });
-
-      let expectAudit = setupAuditTest(hooks, () => ({
-        appURL,
-        startingFrom: ['index.html'],
-        fetch: fetch as unknown as typeof globalThis.fetch,
-      }));
-
-      test('in repo addons are symlinked correctly', function () {
-        // check that package json contains in repo dep
-        expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
-
-        // check that in-repo addons are resolvable
-        resolveEntryPoint(expectAudit)
-          .resolves(/lib\.js/)
-          .toModule()
-          .resolves(/dep-a\/check-resolution\.js/)
-          .toModule()
-          .resolves(/in-repo-a\/check-resolution-target\.js/)
-          .toModule()
-          .codeContains('export {}');
-
-        // check that the in repo addons are correctly upgraded
-        expectFile('./node_modules/dep-a/lib/in-repo-a/package.json').json().get('ember-addon.version').equals(2);
-        expectFile('./node_modules/dep-b/lib/in-repo-b/package.json').json().get('ember-addon.version').equals(2);
-        expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
-
-        // check that the app trees with in repo addon are combined correctly
-        resolveEntryPoint(expectAudit)
-          .resolves(/service\/in-repo\.js/)
-          .toModule()
-          .codeContains('');
-      });
-
-      test('incorporates in-repo-addons of in-repo-addons correctly', function () {
-        // secondary in-repo-addon was correctly detected and activated
-        resolveEntryPoint(expectAudit)
-          .resolves(/services\/secondary\.js/)
-          .toModule()
-          .codeContains('// secondary');
-
-        // secondary is resolvable from primary
-        resolveEntryPoint(expectAudit)
-          .resolves(/services\/primary\.js/)
-          .toModule()
-          .resolves(/secondary-in-repo-addon\/components\/secondary\.js/)
-          .toModule()
-          .codeContains('// secondary component');
+      test(`pnpm test: development`, async function (assert) {
+        let result = await app.execute(`pnpm test`);
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

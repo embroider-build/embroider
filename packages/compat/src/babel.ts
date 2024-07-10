@@ -13,6 +13,48 @@ export function loadLegacyPlugins() {
   return plugins ?? [];
 }
 
+export function loadPluginDebugMacros() {
+  return [
+    [
+      'babel-plugin-debug-macros',
+      {
+        flags: [
+          {
+            source: '@glimmer/env',
+            flags: {
+              DEBUG: true,
+              CI: false,
+            },
+          },
+        ],
+        debugTools: {
+          isDebug: true,
+          source: '@ember/debug',
+          assertPredicateIndex: 1,
+        },
+        externalizeHelpers: {
+          module: '@ember/debug',
+        },
+      },
+      '@ember/debug stripping',
+    ],
+    [
+      'babel-plugin-debug-macros',
+      {
+        externalizeHelpers: {
+          module: '@ember/application/deprecations',
+        },
+        debugTools: {
+          isDebug: true,
+          source: '@ember/application/deprecations',
+          assertPredicateIndex: 1,
+        },
+      },
+      '@ember/application/deprecations stripping',
+    ],
+  ];
+}
+
 function _warnIfNoLegacyPlugins(legacyPlugins: any) {
   if (!legacyPlugins || !legacyPlugins.length) {
     console.warn(`

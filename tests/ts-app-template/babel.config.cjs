@@ -1,5 +1,5 @@
 // eslint-disable-next-line n/no-missing-require
-const { loadLegacyPlugins } = require('@embroider/compat');
+const { loadLegacyPlugins, loadPluginDebugMacros } = require('@embroider/compat');
 
 module.exports = {
   babelrc: false,
@@ -13,43 +13,7 @@ module.exports = {
     ['@babel/plugin-transform-private-property-in-object', { loose: false }],
     ['@babel/plugin-transform-private-methods', { loose: false }],
     ['@babel/plugin-transform-class-properties', { loose: false }],
-    [
-      require.resolve('babel-plugin-debug-macros'),
-      {
-        flags: [
-          {
-            source: '@glimmer/env',
-            flags: {
-              DEBUG: true,
-              CI: false,
-            },
-          },
-        ],
-        debugTools: {
-          isDebug: true,
-          source: '@ember/debug',
-          assertPredicateIndex: 1,
-        },
-        externalizeHelpers: {
-          module: '@ember/debug',
-        },
-      },
-      '@ember/debug stripping',
-    ],
-    [
-      require.resolve('babel-plugin-debug-macros'),
-      {
-        externalizeHelpers: {
-          module: '@ember/application/deprecations',
-        },
-        debugTools: {
-          isDebug: true,
-          source: '@ember/application/deprecations',
-          assertPredicateIndex: 1,
-        },
-      },
-      '@ember/application/deprecations stripping',
-    ],
+    ...loadPluginDebugMacros(),
   ],
   presets: [
     [

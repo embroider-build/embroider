@@ -16,14 +16,14 @@ export default function publicEntrypoints(args: {
   return {
     name: 'addon-modules',
     async buildStart() {
+      this.addWatchFile(args.srcDir);
+
       let matches = walkSync(args.srcDir, {
         globs: [...args.include, '**/*.hbs', '**/*.ts', '**/*.gts', '**/*.gjs'],
         ignore: args.exclude,
       });
 
       for (let name of matches) {
-        this.addWatchFile(path.join(args.srcDir, name));
-
         // the matched file, but with the extension swapped with .js
         let normalizedName = normalizeFileExt(name);
 

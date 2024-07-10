@@ -25,6 +25,14 @@
   "scripts": {
     "test": "jest"
   },
+  "peerDependencies": {
+    "rollup": "^4.6.0"
+  },
+  "peerDependenciesMeta": {
+    "rollup": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@embroider/core": "workspace:^",
     "@rollup/pluginutils": "^4.1.1",

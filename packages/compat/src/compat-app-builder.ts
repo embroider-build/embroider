@@ -596,6 +596,37 @@ export class CompatAppBuilder {
     outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'content-for.json'), contentForConfig, {
       spaces: 2,
     });
+
+    // In addition to outputting content-for.json, we also want to check if content-for 'config-module' has a custom content.
+    // If so, it means some classic addons used to provide this custom content, which is no longer supported.
+    // Developers can deactivate this check (and the subsequent warning) with useAddonConfigModule
+    if (this.compatApp.options.useAddonConfigModule) {
+      let modulePrefix = this.configTree.readConfig().modulePrefix;
+
+      // This is the default script provided by https://github.com/ember-cli/ember-cli/blob/master/lib/utilities/ember-app-utils.js#L84
+      // When storeConfigInMeta is true, this content is always present in the config-module key of content-for.json
+      const defaultConfigModule =
+        `var prefix = '${modulePrefix}';\ntry {\n  var metaName = prefix + '/config/environment';\n  var rawConfig = document.querySelector('meta[name=\"' + metaName + '\"]').getAttribute('content');\n  var config = JSON.parse(decodeURIComponent(rawConfig));\n\n  var exports = { 'default': config };\n\n  Object.defineProperty(exports, '__esModule', { value: true });\n\n  return exports;\n}\ncatch(err) {\n  throw new Error('Could not read config from meta tag with name \"' + metaName + '\".');\n}\n`.replace(
+          /\s/g,
+          ''
+        );
+
+      const configModule = contentForConfig['/index.html']['config-module'];
+      const diff = configModule.replace(/\s/g, '').replace(defaultConfigModule, '');
+
+      if (diff.length) {
+        throw new Error(`
+          Your app uses at least one classic addon that provides content-for 'config-module'. This is no longer supported.
+          With Embroider, you have full control over the config module, so classic addons no longer need to modify it under the hood.
+          The following code is included via content-for 'config-module':
+
+          ${configModule}
+          
+          1. If you want to keep the same behavior, add it to the app/environment.js.
+          2. Once app/environment.js has the content you need, remove the present error by setting "useAddonConfigModule" to false in the build options.
+        `);
+      }
+    }
   }
 
   private addEmberEnvConfig(emberEnvConfig: any) {

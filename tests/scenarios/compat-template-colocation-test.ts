@@ -20,8 +20,6 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
       templates: {
         'index.hbs': `
             <HasColocatedTemplate />
-            {{!-- TODO why is there a TS component here using an appScenario?? --}}
-            {{!-- <HasColocatedTSTemplate /> --}}
             <TemplateOnlyComponent />
           `,
       },
@@ -33,11 +31,6 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
           export default class extends Component {}
           `,
         'has-colocated-template.hbs': `<div>{{this.title}}</div>`,
-        'has-colocated-ts-template.ts': `
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-          `,
-        'has-colocated-ts-template.hbs': `<div>{{this.title}}</div>`,
         'template-only-component.hbs': `<div>I am template only</div>`,
       },
     },

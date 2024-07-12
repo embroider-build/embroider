@@ -2,6 +2,17 @@ import { existsSync } from 'fs-extra';
 import { cleanUrl } from './paths';
 import type PackageCache from './package-cache';
 
+export function syntheticJStoHBS(source: string): string | null {
+  // explicit js is the only case we care about here. Synthetic template JS is
+  // only ever JS (never TS or anything else). And extensionless imports are
+  // handled by the default resolving system doing extension search.
+  if (cleanUrl(source, true).endsWith('.js')) {
+    return source.replace(/.js(\?.*)?/, '.hbs$1');
+  }
+
+  return null;
+}
+
 export function needsSyntheticComponentJS(
   requestedSpecifier: string,
   foundFile: string,

@@ -201,9 +201,6 @@ wideAppScenarios
               <div data-helper-name={{name}}>{{name}}</div>
             {{/each}}
           `,
-          'macros-example.hbs': `
-            <h1 data-macro>Welcome to this {{#if (macroCondition (macroGetOwnConfig "isClassic"))}}classic{{else}}embroider{{/if}} app!</h1>
-          `,
           'static-component-rules-example.hbs': `
             <FancyBox @title="With Default" />
             <FancyBox @title="With Custom" @titleComponent="my-title" />
@@ -250,12 +247,7 @@ wideAppScenarios
 
                 let components = [...document.querySelectorAll("[data-component-name]")].map(elt => elt.dataset.componentName);
                 assert.ok(!components.includes('bs-button'), 'expected not to find bs-button because it got inserted via lexical scope');
-
-                if (getOwnConfig().isClassic) {
-                  assert.ok(components.includes('bs-carousel'), 'expected to find bs-carousel in classic build');
-                } else {
-                  assert.ok(!components.includes('bs-carousel'), 'expected not to find bs-carousel in embroider build');
-                }
+                assert.ok(!components.includes('bs-carousel'), 'expected not to find bs-carousel in embroider build');
               });
             });
           `,
@@ -279,32 +271,7 @@ wideAppScenarios
 
                 let helpers = [...document.querySelectorAll("[data-helper-name]")].map(elt => elt.dataset.helperName);
                 assert.ok(!helpers.includes('reverse'), 'expected not to find reverse, because it is provided directly via scope');
-
-                if (getOwnConfig().isClassic) {
-                  assert.ok(helpers.includes('intersect'), 'expected to find intersect');
-                } else {
-                  assert.ok(!helpers.includes('intersect'), 'expected not to find intersect');
-                }
-              });
-            });
-          `,
-          'macros-example-test.js': `
-            import { module, test } from 'qunit';
-            import { visit } from '@ember/test-helpers';
-            import { setupApplicationTest } from 'ember-qunit';
-            import { getOwnConfig } from '@embroider/macros';
-
-            module('Acceptance | macros-example', function(hooks) {
-              setupApplicationTest(hooks);
-
-              test('macros work', async function(assert) {
-                await visit('/macros-example');
-
-                if (getOwnConfig().isClassic) {
-                  assert.dom('[data-macro]').hasText('Welcome to this classic app!');
-                } else {
-                  assert.dom('[data-macro]').hasText('Welcome to this embroider app!');
-                }
+                assert.ok(!helpers.includes('intersect'), 'expected not to find intersect');
               });
             });
           `,
@@ -363,7 +330,6 @@ wideAppScenarios
         'use strict';
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { MacrosConfig } = require('@embroider/macros/src/node');
         const { maybeEmbroider } = require('@embroider/test-setup');
 
         module.exports = function (defaults) {
@@ -375,10 +341,6 @@ wideAppScenarios
               bootstrapVersion: 4,
               importBootstrapCSS: true
             }
-          });
-
-          MacrosConfig.for(app).setOwnConfig(__filename, {
-            isClassic: Boolean(process.env.CLASSIC),
           });
 
           return maybeEmbroider(app, {

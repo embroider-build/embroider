@@ -41,7 +41,11 @@ Scenarios.fromProject(() => new Project())
     Qmodule(scenario.name, function (hooks) {
       let expectTranspiled: (file: string) => ReturnType<ReturnType<ExpectFile>['transform']>;
       let givenFiles: (files: Record<string, string>) => void;
-      let configure: (opts?: Partial<CompatResolverOptions['options']>, extraOpts?: ConfigureOpts) => Promise<void>;
+      let configure: (
+        opts?: Partial<CompatResolverOptions['options']>,
+        extraOpts?: ConfigureOpts,
+        emberVersion?: string
+      ) => Promise<void>;
 
       interface ConfigureOpts {
         appPackageRules?: Partial<PackageRules>;
@@ -59,13 +63,17 @@ Scenarios.fromProject(() => new Project())
             outputFileSync(resolve(app.dir, filename), contents, 'utf8');
           }
         };
-        configure = async function (opts?: Partial<CompatResolverOptions['options']>, extraOpts?: ConfigureOpts) {
+        configure = async function (
+          opts?: Partial<CompatResolverOptions['options']>,
+          extraOpts?: ConfigureOpts,
+          emberVersion = '4.6.0' //based on app-template package.json
+        ) {
           let etcOptions: EtcOptions = {
             compilerPath: require.resolve('ember-source-latest/dist/ember-template-compiler'),
             targetFormat: 'hbs',
             transforms: [
               ...(extraOpts?.astPlugins ?? []),
-              [require.resolve('@embroider/compat/src/resolver-transform'), { appRoot: app.dir }],
+              [require.resolve('@embroider/compat/src/resolver-transform'), { appRoot: app.dir, emberVersion }],
             ],
           };
 
@@ -100,17 +108,19 @@ Scenarios.fromProject(() => new Project())
                 ...extraOpts?.appPackageRules,
               },
             ],
+            autoRun: true,
+            staticAppPaths: [],
           };
 
           givenFiles({
-            '_babel_config.js': `
+            'node_modules/.embroider/_babel_config_.js': `
             module.exports = {
               plugins: ${JSON.stringify([
                 [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
                 [require.resolve('@embroider/compat/src/babel-plugin-adjust-imports'), { appRoot: app.dir }],
               ])}
             }`,
-            '_babel_filter.js': `
+            'node_modules/.embroider/_babel_filter.js': `
               module.exports = function(filename) { return true }
             `,
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
@@ -1140,6 +1150,36 @@ Scenarios.fromProject(() => new Project())
       `);
       });
 
+      test('built-in helper unique-id is not imported when used with ember source version <5.2', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(unique-id)}}`,
+        });
+        await configure({ staticHelpers: true }, undefined, '4.6.0');
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        export default precompileTemplate("{{(unique-id)}}", {
+          moduleName: "my-app/templates/application.hbs",
+        });
+      `);
+      });
+
+      test('built-in helper unique-id is imported when used with ember source version >=5.2', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{(unique-id)}}`,
+        });
+        await configure({ staticHelpers: true }, undefined, '5.2.0');
+        expectTranspiled('templates/application.hbs').equalsCode(`
+        import { precompileTemplate } from "@ember/template-compilation";
+        import { uniqueId } from "@ember/helper";
+        export default precompileTemplate("{{(uniqueId)}}", {
+          moduleName: "my-app/templates/application.hbs",
+          scope: () => ({
+            uniqueId,
+          }),
+        });
+      `);
+      });
+
       test('built-in modifiers are ignored when used with the modifier keyword', async function () {
         givenFiles({
           'templates/application.hbs': `{{modifier "on"}}{{modifier "action"}}`,
@@ -1158,8 +1198,8 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `
         {{outlet}}
         {{yield bar}}
-        {{#with (hash submit=(action doit)) as |thing| }}
-        {{/with}}
+        {{#let (hash submit=(action doit)) as |thing| }}
+        {{/let}}
         <LinkTo @route="index"/>
         <form {{on "submit" doit}}></form>
       `,
@@ -1168,7 +1208,7 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import { on } from "@ember/modifier";
-        export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#with (hash submit=(action doit)) as |thing|}}\\n        {{/with}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
+        export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#let (hash submit=(action doit)) as |thing|}}\\n        {{/let}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
             on,

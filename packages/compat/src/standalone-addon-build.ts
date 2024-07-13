@@ -16,7 +16,7 @@ export function convertLegacyAddons(compatApp: CompatApp) {
 
   let appPackage = compatApp.appPackage();
 
-  let violations = validatePeerDependencies(appPackage).filter(({ dep }) => dep.isEmberPackage() && !dep.isV2Ember());
+  let violations = validatePeerDependencies(appPackage).filter(({ dep }) => dep.isEmberAddon() && !dep.isV2Ember());
   if (violations.length > 0) {
     if (process.env.I_HAVE_BAD_PEER_DEPS_AND_WANT_A_BROKEN_BUILD) {
       console.warn(
@@ -92,14 +92,14 @@ function buildAddonIndex(compatApp: CompatApp, appPackage: Package, packages: Se
   // yet. This directory lives outside our rewritten-pacakges directory because
   // it's produced by a separate build stage, and it's easier to have them
   // writing into separate directories.
-  content.packages[compatApp.root] = join('..', 'rewritten-app');
+  content.packages[compatApp.root] = join('..', '..', '..', 'tmp', 'rewritten-app');
 
   let nonResolvableDeps = appPackage.nonResolvableDeps;
   if (nonResolvableDeps) {
     let extraRoots = [...nonResolvableDeps.values()].map(v => v.root);
 
     // the app gets extraResolutions support just like every addon does
-    content.extraResolutions[join('..', 'rewritten-app')] = extraRoots;
+    content.extraResolutions[join('..', '..', '..', 'tmp', 'rewritten-app')] = extraRoots;
 
     // but it also gets extraResolutions registered against its *original*
     // location, because the app is unique because stage2 needs a Package
@@ -116,7 +116,7 @@ function findV1Addons(pkg: Package, seen: Set<Package> = new Set(), output: Set<
       continue;
     }
     seen.add(dep);
-    if (dep.isEmberPackage()) {
+    if (dep.isEmberAddon()) {
       if (!dep.isV2Addon()) {
         output.add(dep);
       }

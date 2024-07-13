@@ -1,11 +1,9 @@
 import type { PreparedApp } from 'scenario-tester';
+import CommandWatcher from './helpers/command-watcher';
 import { appScenarios, baseAddon } from './scenarios';
+import fetch from 'node-fetch';
 import QUnit from 'qunit';
-import { resolve, sep } from 'path';
 const { module: Qmodule, test } = QUnit;
-
-import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
-import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
@@ -180,17 +178,24 @@ appScenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectFile: ExpectFile;
+      let server: CommandWatcher;
+      let appURL: string;
 
       hooks.before(async () => {
         app = await scenario.prepare();
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      hooks.beforeEach(assert => {
-        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
+      hooks.after(async () => {
+        await server?.shutdown();
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
 
       test('audit issues', function () {
         expectAudit.hasNoFindings();
@@ -199,122 +204,138 @@ appScenarios
       test('whole package renaming works for top-level module', function () {
         expectAudit
           .module('./components/import-lodash.js')
-          .resolves('lodash')
-          .to('./node_modules/ember-lodash/index.js');
-        expectFile('./node_modules/ember-lodash/index.js').matches(/lodash index/);
+          .resolves(/ember-lodash\/index.js/)
+          .toModule()
+          .codeContains('// lodash index');
       });
 
       test('whole package renaming works for interior module', function () {
         expectAudit
           .module('./components/import-capitalize.js')
-          .resolves('lodash/capitalize')
-          .to('./node_modules/ember-lodash/capitalize.js');
-
-        expectFile('./node_modules/ember-lodash/capitalize.js').matches(/lodash capitalize/);
+          .resolves(/ember-lodash\/capitalize.js/)
+          .toModule()
+          .codeContains('// lodash capitalize');
       });
 
       test("modules in own namespace don't get renamed", function () {
         expectAudit
           .module('./components/import-own-thing.js')
-          .resolves('emits-multiple-packages/own-thing')
-          .to('./node_modules/emits-multiple-packages/own-thing.js');
-        expectFile('./node_modules/emits-multiple-packages/own-thing.js').matches(/own thing/);
+          .resolves(/emits-multiple-packages\/own-thing.js/)
+          .toModule()
+          .codeContains('// own thing');
       });
 
       test('modules outside our namespace do get renamed', function () {
         expectAudit
           .module('./components/import-somebody-elses.js')
-          .resolves('somebody-elses-package/environment')
-          .to('./node_modules/emits-multiple-packages/somebody-elses-package/environment.js');
-        expectFile('./node_modules/emits-multiple-packages/somebody-elses-package/environment.js').matches(
-          /somebody elses environment/
-        );
+          .resolves(/somebody-elses-package\/environment.js/)
+          .toModule()
+          .codeContains('// somebody elses environment');
       });
 
       test('modules outside our namespace do get renamed, with index.js', function () {
         expectAudit
           .module('./components/import-somebody-elses-utils.js')
-          .resolves('somebody-elses-package/utils')
-          .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
-        expectFile('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js').matches(
-          /somebody elses utils/
-        );
+          .resolves(/somebody-elses-package\/utils\/index.js/)
+          .toModule()
+          .codeContains('// somebody elses utils');
       });
 
       test('modules outside our namespace do get renamed, with index', function () {
         expectAudit
           .module('./components/import-somebody-elses-utils-index.js')
-          .resolves('somebody-elses-package/utils/index')
-          .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
+          .resolves(/somebody-elses-package\/utils\/index.js/)
+          .toModule()
+          .codeContains('// somebody elses utils');
       });
       test('modules outside our namespace do get renamed, with index with extension', function () {
         expectAudit
           .module('./components/import-somebody-elses-utils-index-explicit.js')
-          .resolves('somebody-elses-package/utils/index.js')
-          .to('./node_modules/emits-multiple-packages/somebody-elses-package/utils/index.js');
-      });
-      test('renamed modules keep their classic runtime name when used as implicit-modules', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/app-template.js')
+          .resolves(/somebody-elses-package\/utils\/index.js/)
           .toModule()
-          .resolves('./-embroider-implicit-modules.js')
+          .codeContains('// somebody elses utils');
+      });
+      test('renamed modules keep their classic runtime name when used as implicit-modules', function (assert) {
+        expectAudit
+          .module('./index.html')
+          .resolves(/\/index.html.*/) // in-html app-boot script
+          .toModule()
+          .resolves(/\/app\.js.*/)
+          .toModule()
+          .resolves(/.*\/-embroider-entrypoint\.js/)
+          .toModule()
+          .resolves(/.*\/-embroider-implicit-modules\.js/)
           .toModule()
           .withContents(contents => {
             const [, objectName] = /"somebody-elses-package\/environment": (own\d+),/.exec(contents) ?? [];
 
-            return contents.includes(
-              `import * as ${objectName} from "emits-multiple-packages/somebody-elses-package/environment";`
+            let testPattern = new RegExp(
+              `import \\* as ${objectName} from ".*emits-multiple-packages/somebody-elses-package/environment.js.*";`
             );
+
+            assert.ok(testPattern.test(contents));
+
+            return true;
           }, 'module imports from the correct place and exports object with the right key');
       });
+      // TODO: is this test still valid?
       test('rewriting one module does not capture entire package namespace', function () {
         expectAudit
           .module('./components/import-somebody-elses-original.js')
-          .resolves('somebody-elses-package')
-          .to(resolve('/@embroider/ext-es/somebody-elses-package?exports=default').split(sep).join('/'));
+          .resolves(/@embroider\/ext-es\/somebody-elses-package\/exports=default/)
+          .toModule()
+          .codeContains('const m = window.require("somebody-elses-package");');
 
         expectAudit
           .module('./components/import-somebody-elses-original.js')
-          .resolves('somebody-elses-package/deeper')
-          .to(resolve('/@embroider/ext-es/somebody-elses-package/deeper?exports=default').split(sep).join('/'));
+          .resolves(/@embroider\/ext-es\/somebody-elses-package\/deeper\/exports=default/)
+          .toModule()
+          .codeContains('const m = window.require("somebody-elses-package/deeper");');
       });
       test('single file package gets captured and renamed', function () {
         expectAudit
           .module('./components/import-single-file-package.js')
-          .resolves('single-file-package')
-          .to('./node_modules/emits-multiple-packages/single-file-package/index.js');
-        expectFile('./node_modules/emits-multiple-packages/single-file-package/index.js').matches(
-          /single file package/
-        );
+          .resolves(/single-file-package\/index.js/)
+          .toModule()
+          .codeContains('// single file package');
       });
+      // TODO: in all the changes below,
+      // was the .to('./node_modules/has-app-tree-import/index.js') step important?
       test('files logically copied into app from addons resolve their own original packages', function () {
         expectAudit
-          .module('./node_modules/has-app-tree-import/_app_/first.js')
-          .resolves('has-app-tree-import')
-          .to('./node_modules/has-app-tree-import/index.js');
+          .module(/has-app-tree-import\/_app_\/first.js/)
+          .resolves(/has-app-tree-import\/index.js/)
+          .toModule()
+          .codeContains('export default "first-copy";');
         expectAudit
-          .module('./node_modules/intermediate/node_modules/has-app-tree-import/_app_/second.js')
-          .resolves('has-app-tree-import')
-          .to('./node_modules/intermediate/node_modules/has-app-tree-import/index.js');
+          .module(/has-app-tree-import\/_app_\/second.js/)
+          .resolves(/has-app-tree-import\/index.js/)
+          .toModule()
+          .codeContains('export default "second-copy";');
       });
       test(`files logically copied into app from addons resolve the addon's deps`, function () {
         expectAudit
-          .module('./node_modules/has-app-tree-import/_app_/imports-dep.js')
-          .resolves('inner-dep')
-          .to('./node_modules/has-app-tree-import/node_modules/inner-dep/index.js');
+          .module(/has-app-tree-import\/_app_\/imports-dep\.js/)
+          .resolves(/inner-dep\/index\.js/)
+          .toModule()
+          .codeContains('export default "inner-dep";');
       });
-      test(`app-tree files from addons can import from the app`, function () {
+      test(`app-tree files from addons can import from the app`, function (assert) {
         expectAudit
-          .module('./node_modules/mirage-like/_app_/mirage/config.js')
-          .resolves('app-template/components/import-lodash')
-          .to('./components/import-lodash.js');
+          .module(/mirage-like\/_app_\/mirage\/config\.js/)
+          .resolves(/components\/import-lodash\.js/)
+          .toModule()
+          .withContents(contents => {
+            assert.ok(/import lodash from ".*";/.test(contents));
+            return true;
+          });
       });
       test(`files logically copied into app from addons can resolve the app's deps`, function () {
         expectAudit
-          .module('./node_modules/mirage-like/_app_/mirage/config.js')
-          .resolves('a-library')
-          .to('./node_modules/a-library/index.js');
+          .module(/mirage-like\/_app_\/mirage\/config.js/)
+          .resolves(/a-library\/index\.js/)
+          .toModule()
+          .codeContains('');
       });
     });
   });

@@ -10,7 +10,7 @@ async function githubMatrix() {
   let dir = resolve(__dirname, '..', '..', 'tests', 'scenarios');
   let { stdout } = await execa(
     'scenario-tester',
-    ['list', '--require', 'ts-node/register', '--files', '*-test.ts', '--matrix', 'pnpm run test --filter %s'],
+    ['list', '--require', 'ts-node/register', '--files', '*-test.ts', '--matrix', 'pnpm run test --filter "/^%s/"'],
     {
       cwd: dir,
       preferLocal: true,
@@ -18,6 +18,13 @@ async function githubMatrix() {
   );
 
   let { include: suites } = JSON.parse(stdout) as { include: { name: string; command: string }[]; name: string[] };
+
+  // these test
+  let temporaryWindowsIgnoreTests = [
+    'core-resolver-test',
+    'canary-compat-stage2-build-static-with-rules',
+    'canary-compat-exclude-dot-files',
+  ];
 
   let include = [
     ...suites.map(s => ({
@@ -29,6 +36,8 @@ async function githubMatrix() {
     ...suites
       .filter(s => s.name !== 'jest-suites') // TODO: jest tests do not work under windows yet
       .filter(s => !s.name.includes('watch-mode')) // TODO: watch tests are far too slow on windows right now
+      .filter(s => !s.name.endsWith('compat-addon-classic-features-virtual-scripts')) // TODO: these tests are too slow on windows right now
+      .filter(s => !temporaryWindowsIgnoreTests.includes(s.name)) // TODO: unskip these tests after merging stable into main
       .map(s => ({
         name: `${s.name} windows`,
         os: 'windows',

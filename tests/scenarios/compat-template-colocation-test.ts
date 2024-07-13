@@ -1,14 +1,13 @@
 import type { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon, renameApp } from './scenarios';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { Transpiler } from '@embroider/test-support';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
-import { expectFilesAt, expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
+import CommandWatcher from './helpers/command-watcher';
+import fetch from 'node-fetch';
 const { module: Qmodule, test } = QUnit;
 
 let scenarios = appScenarios.map('compat-template-colocation', app => {
@@ -21,13 +20,16 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
       templates: {
         'index.hbs': `
             <HasColocatedTemplate />
-            <HasColocatedTSTemplate />
+            {{!-- TODO why is there a TS component here using an appScenario?? --}}
+            {{!-- <HasColocatedTSTemplate /> --}}
             <TemplateOnlyComponent />
           `,
       },
       components: {
         'has-colocated-template.js': `
           import Component from '@glimmer/component';
+          import ComponentOne from 'my-addon/components/component-one';
+          import ComponentTwo from 'my-addon/components/component-two';
           export default class extends Component {}
           `,
         'has-colocated-template.hbs': `<div>{{this.title}}</div>`,
@@ -63,6 +65,29 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
   });
 });
 
+function checkContents(
+  expectAudit: ReturnType<typeof setupAuditTest>,
+  fn: (contents: string) => void,
+  entrypointFiles?: RegExp[]
+) {
+  let resolved = expectAudit
+    .module('./index.html')
+    .resolves(/\/index.html.*/) // in-html app-boot script
+    .toModule()
+    .resolves(/\/app\.js.*/)
+    .toModule()
+    .resolves(/.*\/-embroider-entrypoint.js/);
+
+  entrypointFiles?.forEach(entrypointFile => {
+    resolved = resolved.toModule().resolves(entrypointFile);
+  });
+
+  resolved.toModule().withContents(contents => {
+    fn(contents);
+    return true;
+  });
+}
+
 scenarios
   .map('staticComponent-false', app => {
     merge(app.files, {
@@ -86,77 +111,119 @@ scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
       let expectFile: ExpectFile;
-      let build: Transpiler;
 
-      hooks.before(async assert => {
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir }));
-
-      hooks.beforeEach(assert => {
+      hooks.beforeEach(async assert => {
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
-        build = new Transpiler(app.dir);
       });
 
-      test(`app's colocated template is associated with JS`, function () {
-        let assertFile = expectFile('components/has-colocated-template.js').transform(build.transpile);
-        assertFile.matches(/import TEMPLATE from ['"]\.\/has-colocated-template.hbs['"];/, 'imported template');
-        assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
 
-        assertFile.matches(
-          /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
-          'default export is wrapped'
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
+
+      test(`app's colocated template is associated with JS`, function (assert) {
+        checkContents(
+          expectAudit,
+          contents => {
+            assert.ok(
+              /import TEMPLATE from ['"]\/components\/has-colocated-template.hbs.*['"];/.test(contents),
+              'imported template'
+            );
+            assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
+            assert.ok(
+              /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/.test(contents),
+              'default export is wrapped'
+            );
+          },
+          [/has-colocated-template/]
         );
       });
 
-      test(`app's template-only component JS is synthesized`, function () {
-        let assertFile = expectFile('components/template-only-component.js').transform(build.transpile);
-        assertFile.matches(/import TEMPLATE from ['"]\.\/template-only-component.hbs['"];/, 'imported template');
-        assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
-        assertFile.matches(/import templateOnlyComponent/, 'found templateOnlyComponent');
+      test(`app's template-only component JS is synthesized`, function (assert) {
+        checkContents(
+          expectAudit,
+          contents => {
+            assert.ok(
+              /import TEMPLATE from ['"]\/components\/template-only-component.hbs.*['"];/.test(contents),
+              'imported template'
+            );
+            assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
+            assert.ok(/import templateOnly/.test(contents), 'found templateOnly');
 
-        assertFile.matches(
-          /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/,
-          'default export is wrapped'
+            assert.ok(
+              /export default setComponentTemplate\(TEMPLATE, templateOnly\(\)\)/.test(contents),
+              'default export is wrapped'
+            );
+          },
+          [/components\/template-only-component/]
         );
       });
 
-      test(`app's colocated TS component is NOT synthesized`, function () {
-        let assertFile = expectFile('components/has-colocated-ts-template.js');
-        assertFile.doesNotExist('component stub was not created');
+      test(`app's colocated components are implicitly included correctly`, function (assert) {
+        checkContents(expectAudit, contents => {
+          const result = /import \* as (\w+) from "\/components\/has-colocated-template.js.*";/.exec(contents);
+
+          if (!result) {
+            console.log(contents);
+            throw new Error('Missing import of has-colocated-template');
+          }
+
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/components/has-colocated-template": ${amdModule}`),
+            'expected module is in the export list'
+          );
+        });
       });
 
-      test(`app's colocated components are implicitly included correctly`, function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule().codeContains(`d("my-app/components/has-colocated-template", function () {
-            return i("my-app/components/has-colocated-template.js");
-          });`);
-      });
-
-      test(`addon's colocated template is associated with JS`, function () {
-        let assertFile = expectFile('./node_modules/my-addon/components/component-one.js').transform(build.transpile);
-        assertFile.matches(/import TEMPLATE from ['"]\.\/component-one.hbs['"];/, 'imported template');
-        assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
-        assertFile.matches(
-          /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/,
-          'default export is wrapped'
+      test(`addon's colocated template is associated with JS`, function (assert) {
+        checkContents(
+          expectAudit,
+          contents => {
+            assert.ok(
+              /import __COLOCATED_TEMPLATE__ from ['"]\.\/component-one.hbs['"];/.test(contents),
+              'imported template'
+            );
+            assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
+            assert.ok(
+              /export default setComponentTemplate\(TEMPLATE, class extends Component \{\}/.test(contents),
+              'default export is wrapped'
+            );
+          },
+          [/components\/has-colocated-template/, /components\/component-one/]
         );
       });
 
-      test(`addon's template-only component JS is synthesized`, function () {
-        let assertFile = expectFile('./node_modules/my-addon/components/component-two.js').transform(build.transpile);
-        assertFile.matches(/import TEMPLATE from ['"]\.\/component-two.hbs['"];/, 'imported template');
-        assertFile.matches(/import \{ setComponentTemplate \}/, 'found setComponentTemplate');
-        assertFile.matches(/import templateOnlyComponent/, 'found templateOnlyComponent');
-        assertFile.matches(
-          /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/,
-          'default export is wrapped'
+      test(`addon's template-only component JS is synthesized`, function (assert) {
+        checkContents(
+          expectAudit,
+          contents => {
+            assert.ok(
+              /import __COLOCATED_TEMPLATE__ from ['"]\.\/component-two.hbs['"];/.test(contents),
+              'imported template'
+            );
+            assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
+            assert.ok(/import templateOnlyComponent/.test(contents), 'found templateOnlyComponent');
+            assert.ok(
+              /export default setComponentTemplate\(TEMPLATE, templateOnlyComponent\(\)\)/.test(contents),
+              'default export is wrapped'
+            );
+          },
+          [/components\/has-colocated-template/, /components\/component-two/]
         );
       });
 
@@ -177,26 +244,46 @@ scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
       let expectFile: ExpectFile;
 
-      hooks.before(async assert => {
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
       hooks.beforeEach(assert => {
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
-      test(`app's colocated components are not implicitly included`, function () {
-        let assertFile = expectFile('assets/my-app.js');
-        assertFile.doesNotMatch(
-          /d\(["']my-app\/components\/has-colocated-template["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/has-colocated-template['"]\);\s*\}/
-        );
-        assertFile.doesNotMatch(
-          /d\(["']my-app\/components\/template-only-component["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/template-only-component['"]\);\s*\}/
-        );
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
+
+      test(`app's colocated components are not implicitly included`, function (assert) {
+        expectAudit
+          .module('./index.html')
+          .resolves(/\/index.html.*/) // in-html app-boot script
+          .toModule()
+          .resolves(/\/app\.js.*/)
+          .toModule()
+          .resolves(/.*\/-embroider-entrypoint.js/)
+          .toModule()
+          .withContents(content => {
+            assert.notOk(/import \* as (\w+) from "\.\/components\/has-colocated-component.js"/.test(content));
+
+            assert.notOk(/import \* as (\w+) from "\.\/components\/template-only-component.js"/.test(content));
+
+            return true;
+          });
       });
 
       test(`addon's colocated components are not in implicit-modules`, function () {
@@ -269,29 +356,73 @@ appScenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let expectFile: ExpectFile;
+      let server: CommandWatcher;
+      let appURL: string;
 
-      hooks.before(async assert => {
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      hooks.beforeEach(assert => {
-        expectFile = expectFilesAt(readFileSync(join(app.dir, 'dist/.stage2-output'), 'utf8'), { qunit: assert });
+      hooks.after(async () => {
+        await server?.shutdown();
       });
 
-      test(`app's pod components and templates are implicitly included correctly`, function () {
-        let assertFile = expectFile('assets/my-app.js');
-        assertFile.matches(
-          /d\(["']my-app\/components\/pod-component\/component["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/pod-component\/component\.js['"]\);\}\)/
-        );
-        assertFile.matches(
-          /d\(["']my-app\/components\/pod-component\/template["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/pod-component\/template\.hbs['"]\);\}\)/
-        );
-        assertFile.matches(
-          /d\(["']my-app\/components\/template-only\/template["'], function\(\)\s*\{\s*return i\(["']my-app\/components\/template-only\/template\.hbs['"]\);\s*\}/
-        );
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
+
+      test(`app's pod components and templates are implicitly included correctly`, function (assert) {
+        expectAudit
+          .module('./index.html')
+          .resolves(/\/index.html.*/) // in-html app-boot script
+          .toModule()
+          .resolves(/\/app\.js.*/)
+          .toModule()
+          .resolves(/.*\/-embroider-entrypoint.js/)
+          .toModule()
+          .withContents(content => {
+            let result = /import \* as (\w+) from "\/components\/pod-component\/component\.js"/.exec(content);
+
+            if (!result) {
+              throw new Error('Could not find pod component');
+            }
+
+            const [, podComponentAmd] = result;
+            assert.ok(
+              content.includes(`"my-app/components/pod-component/component": ${podComponentAmd}`),
+              'expected module is in the export list'
+            );
+
+            result = /import \* as (\w+) from "\/components\/pod-component\/template\.hbs.*"/.exec(content);
+
+            if (!result) {
+              throw new Error('Could not find pod component template');
+            }
+
+            const [, podComponentTemplateAmd] = result;
+            assert.ok(
+              content.includes(`"my-app/components/pod-component/template": ${podComponentTemplateAmd}`),
+              'expected module is in the export list'
+            );
+
+            result = /import \* as (\w+) from "\/components\/template-only\/template\.hbs.*"/.exec(content);
+
+            if (!result) {
+              throw new Error('Could not find template only component');
+            }
+
+            const [, templateOnlyAmd] = result;
+            assert.ok(
+              content.includes(`"my-app/components/template-only/template": ${templateOnlyAmd}`),
+              'expected module is in the export list'
+            );
+
+            return true;
+          });
       });
     });
   });

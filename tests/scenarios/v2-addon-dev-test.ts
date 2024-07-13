@@ -378,11 +378,11 @@ setComponentTemplate(
   precompileTemplate(
   "<div data-test-single-file-component>Hello {{@message}}</div><div data-test-another><Another /></div><Button data-test-button @onClick={{this.doIt}} />",
   {
+  strictMode: true,
   scope: () => ({
     Another,
     Button,
   }),
-  strictMode: true
 }), _SingleFileComponent);
 
 export { SingleFileComponent as default };
@@ -393,7 +393,7 @@ export { SingleFileComponent as default };
           let expectNoNamespaceFile = expectFilesAt(inDependency(app, 'v2-addon-no-namespace').dir, { qunit: assert });
 
           expectFile('package.json').json('ember-addon.public-assets').deepEquals({
-            './public/thing.txt': '/v2-addon/public/thing.txt',
+            './public/thing.txt': '/v2-addon/thing.txt',
           });
           expectNoNamespaceFile('package.json').json('ember-addon.public-assets').deepEquals({
             './public/other.txt': '/other.txt',

@@ -1,13 +1,13 @@
-import { resolve, relative, isAbsolute } from 'path';
-import { readFileSync } from 'fs';
 import {
-  AddonMeta,
   AddonInstance,
-  isDeepAddonInstance,
+  AddonMeta,
   PackageInfo,
+  isDeepAddonInstance,
 } from '@embroider/shared-internals';
 import buildFunnel from 'broccoli-funnel';
-import type { Node } from 'broccoli-node-api';
+import commonAncestorPath from 'common-ancestor-path';
+import { readFileSync } from 'fs';
+import { dirname, isAbsolute, join, normalize, relative, resolve } from 'path';
 import { satisfies } from 'semver';
 
 export interface ShimOptions {
@@ -29,15 +29,46 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
 
   let meta = addonMeta(pkg);
   let disabled = false;
-  const rootTrees = new WeakMap<AddonInstance, Node>();
 
-  function rootTree(addonInstance: AddonInstance): Node {
-    let tree = rootTrees.get(addonInstance);
-    if (!tree) {
-      tree = addonInstance.treeGenerator(directory);
-      rootTrees.set(addonInstance, tree);
+  function treeFor(
+    addonInstance: AddonInstance,
+    resourceMap: Record<string, string>,
+    // default expectation is for resourceMap to map from interior to exterior, swap if needed
+    swapInteriorExterior = false
+  ) {
+    const absoluteInteriorPaths = Object[
+      swapInteriorExterior ? 'values' : 'keys'
+    ](resourceMap).map((internalPath) => join(directory, internalPath));
+
+    if (absoluteInteriorPaths.length === 0) {
+      return;
     }
-    return tree;
+
+    const ancestorPath =
+      commonAncestorPath(...absoluteInteriorPaths.map(dirname)) ?? directory;
+    const ancestorPathRel = relative(directory, ancestorPath);
+    const ancestorTree = addonInstance.treeGenerator(ancestorPath);
+    const relativeInteriorPaths = absoluteInteriorPaths.map((absPath) =>
+      relative(ancestorPath, absPath)
+    );
+
+    return buildFunnel(ancestorTree, {
+      files: relativeInteriorPaths,
+      getDestinationPath(relativePath: string): string {
+        for (let [a, b] of Object.entries(resourceMap)) {
+          const interiorName = swapInteriorExterior ? b : a;
+          const exteriorName = swapInteriorExterior ? a : b;
+          if (join(ancestorPathRel, relativePath) === normalize(interiorName)) {
+            return exteriorName;
+          }
+        }
+        throw new Error(
+          `bug in addonV1Shim, no match for ${relativePath} in ${JSON.stringify(
+            resourceMap
+          )}`
+        );
+      },
+    });
   }
 
   return {
@@ -72,22 +103,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       }
       let maybeAppJS = meta['app-js'];
       if (maybeAppJS) {
-        const appJS = maybeAppJS;
-        return buildFunnel(rootTree(this), {
-          files: Object.values(appJS),
-          getDestinationPath(relativePath: string): string {
-            for (let [exteriorName, interiorName] of Object.entries(appJS)) {
-              if (relativePath === interiorName) {
-                return exteriorName;
-              }
-            }
-            throw new Error(
-              `bug in addonV1Shim, no match for ${relativePath} in ${JSON.stringify(
-                appJS
-              )}`
-            );
-          },
-        });
+        return treeFor(this, maybeAppJS, true);
       }
     },
 
@@ -104,22 +120,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       }
       let maybeAssets = meta['public-assets'];
       if (maybeAssets) {
-        const assets = maybeAssets;
-        return buildFunnel(rootTree(this), {
-          files: Object.keys(assets),
-          getDestinationPath(relativePath: string): string {
-            for (let [interiorName, exteriorName] of Object.entries(assets)) {
-              if (relativePath === interiorName) {
-                return exteriorName;
-              }
-            }
-            throw new Error(
-              `bug in addonV1Shim, no match for ${relativePath} in ${JSON.stringify(
-                assets
-              )}`
-            );
-          },
-        });
+        return treeFor(this, maybeAssets);
       }
     },
 
@@ -162,9 +163,12 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
         }
         autoImport.instance.registerV2Addon(name, root);
       } else {
-        // if we're being used by a v2 addon, it also has this shim and will
-        // forward our registration onward to ember-auto-import
-        (this.parent as EAI2Instance).registerV2Addon(name, root);
+        // This should only be done if we're being consumed by an addon
+        if (this.parent.pkg['ember-addon'].type === 'addon') {
+          // if we're being used by a v2 addon, it also has this shim and will
+          // forward our registration onward to ember-auto-import
+          (this.parent as EAI2Instance).registerV2Addon(name, root);
+        }
       }
     },
   };

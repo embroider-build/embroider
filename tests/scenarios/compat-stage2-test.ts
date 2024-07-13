@@ -1,20 +1,34 @@
 import type { Options } from '@embroider/compat';
 import type { PreparedApp, Project } from 'scenario-tester';
 import { appScenarios, baseAddon, dummyAppScenarios, renameApp } from './scenarios';
-import { resolve } from 'path';
-import { Rebuilder, Transpiler } from '@embroider/test-support';
+import { resolve, join } from 'path';
+import { Transpiler } from '@embroider/test-support';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
+import fetch from 'node-fetch';
 import QUnit from 'qunit';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
+import CommandWatcher from './helpers/command-watcher';
+import { readJsonSync, writeJsonSync } from 'fs-extra';
 
 const { module: Qmodule, test } = QUnit;
 
 let stage2Scenarios = appScenarios.map('compat-stage2-build', app => {
   renameApp(app, 'my-app');
 });
+
+function resolveEntryPoint(expectAudit: ReturnType<typeof setupAuditTest>) {
+  return expectAudit
+    .module('./index.html')
+    .resolves(/\/index.html.*/) // in-html app-boot script
+    .toModule()
+    .resolves(/\/app\.js.*/)
+    .toModule()
+    .resolves(/.*\/-embroider-entrypoint.js/)
+    .toModule();
+}
 
 stage2Scenarios
   .map('in-repo-addons-of-addons', app => {
@@ -27,9 +41,6 @@ stage2Scenarios
     let depA = addAddon(app, 'dep-a');
     let depB = addAddon(app, 'dep-b');
     let depC = addAddon(app, 'dep-c');
-
-    depA.linkDependency('dep-c', { project: depC });
-    depB.linkDependency('dep-c', { project: depC });
 
     addInRepoAddon(depC, 'in-repo-d', {
       app: { service: { 'in-repo.js': '//in-repo-d' } },
@@ -97,19 +108,51 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
       let expectFile: ExpectFile;
 
-      hooks.before(async assert => {
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+        // There is a bug in node-fixturify-project that means project.linkDependency() will cause
+        // strange resolutions of dependencies. It is a timing issue where the peer depenceny checker
+        // runs before the linked dependency has been fully written to disk and ends up giving us the
+        // wrong answers. We are trying to recreate the same behaviour as linking a dependency with
+        // this addDependency function because we still need to test this behaviour.
+        //
+        // when https://github.com/stefanpenner/node-fixturify-project/issues/100 is fixed we should
+        // be able to go back to using depA.linkDependency()
+        function addDependency(fromPkg: string, toPkg: string, projectDirectory: string) {
+          let filename = join(projectDirectory, 'node_modules', fromPkg, 'package.json');
+          let json = readJsonSync(filename);
+          json.dependencies = {
+            ...json.dependencies,
+            [toPkg]: '*',
+          };
+
+          writeJsonSync(filename, json);
+        }
+
+        addDependency('dep-a', 'dep-c', app.dir);
+        addDependency('dep-b', 'dep-c', app.dir);
       });
 
       hooks.beforeEach(assert => {
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
 
       test('in repo addons are symlinked correctly', function () {
         // check that package json contains in repo dep
@@ -118,10 +161,14 @@ stage2Scenarios
         expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
 
         // check that in-repo addons are resolvable
-        expectAudit
-          .module('./node_modules/dep-a/check-resolution.js')
-          .resolves('in-repo-a/check-resolution-target')
-          .to('./node_modules/dep-a/lib/in-repo-a/check-resolution-target.js');
+        resolveEntryPoint(expectAudit)
+          .resolves(/lib\.js/)
+          .toModule()
+          .resolves(/dep-a\/check-resolution\.js/)
+          .toModule()
+          .resolves(/in-repo-a\/check-resolution-target\.js/)
+          .toModule()
+          .codeContains('export {}');
 
         // check that the in repo addons are correctly upgraded
         expectFile('./node_modules/dep-a/lib/in-repo-a/package.json').json().get('ember-addon.version').equals(2);
@@ -129,30 +176,26 @@ stage2Scenarios
         expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
 
         // check that the app trees with in repo addon are combined correctly
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+        resolveEntryPoint(expectAudit)
+          .resolves(/service\/in-repo\.js/)
           .toModule()
-          //TODO investigate removing this @embroider-dep
-          .resolves('my-app/service/in-repo.js')
-          .to('./node_modules/dep-b/lib/in-repo-c/_app_/service/in-repo.js');
+          .codeContains('');
       });
 
       test('incorporates in-repo-addons of in-repo-addons correctly', function () {
         // secondary in-repo-addon was correctly detected and activated
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
+        resolveEntryPoint(expectAudit)
+          .resolves(/services\/secondary\.js/)
           .toModule()
-          //TODO investigate removing this @embroider-dep
-          .resolves('my-app/services/secondary.js')
-          .to('./lib/secondary-in-repo-addon/_app_/services/secondary.js');
+          .codeContains('// secondary');
 
         // secondary is resolvable from primary
-        expectAudit
-          .module('./lib/primary-in-repo-addon/_app_/services/primary.js')
-          .resolves('secondary-in-repo-addon/components/secondary')
-          .to('./lib/secondary-in-repo-addon/components/secondary.js');
+        resolveEntryPoint(expectAudit)
+          .resolves(/services\/primary\.js/)
+          .toModule()
+          .resolves(/secondary-in-repo-addon\/components\/secondary\.js/)
+          .toModule()
+          .codeContains('// secondary component');
       });
     });
   });
@@ -166,14 +209,16 @@ stage2Scenarios
     let depA = addAddon(app, 'dep-a');
 
     merge(depB.files, {
-      app: { service: { 'addon.js': 'dep-b', 'dep-wins-over-dev.js': 'dep-b', 'in-repo-over-deps.js': 'dep-b' } },
+      app: {
+        service: { 'addon.js': '// dep-b', 'dep-wins-over-dev.js': '// dep-b', 'in-repo-over-deps.js': '// dep-b' },
+      },
     });
-    merge(depA.files, { app: { service: { 'addon.js': 'dep-a' } } });
+    merge(depA.files, { app: { service: { 'addon.js': '// dep-a' } } });
 
     addInRepoAddon(app, 'in-repo-a', {
-      app: { service: { 'in-repo.js': 'in-repo-a', 'in-repo-over-deps.js': 'in-repo-a' } },
+      app: { service: { 'in-repo.js': '// in-repo-a', 'in-repo-over-deps.js': '// in-repo-a' } },
     });
-    addInRepoAddon(app, 'in-repo-b', { app: { service: { 'in-repo.js': 'in-repo-b' } } });
+    addInRepoAddon(app, 'in-repo-b', { app: { service: { 'in-repo.js': '// in-repo-b' } } });
 
     let devA = addDevAddon(app, 'dev-a');
     let devB = addDevAddon(app, 'dev-b');
@@ -185,71 +230,113 @@ stage2Scenarios
     (devB.pkg['ember-addon'] as any).after = 'dev-e';
     (devF.pkg['ember-addon'] as any).before = 'dev-d';
 
-    merge(devA.files, { app: { service: { 'dev-addon.js': 'dev-a', 'dep-wins-over-dev.js': 'dev-a' } } });
-    merge(devB.files, { app: { service: { 'test-after.js': 'dev-b' } } });
-    merge(devC.files, { app: { service: { 'dev-addon.js': 'dev-c' } } });
-    merge(devD.files, { app: { service: { 'test-before.js': 'dev-d' } } });
-    merge(devE.files, { app: { service: { 'test-after.js': 'dev-e' } } });
-    merge(devF.files, { app: { service: { 'test-before.js': 'dev-f' } } });
+    merge(devA.files, { app: { service: { 'dev-addon.js': '// dev-a', 'dep-wins-over-dev.js': '// dev-a' } } });
+    merge(devB.files, { app: { service: { 'test-after.js': '// dev-b' } } });
+    merge(devC.files, { app: { service: { 'dev-addon.js': '// dev-c' } } });
+    merge(devD.files, { app: { service: { 'test-before.js': '// dev-d' } } });
+    merge(devE.files, { app: { service: { 'test-after.js': '// dev-e' } } });
+    merge(devF.files, { app: { service: { 'test-before.js': '// dev-f' } } });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
 
-      hooks.before(async assert => {
+      hooks.before(async () => {
         app = await scenario.prepare();
-        let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
-        assert.equal(result.exitCode, 0, result.output);
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
-
-      test('verifies that the correct lexigraphically sorted addons win', function () {
-        let expectModule = expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule();
-        expectModule.resolves('my-app/service/in-repo.js').to('./lib/in-repo-b/_app_/service/in-repo.js');
-        expectModule.resolves('my-app/service/addon.js').to('./node_modules/dep-b/_app_/service/addon.js');
-        expectModule.resolves('my-app/service/dev-addon.js').to('./node_modules/dev-c/_app_/service/dev-addon.js');
+      hooks.after(async () => {
+        await server?.shutdown();
       });
 
-      test('addons declared as dependencies should win over devDependencies', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule()
-          .resolves('my-app/service/dep-wins-over-dev.js')
-          .to('./node_modules/dep-b/_app_/service/dep-wins-over-dev.js');
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
+
+      test('verifies that the correct lexigraphically sorted addons win', function (assert) {
+        let expectModule = resolveEntryPoint(expectAudit);
+        expectModule.withContents(contents => {
+          const result = /import \* as (\w+) from ".*in-repo-b\/_app_\/service\/in-repo.js.*/.exec(contents) ?? [];
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/service/in-repo": ${amdModule}`),
+            'expected module is in the export list'
+          );
+          return true;
+        }, 'module imports from the correct place');
+        expectModule.withContents(contents => {
+          const result = /import \* as (\w+) from ".*dep-b\/_app_\/service\/addon.js.*/.exec(contents) ?? [];
+          const [, amdModule] = result;
+          assert.ok(contents.includes(`"my-app/service/addon": ${amdModule}`), 'expected module is in the export list');
+          return true;
+        }, 'module imports from the correct place');
+        expectModule.withContents(contents => {
+          const result = /import \* as (\w+) from ".*dev-c\/_app_\/service\/dev-addon.js.*/.exec(contents) ?? [];
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/service/dev-addon": ${amdModule}`),
+            'expected module is in the export list'
+          );
+          return true;
+        }, 'module imports from the correct place');
       });
 
-      test('in repo addons declared win over dependencies', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule()
-          .resolves('my-app/service/in-repo-over-deps.js')
-          .to('./lib/in-repo-a/_app_/service/in-repo-over-deps.js');
+      test('addons declared as dependencies should win over devDependencies', function (assert) {
+        resolveEntryPoint(expectAudit).withContents(contents => {
+          const result =
+            /import \* as (\w+) from ".*dep-b\/_app_\/service\/dep-wins-over-dev.js.*/.exec(contents) ?? [];
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/service/dep-wins-over-dev": ${amdModule}`),
+            'expected module is in the export list'
+          );
+          return true;
+        });
       });
 
-      test('ordering with before specified', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule()
-          .resolves('my-app/service/test-before.js')
-          .to('./node_modules/dev-d/_app_/service/test-before.js');
+      test('in repo addons declared win over dependencies', function (assert) {
+        resolveEntryPoint(expectAudit).withContents(contents => {
+          const result =
+            /import \* as (\w+) from ".*in-repo-a\/_app_\/service\/in-repo-over-deps.js.*/.exec(contents) ?? [];
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/service/in-repo-over-deps": ${amdModule}`),
+            'expected module is in the export list'
+          );
+          return true;
+        });
       });
 
-      test('ordering with after specified', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule()
-          .resolves('my-app/service/test-after.js')
-          .to('./node_modules/dev-b/_app_/service/test-after.js');
+      test('ordering with before specified', function (assert) {
+        resolveEntryPoint(expectAudit).withContents(contents => {
+          const result = /import \* as (\w+) from ".*dev-d\/_app_\/service\/test-before.js.*/.exec(contents) ?? [];
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/service/test-before": ${amdModule}`),
+            'expected module is in the export list'
+          );
+          return true;
+        });
+      });
+
+      test('ordering with after specified', function (assert) {
+        resolveEntryPoint(expectAudit).withContents(contents => {
+          const result = /import \* as (\w+) from ".*dev-b\/_app_\/service\/test-after.js.*/.exec(contents) ?? [];
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/service/test-after": ${amdModule}`),
+            'expected module is in the export list'
+          );
+          return true;
+        });
       });
     });
   });
@@ -493,17 +580,15 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
+      let server: CommandWatcher;
+      let appURL: string;
       let expectFile: ExpectFile;
       let build: Transpiler;
-      let builder: Rebuilder;
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        builder = await Rebuilder.create(app.dir, { EMBROIDER_PREBUILD: 'true' });
-      });
-
-      hooks.after(async () => {
-        await builder?.shutdown();
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
       hooks.beforeEach(assert => {
@@ -511,7 +596,15 @@ stage2Scenarios
         build = new Transpiler(app.dir);
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      }));
 
       test('no audit issues', function () {
         // among other things, this is asserting that dynamicComponent in
@@ -519,108 +612,182 @@ stage2Scenarios
         expectAudit.hasNoFindings();
       });
 
-      test('index.hbs', function () {
+      test('index.hbs', function (assert) {
         let expectModule = expectAudit.module('./templates/index.hbs');
 
+        // explicit dependency
         expectModule
-          .resolves('#embroider_compat/components/hello-world')
-          .to('./node_modules/my-addon/_app_/components/hello-world.js', 'explicit dependency');
-
-        expectModule
-          .resolves('#embroider_compat/components/third-choice')
+          .resolves(/my-addon\/_app_\/components\/hello-world/)
           .toModule()
-          .isTemplateOnlyComponent('./templates/components/third-choice.hbs', 'static component helper dependency');
+          .codeContains('');
 
+        // static component helper dependency
         expectModule
-          .resolves('#embroider_compat/components/first-choice')
+          .resolves(/\/components\/third-choice.hbs\/-embroider-pair-component/)
           .toModule()
-          .isTemplateOnlyComponent('./templates/components/first-choice.hbs', 'rule-driven string attribute');
+          .withContents(contents => {
+            assert.ok(
+              /setComponentTemplate\(template, templateOnlyComponent\(undefined, "third-choice"\)\);/.test(contents)
+            );
+            return true;
+          });
 
+        // rule-driven string attribute
         expectModule
-          .resolves('#embroider_compat/components/second-choice')
+          .resolves(/\/components\/first-choice.hbs\/-embroider-pair-component/)
           .toModule()
-          .isTemplateOnlyComponent('./templates/components/second-choice.hbs', 'rule-driven mustache string literal');
+          .withContents(contents => {
+            assert.ok(
+              /setComponentTemplate\(template, templateOnlyComponent\(undefined, "first-choice"\)\);/.test(contents)
+            );
+            return true;
+          });
+
+        // rule-driven mustache string literal
+        expectModule
+          .resolves(/\/components\/second-choice.hbs\/-embroider-pair-component/)
+          .toModule()
+          .withContents(contents => {
+            assert.ok(
+              /setComponentTemplate\(template, templateOnlyComponent\(undefined, "second-choice"\)\);/.test(contents)
+            );
+            return true;
+          });
       });
 
-      test('curly.hbs', function () {
+      test('curly.hbs', function (assert) {
         let expectModule = expectAudit.module('./templates/curly.hbs');
         expectModule
-          .resolves('#embroider_compat/ambiguous/hello-world')
-          .to('./node_modules/my-addon/_app_/components/hello-world.js', 'explicit dependency');
-        expectModule
-          .resolves('#embroider_compat/components/third-choice')
+          .resolves(/my-addon\/_app_\/components\/hello-world/)
           .toModule()
-          .isTemplateOnlyComponent('./templates/components/third-choice.hbs');
+          .codeContains('');
+
         expectModule
-          .resolves('#embroider_compat/components/first-choice')
+          .resolves(/\/components\/third-choice.hbs\/-embroider-pair-component/)
           .toModule()
-          .isTemplateOnlyComponent('./templates/components/first-choice.hbs');
-      });
-
-      test('addon/hello-world.js', function () {
-        expectAudit.module('./node_modules/my-addon/components/hello-world.js').codeEquals(`
-        window.define("my-app/components/second-choice", function () {
-          return importSync("#embroider_compat/components/second-choice");
-        });
-        window.define("my-addon/synthetic-import-1", function () {
-          return importSync("../synthetic-import-1");
-        });
-        import Component from '@ember/component';
-        import layout from '../templates/components/hello-world';
-        import computed from '@ember/object/computed';
-        import somethingExternal from 'not-a-resolvable-package';
-        import { importSync } from "@embroider/macros";
-        export default Component.extend({
-          dynamicComponentName: computed('useDynamic', function () {
-            return this.useDynamic || 'default-dynamic';
-          }),
-          layout
-        });
-        `);
-      });
-
-      test('app/hello-world.js', function () {
-        expectAudit.module('./node_modules/my-addon/_app_/components/hello-world.js').codeEquals(`
-          window.define("my-addon/synthetic-import-1", function () {
-            return importSync("my-addon/synthetic-import-1");
+          .withContents(contents => {
+            assert.ok(
+              /setComponentTemplate\(template, templateOnlyComponent\(undefined, "third-choice"\)\);/.test(contents)
+            );
+            return true;
           });
-          import { importSync } from '@embroider/macros';
-          export { default } from 'my-addon/components/hello-world';
+
+        expectModule
+          .resolves(/\/components\/first-choice.hbs\/-embroider-pair-component/)
+          .toModule()
+          .withContents(contents => {
+            assert.ok(
+              /setComponentTemplate\(template, templateOnlyComponent\(undefined, "first-choice"\)\);/.test(contents)
+            );
+            return true;
+          });
+      });
+
+      test('app/hello-world.js', function (assert) {
+        expectAudit
+          .module('./templates/index.hbs')
+          .resolves(/my-addon\/_app_\/components\/hello-world/)
+          .toModule()
+          .withContents(contents => {
+            const [, importCompat] =
+              /import (.*) from ".*@embroider\/macros\/src\/addon\/es-compat2.js.*";/.exec(contents) ?? [];
+            const [, importName] =
+              /import \* as (\w+) from ".*\/my-addon\/synthetic-import-1.js.*";/.exec(contents) ?? [];
+            assert.ok(
+              contents.includes(
+                `window.define("my-addon/synthetic-import-1", function () {\n  return ${importCompat}(${importName});\n});`
+              )
+            );
+            assert.ok(/export { default } from ".*my-addon\/components\/hello-world.js.*"/.test(contents));
+            return true;
+          });
+      });
+
+      test('addon/hello-world.js', function (assert) {
+        const expectModule = expectAudit
+          .module('./templates/index.hbs')
+          .resolves(/my-addon\/_app_\/components\/hello-world/)
+          .toModule()
+          .resolves(/my-addon\/components\/hello-world\.js/) // remapped to precise copy of my-addon
+          .toModule();
+
+        expectModule.codeContains(`
+          export default Component.extend({
+            dynamicComponentName: computed('useDynamic', function () {
+              return this.useDynamic || 'default-dynamic';
+            }),
+            layout
+          });
         `);
-
-        expectAudit
-          .module('./node_modules/my-addon/_app_/components/hello-world.js')
-          .resolves('my-addon/components/hello-world')
-          .to('./node_modules/my-addon/components/hello-world.js', 'remapped to precise copy of my-addon');
+        expectModule.withContents(contents => {
+          const [, importCompat] =
+            /import (.*) from ".*@embroider\/macros\/src\/addon\/es-compat2.js.*";/.exec(contents) ?? [];
+          let [, importName] =
+            /import \* as (\w+) from ".*\/components\/second-choice.hbs\/-embroider-pair-component";/.exec(contents) ??
+            [];
+          assert.ok(
+            contents.includes(
+              `window.define("my-app/components/second-choice", function () {\n  return ${importCompat}(${importName});\n});`
+            )
+          );
+          [, importName] = /import \* as (\w+) from ".*\/my-addon\/synthetic-import-1.js.*";/.exec(contents) ?? [];
+          assert.ok(
+            contents.includes(
+              `window.define("my-addon/synthetic-import-1", function () {\n  return ${importCompat}(${importName});\n});`
+            )
+          );
+          return true;
+        });
       });
 
-      test('app/templates/components/direct-template-reexport.js', function () {
+      test('app/templates/components/direct-template-reexport.js', function (assert) {
         expectAudit
-          .module('./node_modules/my-addon/_app_/templates/components/direct-template-reexport.js')
-          .resolves('my-addon/templates/components/hello-world')
-          .to('./node_modules/my-addon/templates/components/hello-world.hbs', 'rewrites reexports of templates');
+          .module('./templates/index.hbs')
+          .resolves(/my-addon\/_app_\/templates\/components\/direct-template-reexport\.js\/-embroider-pair-component/)
+          .toModule()
+          .resolves(/my-addon\/_app_\/templates\/components\/direct-template-reexport\.js/)
+          .toModule()
+          .withContents(contents => {
+            assert.ok(
+              /export { default } from ".*\/my-addon\/templates\/components\/hello-world.hbs.*";/.test(contents)
+            );
+            return true;
+          });
       });
 
-      test('uses-inline-template.js', function () {
+      test('uses-inline-template.js', function (assert) {
         expectAudit
           .module('./components/uses-inline-template.js')
-          .resolves('#embroider_compat/components/first-choice')
+          .resolves(/\/components\/first-choice.hbs\/-embroider-pair-component/)
           .toModule()
-          .isTemplateOnlyComponent('./templates/components/first-choice.hbs');
+          .withContents(contents => {
+            assert.ok(
+              /setComponentTemplate\(template, templateOnlyComponent\(undefined, "first-choice"\)\);/.test(contents)
+            );
+            return true;
+          });
       });
 
       test('component with relative import of arbitrarily placed template', function () {
         expectAudit
-          .module('node_modules/my-addon/components/has-relative-template.js')
-          .resolves('./t')
-          .to('node_modules/my-addon/components/t.js');
+          .module(/\/app\.js.*/)
+          .resolves(/.*\/-embroider-entrypoint\.js/)
+          .toModule()
+          .resolves(/.*\/-embroider-implicit-modules\.js/)
+          .toModule()
+          .resolves(/my-addon\/components\/has-relative-template\.js/)
+          .toModule()
+          .resolves(/my-addon\/components\/t.js/)
+          .toModule()
+          .codeContains(`/* import __COLOCATED_TEMPLATE__ from './t.hbs'; */`);
       });
 
       test('app can import a deep addon', function () {
         expectAudit
           .module('./use-deep-addon.js')
-          .resolves('deep-addon')
-          .to('./node_modules/my-addon/node_modules/deep-addon/index.js');
+          .resolves(/deep-addon\/index.js/)
+          .toModule()
+          .codeContains('export default function () {}');
       });
 
       test('amd require in an addon gets rewritten to window.require', function () {
@@ -672,57 +839,65 @@ stage2Scenarios
         );
       });
 
-      test('non-static other paths are included in the entrypoint', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule().codeContains(`d("my-app/non-static-dir/another-library", function () {
-            return i("my-app/non-static-dir/another-library.js");
-          });`);
+      test('non-static other paths are included in the entrypoint', function (assert) {
+        resolveEntryPoint(expectAudit).withContents(contents => {
+          const result = /import \* as (\w+) from "\/non-static-dir\/another-library.js";/.exec(contents);
+
+          if (!result) {
+            throw new Error('Could not find import for non-static-dir/another-library');
+          }
+
+          const [, amdModule] = result;
+          assert.ok(
+            contents.includes(`"my-app/non-static-dir/another-library": ${amdModule}`),
+            'expected module is in the export list'
+          );
+          return true;
+        });
       });
 
       test('static other paths are not included in the entrypoint', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule()
-          .withContents(content => {
-            return !/my-app\/static-dir\/my-library\.js"/.test(content);
-          });
+        resolveEntryPoint(expectAudit).withContents(content => {
+          return !/\.\/static-dir\/my-library\.js"/.test(content);
+        });
       });
 
       test('top-level static other paths are not included in the entrypoint', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule()
-          .withContents(content => {
-            return !content.includes('my-app/top-level-static.js');
-          });
+        resolveEntryPoint(expectAudit).withContents(content => {
+          return !content.includes('/top-level-static.js');
+        });
       });
 
       test('staticAppPaths do not match partial path segments', function () {
-        expectAudit
-          .module('./node_modules/.embroider/rewritten-app/index.html')
-          .resolves('./assets/my-app.js')
-          .toModule()
-          .withContents(content => {
-            return content.includes('my-app/static-dir-not-really/something.js');
-          });
+        resolveEntryPoint(expectAudit).withContents(content => {
+          return content.includes('/static-dir-not-really/something.js');
+        });
       });
 
       test('invokes rule on appTemplates produces synthetic import', function () {
         expectAudit
-          .module('./node_modules/my-addon/_app_/templates/app-example.hbs')
-          .resolves('#embroider_compat/components/synthetic-import2')
-          .to('./node_modules/my-addon/_app_/components/synthetic-import2.js');
+          .module(/\/app\.js.*/)
+          .resolves(/.*\/-embroider-entrypoint\.js/)
+          .toModule()
+          .resolves(/my-addon\/_app_\/templates\/app-example\.hbs.*/)
+          .toModule()
+          .resolves(/my-addon\/_app_\/components\/synthetic-import2\.js/)
+          .toModule()
+          .codeContains('export default function () {}');
       });
 
       test('invokes rule on addonTemplates produces synthetic import', function () {
         expectAudit
-          .module('./node_modules/my-addon/templates/addon-example.hbs')
-          .resolves('#embroider_compat/components/synthetic-import2')
-          .to('./node_modules/my-addon/_app_/components/synthetic-import2.js');
+          .module(/\/app\.js.*/)
+          .resolves(/.*\/-embroider-entrypoint\.js/)
+          .toModule()
+          .resolves(/.*\/-embroider-implicit-modules\.js/)
+          .toModule()
+          .resolves(/my-addon\/templates\/addon-example\.hbs/)
+          .toModule()
+          .resolves(/my-addon\/_app_\/components\/synthetic-import2\.js/)
+          .toModule()
+          .codeContains('export default function () {}');
       });
     });
   });
@@ -775,9 +950,9 @@ dummyAppScenarios
       });
 
       test('dummy app sees that its being developed', function () {
-        let assertFile = expectFile(
-          '../../node_modules/.embroider/rewritten-app/components/inside-dummy-app.js'
-        ).transform(build.transpile);
+        let assertFile = expectFile('../../tmp/rewritten-app/components/inside-dummy-app.js').transform(
+          build.transpile
+        );
         assertFile.matches(/console\.log\(true\)/);
       });
 

@@ -3,8 +3,9 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext, ResolvedId } from 'rollup';
 import type { Plugin } from 'vite';
-import { hbsToJS, ResolverLoader } from '@embroider/core';
+import { hbsToJS, ResolverLoader, cleanUrl } from '@embroider/core';
 import assertNever from 'assert-never';
+import { readFileSync } from 'fs-extra';
 import { parse as pathParse } from 'path';
 import makeDebug from 'debug';
 
@@ -30,7 +31,7 @@ export function hbs(): Plugin {
       }
     },
 
-    transform(source: string, id: string) {
+    load(id: string) {
       const meta = getMeta(this, id);
       if (!meta) {
         return;
@@ -38,7 +39,7 @@ export function hbs(): Plugin {
 
       switch (meta.type) {
         case 'template':
-          let code = hbsToJS(source);
+          let code = hbsToJS(`${readFileSync(cleanUrl(id))}`);
           return {
             code,
           };

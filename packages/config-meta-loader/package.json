@@ -1,0 +1,28 @@
+{
+  "name": "@embroider/config-meta-loader",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "description": "Read the config meta in the document. Inspired by ember-cli/lib/broccoli/app-config-from-meta.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/config-meta-loader"
+  },
+  "license": "MIT",
+  "author": "Marine Dunstetter",
+  "main": "src/index.js",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": "12.* || 14.* || >= 16"
+  }
+}

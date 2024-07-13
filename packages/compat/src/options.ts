@@ -102,6 +102,17 @@ export default interface Options extends CoreOptions {
   // 'body-footer', 'test-body-footer'. You need to use this config only to extend
   // this list.
   availableContentForTypes?: string[];
+
+  // Allows you to cancel the warning that at least one classic addon provides
+  // content-for 'app-boot'. This warning brings awareness for developers
+  // switching to Embroider, but is no longer necessary once content-for
+  // 'app-boot' code has been properly moved to the app-side.
+  useAddonAppBoot?: boolean;
+
+  // content-for 'config-module'. This warning brings awareness for developers
+  // switching to Embroider, but is no longer necessary once content-for
+  // 'config-module' code has been properly moved to the app-side.
+  useAddonConfigModule?: boolean;
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -114,6 +125,8 @@ const defaults = Object.assign(coreWithDefaults(), {
   packageRules: [],
   allowUnsafeDynamicComponents: false,
   availableContentForTypes: [],
+  useAddonAppBoot: true,
+  useAddonConfigModule: true,
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

@@ -104,6 +104,21 @@ appScenarios
         });
         assert.equal(result.exitCode, 0, result.output);
       });
+    });
+  });
+
+appScenarios
+  .map('macro-tests-classic', project => {
+    scenarioSetup(project);
+    merge(project.files, loadFromFixtureData('macro-test-classic'));
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
 
       test(`EMBROIDER_TEST_SETUP_FORCE=classic pnpm test`, async function (assert) {
         // throw_unless_parallelizable is enabled to ensure that @embroider/macros is parallelizable
@@ -141,6 +156,22 @@ appScenarios
         let lodashThreeRun = await app.execute(`cross-env EXPECTED_VERSION=three pnpm test`);
         assert.equal(lodashThreeRun.exitCode, 0, lodashThreeRun.output);
       });
+    });
+  });
+
+appScenarios
+  .only('canary')
+  .map('macro-babel-cache-busting-classic', project => {
+    scenarioSetup(project);
+    merge(project.files, loadFromFixtureData('macro-test-classic'));
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
 
       test(`EMBROIDER_TEST_SETUP_FORCE=classic @embroider/macros babel caching plugin works`, async function (assert) {
         updateVersionChanger(app, '4.0.1');
@@ -159,59 +190,66 @@ appScenarios
     });
   });
 
-dummyAppScenarios
-  .map('macro-sample-addon', project => {
-    let addonFiles = loadFromFixtureData('macro-sample-addon');
-    project.name = 'macro-sample-addon';
-    project.linkDependency('@embroider/macros', { baseDir: __dirname });
-    project.linkDependency('@embroider/webpack', { baseDir: __dirname });
-    project.linkDependency('@embroider/compat', { baseDir: __dirname });
-    project.linkDependency('@embroider/core', { baseDir: __dirname });
+function dummyAppScenarioSetup(project: Project) {
+  let addonFiles = loadFromFixtureData('macro-sample-addon');
+  project.name = 'macro-sample-addon';
+  project.linkDependency('@embroider/macros', { baseDir: __dirname });
+  project.linkDependency('@embroider/webpack', { baseDir: __dirname });
+  project.linkDependency('@embroider/compat', { baseDir: __dirname });
+  project.linkDependency('@embroider/core', { baseDir: __dirname });
 
-    addonFiles['index.js'] = `
-    module.exports = {
-      name: require('./package').name,
-      options: {
-        '@embroider/macros': {
-          setOwnConfig: {
-            hello: 'world',
-          },
+  addonFiles['index.js'] = `
+  module.exports = {
+    name: require('./package').name,
+    options: {
+      '@embroider/macros': {
+        setOwnConfig: {
+          hello: 'world',
         },
       },
-      included(app) {
-        app.options.autoRun = false;
-        this._super.included.apply(this, arguments);
-      },
-      contentFor(type, config, contents) {
-        if (type === 'config-module') {
-          const originalContents = contents.join('');
-          contents.splice(0, contents.length);
-          contents.push(
-            'let config = function() {' + originalContents + '}()',
-            "config.default.APP.fromConfigModule = 'hello new world';",
-            'return config;'
-          );
-          return;
-        }
+    },
+    included(app) {
+      app.options.autoRun = false;
+      this._super.included.apply(this, arguments);
+    },
+    contentFor(type, config, contents) {
+      // This if block is used only by macro-sample-addon-classic, which does not build with Embroider.
+      // When building with Embroider, the responsibility for the config is moved to the app.
+      // Therefore, macro-sample-addon scenario defines 'fromConfigModule' differently using fixtures.
+      if (type === 'config-module') {
+        const originalContents = contents.join('');
+        contents.splice(0, contents.length);
+        contents.push(
+          'let config = function() {' + originalContents + '}()',
+          "config.default.APP.fromConfigModule = 'hello new world';",
+          'return config;'
+        );
+        return;
+      }
 
-        if (type === 'app-boot') {
-          let appSuffix = 'app';
-          let prefix = config.modulePrefix;
-          let configAppAsString = JSON.stringify(config.APP || {});
-          return [
-            'if (!runningTests) {',
-            "  require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
-            '}',
-            'window.LoadedFromCustomAppBoot = true',
-          ]
-            .join('')
-            .replace(/\{\{MODULE_PREFIX\}\}/g, prefix)
-            .replace(/\{\{CONFIG_APP\}\}/g, configAppAsString);
-        }
-      },
-    };`;
+      if (type === 'app-boot') {
+        let appSuffix = 'app';
+        let prefix = config.modulePrefix;
+        let configAppAsString = JSON.stringify(config.APP || {});
+        return [
+          'if (!runningTests) {',
+          "  require('{{MODULE_PREFIX}}/" + appSuffix + "')['default'].create({{CONFIG_APP}});",
+          '}',
+          'window.LoadedFromClassicCustomAppBoot = true',
+        ]
+          .join('')
+          .replace(/\{\{MODULE_PREFIX\}\}/g, prefix)
+          .replace(/\{\{CONFIG_APP\}\}/g, configAppAsString);
+      }
+    },
+  };`;
 
-    merge(project.files, addonFiles);
+  merge(project.files, addonFiles);
+}
+
+dummyAppScenarios
+  .map('macro-sample-addon', project => {
+    dummyAppScenarioSetup(project);
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -225,10 +263,100 @@ dummyAppScenarios
         let result = await addon.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
       });
+    });
+  });
+
+dummyAppScenarios
+  .map('macro-sample-addon-classic', project => {
+    dummyAppScenarioSetup(project);
+    project.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+    merge(project.files, loadFromFixtureData('macro-sample-addon-classic'));
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let addon: PreparedApp;
+
+      hooks.before(async () => {
+        addon = await scenario.prepare();
+      });
 
       test(`pnpm test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
         let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test');
         assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });
+
+dummyAppScenarios
+  .map('macro-sample-addon-useAddonAppBoot', project => {
+    dummyAppScenarioSetup(project);
+    project.mergeFiles({
+      'ember-cli-build.js': `
+        'use strict';
+        const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
+        const { maybeEmbroider } = require('@embroider/test-setup');
+        module.exports = function(defaults) {
+          let app = new EmberAddon(defaults, {});
+          return maybeEmbroider(app, {
+            useAddonConfigModule: false,
+            useAddonAppBoot: true,
+          });
+        };
+      `,
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let addon: PreparedApp;
+
+      hooks.before(async () => {
+        addon = await scenario.prepare();
+      });
+
+      test(`pnpm test`, async function (assert) {
+        let result = await addon.execute('pnpm test');
+        assert.equal(result.exitCode, 1, 'tests exit with errors');
+        assert.true(
+          result.output.includes(`Your app uses at least one classic addon that provides content-for 'app-boot'.`),
+          'the output contains the error message about migrating custom app-boot code'
+        );
+      });
+    });
+  });
+
+dummyAppScenarios
+  .map('macro-sample-addon-useAddonConfigModule', project => {
+    dummyAppScenarioSetup(project);
+    project.mergeFiles({
+      'ember-cli-build.js': `
+        'use strict';
+        const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
+        const { maybeEmbroider } = require('@embroider/test-setup');
+        module.exports = function(defaults) {
+          let app = new EmberAddon(defaults, {});
+          return maybeEmbroider(app, {
+            useAddonConfigModule: true,
+            useAddonAppBoot: false,
+          });
+        };
+      `,
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let addon: PreparedApp;
+
+      hooks.before(async () => {
+        addon = await scenario.prepare();
+      });
+
+      test(`pnpm test`, async function (assert) {
+        let result = await addon.execute('pnpm test');
+        assert.equal(result.exitCode, 1, 'tests exit with errors');
+        assert.true(
+          result.output.includes(`Your app uses at least one classic addon that provides content-for 'config-module'.`),
+          'the output contains the error message about migrating custom config-module code'
+        );
       });
     });
   });

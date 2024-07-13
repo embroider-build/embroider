@@ -8,16 +8,21 @@
 
     {{content-for "head"}}
 
-    <link integrity="" rel="stylesheet" href="{{rootURL}}assets/vendor.css">
-    <link integrity="" rel="stylesheet" href="{{rootURL}}assets/app-template.css">
+    <link integrity="" rel="stylesheet" href="/@embroider/core/vendor.css">
+    <link integrity="" rel="stylesheet" href="/assets/app-template.css">
 
     {{content-for "head-footer"}}
   </head>
   <body>
     {{content-for "body"}}
 
-    <script src="{{rootURL}}assets/vendor.js"></script>
-    <script src="{{rootURL}}assets/app-template.js"></script>
+    <script src="/@embroider/core/vendor.js"></script>
+    <script type="module">
+      import Application from './app';
+      import environment from './config/environment';
+
+      Application.create(environment.APP);
+    </script>
 
     {{content-for "body-footer"}}
   </body>

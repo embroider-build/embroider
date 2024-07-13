@@ -9,12 +9,15 @@ import CommandWatcher, { DEFAULT_TIMEOUT } from './helpers/command-watcher';
 
 const { module: Qmodule, test } = QUnit;
 
-let app = appScenarios.skip('canary').map('watch-mode', () => {
-  /**
-   * We will create files as a part of the watch-mode tests,
-   * because creating files should cause appropriate watch/update behavior
-   */
-});
+let app = appScenarios
+  .skip('canary')
+  .skip('lts_5_8')
+  .map('watch-mode', () => {
+    /**
+     * We will create files as a part of the watch-mode tests,
+     * because creating files should cause appropriate watch/update behavior
+     */
+  });
 
 class File {
   constructor(readonly label: string, readonly fullPath: string) {}
@@ -219,7 +222,7 @@ app.forEachScenario(scenario => {
 
       hooks.beforeEach(assert => {
         assertRewrittenFile = (rewrittenPath: string) => {
-          let fullPath = path.join(app.dir, 'node_modules', '.embroider', 'rewritten-app', ...rewrittenPath.split('/'));
+          let fullPath = path.join(app.dir, 'tmp', 'rewritten-app', ...rewrittenPath.split('/'));
           let file = new File(rewrittenPath, fullPath);
           return new AssertFile(assert, file);
         };

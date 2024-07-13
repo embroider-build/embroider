@@ -1,10 +1,10 @@
-import { readJSONSync } from 'fs-extra';
+import { readJSONSync, existsSync } from 'fs-extra';
 import { join } from 'path';
 import type { TransformOptions } from '@babel/core';
 import { transform } from '@babel/core';
 import type { BoundExpectFile } from './file-assertions';
 import type { AppMeta } from '../../packages/core/src/index';
-import { hbsToJS, RewrittenPackageCache } from '../../packages/core/src/index';
+import { hbsToJS, locateEmbroiderWorkingDir, RewrittenPackageCache } from '../../packages/core/src/index';
 import { Memoize } from 'typescript-memoize';
 import { getRewrittenLocation } from './rewritten-path';
 
@@ -34,7 +34,11 @@ export class Transpiler {
   }
 
   shouldTranspile(relativePath: string) {
-    let shouldTranspile = require(join(this.appOutputPath, '_babel_filter_'));
+    // Depending on how the app builds, the babel filter is not at the same location
+    let embroiderLocation = join(locateEmbroiderWorkingDir(this.appDir), '_babel_filter_.js');
+    let shouldTranspile = existsSync(embroiderLocation)
+      ? require(embroiderLocation)
+      : require(join(this.appOutputPath, '_babel_filter_'));
     return shouldTranspile(join(this.appDir, getRewrittenLocation(this.appDir, relativePath))) as boolean;
   }
 
@@ -53,6 +57,10 @@ export class Transpiler {
       throw new Error(`@embroider/test-support only suports babel 7`);
     }
 
-    return require(join(this.appOutputPath, this.emberMeta['babel'].filename)) as TransformOptions;
+    // Depending on how the app builds, the babel config is not at the same location
+    let embroiderLocation = join(locateEmbroiderWorkingDir(this.appDir), '_babel_config_.js');
+    return existsSync(embroiderLocation)
+      ? (require(embroiderLocation) as TransformOptions)
+      : (require(join(this.appDir, this.emberMeta['babel'].filename)) as TransformOptions);
   }
 }

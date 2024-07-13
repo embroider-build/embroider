@@ -11,10 +11,9 @@ import mergeTrees from 'broccoli-merge-trees';
 import { WatchedDir } from 'broccoli-source';
 import resolve from 'resolve';
 import ContentForConfig from './content-for-config';
-import { V1Config, WriteV1Config } from './v1-config';
-import { WriteV1AppBoot, ReadV1AppBoot } from './v1-appboot';
+import { V1Config } from './v1-config';
 import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo } from '@embroider/core';
-import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync } from 'fs-extra';
+import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync, writeFileSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
 import type { TransformOptions } from '@babel/core';
@@ -22,7 +21,6 @@ import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/nod
 import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
-import SynthesizeTemplateOnlyComponents from './synthesize-template-only-components';
 import { isEmberAutoImportDynamic, isInlinePrecompilePlugin } from './detect-babel-plugins';
 import loadAstPlugins from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
@@ -163,22 +161,6 @@ export default class CompatApp {
 
   get autoRun(): boolean {
     return this.legacyEmberAppInstance.options.autoRun;
-  }
-
-  @Memoize()
-  get appBoot(): ReadV1AppBoot {
-    let env = this.legacyEmberAppInstance.env;
-    let appBootContentTree = new WriteV1AppBoot();
-
-    let patterns = this.configReplacePatterns;
-
-    appBootContentTree = new this.configReplace(appBootContentTree, this.configTree, {
-      configPath: join('environments', `${env}.json`),
-      files: ['config/app-boot.js'],
-      patterns,
-    });
-
-    return new ReadV1AppBoot(appBootContentTree);
   }
 
   private get storeConfigInMeta(): boolean {
@@ -454,6 +436,32 @@ export default class CompatApp {
         copySync(sourcePath, destPath);
       }
 
+      if (this.shouldBuildTests) {
+        writeFileSync(
+          join(outputPath, 'testem.js'),
+          `/*
+ * This is dummy file that exists for the sole purpose
+ * of allowing tests to run directly in the browser as
+ * well as by Testem.
+ *
+ * Testem is configured to run tests directly against
+ * the test build of index.html, which requires a
+ * snippet to load the testem.js file:
+ *   <script src="/testem.js"></script>
+ * This has to go before the qunit framework and app
+ * tests are loaded.
+ *
+ * Testem internally supplies this file. However, if you
+ * run the tests directly in the browser (localhost:8000/tests),
+ * this file does not exist.
+ *
+ * Hence the purpose of this fake file. This file is served
+ * directly from the express server to satisify the script load.
+*/`
+        );
+        this._publicAssets['/testem.js'] = './testem.js';
+      }
+
       let remapAsset = this.remapAsset.bind(this);
 
       let addonMeta: AddonMeta = {
@@ -664,21 +672,10 @@ export default class CompatApp {
     let appTree = this.appTree;
     let testsTree = this.testsTree;
     let lintTree = this.lintTree;
-    let config = new WriteV1Config(this.config, this.storeConfigInMeta, this.testConfig);
-    let patterns = this.configReplacePatterns;
-    let configReplaced = new this.configReplace(config, this.configTree, {
-      configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),
-      files: ['config/environment.js'],
-      patterns,
-    });
 
     let trees: BroccoliNode[] = [];
     trees.push(appTree);
-    trees.push(
-      new SynthesizeTemplateOnlyComponents(appTree, { allowedPaths: ['components'], templateExtensions: ['.hbs'] })
-    );
 
-    trees.push(configReplaced);
     if (testsTree) {
       trees.push(testsTree);
     }
@@ -688,87 +685,6 @@ export default class CompatApp {
     return {
       appJS: mergeTrees(trees, { overwrite: true }),
     };
-  }
-
-  private withoutRootURL(src: string) {
-    let rootURL = this.config.readConfig().rootURL;
-    if ((src.startsWith(rootURL) && rootURL) || (!rootURL && !src.startsWith('/'))) {
-      src = '/' + src.slice(rootURL.length);
-    } else if (src.startsWith('/' + rootURL)) {
-      src = src.slice(rootURL.length);
-    }
-    return src;
-  }
-
-  findAppScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
-    let appJS = scripts.find(
-      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.app.js
-    );
-    return throwIfMissing(
-      appJS,
-      this.legacyEmberAppInstance.options.outputPaths.app.js,
-      scripts.map(s => s.src),
-      entrypoint,
-      'app javascript'
-    );
-  }
-
-  findAppStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
-    let style = styles.find(
-      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.app.css.app
-    );
-    return throwIfMissing(
-      style,
-      this.legacyEmberAppInstance.options.outputPaths.app.css.app,
-      styles.map(s => s.href),
-      entrypoint,
-      'app css'
-    );
-  }
-
-  findVendorScript(scripts: HTMLScriptElement[], entrypoint: string): HTMLScriptElement {
-    let vendor = scripts.find(
-      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.vendor.js
-    );
-    return throwIfMissing(
-      vendor,
-      this.legacyEmberAppInstance.options.outputPaths.vendor.js,
-      scripts.map(s => s.src),
-      entrypoint,
-      'vendor javascript'
-    );
-  }
-
-  findVendorStyles(styles: HTMLLinkElement[], entrypoint: string): HTMLLinkElement {
-    let vendorStyle = styles.find(
-      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.vendor.css
-    );
-    return throwIfMissing(
-      vendorStyle,
-      this.legacyEmberAppInstance.options.outputPaths.vendor.css,
-      styles.map(s => s.href),
-      entrypoint,
-      'vendor css'
-    );
-  }
-
-  findTestSupportStyles(styles: HTMLLinkElement[]): HTMLLinkElement | undefined {
-    return styles.find(
-      style => this.withoutRootURL(style.href) === this.legacyEmberAppInstance.options.outputPaths.testSupport.css
-    );
-  }
-
-  findTestSupportScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(
-      script =>
-        this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.testSupport.js.testSupport
-    );
-  }
-
-  findTestScript(scripts: HTMLScriptElement[]): HTMLScriptElement | undefined {
-    return scripts.find(
-      script => this.withoutRootURL(script.src) === this.legacyEmberAppInstance.options.outputPaths.tests.js
-    );
   }
 
   readonly macrosConfig: MacrosConfig;
@@ -814,7 +730,6 @@ export default class CompatApp {
       publicTree,
       configTree,
       contentForTree,
-      appBootTree: this.appBoot,
       prevStageTree,
     };
   }
@@ -891,24 +806,4 @@ export default class CompatApp {
 interface Preprocessors {
   preprocessJs(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
   preprocessCss(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
-}
-
-function throwIfMissing<T>(
-  asset: T | undefined,
-  needle: string,
-  haystack: string[],
-  entryfile: string,
-  context: string
-): T {
-  if (!asset) {
-    throw new Error(
-      `Could not find ${context}: "${needle}" in ${entryfile}. Found the following instead:\n${haystack
-        .map(asset => ` - ${asset}`)
-        .join(
-          '\n'
-        )}\n\nFor more information about this error: https://github.com/thoov/stitch/wiki/Could-not-find-asset-in-entry-file-error-help`
-    );
-  }
-
-  return asset;
 }

@@ -32,7 +32,7 @@ appScenarios
 
     // <script ... src=".../vendor.js"> => <script ... src=".../vendor.js" data-original-filename="vendor.js">
     indexHtml = indexHtml.replace('vendor.js">', 'vendor.js" data-original-filename="vendor.js">');
-    indexHtml = indexHtml.replace('app-template.js">', 'app-template.js" data-original-filename="app-template.js">');
+    indexHtml = indexHtml.replace(' type="module">', ' data-original-filename="entrypoint" type="module">');
 
     // <script ... => <script defer ...
     indexHtml = indexHtml.replace(/<script /g, '<script defer ');
@@ -51,7 +51,7 @@ appScenarios
         let app = await scenario.prepare();
         let result = await app.execute('ember build', { env: { EMBROIDER_PREBUILD: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
-        expectFile = expectFilesAt(join(app.dir, 'node_modules', '.embroider', 'rewritten-app'), { qunit: assert });
+        expectFile = expectFilesAt(join(app.dir, 'tmp', 'rewritten-app'), { qunit: assert });
       });
 
       test('custom HTML attributes are passed through', () => {
@@ -72,8 +72,8 @@ appScenarios
           'has data-original-filename vendor.js'
         );
         expectFile('./index.html').matches(
-          '" data-original-filename="app-template.js" type="module">',
-          'has data-original-filename app-template.js'
+          ' data-original-filename="entrypoint" type="module">',
+          'has data-original-filename entrypoint'
         );
       });
     });

@@ -5,6 +5,7 @@ export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: 'ember-test-helpers-2' });
 }
 
 async function lts_4_4(project: Project) {
@@ -13,20 +14,59 @@ async function lts_4_4(project: Project) {
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
 }
 
+async function lts_4_8(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.8' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.8' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.8' });
+}
+
+async function lts_4_12(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.12' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.12' });
+}
+
+async function lts_5_4(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.4' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-5.4' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+}
+
+async function lts_5_8(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.8' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-5.8' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+}
+
 async function release(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
-  project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: '@ember/test-helpers-3' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('@babel/core', { baseDir: __dirname });
+}
+
+async function beta(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-beta' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('@babel/core', { baseDir: __dirname });
 }
 
 async function canary(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-canary' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
-  project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: '@ember/test-helpers-3' });
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
 }
 
 export function supportMatrix(scenarios: Scenarios) {
@@ -35,6 +75,7 @@ export function supportMatrix(scenarios: Scenarios) {
       .expand({
         lts_3_28,
         lts_4_4,
+        lts_5_8,
         release,
         canary,
       })
@@ -43,6 +84,30 @@ export function supportMatrix(scenarios: Scenarios) {
       .skip('lts_3_28')
       .skip('lts_4_4')
       .skip('release')
+  );
+}
+
+export function fullSupportMatrix(scenarios: Scenarios) {
+  return (
+    scenarios
+      .expand({
+        lts_3_28,
+        lts_4_4,
+        lts_4_8,
+        lts_4_12,
+        lts_5_4,
+        lts_5_8,
+        release,
+        beta,
+        canary,
+      })
+      // we are skipping these scenarios for now and will likely add them back in one-by one once the
+      // new vite based system is working as we like
+      .skip('lts_3_28')
+      .skip('lts_4_4')
+      .skip('lts_4_8')
+      .skip('lts_4_12')
+      .skip('lts_5_4')
   );
 }
 
@@ -65,16 +130,26 @@ export function baseTSApp() {
   return Project.fromDir(dirname(require.resolve('../ts-app-template/package.json')), { linkDevDeps: true });
 }
 
+export function baseTSAppClassic() {
+  return Project.fromDir(dirname(require.resolve('../ts-app-template-classic/package.json')), { linkDevDeps: true });
+}
+
 export function baseViteApp() {
   return Project.fromDir(dirname(require.resolve('../vite-app/package.json')), { linkDevDeps: true });
 }
 
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
 
+export const wideAppScenarios = fullSupportMatrix(Scenarios.fromProject(baseApp));
+
 // we're standardizing on Ember's native types, which become available starting
 // at 4.8. So we're not going to run type tests on older releases that don't
 // support them.
 export const tsAppScenarios = supportMatrix(Scenarios.fromProject(baseTSApp)).skip('lts_3_28').skip('lts_4_4');
+
+export const tsAppClassicScenarios = supportMatrix(Scenarios.fromProject(baseTSAppClassic))
+  .skip('lts_3_28')
+  .skip('lts_4_4');
 
 export const dummyAppScenarios = supportMatrix(Scenarios.fromProject(() => baseAddon('dummy-app')));
 

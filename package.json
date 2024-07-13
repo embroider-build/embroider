@@ -6,8 +6,8 @@
   },
   "scripts": {
     "clean": "git clean -x -f",
-    "compile": "tsc",
-    "dev": "tsc --watch",
+    "compile": "tsc -b",
+    "dev": "tsc -b --watch",
     "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
     "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
     "lint:eslint": "eslint . --cache --report-unused-disable-directives",
@@ -15,7 +15,7 @@
     "lint:prettier": "prettier . -c",
     "lint:prettier:fix": "prettier . -w",
     "lint:router-types": "cd packages/router && pnpm lint:types",
-    "prepare": "tsc && pnpm build-v2-addons",
+    "prepare": "tsc -b && pnpm build-v2-addons",
     "build-v2-addons": "concurrently 'pnpm:build-v2-addons:*'",
     "build-v2-addons:router": "cd packages/router && pnpm build",
     "test": "cd tests/scenarios && pnpm test"
@@ -35,6 +35,9 @@
       "graceful-fs": "^4.0.0",
       "@types/eslint": "^8.37.0",
       "babel-plugin-module-resolver@5.0.1": "5.0.0"
+    },
+    "patchedDependencies": {
+      "ember-source@5.8.0": "patches/ember-source@5.8.0.patch"
     }
   },
   "devDependencies": {
@@ -50,7 +53,7 @@
     "jest": "^29.2.1",
     "prettier": "^2.3.1",
     "release-plan": "^0.9.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.5.2"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
@@ -66,5 +69,6 @@
       "unlabeled": ":question: Unlabeled"
     },
     "wildcardLabel": "unlabeled"
-  }
+  },
+  "packageManager": "pnpm@8.15.8+sha256.691fe176eea9a8a80df20e4976f3dfb44a04841ceb885638fe2a26174f81e65e"
 }

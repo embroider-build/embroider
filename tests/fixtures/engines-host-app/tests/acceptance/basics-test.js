@@ -56,15 +56,14 @@ function createLazyEngineTest(type) {
       );
     }
 
-    // TODO: uncomment once we fix this appearing too eagerly
-    //assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+    assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
 
     await visit('/use-lazy-engine');
     let entriesAfter = Object.entries(window.require.entries).length;
     if (type === 'safe') {
-      assert.ok(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+      assert.ok(!!window.require.entries['lazy-engine/helpers/duplicated-helper'], 'in safe mode we expect to see lazy-engine/helpers/duplicated-helper but its not there');
     } else {
-      assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper']);
+      assert.notOk(!!window.require.entries['lazy-engine/helpers/duplicated-helper'], 'in optimized mode we expect to *not* see lazy-engine/helpers/duplicated-helper but it is there');
     }
     assert.ok(entriesAfter > entriesBefore);
     assert.equal(currentURL(), '/use-lazy-engine');

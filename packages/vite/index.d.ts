@@ -6,3 +6,4 @@ export * from './src/template-tag.js';
 export * from './src/optimize-deps.js';
 export * from './src/assets.js';
 export * from './src/build.js';
+export * from './src/content-for.js';

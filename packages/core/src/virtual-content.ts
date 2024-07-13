@@ -4,7 +4,12 @@ import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
 import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
+import { decodeVirtualVendor, renderVendor } from './virtual-vendor';
 import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
+
+import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
+import { decodeTestEntrypoint, renderTestEntrypoint } from './virtual-test-entrypoint';
+import { decodeRouteEntrypoint, renderRouteEntrypoint } from './virtual-route-entrypoint';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -24,6 +29,21 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
     return renderCJSExternalShim(cjsExtern);
   }
 
+  let entrypoint = decodeEntrypoint(filename);
+  if (entrypoint) {
+    return renderEntrypoint(resolver, entrypoint);
+  }
+
+  let testEntrypoint = decodeTestEntrypoint(filename);
+  if (testEntrypoint) {
+    return renderTestEntrypoint(resolver, testEntrypoint);
+  }
+
+  let routeEntrypoint = decodeRouteEntrypoint(filename);
+  if (routeEntrypoint) {
+    return renderRouteEntrypoint(resolver, routeEntrypoint);
+  }
+
   let extern = decodeVirtualExternalESModule(filename);
   if (extern) {
     return renderESExternalShim(extern);
@@ -41,6 +61,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let im = decodeImplicitModules(filename);
   if (im) {
     return renderImplicitModules(im, resolver);
+  }
+
+  let isVendor = decodeVirtualVendor(filename);
+  if (isVendor) {
+    return renderVendor(filename, resolver);
   }
 
   let isImplicitTestScripts = decodeImplicitTestScripts(filename);
@@ -123,7 +148,7 @@ export default setComponentTemplate(template, templateOnlyComponent(undefined, "
 
 export function virtualExternalESModule(specifier: string, exports: string[] | undefined): string {
   if (exports) {
-    return externalESPrefix + specifier + `?exports=${exports.join(',')}`;
+    return externalESPrefix + specifier + `/exports=${exports.join(',')}`;
   } else {
     return externalESPrefix + specifier;
   }
@@ -136,12 +161,12 @@ export function virtualExternalCJSModule(specifier: string): string {
 function decodeVirtualExternalESModule(filename: string): { moduleName: string; exports: string[] } | undefined {
   if (filename.startsWith(externalESPrefix)) {
     let exports: string[] = [];
-    let url = new URL(filename.slice(externalESPrefix.length), 'http://example.com');
-    let nameString = url.searchParams.get('exports');
+    let components = filename.split('/exports=');
+    let nameString = components[1];
     if (nameString) {
       exports = nameString.split(',');
     }
-    let moduleName = url.pathname.slice(1);
+    let moduleName = components[0].slice(externalESPrefix.length);
     return { moduleName, exports };
   }
 }

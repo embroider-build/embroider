@@ -26,6 +26,7 @@ import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import type UserOptions from './options';
 import { nodeResolve } from './node-resolve';
+import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -91,8 +92,11 @@ export interface Options {
   appRoot: string;
   engines: EngineConfig[];
   modulePrefix: string;
+  splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
+  autoRun: boolean;
+  staticAppPaths: string[];
 }
 
 // TODO: once we can remove the stage2 entrypoint this type can get streamlined
@@ -196,7 +200,11 @@ export class Resolver {
     request = this.handleImplicitTestScripts(request);
     request = this.handleVendorStyles(request);
     request = this.handleTestSupportStyles(request);
+    request = this.handleEntrypoint(request);
+    request = this.handleTestEntrypoint(request);
+    request = this.handleRouteEntrypoint(request);
     request = this.handleRenaming(request);
+    request = this.handleVendor(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
     request = this.preHandleExternal(request);
@@ -424,6 +432,95 @@ export class Resolver {
     }
   }
 
+  private handleEntrypoint<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = ['@embroider/core/entrypoint', '/@embroider/core/entrypoint', './@embroider/core/entrypoint'];
+
+    if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
+      return request;
+    }
+
+    const result = /\.?\/?@embroider\/core\/entrypoint(?:\/(?<packageName>.*))?/.exec(request.specifier);
+
+    if (!result) {
+      // TODO make a better error
+      throw new Error('entrypoint does not match pattern' + request.specifier);
+    }
+
+    const { packageName } = result.groups!;
+
+    const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!requestingPkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    let pkg;
+
+    if (packageName) {
+      pkg = this.packageCache.resolve(packageName, requestingPkg);
+    } else {
+      pkg = requestingPkg;
+    }
+
+    return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
+  }
+
+  private handleTestEntrypoint<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = [
+      '@embroider/core/test-entrypoint',
+      '/@embroider/core/test-entrypoint',
+      './@embroider/core/test-entrypoint',
+    ];
+
+    if (!candidates.some(c => request.specifier === c)) {
+      return request;
+    }
+
+    const pkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!pkg?.isV2Ember() || !pkg.isV2App()) {
+      throw new Error(
+        `bug: found test entrypoint import from somewhere other than the top-level app engine: ${request.fromFile}`
+      );
+    }
+
+    return logTransition(
+      'test-entrypoint',
+      request,
+      request.virtualize(resolve(pkg.root, '-embroider-test-entrypoint.js'))
+    );
+  }
+
+  private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+
+    let routeName = decodePublicRouteEntrypoint(request.specifier);
+
+    if (!routeName) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!pkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    return logTransition('route entrypoint', request, request.virtualize(encodeRouteEntrypoint(pkg.root, routeName)));
+  }
+
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
     const candidates = [
@@ -510,9 +607,9 @@ export class Resolver {
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (pkg?.root !== this.options.engines[0].root) {
+    if (!pkg || !this.options.engines.some(e => e.root === pkg?.root)) {
       throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app or Engine. The top-level Ember app is the only one that has support for @embroider/core/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
       );
     }
 
@@ -945,6 +1042,24 @@ export class Resolver {
     return request;
   }
 
+  private handleVendor<R extends ModuleRequest>(request: R): R {
+    //TODO move the extra forwardslash handling out into the vite plugin
+    const candidates = ['@embroider/core/vendor.js', '/@embroider/core/vendor.js', './@embroider/core/vendor.js'];
+
+    if (!candidates.includes(request.specifier)) {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (pkg?.root !== this.options.engines[0].root) {
+      throw new Error(
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/vendor.js. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+      );
+    }
+
+    return logTransition('vendor', request, request.virtualize(resolve(pkg.root, '-embroider-vendor.js')));
+  }
+
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
     let levels = ['..'];
     if (pkg.name.startsWith('@')) {
@@ -1048,7 +1163,7 @@ export class Resolver {
     if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
         let dep = this.packageCache.resolve(packageName, logicalPackage);
-        if (!dep.isEmberPackage()) {
+        if (!dep.isEmberAddon()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
           return this.external('v1 package without auto-import', request, specifier);

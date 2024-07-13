@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "4.3.1",
+  "version": "5.0.0",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",
@@ -25,6 +25,14 @@
   "scripts": {
     "test": "jest"
   },
+  "peerDependencies": {
+    "rollup": "^4.6.0"
+  },
+  "peerDependenciesMeta": {
+    "rollup": {
+      "optional": true
+    }
+  },
   "dependencies": {
     "@embroider/core": "workspace:^",
     "@rollup/pluginutils": "^4.1.1",
@@ -44,7 +52,7 @@
     "@types/yargs": "^17.0.3",
     "rollup": "^3.23.0",
     "tmp": "^0.1.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.4.5"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

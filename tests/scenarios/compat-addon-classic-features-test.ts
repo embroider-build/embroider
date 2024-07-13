@@ -1,9 +1,12 @@
 import { throwOnWarnings } from '@embroider/core';
-import { readFileSync } from 'fs';
+import { lstatSync, readFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 import { merge } from 'lodash';
 import QUnit from 'qunit';
 import type { PreparedApp } from 'scenario-tester';
 import fetch from 'node-fetch';
+import globby from 'globby';
+import { join } from 'path';
 
 import { appScenarios, baseAddon } from './scenarios';
 import CommandWatcher from './helpers/command-watcher';
@@ -69,8 +72,8 @@ appScenarios
           
               {{content-for "head"}}
           
-              <link integrity="" rel="stylesheet" href="{{rootURL}}assets/vendor.css">
-              <link integrity="" rel="stylesheet" href="{{rootURL}}assets/app-template.css">
+              <link integrity="" rel="stylesheet" href="/@embroider/core/vendor.css">
+              <link integrity="" rel="stylesheet" href="/assets/app-template.css">
           
               {{content-for "head-footer"}}
             </head>
@@ -78,8 +81,13 @@ appScenarios
               {{content-for "body"}}
               {{content-for "custom"}}
           
-              <script src="{{rootURL}}assets/vendor.js"></script>
-              <script src="{{rootURL}}assets/app-template.js"></script>
+              <script src="/@embroider/core/vendor.js"></script>
+              <script type="module">
+                import Application from './app';
+                import environment from './config/environment';
+
+                Application.create(environment.APP);
+              </script>
           
               {{content-for "body-footer"}}
             </body>
@@ -125,6 +133,122 @@ appScenarios
           let text = await response.text();
           assert.true(text.includes('<p>Content for body</p>'));
           assert.true(text.includes('<p>Content for custom</p>'));
+        } finally {
+          await server.shutdown();
+        }
+      });
+    });
+  });
+
+appScenarios
+  .map('compat-addon-classic-features-virtual-scripts', () => {})
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test('virtual scripts are emitted in the build', async function (assert) {
+        let result = await app.execute('pnpm build');
+        assert.equal(result.exitCode, 0, result.output);
+
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/vendor.js`).isFile());
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/test-support.js`).isFile());
+      });
+
+      test('virtual scripts contents are served in dev mode', async function (assert) {
+        const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        try {
+          const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+          let response = await fetch(`${url}/@embroider/core/vendor.js`);
+          assert.strictEqual(response.status, 200);
+          // checking the response status 200 is not enough to assert vendor.js is served,
+          // because when the URL is not recognized, the response contains the index.html
+          // and has a 200 status (for index.html being returned correctly)
+          let text = await response.text();
+          assert.true(!text.includes('<!DOCTYPE html>'));
+
+          response = await fetch(`${url}/@embroider/core/test-support.js`);
+          assert.strictEqual(response.status, 200);
+          // checking the response status 200 is not enough to assert test-support.js is served,
+          // because when the URL is not recognized, the response contains the index.html
+          // and has a 200 status (for index.html being returned correctly)
+          text = await response.text();
+          assert.true(!text.includes('<!DOCTYPE html>'));
+        } finally {
+          await server.shutdown();
+        }
+      });
+    });
+  });
+
+appScenarios
+  .map('compat-addon-classic-features-virtual-styles', project => {
+    let myAddon = baseAddon();
+    myAddon.pkg.name = 'my-addon';
+    merge(myAddon.files, {
+      addon: {
+        styles: {
+          'addon.css': `
+            .my-addon-p { color: blue; }
+          `,
+        },
+      },
+    });
+    project.addDependency(myAddon);
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test('virtual styles are included in the CSS of the production build', async function (assert) {
+        let result = await app.execute('pnpm build');
+        assert.equal(result.exitCode, 0, result.output);
+
+        // TODO: replace with an Audit when it's ready to take any given dist
+        let styles = await globby('dist/**/*.css', { cwd: app.dir });
+        let readResult = await Promise.all(
+          styles.map(async styleFile => {
+            let content = await readFile(join(app.dir, styleFile));
+            return content.toString().includes('.my-addon-p{color:#00f}');
+          })
+        );
+        assert.true(readResult.includes(true));
+      });
+
+      test('virtual styles are included in the CSS of the test build', async function (assert) {
+        let result = await app.execute('pnpm test');
+        assert.equal(result.exitCode, 0, result.output);
+
+        // TODO: replace with an Audit when it's ready to take any given dist
+        let styles = await globby('dist/**/*.css', { cwd: app.dir });
+        let readResult = await Promise.all(
+          styles.map(async styleFile => {
+            let content = await readFile(join(app.dir, styleFile));
+            return content.toString();
+          })
+        );
+        assert.true(readResult.some(content => content.includes('.my-addon-p{color:#00f}')));
+        assert.true(readResult.some(content => content.includes('#qunit-tests')));
+      });
+
+      test('virtual styles are served in dev mode', async function (assert) {
+        const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        try {
+          const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+          let response = await fetch(`${url}/@embroider/core/vendor.css?direct`);
+          let text = await response.text();
+          assert.true(text.includes('.my-addon-p { color: blue; }'));
+
+          response = await fetch(`${url}/@embroider/core/test-support.css?direct`);
+          text = await response.text();
+          assert.true(text.includes('#qunit-tests'));
         } finally {
           await server.shutdown();
         }

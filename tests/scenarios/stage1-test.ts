@@ -59,9 +59,12 @@ appScenarios
       hooks.before(async assert => {
         process.env.THROW_UNLESS_PARALLELIZABLE = '1'; // see https://github.com/embroider-build/embroider/pull/924
         app = await scenario.prepare();
-        let result = await app.execute(
-          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
-        );
+        let result = await app.execute('node ./node_modules/ember-cli/bin/ember b', {
+          env: {
+            STAGE1_ONLY: 'true',
+            EMBROIDER_PREBUILD: 'true',
+          },
+        });
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -141,7 +144,7 @@ appScenarios
         );
 
         fileContents.matches(
-          /precompileTemplate\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
+          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
           'called template is still hbs and custom transforms have run'
         );
 
@@ -201,9 +204,12 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        await app.execute(
-          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
-        );
+        await app.execute('node ./node_modules/ember-cli/bin/ember b', {
+          env: {
+            STAGE1_ONLY: 'true',
+            EMBROIDER_PREBUILD: 'true',
+          },
+        });
       });
 
       hooks.beforeEach(assert => {
@@ -219,7 +225,7 @@ appScenarios
         );
 
         file.matches(
-          /precompileTemplate\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
+          /hbs\(["']<div class={{embroider-sample-transforms-result}}>Extra<\/div>["']\)/,
           'called template is still hbs and custom transforms have run'
         );
 
@@ -449,9 +455,12 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        await app.execute(
-          'cross-env STAGE1_ONLY=true EMBROIDER_PREBUILD=true node ./node_modules/ember-cli/bin/ember b'
-        );
+        await app.execute('node ./node_modules/ember-cli/bin/ember b', {
+          env: {
+            STAGE1_ONLY: 'true',
+            EMBROIDER_PREBUILD: 'true',
+          },
+        });
       });
 
       hooks.beforeEach(assert => {

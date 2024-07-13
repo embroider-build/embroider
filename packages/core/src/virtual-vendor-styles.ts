@@ -29,7 +29,7 @@ function getVendorStyles(owner: Package, resolver: Resolver): string {
         addon.canResolveFromFile,
       ])
     ),
-    isApp: true,
+    isApp: engineConfig.root === resolver.options.engines[0].root,
     modulePrefix: resolver.options.modulePrefix,
     appRelativePath: 'NOT_USED_DELETE_ME',
   };
@@ -38,10 +38,21 @@ function getVendorStyles(owner: Package, resolver: Resolver): string {
 }
 
 function generateVendorStyles(engine: Engine): string {
-  let result: string[] = impliedAddonVendorStyles(engine).map((sourcePath: string): string => {
-    let source = readFileSync(sourcePath);
-    return `${source}`;
-  });
+  let result: string[] = impliedAddonVendorStyles(engine).map(sourcePath => readFileSync(sourcePath, 'utf-8'));
+
+  // add the engines own styles but only if it is not the top-level app, that is provided by @embroider/synthesized-styles
+  if (!engine.isApp) {
+    let engineStyles = [];
+
+    engineStyles = getAddonImplicitStyles(engine.package as V2AddonPackage).map(sourcePath =>
+      readFileSync(sourcePath, 'utf-8')
+    );
+
+    // add engine's own implicit styles after all vendor styles
+    if (engineStyles.length) {
+      result = [...result, ...engineStyles];
+    }
+  }
 
   return result.join('') as string;
 }
@@ -58,20 +69,28 @@ function impliedAddonVendorStyles(engine: Engine): string[] {
         return 1000;
     }
   })) {
-    let implicitStyles = addon.meta['implicit-styles'];
-    if (implicitStyles) {
-      let styles = [];
-      let options = { basedir: addon.root };
-      for (let mod of implicitStyles) {
-        // exclude engines because they will handle their own css importation
-        if (!addon.isLazyEngine()) {
-          styles.push(resolve.sync(mod, options));
-        }
-      }
-      if (styles.length) {
-        result = [...styles, ...result];
-      }
+    // exclude lazy engines because they will handle their own css importation
+    if (addon.isLazyEngine()) {
+      continue;
+    }
+
+    let styles = getAddonImplicitStyles(addon);
+
+    if (styles.length) {
+      result = [...styles, ...result];
     }
   }
   return result;
+}
+
+function getAddonImplicitStyles(pkg: V2AddonPackage): string[] {
+  let implicitStyles = pkg.meta['implicit-styles'];
+  let styles = [];
+  if (implicitStyles) {
+    let options = { basedir: pkg.root };
+    for (let mod of implicitStyles) {
+      styles.push(resolve.sync(mod, options));
+    }
+  }
+  return styles;
 }

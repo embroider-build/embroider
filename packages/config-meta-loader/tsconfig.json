@@ -1,0 +1,22 @@
+{
+  "include": [
+    "src/**/*.ts",
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "target": "es2019",
+    "module": "ESNext",
+    "declaration": true,
+    "typeRoots": ["types", "node_modules/@types"],
+    "esModuleInterop": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": true,
+    "allowUnreachableCode": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "useUnknownInCatchVariables": false,
+  },
+}

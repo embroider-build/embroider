@@ -8,15 +8,15 @@
 
     {{content-for "head"}}
 
-    <link integrity="" rel="stylesheet" href="/@embroider/core/vendor.css">
-    <link integrity="" rel="stylesheet" href="/assets/ts-app-template.css">
+    <link integrity="" rel="stylesheet" href="%BASE_URL%@embroider/core/vendor.css">
+    <link integrity="" rel="stylesheet" href="%BASE_URL%assets/ts-app-template.css">
 
     {{content-for "head-footer"}}
   </head>
   <body>
     {{content-for "body"}}
 
-    <script src="/@embroider/core/vendor.js"></script>
+    <script src="%BASE_URL%@embroider/core/vendor.js"></script>
     <script type="module">
       import Application from './app/app.ts';
       import environment from './app/config/environment';

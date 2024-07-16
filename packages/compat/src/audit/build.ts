@@ -28,7 +28,7 @@ export function isBuildError(err: any): err is BuildError {
   return err?.isBuildError;
 }
 
-async function execute(
+export async function execute(
   shellCommand: string,
   opts?: { env?: Record<string, string>; pwd?: string }
 ): Promise<{

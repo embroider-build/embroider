@@ -4,19 +4,23 @@ import type { Node, InputNode } from 'broccoli-node-api';
 import { join, relative, resolve } from 'path';
 import type { types as t } from '@babel/core';
 import type { NodePath } from '@babel/traverse';
-import { statSync, readdirSync, readFileSync } from 'fs';
+import { statSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import Plugin from 'broccoli-plugin';
 import { transformSync } from '@babel/core';
 import { hbsToJS, ResolverLoader } from '@embroider/core';
 import { ImportUtil } from 'babel-import-util';
 import ResolverTransform from './resolver-transform';
+import { execute } from './audit/build';
+import { locateEmbroiderWorkingDir } from '@embroider/core';
+
 export interface TemplateTagCodemodOptions {
   shouldTransformPath: (outputPath: string) => boolean;
+  dryRun: boolean;
 }
 
-export default function templateTagCode(
+export default function templateTagCodemod(
   emberApp: EmberAppInstance,
-  options: TemplateTagCodemodOptions = { shouldTransformPath: () => true }
+  { shouldTransformPath = (() => true) as TemplateTagCodemodOptions['shouldTransformPath'], dryRun = false } = {}
 ): Node {
   return new TemplateTagCodemodPlugin(
     [
@@ -32,7 +36,7 @@ export default function templateTagCode(
         },
       }),
     ],
-    options
+    { shouldTransformPath, dryRun }
   );
 }
 class TemplateTagCodemodPlugin extends Plugin {
@@ -58,20 +62,22 @@ class TemplateTagCodemodPlugin extends Plugin {
     this.inputPaths[0];
     const tmp_path = readFileSync(this.inputPaths[0] + '/.stage2-output').toLocaleString();
     const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
-    const resolver = new ResolverLoader(__dirname).resolver;
+    const resolver = new ResolverLoader(process.cwd()).resolver;
     const hbs_file_test = /\/rewritten-app\/components\/.*\.hbs$/;
+    // locate ember-source for the host app so we know which version to insert builtIns for
+    const emberSourceEntrypoint = require.resolve('ember-source', { paths: [process.cwd()] });
+    const emberVersion = JSON.parse(readFileSync(join(emberSourceEntrypoint, '../../package.json')).toString()).version;
 
-    for await (const p of walkSync(tmp_path)) {
-      if (hbs_file_test.test(p) && this.options.shouldTransformPath(p)) {
-        const template_file_src = readFileSync(p).toLocaleString();
+    for await (const current_file of walkSync(tmp_path)) {
+      if (hbs_file_test.test(current_file) && this.options.shouldTransformPath(current_file)) {
+        const template_file_src = readFileSync(current_file).toLocaleString();
         const ember_template_compiler = resolver.nodeResolve(
           'ember-source/vendor/ember/ember-template-compiler',
-          resolve(__dirname, 'package.json')
+          resolve(locateEmbroiderWorkingDir(process.cwd()), 'rewritten-app', 'package.json')
         );
         if (ember_template_compiler.type === 'not_found') {
           throw 'This will not ever be true';
         }
-
         let src =
           transformSync(hbsToJS(template_file_src), {
             plugins: [
@@ -79,13 +85,12 @@ class TemplateTagCodemodPlugin extends Plugin {
                 'babel-plugin-ember-template-compilation',
                 {
                   compilerPath: ember_template_compiler.filename,
-                  transforms: [ResolverTransform({ appRoot: __dirname })],
+                  transforms: [ResolverTransform({ appRoot: process.cwd(), emberVersion: emberVersion })],
                   targetFormat: 'hbs',
                 },
               ],
             ],
           })?.code ?? '';
-
         const import_bucket: NodePath<t.ImportDeclaration>[] = [];
         let transformed_template_value = '';
         transformSync(src, {
@@ -94,13 +99,12 @@ class TemplateTagCodemodPlugin extends Plugin {
               return {
                 visitor: {
                   ImportDeclaration(import_declaration: NodePath<t.ImportDeclaration>) {
-                    // if (import_declaration.node.source.value.indexOf('@ember/template-compilation') !== -1) {
-                    //   import_declaration.remove();
-                    //   return;
-                    // }
+                    if (import_declaration.node.source.value.indexOf('@ember/component/template-only') > -1) {
+                      return;
+                    }
                     const extractor = import_declaration.node.source.value.match(compatPattern);
                     if (extractor) {
-                      const result = resolver.nodeResolve(extractor[0], p);
+                      const result = resolver.nodeResolve(extractor[0], current_file);
                       if (result.type === 'real') {
                         // find package
                         const owner_package = resolver.packageCache.ownerOfFile(result.filename);
@@ -130,16 +134,20 @@ class TemplateTagCodemodPlugin extends Plugin {
             },
           ],
         });
+
         //find backing class
         const backing_class_resolution = resolver.nodeResolve(
-          '#embroider_compat/' + relative(tmp_path, p).slice(0, -4),
+          '#embroider_compat/' + relative(tmp_path, current_file).slice(0, -4),
           tmp_path
         );
 
-        const backing_class_src =
-          'filename' in backing_class_resolution ? readFileSync(backing_class_resolution.filename).toString() : '';
+        const backing_class_filename = 'filename' in backing_class_resolution ? backing_class_resolution.filename : '';
+        const backing_class_src = readFileSync(backing_class_filename).toString();
         // console.log(backing_class_src);
         const magic_string = '__MAGIC_STRING_FOR_TEMPLATE_TAG_REPLACE__';
+        const is_template_only =
+          backing_class_src.indexOf("import templateOnlyComponent from '@ember/component/template-only';") !== -1;
+
         src = transformSync(backing_class_src, {
           plugins: [
             ['@babel/plugin-syntax-decorators', { decoratorsBeforeExport: true }],
@@ -187,10 +195,40 @@ class TemplateTagCodemodPlugin extends Plugin {
             },
           ],
         })!.code!.replace(`/*${magic_string}*/`, transformed_template_value);
-        // TODO git rm old files
+        if (is_template_only) {
+          // because we can't inject a comment as the default export
+          // we replace the known exported string
+          src = src.replace('templateOnlyComponent()', transformed_template_value);
+        }
+
+        const dryRun = this.options.dryRun ? '--dry-run' : '';
         // work out original file path in app tree
+        const app_relative_path = join('app', relative(tmp_path, current_file));
+        const new_file_path = app_relative_path.slice(0, -4) + '.gjs';
+
         // write glimmer file out
-        // console.log('transformed+++++++++++++++++++++++++++++++++++++\n\n', src);
+        if (this.options.dryRun) {
+          console.log('Write new file', new_file_path, src);
+        } else {
+          writeFileSync(join(process.cwd(), new_file_path), src, { flag: 'wx+' });
+        }
+
+        // git rm old files (js/ts if exists + hbs)
+        let rm_hbs = await execute(`git rm ${app_relative_path} ${dryRun}`, {
+          pwd: process.cwd(),
+        });
+        console.log(rm_hbs.output);
+
+        if (!is_template_only) {
+          // remove backing class only if it's not a template only component
+          // resolve repative path to rewritten-app
+          const app_relative_path = join('app', relative(tmp_path, backing_class_filename));
+          let rm_js = await execute(`git rm ${app_relative_path} ${dryRun}`, {
+            pwd: process.cwd(),
+          });
+
+          console.log(rm_js.output);
+        }
       }
     }
   }

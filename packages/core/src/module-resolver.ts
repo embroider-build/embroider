@@ -702,7 +702,10 @@ export class Resolver {
       })
     );
 
-    if (helperMatch.type === 'found') {
+    // for the case of 'ignored' that means that esbuild found this helper in an external
+    // package so it should be considered found in this case and we should not look for a
+    // component with this name
+    if (helperMatch.type === 'found' || helperMatch.type === 'ignored') {
       return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
     }
 

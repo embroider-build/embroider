@@ -1,5 +1,27 @@
 # Embroider Changelog
 
+## Release (2024-07-16)
+
+@embroider/compat 3.5.7 (patch)
+@embroider/util 1.13.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2033](https://github.com/embroider-build/embroider/pull/2033) Remove deprecations warnings in resolver transform ([@mkszepp](https://github.com/mkszepp))
+  * [#2047](https://github.com/embroider-build/embroider/pull/2047) Add semver to power select with create ([@mkszepp](https://github.com/mkszepp))
+
+#### :house: Internal
+* `@embroider/test-scenarios`
+  * [#1930](https://github.com/embroider-build/embroider/pull/1930) create a smoke test for the widest possible matrix ([@mansona](https://github.com/mansona))
+* Other
+  * [#2015](https://github.com/embroider-build/embroider/pull/2015) update github actions ([@mansona](https://github.com/mansona))
+* `@embroider/util`, `@embroider/sample-transforms`, `@embroider/test-support`, `@embroider/test-scenarios`
+  * [#1931](https://github.com/embroider-build/embroider/pull/1931) update scenario-tester ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
 ## Release (2024-07-03)
 
 @embroider/compat 3.5.6 (patch)

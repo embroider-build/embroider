@@ -11,8 +11,8 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.5.5",
-      "newVersion": "3.5.6",
+      "oldVersion": "3.5.6",
+      "newVersion": "3.5.7",
       "constraints": [
         {
           "impact": "patch",
@@ -43,7 +43,16 @@
       "oldVersion": "4.0.0"
     },
     "@embroider/util": {
-      "oldVersion": "1.13.1"
+      "impact": "patch",
+      "oldVersion": "1.13.1",
+      "newVersion": "1.13.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/util/package.json"
     },
     "@embroider/vite": {
       "oldVersion": "0.2.0"
@@ -52,5 +61,5 @@
       "oldVersion": "4.0.4"
     }
   },
-  "description": "## Release (2024-07-03)\n\n@embroider/compat 3.5.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2012](https://github.com/embroider-build/embroider/pull/2012) Empty packages as valid v2 addons ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### Committers: 1\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
+  "description": "## Release (2024-07-16)\n\n@embroider/compat 3.5.7 (patch)\n@embroider/util 1.13.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2033](https://github.com/embroider-build/embroider/pull/2033) Remove deprecations warnings in resolver transform ([@mkszepp](https://github.com/mkszepp))\n  * [#2047](https://github.com/embroider-build/embroider/pull/2047) Add semver to power select with create ([@mkszepp](https://github.com/mkszepp))\n\n#### :house: Internal\n* `@embroider/test-scenarios`\n  * [#1930](https://github.com/embroider-build/embroider/pull/1930) create a smoke test for the widest possible matrix ([@mansona](https://github.com/mansona))\n* Other\n  * [#2015](https://github.com/embroider-build/embroider/pull/2015) update github actions ([@mansona](https://github.com/mansona))\n* `@embroider/util`, `@embroider/sample-transforms`, `@embroider/test-support`, `@embroider/test-scenarios`\n  * [#1931](https://github.com/embroider-build/embroider/pull/1931) update scenario-tester ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
 }

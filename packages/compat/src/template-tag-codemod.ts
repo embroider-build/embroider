@@ -99,9 +99,6 @@ class TemplateTagCodemodPlugin extends Plugin {
               return {
                 visitor: {
                   ImportDeclaration(import_declaration: NodePath<t.ImportDeclaration>) {
-                    if (import_declaration.node.source.value.indexOf('@ember/component/template-only') > -1) {
-                      return;
-                    }
                     const extractor = import_declaration.node.source.value.match(compatPattern);
                     if (extractor) {
                       const result = resolver.nodeResolve(extractor[0], current_file);
@@ -180,6 +177,11 @@ class TemplateTagCodemodPlugin extends Plugin {
                         }
                       }
                     },
+                  },
+                  ImportDeclaration(import_declaration: NodePath<t.ImportDeclaration>) {
+                    if (import_declaration.node.source.value.indexOf('@ember/component/template-only') !== -1) {
+                      import_declaration.remove();
+                    }
                   },
                   ExportDefaultDeclaration(path: NodePath<t.ExportDefaultDeclaration>) {
                     path.traverse({

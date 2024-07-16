@@ -34,7 +34,36 @@ stage2Scenarios
   .map('in-repo-addons-of-addons', app => {
     app.mergeFiles({
       app: {
-        'lib.js': 'import "dep-a/check-resolution.js"',
+        'lib.js': 'export {default} from "dep-a/check-resolution.js"',
+      },
+      tests: {
+        unit: {
+          'in-repo-addons-of-addons.js': `import { module, test } from 'qunit';
+
+          import libJS from 'my-app/lib';
+          import inRepo from 'my-app/service/in-repo';
+          import secondaryService from 'my-app/services/secondary';
+          import primaryService from 'my-app/services/primary';
+
+          module('Unit | basics', function () {
+            test('libJS resolution comes from the right place', async function (assert) {
+              assert.strictEqual(libJS, 'in-repo-a|check-resolution-target.js');
+            });
+
+            test('inRepo resolution comes from the right place', async function (assert) {
+              assert.strictEqual(inRepo, 'in-repo-c|service|in-repo.js');
+            });
+
+            test('secondaryService resolution comes from the right place', async function (assert) {
+              assert.strictEqual(secondaryService, 'secondary-in-repo-addon|service|secondary.js');
+            });
+
+            test('primaryService resolution comes from the right place', async function (assert) {
+              assert.strictEqual(primaryService, 'secondary-in-repo-addon|component|secondary.js');
+            });
+          })
+          `,
+        },
       },
     });
 
@@ -43,26 +72,26 @@ stage2Scenarios
     let depC = addAddon(app, 'dep-c');
 
     addInRepoAddon(depC, 'in-repo-d', {
-      app: { service: { 'in-repo.js': '//in-repo-d' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-d|service|in-repo.js";' } },
     });
     addInRepoAddon(depA, 'in-repo-a', {
-      app: { service: { 'in-repo.js': '//in-repo-a' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-a|service|in-repo.js";' } },
       addon: {
-        'check-resolution-target.js': 'export {}',
+        'check-resolution-target.js': 'export default "in-repo-a|check-resolution-target.js";',
       },
     });
     merge(depA.files, {
       addon: {
         'check-resolution.js': `
-          import 'in-repo-a/check-resolution-target';
+          export { default } from 'in-repo-a/check-resolution-target';
         `,
       },
     });
     addInRepoAddon(depB, 'in-repo-b', {
-      app: { service: { 'in-repo.js': '//in-repo-b' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-b|service|in-repo.js";' } },
     });
     addInRepoAddon(depB, 'in-repo-c', {
-      app: { service: { 'in-repo.js': '//in-repo-c' } },
+      app: { service: { 'in-repo.js': 'export default "in-repo-c|service|in-repo.js";' } },
     });
 
     // make an in-repo addon with a dependency on a secondary in-repo-addon
@@ -80,7 +109,7 @@ stage2Scenarios
       ),
       app: {
         services: {
-          'primary.js': `import "secondary-in-repo-addon/components/secondary"`,
+          'primary.js': `export {default} from "secondary-in-repo-addon/components/secondary"`,
         },
       },
     });
@@ -90,12 +119,12 @@ stage2Scenarios
     addInRepoAddon(app, 'secondary-in-repo-addon', {
       app: {
         services: {
-          'secondary.js': '// secondary',
+          'secondary.js': 'export default "secondary-in-repo-addon|service|secondary.js";',
         },
       },
       addon: {
         components: {
-          'secondary.js': '// secondary component',
+          'secondary.js': 'export default "secondary-in-repo-addon|component|secondary.js";',
         },
       },
     });
@@ -108,15 +137,9 @@ stage2Scenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let server: CommandWatcher;
-      let appURL: string;
-      let expectFile: ExpectFile;
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-
         // There is a bug in node-fixturify-project that means project.linkDependency() will cause
         // strange resolutions of dependencies. It is a timing issue where the peer depenceny checker
         // runs before the linked dependency has been fully written to disk and ends up giving us the
@@ -140,62 +163,9 @@ stage2Scenarios
         addDependency('dep-b', 'dep-c', app.dir);
       });
 
-      hooks.beforeEach(assert => {
-        expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
-      });
-
-      hooks.after(async () => {
-        await server?.shutdown();
-      });
-
-      let expectAudit = setupAuditTest(hooks, () => ({
-        appURL,
-        startingFrom: ['index.html'],
-        fetch: fetch as unknown as typeof globalThis.fetch,
-      }));
-
-      test('in repo addons are symlinked correctly', function () {
-        // check that package json contains in repo dep
-        expectFile('./node_modules/dep-a/package.json').json().get('dependencies.in-repo-a').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-c').equals('0.0.0');
-        expectFile('./node_modules/dep-b/package.json').json().get('dependencies.in-repo-b').equals('0.0.0');
-
-        // check that in-repo addons are resolvable
-        resolveEntryPoint(expectAudit)
-          .resolves(/lib\.js/)
-          .toModule()
-          .resolves(/dep-a\/check-resolution\.js/)
-          .toModule()
-          .resolves(/in-repo-a\/check-resolution-target\.js/)
-          .toModule()
-          .codeContains('export {}');
-
-        // check that the in repo addons are correctly upgraded
-        expectFile('./node_modules/dep-a/lib/in-repo-a/package.json').json().get('ember-addon.version').equals(2);
-        expectFile('./node_modules/dep-b/lib/in-repo-b/package.json').json().get('ember-addon.version').equals(2);
-        expectFile('./node_modules/dep-b/lib/in-repo-c/package.json').json().get('ember-addon.version').equals(2);
-
-        // check that the app trees with in repo addon are combined correctly
-        resolveEntryPoint(expectAudit)
-          .resolves(/service\/in-repo\.js/)
-          .toModule()
-          .codeContains('');
-      });
-
-      test('incorporates in-repo-addons of in-repo-addons correctly', function () {
-        // secondary in-repo-addon was correctly detected and activated
-        resolveEntryPoint(expectAudit)
-          .resolves(/services\/secondary\.js/)
-          .toModule()
-          .codeContains('// secondary');
-
-        // secondary is resolvable from primary
-        resolveEntryPoint(expectAudit)
-          .resolves(/services\/primary\.js/)
-          .toModule()
-          .resolves(/secondary-in-repo-addon\/components\/secondary\.js/)
-          .toModule()
-          .codeContains('// secondary component');
+      test(`pnpm test: development`, async function (assert) {
+        let result = await app.execute(`pnpm test`);
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });
@@ -210,15 +180,26 @@ stage2Scenarios
 
     merge(depB.files, {
       app: {
-        service: { 'addon.js': '// dep-b', 'dep-wins-over-dev.js': '// dep-b', 'in-repo-over-deps.js': '// dep-b' },
+        service: {
+          'addon.js': 'export default "dep-b|service|addon.js";',
+          'dep-wins-over-dev.js': 'export default "dep-b|service|dep-wins-over-dev.js";',
+          'in-repo-over-deps.js': 'export default "dep-b|service|in-repo-over-deps.js";',
+        },
       },
     });
-    merge(depA.files, { app: { service: { 'addon.js': '// dep-a' } } });
+    merge(depA.files, { app: { service: { 'addon.js': 'export default "dep-a|service|addon.js";' } } });
 
     addInRepoAddon(app, 'in-repo-a', {
-      app: { service: { 'in-repo.js': '// in-repo-a', 'in-repo-over-deps.js': '// in-repo-a' } },
+      app: {
+        service: {
+          'in-repo.js': 'export default "in-repo-a|service|in-repo.js";',
+          'in-repo-over-deps.js': 'export default "in-repo-a|service|in-repo-over-deps.js";',
+        },
+      },
     });
-    addInRepoAddon(app, 'in-repo-b', { app: { service: { 'in-repo.js': '// in-repo-b' } } });
+    addInRepoAddon(app, 'in-repo-b', {
+      app: { service: { 'in-repo.js': 'export default "in-repo-b|service|in-repo.js";' } },
+    });
 
     let devA = addDevAddon(app, 'dev-a');
     let devB = addDevAddon(app, 'dev-b');
@@ -230,113 +211,82 @@ stage2Scenarios
     (devB.pkg['ember-addon'] as any).after = 'dev-e';
     (devF.pkg['ember-addon'] as any).before = 'dev-d';
 
-    merge(devA.files, { app: { service: { 'dev-addon.js': '// dev-a', 'dep-wins-over-dev.js': '// dev-a' } } });
-    merge(devB.files, { app: { service: { 'test-after.js': '// dev-b' } } });
-    merge(devC.files, { app: { service: { 'dev-addon.js': '// dev-c' } } });
-    merge(devD.files, { app: { service: { 'test-before.js': '// dev-d' } } });
-    merge(devE.files, { app: { service: { 'test-after.js': '// dev-e' } } });
-    merge(devF.files, { app: { service: { 'test-before.js': '// dev-f' } } });
+    merge(devA.files, {
+      app: {
+        service: {
+          'dev-addon.js': 'export default "dev-a|service|dev-addon.js";',
+          'dep-wins-over-dev.js': 'export default "dev-a|service|dep-wins-over-dev.js";',
+        },
+      },
+    });
+    merge(devB.files, { app: { service: { 'test-after.js': 'export default "dev-b|service|test-after.js";' } } });
+    merge(devC.files, { app: { service: { 'dev-addon.js': 'export default "dev-c|service|dev-addon.js";' } } });
+    merge(devD.files, { app: { service: { 'test-before.js': 'export default "dev-d|service|test-before.js";' } } });
+    merge(devE.files, { app: { service: { 'test-after.js': 'export default "dev-e|service|test-after.js";' } } });
+    merge(devF.files, { app: { service: { 'test-before.js': 'export default "dev-f|service|test-before.js";' } } });
+
+    merge(app.files, {
+      services: {
+        'store.js': `export { default } from 'ember-data/store';`,
+      },
+      tests: {
+        unit: {
+          'sorted-addons-win.js': `import { module, test } from 'qunit';
+
+          import inRepoB from 'my-app/service/in-repo';
+          import addonService from 'my-app/service/addon';
+          import devAddon from 'my-app/service/dev-addon';
+          import depWinsOverDev from 'my-app/service/dep-wins-over-dev';
+          import inRepoOverDeps from 'my-app/service/in-repo-over-deps';
+          import testBefore from 'my-app/service/test-before';
+          import testAfter from 'my-app/service/test-after';
+
+          module('Unit | basics', function () {
+            test('in-repo-b comes from the right place', async function (assert) {
+              assert.strictEqual(inRepoB, 'in-repo-b|service|in-repo.js');
+            });
+
+            test('addon-service comes from the right place', async function (assert) {
+              assert.strictEqual(addonService, 'dep-b|service|addon.js');
+            });
+
+            test('dev-addon-service comes from the right place', async function (assert) {
+              assert.strictEqual(devAddon, 'dev-c|service|dev-addon.js');
+            });
+
+            test('depWinsOverDev comes from the right place', async function (assert) {
+              assert.strictEqual(depWinsOverDev, 'dep-b|service|dep-wins-over-dev.js');
+            });
+
+            test('inRepoOverDeps comes from the right place', async function (assert) {
+              assert.strictEqual(inRepoOverDeps, 'in-repo-a|service|in-repo-over-deps.js');
+            });
+
+            test('testBefore comes from the right place', async function (assert) {
+              assert.strictEqual(testBefore, 'dev-d|service|test-before.js');
+            });
+
+            test('testAfter comes from the right place', async function (assert) {
+              assert.strictEqual(testAfter, 'dev-b|service|test-after.js');
+            });
+          })
+          `,
+        },
+      },
+    });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let server: CommandWatcher;
-      let appURL: string;
-
       hooks.before(async () => {
         app = await scenario.prepare();
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 
-      hooks.after(async () => {
-        await server?.shutdown();
-      });
-
-      let expectAudit = setupAuditTest(hooks, () => ({
-        appURL,
-        startingFrom: ['index.html'],
-        fetch: fetch as unknown as typeof globalThis.fetch,
-      }));
-
-      test('verifies that the correct lexigraphically sorted addons win', function (assert) {
-        let expectModule = resolveEntryPoint(expectAudit);
-        expectModule.withContents(contents => {
-          const result = /import \* as (\w+) from ".*in-repo-b\/_app_\/service\/in-repo.js.*/.exec(contents) ?? [];
-          const [, amdModule] = result;
-          assert.ok(
-            contents.includes(`"my-app/service/in-repo": ${amdModule}`),
-            'expected module is in the export list'
-          );
-          return true;
-        }, 'module imports from the correct place');
-        expectModule.withContents(contents => {
-          const result = /import \* as (\w+) from ".*dep-b\/_app_\/service\/addon.js.*/.exec(contents) ?? [];
-          const [, amdModule] = result;
-          assert.ok(contents.includes(`"my-app/service/addon": ${amdModule}`), 'expected module is in the export list');
-          return true;
-        }, 'module imports from the correct place');
-        expectModule.withContents(contents => {
-          const result = /import \* as (\w+) from ".*dev-c\/_app_\/service\/dev-addon.js.*/.exec(contents) ?? [];
-          const [, amdModule] = result;
-          assert.ok(
-            contents.includes(`"my-app/service/dev-addon": ${amdModule}`),
-            'expected module is in the export list'
-          );
-          return true;
-        }, 'module imports from the correct place');
-      });
-
-      test('addons declared as dependencies should win over devDependencies', function (assert) {
-        resolveEntryPoint(expectAudit).withContents(contents => {
-          const result =
-            /import \* as (\w+) from ".*dep-b\/_app_\/service\/dep-wins-over-dev.js.*/.exec(contents) ?? [];
-          const [, amdModule] = result;
-          assert.ok(
-            contents.includes(`"my-app/service/dep-wins-over-dev": ${amdModule}`),
-            'expected module is in the export list'
-          );
-          return true;
-        });
-      });
-
-      test('in repo addons declared win over dependencies', function (assert) {
-        resolveEntryPoint(expectAudit).withContents(contents => {
-          const result =
-            /import \* as (\w+) from ".*in-repo-a\/_app_\/service\/in-repo-over-deps.js.*/.exec(contents) ?? [];
-          const [, amdModule] = result;
-          assert.ok(
-            contents.includes(`"my-app/service/in-repo-over-deps": ${amdModule}`),
-            'expected module is in the export list'
-          );
-          return true;
-        });
-      });
-
-      test('ordering with before specified', function (assert) {
-        resolveEntryPoint(expectAudit).withContents(contents => {
-          const result = /import \* as (\w+) from ".*dev-d\/_app_\/service\/test-before.js.*/.exec(contents) ?? [];
-          const [, amdModule] = result;
-          assert.ok(
-            contents.includes(`"my-app/service/test-before": ${amdModule}`),
-            'expected module is in the export list'
-          );
-          return true;
-        });
-      });
-
-      test('ordering with after specified', function (assert) {
-        resolveEntryPoint(expectAudit).withContents(contents => {
-          const result = /import \* as (\w+) from ".*dev-b\/_app_\/service\/test-after.js.*/.exec(contents) ?? [];
-          const [, amdModule] = result;
-          assert.ok(
-            contents.includes(`"my-app/service/test-after": ${amdModule}`),
-            'expected module is in the export list'
-          );
-          return true;
-        });
+      test(`pnpm test: development`, async function (assert) {
+        let result = await app.execute(`pnpm test`);
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

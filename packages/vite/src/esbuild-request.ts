@@ -16,7 +16,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
       return;
     }
 
-    if (source && importer && source[0] !== '\0') {
+    if (source && importer && source[0] !== '\0' && !source.startsWith('virtual-module:')) {
       let fromFile = cleanUrl(importer);
       return new EsBuildModuleRequest(
         context,
@@ -130,7 +130,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
       return {
         type: 'found',
         filename: request.specifier,
-        result: { path: request.specifier, namespace: 'embroider' },
+        result: { path: request.specifier, namespace: 'embroider-virtual' },
         isVirtual: this.isVirtual,
       };
     }
@@ -144,6 +144,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
       };
     }
 
+    requestStatus(request.specifier);
+
     let result = await this.context.resolve(request.specifier, {
       importer: request.fromFile,
       resolveDir: dirname(request.fromFile),
@@ -155,7 +157,10 @@ export class EsBuildModuleRequest implements ModuleRequest {
         },
       },
     });
-    if (result.errors.length > 0) {
+
+    let status = readStatus(request.specifier);
+
+    if (result.errors.length > 0 || status === 'not_found') {
       return { type: 'not_found', err: result };
     } else if (result.external) {
       return { type: 'ignored', result };
@@ -163,4 +168,42 @@ export class EsBuildModuleRequest implements ModuleRequest {
       return { type: 'found', filename: result.path, result, isVirtual: this.isVirtual };
     }
   }
+}
+
+/*
+  This is an unfortunate necessity. During depscan, vite deliberately hides
+  information from esbuild. Specifically, it treats "not found" and "this is an
+  external dependency" as both "external: true". But we really care about the
+  difference, since we have fallback behaviors for the "not found" case. Using
+  this global state, our rollup resolver plugin can observe what vite is
+  actually doing and communicate that knowledge outward to our esbuild resolver
+  plugin.
+ */
+function sharedGlobalState() {
+  let channel = (globalThis as any).__embroider_vite_resolver_channel__ as
+    | undefined
+    | Map<string, 'pending' | 'found' | 'not_found'>;
+  if (!channel) {
+    channel = new Map();
+    (globalThis as any).__embroider_vite_resolver_channel__ = channel;
+  }
+  return channel;
+}
+
+function requestStatus(id: string): void {
+  sharedGlobalState().set(id, 'pending');
+}
+
+export function writeStatus(id: string, status: 'found' | 'not_found'): void {
+  let channel = sharedGlobalState();
+  if (channel.get(id) === 'pending') {
+    channel.set(id, status);
+  }
+}
+
+function readStatus(id: string): 'pending' | 'not_found' | 'found' {
+  let channel = sharedGlobalState();
+  let result = channel.get(id) ?? 'pending';
+  channel.delete(id);
+  return result;
 }

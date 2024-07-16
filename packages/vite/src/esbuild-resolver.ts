@@ -1,60 +1,53 @@
-import type { Plugin as EsBuildPlugin } from 'esbuild';
-import { type PluginItem, transform } from '@babel/core';
-import { ResolverLoader, virtualContent, locateEmbroiderWorkingDir, explicitRelative } from '@embroider/core';
-import { readFileSync, readJSONSync } from 'fs-extra';
+import type { Plugin as EsBuildPlugin, OnLoadResult } from 'esbuild';
+import { transform } from '@babel/core';
+import { ResolverLoader, virtualContent, needsSyntheticComponentJS } from '@embroider/core';
+import { readFileSync } from 'fs-extra';
 import { EsBuildModuleRequest } from './esbuild-request';
 import assertNever from 'assert-never';
-import { dirname, isAbsolute, resolve } from 'path';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 
-function* candidates(path: string) {
-  yield path;
-  yield path + '.hbs';
-  yield path + '.gjs';
-  yield path + '.gts';
-}
+const templateOnlyComponent =
+  `import templateOnly from '@ember/component/template-only';\n` + `export default templateOnly();\n`;
 
-export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
+export function esBuildResolver(): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
-  let macrosConfig: PluginItem | undefined;
   let preprocessor = new Preprocessor();
+
+  function transformAndAssert(src: string, filename: string): string {
+    const result = transform(src, { filename });
+    if (!result || result.code == null) {
+      throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
+    }
+    return result.code!;
+  }
+
+  function onLoad({ path, namespace }: { path: string; namespace: string }): OnLoadResult {
+    let src: string;
+    if (namespace === 'embroider-template-only-component') {
+      src = templateOnlyComponent;
+    } else if (namespace === 'embroider-virtual') {
+      src = virtualContent(path, resolverLoader.resolver).src;
+    } else {
+      src = readFileSync(path, 'utf8');
+    }
+    if (path.endsWith('.hbs')) {
+      src = hbsToJS(src);
+    } else if (['.gjs', '.gts'].some(ext => path.endsWith(ext))) {
+      src = preprocessor.process(src, { filename: path });
+    }
+    if (['.hbs', '.gjs', '.gts', '.js', '.ts'].some(ext => path.endsWith(ext))) {
+      src = transformAndAssert(src, path);
+    }
+    return { contents: src };
+  }
 
   return {
     name: 'embroider-esbuild-resolver',
     setup(build) {
-      // This resolver plugin is designed to test candidates for extensions and interoperates with our other embroider specific plugin
-      build.onResolve({ filter: /./ }, async ({ path, importer, namespace, resolveDir, pluginData, kind }) => {
-        if (pluginData?.embroiderExtensionSearch) {
-          return null;
-        }
-
-        let firstFailure;
-
-        for (let candidate of candidates(path)) {
-          let { specifier, fromFile } = adjustVirtualImport(candidate, importer);
-          let result = await build.resolve(specifier, {
-            namespace,
-            resolveDir,
-            importer: fromFile,
-            kind,
-            pluginData: { ...pluginData, embroiderExtensionSearch: true },
-          });
-
-          if (result.errors.length === 0) {
-            return result;
-          }
-
-          if (!firstFailure) {
-            firstFailure = result;
-          }
-        }
-
-        return firstFailure;
-      });
+      // Embroider Resolver
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let { specifier, fromFile } = adjustVirtualImport(path, importer);
-        let request = EsBuildModuleRequest.from(build, kind, specifier, fromFile, pluginData);
+        let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
         if (!request) {
           return null;
         }
@@ -70,92 +63,42 @@ export function esBuildResolver(root = process.cwd()): EsBuildPlugin {
         }
       });
 
-      build.onLoad({ namespace: 'embroider', filter: /./ }, ({ path }) => {
-        // We don't want esbuild to try loading virtual CSS files
-        if (path.endsWith('.css')) {
-          return { contents: '' };
+      // template-only-component synthesis
+      build.onResolve({ filter: /./ }, async ({ path, importer, namespace, resolveDir, pluginData, kind }) => {
+        if (pluginData?.embroiderExtensionResolving) {
+          // reentrance
+          return null;
         }
-        let { src } = virtualContent(path, resolverLoader.resolver);
-        if (!macrosConfig) {
-          macrosConfig = readJSONSync(resolve(locateEmbroiderWorkingDir(root), 'macros-config.json')) as PluginItem;
-        }
-        return { contents: runMacros(src, path, macrosConfig) };
-      });
 
-      build.onLoad({ filter: /\.g[jt]s$/ }, async ({ path: filename }) => {
-        const code = readFileSync(filename, 'utf8');
-
-        const result = transform(preprocessor.process(code, { filename }), {
-          filename,
+        let result = await build.resolve(path, {
+          namespace,
+          resolveDir,
+          importer,
+          kind,
+          // avoid reentrance
+          pluginData: { ...pluginData, embroiderExtensionResolving: true },
         });
 
-        if (!result || !result.code) {
-          throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
+        if (result.errors.length === 0 && !result.external) {
+          let syntheticPath = needsSyntheticComponentJS(path, result.path, resolverLoader.resolver.packageCache);
+          if (syntheticPath) {
+            return { path: syntheticPath, namespace: 'embroider-template-only-component' };
+          }
         }
 
-        const contents = result.code;
-
-        return { contents };
+        return result;
       });
 
-      build.onLoad({ filter: /\.hbs$/ }, async ({ path: filename }) => {
-        const code = readFileSync(filename, 'utf8');
+      // we need to handle everything from one of our three special namespaces:
+      build.onLoad({ namespace: 'embroider-template-only-component', filter: /./ }, onLoad);
+      build.onLoad({ namespace: 'embroider-virtual', filter: /./ }, onLoad);
+      build.onLoad({ namespace: 'embroider-template-tag', filter: /./ }, onLoad);
 
-        const result = transform(hbsToJS(code), { filename });
+      // we need to handle all hbs
+      build.onLoad({ filter: /\.hbs$/ }, onLoad);
 
-        if (!result || !result.code) {
-          throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
-        }
-
-        const contents = result.code;
-
-        return { contents };
-      });
-
-      build.onLoad({ filter: /\.[jt]s$/ }, ({ path, namespace }) => {
-        let src: string;
-        if (namespace === 'embroider') {
-          src = virtualContent(path, resolverLoader.resolver).src;
-        } else {
-          src = readFileSync(path, 'utf8');
-        }
-        if (!macrosConfig) {
-          macrosConfig = readJSONSync(resolve(locateEmbroiderWorkingDir(root), 'macros-config.json')) as PluginItem;
-        }
-        return { contents: runMacros(src, path, macrosConfig) };
-      });
+      // we need to handle all GJS (to preprocess) and JS (to run macros)
+      build.onLoad({ filter: /\.g?[jt]s$/ }, onLoad);
     },
   };
-}
-
-function runMacros(src: string, filename: string, macrosConfig: PluginItem): string {
-  return transform(src, {
-    filename,
-    plugins: [macrosConfig],
-  })!.code!;
-}
-
-// esbuild's resolve does not like when we resolve from virtual paths. That is,
-// a request like "../thing.js" from "/a/real/path/VIRTUAL_SUBDIR/virtual.js"
-// has an unambiguous target of "/a/real/path/thing.js", but esbuild won't do
-// that path adjustment until after checking whether VIRTUAL_SUBDIR actually
-// exists.
-//
-// We can do the path adjustments before doing resolve.
-function adjustVirtualImport(specifier: string, fromFile: string): { specifier: string; fromFile: string } {
-  let fromDir = dirname(fromFile);
-  if (!isAbsolute(specifier) && specifier.startsWith('.')) {
-    let targetPath = resolve(fromDir, specifier);
-    let newFromDir = dirname(targetPath);
-    if (fromDir !== newFromDir) {
-      return {
-        specifier: explicitRelative(newFromDir, targetPath),
-        // we're resolving *from* the destination, because we need to resolve
-        // from a file that exists, and we know that (if this was supposed to
-        // succeed at all) that file definitely does
-        fromFile: targetPath,
-      };
-    }
-  }
-  return { specifier, fromFile };
 }

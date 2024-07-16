@@ -4,6 +4,8 @@ import { RollupModuleRequest, virtualPrefix } from './request';
 import assertNever from 'assert-never';
 import makeDebug from 'debug';
 import { resolve } from 'path';
+import { writeStatus } from './esbuild-request';
+import type { PluginContext } from 'rollup';
 
 const debug = makeDebug('embroider:vite');
 
@@ -35,6 +37,10 @@ export function resolver(): Plugin {
     },
 
     async resolveId(source, importer, options) {
+      if (options.custom?.depScan) {
+        return await observeDepScan(this, source, importer, options);
+      }
+
       let request = RollupModuleRequest.from(this, source, importer, options.custom);
       if (!request) {
         // fallthrough to other rollup plugins
@@ -79,4 +85,25 @@ export function resolver(): Plugin {
       });
     },
   };
+}
+
+// During depscan, we have a wildly different job than during normal
+// usage. Embroider's esbuild resolver plugin replaces this rollup
+// resolver plugin for actually doing resolving, so we don't do any of
+// that. But we are still well-positioned to observe what vite's rollup
+// resolver plugin is doing, and that is important because vite's
+// esbuild depscan plugin will always obscure the results before
+// embroider's esbuild resolver plugin can see them. It obscures the
+// results by marking *both* "not found" and "this is a third-party
+// package" as "external: true". We really care about the difference
+// between the two, since we have fallback behaviors that should apply
+// to "not found" that should not apply to successfully discovered
+// third-party packages.
+async function observeDepScan(context: PluginContext, source: string, importer: string | undefined, options: any) {
+  let result = await context.resolve(source, importer, {
+    ...options,
+    skipSelf: true,
+  });
+  writeStatus(source, result ? 'found' : 'not_found');
+  return result;
 }

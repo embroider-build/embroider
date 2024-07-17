@@ -63,7 +63,7 @@ class TemplateTagCodemodPlugin extends Plugin {
     const tmp_path = readFileSync(this.inputPaths[0] + '/.stage2-output').toLocaleString();
     const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
     const resolver = new ResolverLoader(process.cwd()).resolver;
-    const hbs_file_test = /\/rewritten-app\/components\/.*\.hbs$/;
+    const hbs_file_test = /[\\/]rewritten-app[\\/]components[\\/].*\.hbs$/;
     // locate ember-source for the host app so we know which version to insert builtIns for
     const emberSourceEntrypoint = require.resolve('ember-source', { paths: [process.cwd()] });
     const emberVersion = JSON.parse(readFileSync(join(emberSourceEntrypoint, '../../package.json')).toString()).version;

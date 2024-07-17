@@ -665,6 +665,10 @@ export class Resolver {
         })
       );
 
+      if (resolution.type === 'ignored') {
+        return logTransition(`resolving to ignored component`, request, request.resolveTo(resolution));
+      }
+
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.

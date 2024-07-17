@@ -1820,6 +1820,9 @@ importers:
       ember-modifier:
         specifier: ^4.0.0
         version: 4.1.0(ember-source@3.28.12)
+      ember-page-title:
+        specifier: ^8.2.3
+        version: 8.2.3(ember-source@3.28.12)
       ember-qunit-7:
         specifier: npm:ember-qunit@^7.0.0
         version: /ember-qunit@7.0.0(@ember/test-helpers@2.9.4)(ember-source@3.28.12)(qunit@2.21.0)(webpack@5.92.0)
@@ -1856,6 +1859,9 @@ importers:
       ember-truth-helpers:
         specifier: ^3.0.0
         version: 3.1.1
+      ember-welcome-page:
+        specifier: ^7.0.2
+        version: 7.0.2
       execa:
         specifier: ^5.1.1
         version: 5.1.1
@@ -2796,7 +2802,7 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/core': 7.24.7(supports-color@8.1.1)
+      '@babel/core': 7.24.7
       '@babel/helper-plugin-utils': 7.24.7
 
   /@babel/plugin-syntax-decorators@7.24.7(@babel/core@7.24.7):
@@ -15464,6 +15470,19 @@ packages:
       - supports-color
     dev: true
 
+  /ember-page-title@8.2.3(ember-source@3.28.12):
+    resolution: {integrity: sha512-9XH4EVPCpSCyXRsLPzdDydU4HgQnaVeJJTrRF0WVh5bZERI9DgxuHv1NPmZU28todHRH91KcBc5nx8kIVJmqUw==}
+    engines: {node: 16.* || >= 18}
+    peerDependencies:
+      ember-source: '>= 3.28.0'
+    dependencies:
+      '@embroider/addon-shim': 1.8.9
+      '@simple-dom/document': 1.4.0
+      ember-source: 3.28.12(@babel/core@7.24.7)
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
   /ember-page-title@8.2.3(ember-source@5.3.0):
     resolution: {integrity: sha512-9XH4EVPCpSCyXRsLPzdDydU4HgQnaVeJJTrRF0WVh5bZERI9DgxuHv1NPmZU28todHRH91KcBc5nx8kIVJmqUw==}
     engines: {node: 16.* || >= 18}
@@ -16524,6 +16543,15 @@ packages:
       walk-sync: 2.2.0
     transitivePeerDependencies:
       - encoding
+      - supports-color
+    dev: true
+
+  /ember-welcome-page@7.0.2:
+    resolution: {integrity: sha512-TyaKxFIRXhODW5BTbqD/by0Gu8Z9B9AA1ki3Bzzm6fOj2b30Qlprtt+XUG52kS0zVNmxYj/WWoT0TsKiU61VOw==}
+    engines: {node: 14.* || 16.* || >= 18}
+    dependencies:
+      '@embroider/addon-shim': 1.8.9
+    transitivePeerDependencies:
       - supports-color
     dev: true
 

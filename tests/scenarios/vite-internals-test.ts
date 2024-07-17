@@ -10,13 +10,20 @@ const { module: Qmodule, test } = QUnit;
 appScenarios
   .only('canary')
   .map('vite-internals', app => {
+    app.linkDevDependency('ember-page-title', { baseDir: __dirname });
+    app.linkDevDependency('ember-welcome-page', { baseDir: __dirname });
     app.mergeFiles({
       app: {
         components: {
           'fancy-button.hbs': `<h1>I'm fancy</h1>`,
         },
         templates: {
-          'application.hbs': '<FancyButton />',
+          'application.hbs': `{{page-title "MyApp"}}
+
+          <FancyButton />
+          {{outlet}}
+
+          <WelcomePage />`,
         },
       },
     });

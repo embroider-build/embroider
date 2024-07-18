@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-07-18)
+
+@embroider/compat 3.6.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#1842](https://github.com/embroider-build/embroider/pull/1842) [beta] template-tag code mod ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
 ## Release (2024-07-16)
 
 @embroider/compat 3.5.7 (patch)

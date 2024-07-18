@@ -10,13 +10,13 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.5.6",
-      "newVersion": "3.5.7",
+      "impact": "minor",
+      "oldVersion": "3.5.7",
+      "newVersion": "3.6.0",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
@@ -43,16 +43,7 @@
       "oldVersion": "4.0.0"
     },
     "@embroider/util": {
-      "impact": "patch",
-      "oldVersion": "1.13.1",
-      "newVersion": "1.13.2",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/util/package.json"
+      "oldVersion": "1.13.2"
     },
     "@embroider/vite": {
       "oldVersion": "0.2.0"
@@ -61,5 +52,5 @@
       "oldVersion": "4.0.4"
     }
   },
-  "description": "## Release (2024-07-16)\n\n@embroider/compat 3.5.7 (patch)\n@embroider/util 1.13.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2033](https://github.com/embroider-build/embroider/pull/2033) Remove deprecations warnings in resolver transform ([@mkszepp](https://github.com/mkszepp))\n  * [#2047](https://github.com/embroider-build/embroider/pull/2047) Add semver to power select with create ([@mkszepp](https://github.com/mkszepp))\n\n#### :house: Internal\n* `@embroider/test-scenarios`\n  * [#1930](https://github.com/embroider-build/embroider/pull/1930) create a smoke test for the widest possible matrix ([@mansona](https://github.com/mansona))\n* Other\n  * [#2015](https://github.com/embroider-build/embroider/pull/2015) update github actions ([@mansona](https://github.com/mansona))\n* `@embroider/util`, `@embroider/sample-transforms`, `@embroider/test-support`, `@embroider/test-scenarios`\n  * [#1931](https://github.com/embroider-build/embroider/pull/1931) update scenario-tester ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
+  "description": "## Release (2024-07-18)\n\n@embroider/compat 3.6.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#1842](https://github.com/embroider-build/embroider/pull/1842) [beta] template-tag code mod ([@void-mAlex](https://github.com/void-mAlex))\n\n#### Committers: 1\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n"
 }

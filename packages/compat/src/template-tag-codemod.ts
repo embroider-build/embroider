@@ -78,11 +78,19 @@ class TemplateTagCodemodPlugin extends Plugin {
         if (ember_template_compiler.type === 'not_found') {
           throw 'This will not ever be true';
         }
+
+        const embroider_compat_path = require.resolve('@embroider/compat', { paths: [process.cwd()] });
+        const babel_plugin_ember_template_compilation = require.resolve('babel-plugin-ember-template-compilation', {
+          paths: [embroider_compat_path],
+        });
+        const babel_plugin_syntax_decorators = require.resolve('@babel/plugin-syntax-decorators', {
+          paths: [embroider_compat_path],
+        });
         let src =
           transformSync(hbsToJS(template_file_src), {
             plugins: [
               [
-                'babel-plugin-ember-template-compilation',
+                babel_plugin_ember_template_compilation,
                 {
                   compilerPath: ember_template_compiler.filename,
                   transforms: [ResolverTransform({ appRoot: process.cwd(), emberVersion: emberVersion })],
@@ -134,7 +142,7 @@ class TemplateTagCodemodPlugin extends Plugin {
 
         //find backing class
         const backing_class_resolution = resolver.nodeResolve(
-          '#embroider_compat/' + relative(tmp_path, current_file).slice(0, -4),
+          '#embroider_compat/' + relative(tmp_path, current_file).replace(/[\\]/g, '/').slice(0, -4),
           tmp_path
         );
 
@@ -147,7 +155,7 @@ class TemplateTagCodemodPlugin extends Plugin {
 
         src = transformSync(backing_class_src, {
           plugins: [
-            ['@babel/plugin-syntax-decorators', { decoratorsBeforeExport: true }],
+            [babel_plugin_syntax_decorators, { decoratorsBeforeExport: true }],
             function glimmer_syntax_creator(babel): unknown {
               return {
                 name: 'test',

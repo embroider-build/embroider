@@ -10,7 +10,7 @@ import { transformSync } from '@babel/core';
 import { hbsToJS, ResolverLoader } from '@embroider/core';
 import { ImportUtil } from 'babel-import-util';
 import ResolverTransform from './resolver-transform';
-import { execute } from './audit/build';
+import { spawn } from 'child_process';
 import { locateEmbroiderWorkingDir } from '@embroider/core';
 
 export interface TemplateTagCodemodOptions {
@@ -148,7 +148,6 @@ class TemplateTagCodemodPlugin extends Plugin {
 
         const backing_class_filename = 'filename' in backing_class_resolution ? backing_class_resolution.filename : '';
         const backing_class_src = readFileSync(backing_class_filename).toString();
-        // console.log(backing_class_src);
         const magic_string = '__MAGIC_STRING_FOR_TEMPLATE_TAG_REPLACE__';
         const is_template_only =
           backing_class_src.indexOf("import templateOnlyComponent from '@ember/component/template-only';") !== -1;
@@ -242,4 +241,52 @@ class TemplateTagCodemodPlugin extends Plugin {
       }
     }
   }
+}
+
+async function execute(
+  shellCommand: string,
+  opts?: { env?: Record<string, string>; pwd?: string }
+): Promise<{
+  exitCode: number;
+  stderr: string;
+  stdout: string;
+  output: string;
+}> {
+  let env: Record<string, string | undefined> | undefined;
+  if (opts?.env) {
+    env = { ...process.env, ...opts.env };
+  }
+  let child = spawn(shellCommand, {
+    stdio: ['inherit', 'pipe', 'pipe'],
+    cwd: opts?.pwd,
+    shell: true,
+    env,
+  });
+  let stderrBuffer: string[] = [];
+  let stdoutBuffer: string[] = [];
+  let combinedBuffer: string[] = [];
+  child.stderr.on('data', data => {
+    stderrBuffer.push(data);
+    combinedBuffer.push(data);
+  });
+  child.stdout.on('data', data => {
+    stdoutBuffer.push(data);
+    combinedBuffer.push(data);
+  });
+  return new Promise(resolve => {
+    child.on('close', (exitCode: number) => {
+      resolve({
+        exitCode,
+        get stdout() {
+          return stdoutBuffer.join('');
+        },
+        get stderr() {
+          return stderrBuffer.join('');
+        },
+        get output() {
+          return combinedBuffer.join('');
+        },
+      });
+    });
+  });
 }

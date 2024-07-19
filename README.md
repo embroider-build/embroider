@@ -117,6 +117,28 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 });
 ```
 
+## Template Tag Codemod
+
+Edit `ember-cli-build.js`:
+```js
+return require('@embroider/compat').templateTagCodemod(app, {
+  shouldTransformPath: (path) => { return true; },
+  dryRun: true,
+});
+```
+Run a normal ember build to transform your hbs templates into template tag single file components.
+Requires optimized build (static* flags to be turned on)
+
+### Options
+
+* `shouldTransformPath` - allows users to filter the templates that the code mod would run on
+* `dryRun` - option can be used to obtain a summary of the changed the build would perform and which files it would act upon
+
+### Limitations
+
+* App templates only
+* `@embroider/compat` >= 3.6.0
+
 ## Compatibility
 
 ### Ember version

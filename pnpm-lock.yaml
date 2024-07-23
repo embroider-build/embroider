@@ -373,7 +373,7 @@ importers:
         version: 1.7.0
       code-equality-assertions:
         specifier: ^0.9.0
-        version: 0.9.0(@types/jest@29.5.12)(qunit@2.21.0)
+        version: 0.9.0(@types/jest@29.5.12)(@types/qunit@2.19.10)(qunit@2.21.0)
       ember-engines:
         specifier: ^0.8.19
         version: 0.8.23(@glint/template@1.4.0)
@@ -498,6 +498,9 @@ importers:
       '@types/node':
         specifier: ^15.12.2
         version: 15.14.9
+      '@types/qunit':
+        specifier: ^2.11.1
+        version: 2.19.10
       '@types/resolve':
         specifier: ^1.20.0
         version: 1.20.6
@@ -606,7 +609,7 @@ importers:
         version: 2.2.5
       code-equality-assertions:
         specifier: ^0.9.0
-        version: 0.9.0(@types/jest@29.5.12)(qunit@2.21.0)
+        version: 0.9.0(@types/jest@29.5.12)(@types/qunit@2.19.10)(qunit@2.21.0)
       scenario-tester:
         specifier: ^2.1.2
         version: 2.1.2
@@ -1219,7 +1222,7 @@ importers:
         version: 3.5.2
       code-equality-assertions:
         specifier: ^0.9.0
-        version: 0.9.0(@types/jest@29.5.12)(qunit@2.21.0)
+        version: 0.9.0(@types/jest@29.5.12)(@types/qunit@2.19.10)(qunit@2.21.0)
       console-ui:
         specifier: ^3.0.0
         version: 3.1.2
@@ -1281,6 +1284,9 @@ importers:
       '@types/node':
         specifier: ^10.5.2
         version: 10.17.60
+      '@types/qunit':
+        specifier: ^2.11.1
+        version: 2.19.10
 
   test-packages/unstable-release:
     dependencies:
@@ -8922,9 +8928,6 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependenciesMeta:
-      ajv:
-        optional: true
     dependencies:
       ajv: 8.16.0
 
@@ -11436,7 +11439,7 @@ packages:
       q: 1.5.1
     dev: true
 
-  /code-equality-assertions@0.9.0(@types/jest@29.5.12)(qunit@2.21.0):
+  /code-equality-assertions@0.9.0(@types/jest@29.5.12)(@types/qunit@2.19.10)(qunit@2.21.0):
     resolution: {integrity: sha512-8t2+ZiCU9TIr/78TyVSEFii9khSic293zVCfndsG7bOymAsdDFmN1GSwjRdyQxz7+tHE+biUvt08Qlx4Xvfuxw==}
     peerDependencies:
       '@types/jest': '2'
@@ -11452,6 +11455,7 @@ packages:
     dependencies:
       '@babel/core': 7.24.7
       '@types/jest': 29.5.12
+      '@types/qunit': 2.19.10
       diff: 5.2.0
       prettier: 2.8.8
       qunit: 2.21.0

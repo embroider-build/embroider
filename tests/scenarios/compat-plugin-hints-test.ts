@@ -8,13 +8,13 @@ import { join } from 'path';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
-export function samplePlugin() {
-  return { visitor: {} };
-}
-
 appScenarios
   .map('compat-plugin-hints', app => {
-    app.files['ember-cli-build.js'] = `
+    app.mergeFiles({
+      'sample-plugin.js': `module.exports.samplePlugin = function samplePlugin() {
+        return { visitor: {} };
+      }`,
+      'ember-cli-build.js': `
       'use strict';
 
       const EmberApp = require('ember-cli/lib/broccoli/ember-app');
@@ -25,7 +25,7 @@ appScenarios
           babel: {
             plugins: [
               // deliberately non-serializable form
-              require("${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}").samplePlugin
+              require(__dirname + '/sample-plugin.js').samplePlugin
             ]
           }
         });
@@ -38,13 +38,14 @@ appScenarios
           ],
           pluginHints: [
             {
-              resolve: ["${__filename.replace(/\\/g, '/').replace(/\.ts$/, '.js')}"],
+              resolve: [__dirname + '/sample-plugin.js'],
               useMethod: 'samplePlugin',
             },
           ],
         });
       };
-      `;
+      `,
+    });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

@@ -47,7 +47,16 @@ module.exports = {
       },
     },
     {
-      files: ['test-packages/**/*.[jt]s', 'tests/scenarios/**/*.{js,ts}'],
+      files: ['test-packages/**/*.[jt]s'],
+      rules: {
+        'import/no-extraneous-dependencies': 'off',
+      },
+    },
+    {
+      files: ['tests/scenarios/**/*.ts'],
+      parserOptions: {
+        project: './tests/scenarios/tsconfig.json',
+      },
       rules: {
         'import/no-extraneous-dependencies': 'off',
       },

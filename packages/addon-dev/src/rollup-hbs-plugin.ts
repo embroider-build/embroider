@@ -12,6 +12,10 @@ export default function rollupHbsPlugin({
   return {
     name: 'rollup-hbs-plugin',
     async resolveId(source: string, importer: string | undefined, options) {
+      let hbsFilename = source.replace(/\.\w{1,3}$/, '') + '.hbs';
+      if (hbsFilename !== source) {
+        this.addWatchFile(hbsFilename);
+      }
       let resolution = await this.resolve(source, importer, {
         skipSelf: true,
         ...options,
@@ -113,6 +117,10 @@ async function maybeSynthesizeComponentJS(
   let type = excludeColocation?.some((glob) => minimatch(hbsFilename, glob))
     ? 'template-js'
     : 'template-only-component-js';
+
+  if (type === 'template-only-component-js') {
+    context.addWatchFile(source);
+  }
   // we're trying to resolve a JS module but only the corresponding HBS
   // file exists. Synthesize the JS. The meta states if the hbs corresponds
   // to a template-only component or a simple template like a route template.

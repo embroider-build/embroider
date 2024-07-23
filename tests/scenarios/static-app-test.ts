@@ -11,6 +11,7 @@ wideAppScenarios
   .map('static-app', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
     project.addDevDependency(emberBootstrap());
+    project.linkDevDependency('@babel/helper-module-imports', { baseDir: __dirname });
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
     project.linkDevDependency('ember-modifier', { baseDir: __dirname });
 

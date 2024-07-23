@@ -1030,6 +1030,19 @@ export class Resolver {
           );
         }
       } else {
+        // v2 apps can't rely on packageJSON exports because they will essentially enforce an extension
+        // we need to do an extensionless search so that things like template-only components can get their
+        // synthesized JS. This isn't an issue for addons because they are expected to have their template-only
+        // implementation backed in at deploy time
+        if (pkg.root === this.options.engines[0].root) {
+          let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
+          return logTransition(
+            `v2 app self-import`,
+            request,
+            request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
+          );
+        }
+
         // v2 packages are supposed to use package.json `exports` to enable
         // self-imports, but not all build tools actually follow the spec. This
         // is a workaround for badly behaved packagers.

@@ -46,6 +46,13 @@ export default function rollupHbsPlugin({
     },
 
     load(id: string) {
+      let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
+      if (hbsFilename !== id) {
+        this.addWatchFile(hbsFilename);
+        if (getMeta(this, id)?.type === 'template-only-component-js') {
+          this.addWatchFile(id);
+        }
+      }
       if (hbsFilter(id)) {
         return null;
       }

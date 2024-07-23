@@ -50,7 +50,6 @@ export class DevWatcher {
      * NOTE: there is a bit of a delay between a file change and the next "START"
      */
     this.#watcher.on('event', args => {
-      console.log('args', args);
       switch (args.code) {
         case 'START': {
           this.#defer();

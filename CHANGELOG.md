@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2024-07-25)
+
+
+
+#### :memo: Documentation
+* [#2055](https://github.com/embroider-build/embroider/pull/2055) document templateTagCodemod usage ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :house: Internal
+* [#2058](https://github.com/embroider-build/embroider/pull/2058) Set the packageManager field ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2024-07-18)
 
 @embroider/compat 3.6.0 (minor)

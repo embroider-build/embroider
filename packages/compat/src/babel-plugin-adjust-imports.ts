@@ -119,7 +119,7 @@ function applyRules(
             t,
             adder,
             path,
-            `#embroider_compat/components/${dasherizedName}`,
+            `@embroider/virtual/components/${dasherizedName}`,
             `${lookup.owningEngine.packageName}/components/${dasherizedName}`
           )
         );

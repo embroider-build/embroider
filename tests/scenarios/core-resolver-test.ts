@@ -157,18 +157,18 @@ Scenarios.fromProject(() => new Project())
         expectAudit.hasNoProblems();
       });
 
-      Qmodule('#embroider_compat', function () {
+      Qmodule('@embroider/virtual', function () {
         test('js-only component', async function () {
           givenFiles({
             'components/hello-world.js': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .to('./components/hello-world.js');
         });
 
@@ -176,14 +176,14 @@ Scenarios.fromProject(() => new Project())
           givenFiles({
             'components/hello-world.js': 'export default function() {}',
             'templates/components/hello-world.hbs': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure();
 
           let pairModule = expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
           pairModule.codeEquals(`
@@ -200,14 +200,14 @@ Scenarios.fromProject(() => new Project())
         test('hbs-only component', async function () {
           givenFiles({
             'templates/components/hello-world.hbs': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure();
 
           let pairModule = expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
           pairModule.codeEquals(`
@@ -223,21 +223,21 @@ Scenarios.fromProject(() => new Project())
         test('explicitly namedspaced component', async function () {
           givenFiles({
             'node_modules/my-addon/components/thing.js': '',
-            'app.js': `import "#embroider_compat/components/my-addon@thing"`,
+            'app.js': `import "@embroider/virtual/components/my-addon@thing"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/my-addon@thing')
+            .resolves('@embroider/virtual/components/my-addon@thing')
             .to('./node_modules/my-addon/components/thing.js');
         });
 
         test('explicitly namedspaced component in renamed package', async function () {
           givenFiles({
             'node_modules/my-addon/components/thing.js': '',
-            'app.js': `import "#embroider_compat/components/has-been-renamed@thing"`,
+            'app.js': `import "@embroider/virtual/components/has-been-renamed@thing"`,
           });
 
           await configure({
@@ -248,14 +248,14 @@ Scenarios.fromProject(() => new Project())
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/has-been-renamed@thing')
+            .resolves('@embroider/virtual/components/has-been-renamed@thing')
             .to('./node_modules/my-addon/components/thing.js');
         });
 
         test('explicitly namedspaced component references its own package', async function () {
           givenFiles({
             'app.js': `import "my-addon/components/thing"`,
-            'node_modules/my-addon/components/thing.js': `import "#embroider_compat/components/my-addon@inner"`,
+            'node_modules/my-addon/components/thing.js': `import "@embroider/virtual/components/my-addon@inner"`,
             'node_modules/my-addon/components/inner.js': '',
           });
 
@@ -263,49 +263,49 @@ Scenarios.fromProject(() => new Project())
 
           expectAudit
             .module('./node_modules/my-addon/components/thing.js')
-            .resolves('#embroider_compat/components/my-addon@inner')
+            .resolves('@embroider/virtual/components/my-addon@inner')
             .to('./node_modules/my-addon/components/inner.js');
         });
 
         test('podded js-only component with blank podModulePrefix', async function () {
           givenFiles({
             'components/hello-world/component.js': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .to('./components/hello-world/component.js');
         });
 
         test('podded js-only component with non-blank podModulePrefix', async function () {
           givenFiles({
             'pods/components/hello-world/component.js': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure({ podModulePrefix: 'my-app/pods' });
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .to('./pods/components/hello-world/component.js');
         });
 
         test('podded hbs-only component with blank podModulePrefix', async function () {
           givenFiles({
             'components/hello-world/template.hbs': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure();
 
           let pairModule = expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
           pairModule.codeEquals(`
@@ -321,14 +321,14 @@ Scenarios.fromProject(() => new Project())
         test('podded hbs-only component with non-blank podModulePrefix', async function () {
           givenFiles({
             'pods/components/hello-world/template.hbs': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure({ podModulePrefix: 'my-app/pods' });
 
           let pairModule = expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
           pairModule.codeEquals(`
@@ -345,14 +345,14 @@ Scenarios.fromProject(() => new Project())
           givenFiles({
             'components/hello-world/component.js': 'export default function() {}',
             'components/hello-world/template.hbs': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure();
 
           let pairModule = expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
           pairModule.codeEquals(`
@@ -370,14 +370,14 @@ Scenarios.fromProject(() => new Project())
           givenFiles({
             'pods/components/hello-world/component.js': 'export default function() {}',
             'pods/components/hello-world/template.hbs': '',
-            'app.js': `import "#embroider_compat/components/hello-world"`,
+            'app.js': `import "@embroider/virtual/components/hello-world"`,
           });
 
           await configure({ podModulePrefix: 'my-app/pods' });
 
           let pairModule = expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/components/hello-world')
+            .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
           pairModule.codeEquals(`
@@ -394,70 +394,70 @@ Scenarios.fromProject(() => new Project())
         test('plain helper', async function () {
           givenFiles({
             'helpers/hello-world.js': '',
-            'app.js': `import "#embroider_compat/helpers/hello-world"`,
+            'app.js': `import "@embroider/virtual/helpers/hello-world"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/helpers/hello-world')
+            .resolves('@embroider/virtual/helpers/hello-world')
             .to('./helpers/hello-world.js');
         });
 
         test('namespaced helper', async function () {
           givenFiles({
             'node_modules/my-addon/helpers/hello-world.js': '',
-            'app.js': `import "#embroider_compat/helpers/my-addon@hello-world"`,
+            'app.js': `import "@embroider/virtual/helpers/my-addon@hello-world"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/helpers/my-addon@hello-world')
+            .resolves('@embroider/virtual/helpers/my-addon@hello-world')
             .to('./node_modules/my-addon/helpers/hello-world.js');
         });
 
         test('modifier', async function () {
           givenFiles({
             'modifiers/hello-world.js': '',
-            'app.js': `import "#embroider_compat/modifiers/hello-world"`,
+            'app.js': `import "@embroider/virtual/modifiers/hello-world"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/modifiers/hello-world')
+            .resolves('@embroider/virtual/modifiers/hello-world')
             .to('./modifiers/hello-world.js');
         });
 
         test('nested ambiguous component', async function () {
           givenFiles({
             'components/something/hello-world.js': '',
-            'app.js': `import "#embroider_compat/ambiguous/something/hello-world"`,
+            'app.js': `import "@embroider/virtual/ambiguous/something/hello-world"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/ambiguous/something/hello-world')
+            .resolves('@embroider/virtual/ambiguous/something/hello-world')
             .to('./components/something/hello-world.js');
         });
 
         test('nested ambiguous helper', async function () {
           givenFiles({
             'helpers/something/hello-world.js': '',
-            'app.js': `import "#embroider_compat/ambiguous/something/hello-world"`,
+            'app.js': `import "@embroider/virtual/ambiguous/something/hello-world"`,
           });
 
           await configure();
 
           expectAudit
             .module('./app.js')
-            .resolves('#embroider_compat/ambiguous/something/hello-world')
+            .resolves('@embroider/virtual/ambiguous/something/hello-world')
             .to('./helpers/something/hello-world.js');
         });
       });

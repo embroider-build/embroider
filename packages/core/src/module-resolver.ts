@@ -142,7 +142,7 @@ type MergeEntry =
 
 type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName */ string, MergeEntry>>;
 
-const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
+const compatPattern = /@embroider\/virtual\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
 export interface ModuleRequest<Res extends Resolution = Resolution> {
   readonly specifier: string;
@@ -594,7 +594,7 @@ export class Resolver {
       case 'ambiguous':
         return this.resolveHelperOrComponent(rest, engine, request);
       default:
-        throw new Error(`bug: unexepected #embroider_compat specifier: ${request.specifier}`);
+        throw new Error(`bug: unexepected @embroider/virtual specifier: ${request.specifier}`);
     }
   }
 
@@ -1277,14 +1277,14 @@ export class Resolver {
 
     if (compatPattern.test(request.specifier)) {
       // Some kinds of compat requests get rewritten into other things
-      // deterministically. For example, "#embroider_compat/helpers/whatever"
+      // deterministically. For example, "@embroider/virtual/helpers/whatever"
       // means only "the-current-engine/helpers/whatever", and if that doesn't
       // actually exist it's that path that will show up as a missing import.
       //
       // But others have an ambiguous meaning. For example,
-      // #embroider_compat/components/whatever can mean several different
+      // @embroider/virtual/components/whatever can mean several different
       // things. If we're unable to find any of them, the actual
-      // "#embroider_compat" request will fall through all the way to here.
+      // "@embroider/virtual" request will fall through all the way to here.
       //
       // In that case, we don't want to externalize that failure. We know it's
       // not a classic runtime thing. It's better to let it be a build error

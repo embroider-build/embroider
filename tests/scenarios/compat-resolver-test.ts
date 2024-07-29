@@ -185,7 +185,7 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('./templates/application.hbs').equalsCode(`
             import { precompileTemplate } from "@ember/template-compilation";
-            import helloWorld_ from "#embroider_compat/components/hello-world";
+            import helloWorld_ from "@embroider/virtual/components/hello-world";
             export default precompileTemplate("{{helloWorld_}}", {
               moduleName: "my-app/templates/application.hbs",
               scope: () => ({
@@ -204,7 +204,7 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/application.hbs').equalsCode(`
             import { precompileTemplate } from "@ember/template-compilation";
-            import helloWorld_ from "#embroider_compat/ambiguous/hello-world";
+            import helloWorld_ from "@embroider/virtual/ambiguous/hello-world";
             export default precompileTemplate("{{helloWorld_ arg=1}}", {
               moduleName: "my-app/templates/application.hbs",
               scope: () => ({
@@ -223,7 +223,7 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/application.hbs').equalsCode(`
             import { precompileTemplate } from "@ember/template-compilation";
-            import helloWorld_ from "#embroider_compat/ambiguous/hello-world";
+            import helloWorld_ from "@embroider/virtual/ambiguous/hello-world";
             export default precompileTemplate("{{helloWorld_ arg=1}}", {
               moduleName: "my-app/templates/application.hbs",
               scope: () => ({
@@ -240,7 +240,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true, staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
             import { precompileTemplate } from "@ember/template-compilation";
-            import somethingHelloWorld_ from "#embroider_compat/ambiguous/something/hello-world";
+            import somethingHelloWorld_ from "@embroider/virtual/ambiguous/something/hello-world";
             export default precompileTemplate("{{somethingHelloWorld_}}", {
               moduleName: "my-app/templates/application.hbs",
               scope: () => ({
@@ -257,7 +257,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
           export default precompileTemplate("<helloWorld_ /><helloWorld_ />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -278,7 +278,7 @@ Scenarios.fromProject(() => new Project())
         });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import thing_ from "#embroider_compat/components/thing";
+          import thing_ from "@embroider/virtual/components/thing";
           export default precompileTemplate("<thing_ @foo={{1}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -295,7 +295,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
           export default precompileTemplate("{{#helloWorld_}} {{/helloWorld_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -312,7 +312,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
           export default precompileTemplate("<helloWorld_ />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -329,7 +329,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello/world";
+          import helloWorld_ from "@embroider/virtual/components/hello/world";
           export default precompileTemplate("<helloWorld_ />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -346,7 +346,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
           export default precompileTemplate("<helloWorld_></helloWorld_>", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -540,9 +540,9 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
-          import firstTarget_ from "#embroider_compat/components/first-target";
-          import secondTarget_ from "#embroider_compat/components/second-target";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
+          import firstTarget_ from "@embroider/virtual/components/first-target";
+          import secondTarget_ from "@embroider/virtual/components/second-target";
           export default precompileTemplate("<helloWorld_ @iAmAComponent={{firstTarget_}} /><helloWorld_ @iAmAComponent={{secondTarget_}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -573,9 +573,9 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
-          import firstTarget_ from "#embroider_compat/components/first-target";
-          import secondTarget_ from "#embroider_compat/components/second-target";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
+          import firstTarget_ from "@embroider/virtual/components/first-target";
+          import secondTarget_ from "@embroider/virtual/components/second-target";
           export default precompileTemplate("{{#helloWorld_ iAmAComponent=firstTarget_}}{{/helloWorld_}}{{#helloWorld_ iAmAComponent=secondTarget_}}{{/helloWorld_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -606,9 +606,9 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/ambiguous/hello-world";
-          import firstTarget_ from "#embroider_compat/components/first-target";
-          import secondTarget_ from "#embroider_compat/components/second-target";
+          import helloWorld_ from "@embroider/virtual/ambiguous/hello-world";
+          import firstTarget_ from "@embroider/virtual/components/first-target";
+          import secondTarget_ from "@embroider/virtual/components/second-target";
           export default precompileTemplate("{{helloWorld_ iAmAComponent=firstTarget_}}{{helloWorld_ iAmAComponent=secondTarget_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -700,7 +700,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import myHelper_ from "#embroider_compat/helpers/myHelper";
+          import myHelper_ from "@embroider/virtual/helpers/myHelper";
           export default precompileTemplate("<Stuff @value={{myHelper_ 1}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -717,7 +717,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import myHelper_ from "#embroider_compat/helpers/myHelper";
+          import myHelper_ from "@embroider/virtual/helpers/myHelper";
           export default precompileTemplate("<div class={{myHelper_ 1}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -736,7 +736,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import div_ from "#embroider_compat/helpers/div";
+          import div_ from "@embroider/virtual/helpers/div";
           export default precompileTemplate('{{#let (div_ this.a this.b) as |c|}}\\n          <div>{{c}}</div>\\n        {{/let}}', {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -753,7 +753,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import await_ from "#embroider_compat/helpers/await";
+          import await_ from "@embroider/virtual/helpers/await";
           export default precompileTemplate("<div class={{await_ 1}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -783,7 +783,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import myHelper_ from "#embroider_compat/helpers/myHelper";
+          import myHelper_ from "@embroider/virtual/helpers/myHelper";
           export default precompileTemplate("{{myHelper_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -826,7 +826,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
           export default precompileTemplate("{{component helloWorld_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -843,7 +843,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/helpers/hello-world";
+          import helloWorld_ from "@embroider/virtual/helpers/hello-world";
           export default precompileTemplate("{{helper helloWorld_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -860,7 +860,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
           export default precompileTemplate("{{#component helloWorld_}}{{/component}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -877,7 +877,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/components/hello-world";
+          import helloWorld_ from "@embroider/virtual/components/hello-world";
           export default precompileTemplate("{{(component helloWorld_)}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -894,7 +894,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/helpers/hello-world";
+          import helloWorld_ from "@embroider/virtual/helpers/hello-world";
           export default precompileTemplate("{{(helper helloWorld_)}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -917,7 +917,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/helpers/hello-world";
+          import helloWorld_ from "@embroider/virtual/helpers/hello-world";
           export default precompileTemplate("\\n            {{#let (helper helloWorld_ name=\\"World\\") as |hello|}}\\n              {{#let (helper hello name=\\"Tomster\\") as |helloTomster|}}\\n                {{helloTomster name=\\"Zoey\\"}}\\n              {{/let}}\\n            {{/let}}\\n          ", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -934,7 +934,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import helloWorld_ from "#embroider_compat/modifiers/hello-world";
+          import helloWorld_ from "@embroider/virtual/modifiers/hello-world";
           export default precompileTemplate("<div {{(modifier helloWorld_)}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -964,7 +964,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";
+          import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
           export default precompileTemplate("<div {{scrollTop_}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -981,7 +981,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";
+          import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
           export default precompileTemplate("<div {{scrollTop_ @scrollTopPos}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -998,7 +998,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";
+          import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
           export default precompileTemplate("<Thing {{scrollTop_ @scrollTopPos}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -1015,7 +1015,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import scrollTop_ from "#embroider_compat/modifiers/scroll-top";
+          import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
           export default precompileTemplate("<Thing as |f|><f.Input {{scrollTop_ @scrollTopPos}} /></Thing>", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -1062,7 +1062,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticModifiers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import addListener_ from "#embroider_compat/modifiers/add-listener";
+          import addListener_ from "@embroider/virtual/modifiers/add-listener";
           export default precompileTemplate("{{#let (modifier addListener_) as |addListener|}}\\n          {{#let (modifier addListener \\"click\\") as |addClickListener|}}\\n            <button {{addClickListener this.handleClick}}>Test</button>\\n          {{/let}}\\n        {{/let}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -1262,7 +1262,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticComponents: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import thing_ from "#embroider_compat/components/my-addon@thing";
+        import thing_ from "@embroider/virtual/components/my-addon@thing";
         export default precompileTemplate("{{component thing_}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1286,7 +1286,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import thing_ from "#embroider_compat/components/my-addon@thing";
+          import thing_ from "@embroider/virtual/components/my-addon@thing";
           export default precompileTemplate("<thing_ />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -1310,7 +1310,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import thing_ from "#embroider_compat/helpers/my-addon@thing";
+          import thing_ from "@embroider/virtual/helpers/my-addon@thing";
           export default precompileTemplate("{{(thing_)}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -1534,8 +1534,8 @@ Scenarios.fromProject(() => new Project())
         });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import capitalize_ from "#embroider_compat/helpers/capitalize";
-        import validate_ from "#embroider_compat/modifiers/validate";
+        import capitalize_ from "@embroider/virtual/helpers/capitalize";
+        import validate_ from "@embroider/virtual/modifiers/validate";
         export default precompileTemplate("\\n          {{#each things as |capitalize|}} {{(capitalize)}} {{/each}} {{(capitalize_)}}\\n          <Form as |validate|><input {{validate}} /></Form> <input {{validate_}} />\\n          ", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1585,7 +1585,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
         export default precompileTemplate("{{#formBuilder_ as |field|}}{{component field}}{{/formBuilder_}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1617,7 +1617,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
         export default precompileTemplate("{{#formBuilder_ as |other field|}}{{component field}}{{/formBuilder_}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1649,7 +1649,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
         export default precompileTemplate("{{#formBuilder_ as |f|}}{{component f.field}}{{/formBuilder_}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1681,7 +1681,7 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
         export default precompileTemplate("<formBuilder_ as |field|>{{component field}}</formBuilder_>", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1713,8 +1713,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
-        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "@embroider/virtual/ambiguous/form-builder";
+        import fancyTitle_ from "@embroider/virtual/components/fancy-title";
         export default precompileTemplate("{{formBuilder_ title=fancyTitle_}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1747,8 +1747,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
-        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
+        import fancyTitle_ from "@embroider/virtual/components/fancy-title";
         export default precompileTemplate("{{#formBuilder_ title=fancyTitle_}}{{/formBuilder_}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1781,8 +1781,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
-        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
+        import fancyTitle_ from "@embroider/virtual/components/fancy-title";
         export default precompileTemplate("<formBuilder_ @title={{fancyTitle_}}></formBuilder_>", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1815,8 +1815,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
-        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "@embroider/virtual/ambiguous/form-builder";
+        import fancyTitle_ from "@embroider/virtual/components/fancy-title";
         export default precompileTemplate("{{formBuilder_ title=fancyTitle_}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1849,8 +1849,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/ambiguous/form-builder";
-        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "@embroider/virtual/ambiguous/form-builder";
+        import fancyTitle_ from "@embroider/virtual/components/fancy-title";
         export default precompileTemplate("{{formBuilder_ title=(component fancyTitle_)}}", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1883,8 +1883,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
-        import fancyTitle_ from "#embroider_compat/components/fancy-title";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
+        import fancyTitle_ from "@embroider/virtual/components/fancy-title";
         export default precompileTemplate("<formBuilder_ @title={{component fancyTitle_}} />", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
@@ -1940,8 +1940,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('components/form-builder.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
-        import fancyNavbar_ from "#embroider_compat/components/fancy-navbar";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
+        import fancyNavbar_ from "@embroider/virtual/components/fancy-navbar";
         export default precompileTemplate("\\n        <formBuilder_ @navbar={{component fancyNavbar_}} as |bar|>\\n          {{component bar}}\\n        </formBuilder_>", {
           moduleName: "my-app/components/form-builder.hbs",
           scope: () => ({
@@ -1973,8 +1973,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('components/form-builder.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
-        import fancyNavbar_ from "#embroider_compat/components/fancy-navbar";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
+        import fancyNavbar_ from "@embroider/virtual/components/fancy-navbar";
         export default precompileTemplate("\\n        {{#formBuilder_ navbar=(component fancyNavbar_) as |bar|}}\\n          {{component bar}}\\n        {{/formBuilder_}}", {
           moduleName: "my-app/components/form-builder.hbs",
           scope: () => ({
@@ -2006,8 +2006,8 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('components/form-builder.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-        import formBuilder_ from "#embroider_compat/components/form-builder";
-        import fancyNavbar_ from "#embroider_compat/components/fancy-navbar";
+        import formBuilder_ from "@embroider/virtual/components/form-builder";
+        import fancyNavbar_ from "@embroider/virtual/components/fancy-navbar";
         export default precompileTemplate("\\n        {{#formBuilder_ navbar=(component fancyNavbar_) as |f|}}\\n          {{component f.bar}}\\n        {{/formBuilder_}}", {
           moduleName: "my-app/components/form-builder.hbs",
           scope: () => ({
@@ -2112,7 +2112,7 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('components/my-thing.hbs').equalsCode(`
           window.define("my-app/components/alpha", function () {
-            return importSync("#embroider_compat/components/alpha");
+            return importSync("@embroider/virtual/components/alpha");
           });
           import { precompileTemplate } from "@ember/template-compilation";
           import { importSync } from "@embroider/macros";
@@ -2141,7 +2141,7 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/index.hbs').equalsCode(`
           window.define("my-app/components/alpha", function () {
-            return importSync("#embroider_compat/components/alpha");
+            return importSync("@embroider/virtual/components/alpha");
           });
           import { precompileTemplate } from "@ember/template-compilation";
           import { importSync } from "@embroider/macros";
@@ -2158,7 +2158,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-          import title_ from "#embroider_compat/helpers/title";
+          import title_ from "@embroider/virtual/helpers/title";
           export default precompileTemplate("<Example @arg={{(title_)}} as |title|>{{(title)}}</Example>", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
@@ -2175,7 +2175,7 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticHelpers: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
-          import title_ from "#embroider_compat/helpers/title";
+          import title_ from "@embroider/virtual/helpers/title";
           export default precompileTemplate("{{#example arg=(title_) as |title|}}{{(title)}}{{/example}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({

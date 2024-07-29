@@ -339,7 +339,7 @@ describe('audit', function () {
     expect(withoutCodeFrames(result.findings)).toEqual([
       {
         message: 'unable to resolve dependency',
-        detail: '#embroider_compat/components/no-such-thing',
+        detail: '@embroider/virtual/components/no-such-thing',
         filename: './hello.hbs',
       },
     ]);
@@ -356,7 +356,7 @@ describe('audit', function () {
     expect(withoutCodeFrames(result.findings)).toEqual([
       {
         message: 'unable to resolve dependency',
-        detail: '#embroider_compat/components/no-such-thing',
+        detail: '@embroider/virtual/components/no-such-thing',
         filename: './app.js',
       },
     ]);
@@ -375,7 +375,7 @@ describe('audit', function () {
     expect(withoutCodeFrames(result.findings)).toEqual([
       {
         message: 'unable to resolve dependency',
-        detail: '#embroider_compat/components/no-such-thing',
+        detail: '@embroider/virtual/components/no-such-thing',
         filename: './hello.hbs',
       },
     ]);

@@ -12,6 +12,10 @@ export default function rollupHbsPlugin({
   return {
     name: 'rollup-hbs-plugin',
     async resolveId(source: string, importer: string | undefined, options) {
+      let hbsFilename = source.replace(/\.\w{1,3}$/, '') + '.hbs';
+      if (hbsFilename !== source) {
+        this.addWatchFile(hbsFilename);
+      }
       let resolution = await this.resolve(source, importer, {
         skipSelf: true,
         ...options,
@@ -30,9 +34,31 @@ export default function rollupHbsPlugin({
       }
     },
 
-    load(id: string) {
+    transform(code: string, id: string) {
+      let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
+      if (hbsFilename !== id) {
+        this.addWatchFile(hbsFilename);
+        if (getMeta(this, id)?.type === 'template-only-component-js') {
+          this.addWatchFile(id);
+        }
+      }
       if (hbsFilter(id)) {
-        return getHbsToJSCode(id);
+        return {
+          code: hbsToJS(code),
+        };
+      }
+    },
+
+    load(id: string) {
+      let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
+      if (hbsFilename !== id) {
+        this.addWatchFile(hbsFilename);
+        if (getMeta(this, id)?.type === 'template-only-component-js') {
+          this.addWatchFile(id);
+        }
+      }
+      if (hbsFilter(id)) {
+        return null;
       }
       let meta = getMeta(this, id);
       if (meta) {
@@ -91,6 +117,10 @@ async function maybeSynthesizeComponentJS(
   let type = excludeColocation?.some((glob) => minimatch(hbsFilename, glob))
     ? 'template-js'
     : 'template-only-component-js';
+
+  if (type === 'template-only-component-js') {
+    context.addWatchFile(source);
+  }
   // we're trying to resolve a JS module but only the corresponding HBS
   // file exists. Synthesize the JS. The meta states if the hbs corresponds
   // to a template-only component or a simple template like a route template.

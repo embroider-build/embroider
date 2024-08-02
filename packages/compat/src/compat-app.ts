@@ -237,7 +237,19 @@ export default class CompatApp {
         plugins = appBabel.plugins.concat(plugins);
       }
       if (appBabel.presets) {
-        presets = appBabel.presets.concat(presets);
+        if (this.legacyEmberAppInstance.options.useCustomBabelPresets) {
+          throw new Error(`
+            The following Babel presets have been found on the app custom Babel configuration:
+
+            ${presets}
+
+            Either these presets have been added explicitly to the app (e.g. through ember-cli-babel options in ember-cli-build.js), either classic addons have pushed these presets into the app.
+            With Embroider, you have full control over the Babel config via babel.config.cjs, and babel.config.cjs should be the only source of truth regarding Babel configuration; so classic addons no longer have the ability to push Babel presets.
+            
+            1. Add the presets you want to use to the babel.config.cjs.
+            2. Once babel.config.cjs has the presets you need, remove the present error by setting "useCustomBabelPresets" to false in the build options.
+          `);
+        }
       }
     }
 

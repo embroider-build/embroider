@@ -113,6 +113,14 @@ export default interface Options extends CoreOptions {
   // switching to Embroider, but is no longer necessary once content-for
   // 'config-module' code has been properly moved to the app-side.
   useAddonConfigModule?: boolean;
+
+  // Allows you to cancel the error that custom Babel presets have been
+  // found. This error notifies developers switching to Embroider that
+  // presets pushed by classic addons will no longer work. It also brings
+  // awareness about how to migrate from Babel build options to Babel config,
+  // but is no longer necessary once presets have been properly defined in the
+  // Babel config.
+  useCustomBabelPresets?: boolean;
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -127,6 +135,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   availableContentForTypes: [],
   useAddonAppBoot: true,
   useAddonConfigModule: true,
+  useCustomBabelPresets: true,
 });
 
 export function optionsWithDefaults(options?: Options): Required<Options> {

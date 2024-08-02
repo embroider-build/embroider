@@ -581,6 +581,9 @@ export class CompatAppBuilder {
       `module.exports = ${JSON.stringify(pconfig.config, null, 2)}`,
       'utf8'
     );
+    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_config_.json'), pconfig.config, {
+      spaces: 2,
+    });
     writeFileSync(
       join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_filter_.js'),
       babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.origAppPackage.root }),

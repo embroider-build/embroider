@@ -256,7 +256,7 @@ app.forEachScenario(scenario => {
           `
         import './helpers/page-title';
         import 'app-template/helpers/page-title';
-        import '#embroider_compat/helpers/page-title';
+        import '@embroider/virtual/helpers/page-title';
         import 'ember-page-title/_app_/helpers/page-title.js';
         // todo: import 'ember-page-title/_app_/helpers/page-title';
       `

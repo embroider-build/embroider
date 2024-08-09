@@ -470,20 +470,7 @@ export class CompatAppBuilder {
       assetPaths.push('package.json');
     }
 
-    let meta: AppMeta = {
-      type: 'app',
-      version: 2,
-      assets: assetPaths,
-      babel: {
-        filename: '_babel_config_.js',
-        isParallelSafe: true, // TODO
-        majorVersion: this.compatApp.babelMajorVersion(),
-        fileFilter: '_babel_filter_.js',
-      },
-      'root-url': this.rootURL(),
-    };
-
-    let pkg = this.combinePackageJSON(meta);
+    let pkg = this.combinePackageJSON(assetPaths);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 
     let resolverConfig = this.resolverConfig(appFiles);
@@ -499,15 +486,31 @@ export class CompatAppBuilder {
     this.addMacrosConfig(this.compatApp.macrosConfig.babelPluginConfig()[0]);
   }
 
-  private combinePackageJSON(meta: AppMeta): object {
+  private combinePackageJSON(assetPaths: string[]): object {
     let pkgLayers: any[] = [this.origAppPackage.packageJSON];
     let fastbootConfig = this.fastbootConfig;
     if (fastbootConfig) {
       // fastboot-specific package.json output is allowed to add to our original package.json
       pkgLayers.push(fastbootConfig.packageJSON);
     }
-    // but our own new v2 app metadata takes precedence over both
-    pkgLayers.push({ 'ember-addon': meta });
+
+    if ((this.origAppPackage.packageJSON['ember-addon']?.version ?? 0) < 2) {
+      // the app has no v2 metdata, so we must be auto-upgrading it
+      let meta: AppMeta = {
+        type: 'app',
+        version: 2,
+        assets: assetPaths,
+        babel: {
+          filename: '_babel_config_.js',
+          isParallelSafe: true, // TODO
+          majorVersion: this.compatApp.babelMajorVersion(),
+          fileFilter: '_babel_filter_.js',
+        },
+        'root-url': this.rootURL(),
+        'auto-upgraded': true,
+      };
+      pkgLayers.push({ 'ember-addon': meta });
+    }
     return combinePackageJSON(...pkgLayers);
   }
 

@@ -508,12 +508,6 @@ export class CompatAppBuilder {
     }
     // but our own new v2 app metadata takes precedence over both
     pkgLayers.push({ 'ember-addon': meta });
-    // add a default package exports
-    pkgLayers.push({
-      exports: {
-        './*': './*.js',
-      },
-    });
     return combinePackageJSON(...pkgLayers);
   }
 
@@ -624,7 +618,7 @@ export class CompatAppBuilder {
           The following code is included via content-for 'config-module':
 
           ${configModule}
-          
+
           1. If you want to keep the same behavior, add it to the app/environment.js.
           2. Once app/environment.js has the content you need, remove the present error by setting "useAddonConfigModule" to false in the build options.
         `);

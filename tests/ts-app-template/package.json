@@ -10,6 +10,9 @@
     "doc": "doc",
     "test": "tests"
   },
+  "exports": {
+    "./*": "./*"
+  },
   "scripts": {
     "build": "ember build --environment=production",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",

@@ -10,6 +10,9 @@
     "doc": "doc",
     "test": "tests"
   },
+  "exports": {
+    "./*": "./*"
+  },
   "scripts": {
     "build": "vite build",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",

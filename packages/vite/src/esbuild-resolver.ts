@@ -52,8 +52,22 @@ export function esBuildResolver(): EsBuildPlugin {
           return null;
         }
         let resolution = await resolverLoader.resolver.resolve(request);
+        const imp = importer.replace(/\\/g, '/');
+        const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
         switch (resolution.type) {
           case 'found':
+            // if some addon imports app files we do not want to bundle it
+            const isInNodeModules = resolution.filename.slice(appRoot.length).includes('/node_modules/');
+            const isInAppRoot = resolution.filename.replace(/\\/g, '/').startsWith(appRoot);
+            if (isInAppRoot && !isInNodeModules && importer !== '<stdin>') {
+              const isFromApp = imp.startsWith(appRoot) && !importer.slice(appRoot.length).includes('/node_modules/');
+              if (!isFromApp) {
+                return {
+                  path: resolution.filename,
+                  external: true,
+                };
+              }
+            }
           case 'ignored':
             return resolution.result;
           case 'not_found':
@@ -70,23 +84,26 @@ export function esBuildResolver(): EsBuildPlugin {
           return null;
         }
 
-        let result = await build.resolve(path, {
-          namespace,
-          resolveDir,
-          importer,
-          kind,
-          // avoid reentrance
-          pluginData: { ...pluginData, embroiderExtensionResolving: true },
-        });
-
-        if (result.errors.length === 0 && !result.external) {
-          let syntheticPath = needsSyntheticComponentJS(path, result.path, resolverLoader.resolver.packageCache);
-          if (syntheticPath) {
-            return { path: syntheticPath, namespace: 'embroider-template-only-component' };
+        const extensions = ['', '.hbs'];
+        for (const extension of extensions) {
+          let result = await build.resolve(path + extension, {
+            namespace,
+            resolveDir,
+            importer,
+            kind,
+            // avoid reentrance
+            pluginData: { ...pluginData, embroiderExtensionResolving: true },
+          });
+          console.log('path + extension', path + extension, result.errors.length);
+          if (result.errors.length) continue;
+          if (result.errors.length === 0 && !result.external) {
+            let syntheticPath = needsSyntheticComponentJS(path, result.path, resolverLoader.resolver.packageCache);
+            if (syntheticPath) {
+              return { path: syntheticPath, namespace: 'embroider-template-only-component' };
+            }
           }
+          return result;
         }
-
-        return result;
       });
 
       // we need to handle everything from one of our three special namespaces:

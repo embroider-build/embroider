@@ -25,7 +25,11 @@ export default class Package {
 
   @Memoize()
   protected get internalPackageJSON() {
-    return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    try {
+      return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    } catch {
+      return {};
+    }
   }
 
   @Memoize()
@@ -43,7 +47,7 @@ export default class Package {
   }
 
   get meta(): AddonMeta | AppMeta | undefined {
-    let m = this.packageJSON['ember-addon'];
+    let m = this.packageJSON['ember-addon'] || {};
     if (this.isV2App()) {
       return m as unknown as AppMeta;
     }

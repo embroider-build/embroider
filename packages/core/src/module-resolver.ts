@@ -5,7 +5,7 @@ import {
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve, posix, extname } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -638,6 +638,7 @@ export class Resolver {
 
     let hbsModule: Resolution | null = null;
     let jsModule: Resolution | null = null;
+    let jsSpecifier: string | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
@@ -673,6 +674,7 @@ export class Resolver {
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
       if (resolution.type === 'found' && !resolution.filename.endsWith('.hbs')) {
+        jsSpecifier = candidateSpecifier;
         jsModule = resolution;
         break;
       }
@@ -684,8 +686,20 @@ export class Resolver {
         request,
         request.virtualize(virtualPairComponent(hbsModule.filename, jsModule?.filename))
       );
-    } else if (jsModule) {
-      return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));
+    } else if (jsSpecifier && jsModule) {
+      let newRequest = request.alias(jsSpecifier);
+      let fromPkg = this.packageCache.ownerOfFile(target.from)!;
+      let renamedRequest = this.handleRenaming(newRequest);
+      if (!renamedRequest.specifier.startsWith('.')) {
+        newRequest = renamedRequest;
+      }
+      let targetPkgName = getPackageName(newRequest.specifier);
+      if (targetPkgName && fromPkg.name !== targetPkgName) {
+        newRequest = this.makeResolvable(newRequest);
+      } else {
+        newRequest = renamedRequest;
+      }
+      return logTransition(`resolving to resolveComponent found only JS`, request, newRequest);
     } else {
       return logTransition(`resolveComponent failed`, request);
     }
@@ -710,7 +724,11 @@ export class Resolver {
     // package so it should be considered found in this case and we should not look for a
     // component with this name
     if (helperMatch.type === 'found' || helperMatch.type === 'ignored') {
-      return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
+      return logTransition(
+        'resolve to ambiguous case matched a helper',
+        request,
+        request.alias(helperCandidate.specifier)
+      );
     }
 
     // unlike resolveHelper, resolveComponent already does pre-resolution in
@@ -906,6 +924,12 @@ export class Resolver {
     if (isTerminal(request)) {
       return request;
     }
+    if (request.meta?.skipHandleRewrittenPackages) {
+      return request;
+    }
+    if (request.specifier.startsWith('@embroider/rewritten-packages')) {
+      return request;
+    }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!requestingPkg) {
       return request;
@@ -1074,12 +1098,20 @@ export class Resolver {
   }
 
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
-    let levels = ['..'];
-    if (pkg.name.startsWith('@')) {
-      levels.push('..');
-    }
     let originalFromFile = request.fromFile;
-    let newRequest = request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js'));
+    if (!pkg.isV2Addon()) {
+      let levels = ['..'];
+      if (pkg.name.startsWith('@')) {
+        levels.push('..');
+      }
+      let newRequest = request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js'));
+
+      // setting meta because if this fails, we want the fallback to pick up back
+      // in the original requesting package.
+      return newRequest.withMeta({ originalFromFile });
+    }
+
+    let newRequest = this.makeResolvable(request);
 
     if (newRequest === request) {
       return request;
@@ -1260,11 +1292,95 @@ export class Resolver {
     }
   }
 
+  async resolveAlias<R extends ModuleRequest>(request: R): Promise<R> {
+    let engineNames = this.options.engines.map(e => e.packageName);
+    let res = {
+      importer: request.fromFile,
+      path: request.specifier,
+    };
+    let isVirtual = request.isVirtual;
+    let path = request.specifier;
+    if (path.startsWith('.') || path.startsWith('#') || engineNames.some(packageName => path.startsWith(packageName))) {
+      let resolved = await this.beforeResolve(request);
+      if (resolved.isVirtual) {
+        isVirtual = true;
+        let result = await this.resolve(request);
+        if (result.type !== 'not_found') {
+          const r = result.result as any;
+          if (r?.path) {
+            res.path = r.path;
+            res.importer = r.importer;
+          } else if (r?.specifier) {
+            res.path = r.specifier;
+            res.importer = r.fromFile;
+          }
+        }
+      }
+      if (!resolved.isVirtual) {
+        resolved = await this.fallbackResolve(resolved);
+        if (resolved.specifier) {
+          res.path = resolved.specifier;
+          res.importer = resolved.fromFile;
+        }
+      }
+    } else {
+      let resolved = await this.beforeResolve(request.withMeta({ skipHandleRewrittenPackages: true }));
+      if (resolved.specifier) {
+        res.path = resolved.specifier;
+        res.importer = resolved.fromFile;
+      }
+      isVirtual = isVirtual || resolved.isVirtual;
+    }
+    if (!isVirtual) {
+      const ext = extname(res.path);
+      const extNameRegex = new RegExp(`\\${ext}$`);
+      if (this.options.resolvableExtensions.includes(`.${ext}`)) {
+        res.path = res.path.replace(extNameRegex, '');
+      }
+      return request.alias(res.path).rehome(res.importer);
+    }
+    return request.virtualize(res.path).rehome(res.importer);
+  }
+
+  makeResolvable<R extends ModuleRequest>(request: R): R {
+    if (request.fromFile && !request.fromFile.startsWith('./')) {
+      let fromPkg: Package;
+      try {
+        fromPkg =
+          this.packageCache.ownerOfFile(request.fromFile) || this.packageCache.ownerOfFile(this.options.appRoot)!;
+      } catch (e) {
+        fromPkg = this.packageCache.ownerOfFile(this.options.appRoot)!;
+      }
+
+      let pkgName = getPackageName(request.specifier);
+      try {
+        let pkg = pkgName ? this.packageCache.resolve(pkgName, fromPkg!) : fromPkg;
+        if (!pkg.isV2Addon() || !pkg.meta['auto-upgraded'] || !pkg.root.includes('rewritten-packages')) {
+          // some tests make addons be auto-upgraded, but are not actually in rewritten-packages
+          return request;
+        }
+        let levels = ['..'];
+        if (pkg.name.startsWith('@')) {
+          levels.push('..');
+        }
+        let resolvedRoot = resolve(pkg.root, ...levels, ...levels, '..');
+        let specifier = resolve(pkg.root, ...levels, request.specifier);
+        specifier = specifier.replace(resolvedRoot, '@embroider/rewritten-packages').replace(/\\/g, '/');
+        return request.alias(specifier).rehome(resolve(this.options.appRoot, 'package.json'));
+      } catch (e) {}
+    }
+    return request;
+  }
+
   private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
     if (request.isVirtual) {
       throw new Error(
         'Build tool bug detected! Fallback resolve should never see a virtual request. It is expected that the defaultResolve for your bundler has already resolved this request'
       );
+    }
+
+    if (request.specifier.startsWith('@embroider/rewritten-packages')) {
+      return request;
     }
 
     if (request.specifier === '@embroider/macros') {
@@ -1328,6 +1444,7 @@ export class Resolver {
           explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier))
         );
         if (appJSMatch) {
+          appJSMatch = this.makeResolvable(appJSMatch);
           return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
         } else {
           return logTransition('fallbackResolve: relative appJs search failure', request);
@@ -1344,7 +1461,8 @@ export class Resolver {
       if (addon) {
         const rehomed = request.rehome(addon.canResolveFromFile);
         if (rehomed !== request) {
-          return logTransition(`activeAddons`, request, rehomed);
+          let newRequest = this.makeResolvable(rehomed);
+          return logTransition(`activeAddons`, request, newRequest);
         }
       }
     }

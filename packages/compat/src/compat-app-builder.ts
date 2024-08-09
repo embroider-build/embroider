@@ -470,23 +470,7 @@ export class CompatAppBuilder {
       assetPaths.push('package.json');
     }
 
-    let meta: AppMeta = {
-      type: 'app',
-      version: 2,
-      assets: assetPaths,
-      babel: {
-        filename: '_babel_config_.js',
-        isParallelSafe: true, // TODO
-        majorVersion: this.compatApp.babelMajorVersion(),
-        fileFilter: '_babel_filter_.js',
-      },
-      'root-url': this.rootURL(),
-    };
-
-    // all compat apps are auto-upgraded, there's no v2 app format here
-    meta['auto-upgraded'] = true;
-
-    let pkg = this.combinePackageJSON(meta);
+    let pkg = this.combinePackageJSON(assetPaths);
     writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
 
     let resolverConfig = this.resolverConfig(appFiles);
@@ -502,15 +486,33 @@ export class CompatAppBuilder {
     this.addMacrosConfig(this.compatApp.macrosConfig.babelPluginConfig()[0]);
   }
 
-  private combinePackageJSON(meta: AppMeta): object {
+  private combinePackageJSON(assetPaths: string[]): object {
     let pkgLayers: any[] = [this.origAppPackage.packageJSON];
     let fastbootConfig = this.fastbootConfig;
     if (fastbootConfig) {
       // fastboot-specific package.json output is allowed to add to our original package.json
       pkgLayers.push(fastbootConfig.packageJSON);
     }
-    // but our own new v2 app metadata takes precedence over both
+
+    let meta: AppMeta = {
+      type: 'app',
+      version: 2,
+      assets: assetPaths,
+      babel: {
+        filename: '_babel_config_.js',
+        isParallelSafe: true, // TODO
+        majorVersion: this.compatApp.babelMajorVersion(),
+        fileFilter: '_babel_filter_.js',
+      },
+      'root-url': this.rootURL(),
+    };
+
+    if ((this.origAppPackage.packageJSON['ember-addon']?.version ?? 0) < 2) {
+      meta['auto-upgraded'] = true;
+    }
+
     pkgLayers.push({ 'ember-addon': meta });
+
     return combinePackageJSON(...pkgLayers);
   }
 
@@ -621,7 +623,7 @@ export class CompatAppBuilder {
           The following code is included via content-for 'config-module':
 
           ${configModule}
-          
+
           1. If you want to keep the same behavior, add it to the app/environment.js.
           2. Once app/environment.js has the content you need, remove the present error by setting "useAddonConfigModule" to false in the build options.
         `);

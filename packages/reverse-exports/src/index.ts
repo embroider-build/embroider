@@ -1,6 +1,7 @@
 import { posix } from 'path';
 import { exports as resolveExports } from 'resolve.exports';
 
+type PkgJSON = { name: string; exports?: Exports };
 type Exports = string | string[] | { [key: string]: Exports };
 
 /**
@@ -72,24 +73,27 @@ export function _findPathRecursively(
   throw new Error(`Unexpected type of obj: ${typeof exportsObj}`);
 }
 
-export default function reversePackageExports(
-  { exports: exportsObj, name }: { exports?: Exports; name: string },
-  relativePath: string
-): string {
-  if (!exportsObj) {
-    return posix.join(name, relativePath);
+/*
+  Takes a relativePath that is relative to the package root and produces its
+  externally-addressable name.
+
+  Returns undefined for a relativePath that is forbidden to be accessed from the
+  outside.
+*/
+export function externalName(pkg: PkgJSON, relativePath: string): string | undefined {
+  let { exports } = pkg;
+  if (!exports) {
+    return posix.join(pkg.name, relativePath);
   }
 
-  const maybeKeyValuePair = _findPathRecursively(exportsObj, candidate => {
+  const maybeKeyValuePair = _findPathRecursively(exports, candidate => {
     const regex = new RegExp(_prepareStringForRegex(candidate));
 
     return regex.test(relativePath);
   });
 
   if (!maybeKeyValuePair) {
-    throw new Error(
-      `You tried to reverse exports for the file \`${relativePath}\` in package \`${name}\` but it does not match any of the exports rules defined in package.json. This means it should not be possible to access directly.`
-    );
+    return undefined;
   }
 
   const { key, value } = maybeKeyValuePair;
@@ -98,7 +102,7 @@ export default function reversePackageExports(
     throw new Error('Expected value to be a string');
   }
 
-  const maybeResolvedPaths = resolveExports({ name, exports: { [value]: key } }, relativePath);
+  const maybeResolvedPaths = resolveExports({ name: pkg.name, exports: { [value]: key } }, relativePath);
 
   if (!maybeResolvedPaths) {
     throw new Error(
@@ -108,7 +112,7 @@ export default function reversePackageExports(
 
   const [resolvedPath] = maybeResolvedPaths;
 
-  return resolvedPath.replace(/^./, name);
+  return posix.join(pkg.name, resolvedPath);
 }
 
 export function _prepareStringForRegex(input: string): string {

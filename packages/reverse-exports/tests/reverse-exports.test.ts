@@ -1,14 +1,14 @@
-import reversePackageExports, { _findPathRecursively, _prepareStringForRegex } from '../src';
+import { externalName, _findPathRecursively, _prepareStringForRegex } from '../src';
 
 describe('reverse exports', function () {
   it('exports is missing', function () {
-    expect(reversePackageExports({ name: 'best-addon' }, './dist/_app_/components/face.js')).toBe(
+    expect(externalName({ name: 'best-addon' }, './dist/_app_/components/face.js')).toBe(
       'best-addon/dist/_app_/components/face.js'
     );
   });
 
   it('exports is a string', function () {
-    const actual = reversePackageExports(
+    const actual = externalName(
       {
         name: 'my-addon',
         exports: './foo.js',
@@ -19,7 +19,7 @@ describe('reverse exports', function () {
   });
 
   it('exports is an object with one entry', function () {
-    const actual = reversePackageExports(
+    const actual = externalName(
       {
         name: 'my-addon',
         exports: {
@@ -43,12 +43,12 @@ describe('reverse exports', function () {
         './glob/*': './grod/**/*.js',
       },
     };
-    expect(reversePackageExports(packageJson, './main.js')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './secondary.js')).toBe('my-addon/sub/path');
-    expect(reversePackageExports(packageJson, './directory/some/file.js')).toBe('my-addon/prefix/some/file.js');
-    expect(reversePackageExports(packageJson, './other-directory/file.js')).toBe('my-addon/prefix/deep/file.js');
-    expect(reversePackageExports(packageJson, './yet-another/deep/file.js')).toBe('my-addon/other-prefix/deep/file');
-    expect(reversePackageExports(packageJson, './grod/very/deep/file.js')).toBe('my-addon/glob/very/deep/file');
+    expect(externalName(packageJson, './main.js')).toBe('my-addon');
+    expect(externalName(packageJson, './secondary.js')).toBe('my-addon/sub/path');
+    expect(externalName(packageJson, './directory/some/file.js')).toBe('my-addon/prefix/some/file.js');
+    expect(externalName(packageJson, './other-directory/file.js')).toBe('my-addon/prefix/deep/file.js');
+    expect(externalName(packageJson, './yet-another/deep/file.js')).toBe('my-addon/other-prefix/deep/file');
+    expect(externalName(packageJson, './grod/very/deep/file.js')).toBe('my-addon/glob/very/deep/file');
   });
 
   it('alternative exports', function () {
@@ -58,8 +58,8 @@ describe('reverse exports', function () {
         './things/': ['./good-things/', './bad-things/'],
       },
     };
-    expect(reversePackageExports(packageJson, './good-things/apple.js')).toBe('my-addon/things/apple.js');
-    expect(reversePackageExports(packageJson, './bad-things/apple.js')).toBe('my-addon/things/apple.js');
+    expect(externalName(packageJson, './good-things/apple.js')).toBe('my-addon/things/apple.js');
+    expect(externalName(packageJson, './bad-things/apple.js')).toBe('my-addon/things/apple.js');
   });
 
   it('conditional exports - simple abbreviated', function () {
@@ -71,9 +71,9 @@ describe('reverse exports', function () {
         default: './index.js',
       },
     };
-    expect(reversePackageExports(packageJson, './index-module.js')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './index-require.cjs')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './index.js')).toBe('my-addon');
+    expect(externalName(packageJson, './index-module.js')).toBe('my-addon');
+    expect(externalName(packageJson, './index-require.cjs')).toBe('my-addon');
+    expect(externalName(packageJson, './index.js')).toBe('my-addon');
   });
 
   it('conditional exports - simple non-abbreviated', function () {
@@ -87,9 +87,9 @@ describe('reverse exports', function () {
         },
       },
     };
-    expect(reversePackageExports(packageJson, './index-module.js')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './index-require.cjs')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './index.js')).toBe('my-addon');
+    expect(externalName(packageJson, './index-module.js')).toBe('my-addon');
+    expect(externalName(packageJson, './index-require.cjs')).toBe('my-addon');
+    expect(externalName(packageJson, './index.js')).toBe('my-addon');
   });
 
   it('conditional subpath exports', function () {
@@ -103,9 +103,9 @@ describe('reverse exports', function () {
         },
       },
     };
-    expect(reversePackageExports(packageJson, './index.js')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './feature-node.cjs')).toBe('my-addon/feature.js');
-    expect(reversePackageExports(packageJson, './feature.js')).toBe('my-addon/feature.js');
+    expect(externalName(packageJson, './index.js')).toBe('my-addon');
+    expect(externalName(packageJson, './feature-node.cjs')).toBe('my-addon/feature.js');
+    expect(externalName(packageJson, './feature.js')).toBe('my-addon/feature.js');
   });
 
   it('nested conditional exports', function () {
@@ -119,12 +119,12 @@ describe('reverse exports', function () {
         default: './feature.mjs',
       },
     };
-    expect(reversePackageExports(packageJson, './feature-node.mjs')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './feature-node.cjs')).toBe('my-addon');
-    expect(reversePackageExports(packageJson, './feature.mjs')).toBe('my-addon');
+    expect(externalName(packageJson, './feature-node.mjs')).toBe('my-addon');
+    expect(externalName(packageJson, './feature-node.cjs')).toBe('my-addon');
+    expect(externalName(packageJson, './feature.mjs')).toBe('my-addon');
   });
 
-  it('should throw when no exports entry is matching', function () {
+  it('should return undefined when no exports entry is matching', function () {
     const packageJson = {
       name: 'my-addon',
       exports: {
@@ -136,9 +136,7 @@ describe('reverse exports', function () {
       },
     };
 
-    expect(() => reversePackageExports(packageJson, './foo.bar')).toThrow(
-      'You tried to reverse exports for the file `./foo.bar` in package `my-addon` but it does not match any of the exports rules defined in package.json. This means it should not be possible to access directly.'
-    );
+    expect(externalName(packageJson, './foo.bar')).toBe(undefined);
   });
 
   it('conditional exports: using a single asterisk as glob for nested path', function () {
@@ -154,7 +152,7 @@ describe('reverse exports', function () {
       },
     };
 
-    expect(reversePackageExports(packageJson, './dist/_app_/components/welcome-page.js')).toBe(
+    expect(externalName(packageJson, './dist/_app_/components/welcome-page.js')).toBe(
       'my-v2-addon/_app_/components/welcome-page'
     );
   });

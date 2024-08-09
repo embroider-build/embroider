@@ -10,7 +10,7 @@ import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
-import reversePackageExports from '@embroider/reverse-exports';
+import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
 
 import {
@@ -810,13 +810,19 @@ export class Resolver {
                 `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
+            let specifier = externalName(addon.packageJSON, inAddonName);
+            if (!specifier) {
+              throw new Error(
+                `${addon.name}'s package.json app-js refers to ${inAddonName}, but that module is not accessible from outside the package`
+              );
+            }
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
                 engineModules.set(inEngineName, {
                   type: 'app-only',
                   'app-js': {
-                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    specifier,
                     fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },
@@ -830,7 +836,7 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'both',
                   'app-js': {
-                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    specifier,
                     fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },
@@ -854,13 +860,19 @@ export class Resolver {
                 `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
+            let specifier = externalName(addon.packageJSON, inAddonName);
+            if (!specifier) {
+              throw new Error(
+                `${addon.name}'s package.json fastboot-js refers to ${inAddonName}, but that module is not accessible from outside the package`
+              );
+            }
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
                 engineModules.set(inEngineName, {
                   type: 'fastboot-only',
                   'fastboot-js': {
-                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    specifier,
                     fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },
@@ -874,7 +886,7 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'both',
                   'fastboot-js': {
-                    specifier: reversePackageExports(addon.packageJSON, inAddonName),
+                    specifier,
                     fromFile: addonConfig.canResolveFromFile,
                     fromPackageName: addon.name,
                   },

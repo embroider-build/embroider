@@ -618,6 +618,7 @@ export default class CompatApp {
     return this.preprocessJS(
       buildFunnel(this.legacyEmberAppInstance.trees.app, {
         exclude: ['styles/**', '*.html'],
+        destDir: 'app',
       })
     );
   }

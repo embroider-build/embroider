@@ -7,7 +7,7 @@ import { getAppFiles, importPaths, staticAppPathsPattern } from './virtual-entry
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-test-entrypoint.js/;
 
-export function decodeTestEntrypoint(filename: string): { fromFile: string } | undefined {
+export function decodeTestEntrypoint(filename: string): { fromDir: string } | undefined {
   // Performance: avoid paying regex exec cost unless needed
   if (!filename.includes('-embroider-test-entrypoint.js')) {
     return;
@@ -15,19 +15,19 @@ export function decodeTestEntrypoint(filename: string): { fromFile: string } | u
   let m = entrypointPattern.exec(filename);
   if (m) {
     return {
-      fromFile: m.groups!.filename,
+      fromDir: m.groups!.filename,
     };
   }
 }
 
 export function renderTestEntrypoint(
   resolver: Resolver,
-  { fromFile }: { fromFile: string }
+  { fromDir }: { fromDir: string }
 ): { src: string; watches: string[] } {
-  const owner = resolver.packageCache.ownerOfFile(fromFile);
+  const owner = resolver.packageCache.ownerOfFile(fromDir);
 
   if (!owner) {
-    throw new Error(`Owner expected while loading test entrypoint from file: ${fromFile}`);
+    throw new Error(`Owner expected while loading test entrypoint from file: ${fromDir}`);
   }
 
   let engine = resolver.owningEngine(owner);
@@ -45,7 +45,7 @@ export function renderTestEntrypoint(
       modulePrefix: resolver.options.modulePrefix,
       appRelativePath: 'NOT_USED_DELETE_ME',
     },
-    getAppFiles(owner.root),
+    getAppFiles(fromDir),
     new Set(), // no fastboot files
     extensionsPattern(resolver.options.resolvableExtensions),
     staticAppPathsPattern(resolver.options.staticAppPaths),

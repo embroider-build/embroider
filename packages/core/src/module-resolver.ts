@@ -466,8 +466,15 @@ export class Resolver {
     } else {
       pkg = requestingPkg;
     }
-
-    return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
+    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+    return logTransition(
+      'entrypoint',
+      request,
+      request.virtualize(resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'))
+    );
   }
 
   private handleTestEntrypoint<R extends ModuleRequest>(request: R): R {
@@ -494,10 +501,14 @@ export class Resolver {
       );
     }
 
+    let matched = resolveExports(pkg.packageJSON, '-embroider-test-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
     return logTransition(
       'test-entrypoint',
       request,
-      request.virtualize(resolve(pkg.root, '-embroider-test-entrypoint.js'))
+      request.virtualize(resolve(pkg.root, matched?.[0] ?? '-embroider-test-entrypoint.js'))
     );
   }
 
@@ -1333,11 +1344,15 @@ export class Resolver {
       if (withinEngine) {
         // it's a relative import inside an engine (which also means app), which
         // means we may need to satisfy the request via app tree merging.
-        let appJSMatch = await this.searchAppTree(
-          request,
-          withinEngine,
-          explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier))
-        );
+
+        let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
+        if (!logicalName) {
+          return logTransition(
+            'fallbackResolve: relative failure because this file is not externally accessible',
+            request
+          );
+        }
+        let appJSMatch = await this.searchAppTree(request, withinEngine, logicalName);
         if (appJSMatch) {
           return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
         } else {
@@ -1494,16 +1509,10 @@ export class Resolver {
     if (engineConfig) {
       // we're directly inside an engine, so we're potentially resolvable as a
       // global component
-
-      // this kind of mapping is not true in general for all packages, but it
-      // *is* true for all classical engines (which includes apps) since they
-      // don't support package.json `exports`. As for a future v2 engine or app:
-      // this whole method is only relevant for implementing packageRules, which
-      // should only be for classic stuff. v2 packages should do the right
-      // things from the beginning and not need packageRules about themselves.
-      let inAppName = explicitRelative(engineConfig.root, filename);
-
-      return this.tryReverseComponent(engineConfig.packageName, inAppName);
+      let inAppName = engineRelativeName(owningPackage, filename);
+      if (inAppName) {
+        return this.tryReverseComponent(engineConfig.packageName, inAppName);
+      }
     }
 
     let engineInfo = this.reverseSearchAppTree(owningPackage, filename);
@@ -1554,4 +1563,11 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 //
 function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, importedPackageName: string): boolean {
   return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
+}
+
+function engineRelativeName(pkg: Package, filename: string): string | undefined {
+  let outsideName = externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
+  if (outsideName) {
+    return '.' + outsideName.slice(pkg.name.length);
+  }
 }

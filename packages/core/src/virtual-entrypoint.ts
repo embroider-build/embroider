@@ -12,7 +12,7 @@ import escapeRegExp from 'escape-string-regexp';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
 
-export function decodeEntrypoint(filename: string): { fromFile: string } | undefined {
+export function decodeEntrypoint(filename: string): { fromDir: string } | undefined {
   // Performance: avoid paying regex exec cost unless needed
   if (!filename.includes('-embroider-entrypoint')) {
     return;
@@ -20,7 +20,7 @@ export function decodeEntrypoint(filename: string): { fromFile: string } | undef
   let m = entrypointPattern.exec(filename);
   if (m) {
     return {
-      fromFile: m.groups!.filename,
+      fromDir: m.groups!.filename,
     };
   }
 }
@@ -33,10 +33,10 @@ export function staticAppPathsPattern(staticAppPaths: string[] | undefined): Reg
 
 export function renderEntrypoint(
   resolver: Resolver,
-  { fromFile }: { fromFile: string }
+  { fromDir }: { fromDir: string }
 ): { src: string; watches: string[] } {
   // this is new
-  const owner = resolver.packageCache.ownerOfFile(fromFile);
+  const owner = resolver.packageCache.ownerOfFile(fromDir);
 
   let eagerModules: string[] = [];
 
@@ -61,7 +61,7 @@ export function renderEntrypoint(
       modulePrefix: isApp ? resolver.options.modulePrefix : engine.packageName,
       appRelativePath: 'NOT_USED_DELETE_ME',
     },
-    getAppFiles(owner.root),
+    getAppFiles(fromDir),
     hasFastboot ? getFastbootFiles(owner.root) : new Set(),
     extensionsPattern(resolver.options.resolvableExtensions),
     staticAppPathsPattern(resolver.options.staticAppPaths),
@@ -153,8 +153,6 @@ export function renderEntrypoint(
 
 const entryTemplate = compile(`
 import { macroCondition, getGlobalConfig } from '@embroider/macros';
-
-import environment from './config/environment';
 
 {{#if styles}}
   if (macroCondition(!getGlobalConfig().fastboot?.isRunning)) {

@@ -84,23 +84,26 @@ export function esBuildResolver(): EsBuildPlugin {
           return null;
         }
 
-        let result = await build.resolve(path, {
-          namespace,
-          resolveDir,
-          importer,
-          kind,
-          // avoid reentrance
-          pluginData: { ...pluginData, embroiderExtensionResolving: true },
-        });
-
-        if (result.errors.length === 0 && !result.external) {
-          let syntheticPath = needsSyntheticComponentJS(path, result.path, resolverLoader.resolver.packageCache);
-          if (syntheticPath) {
-            return { path: syntheticPath, namespace: 'embroider-template-only-component' };
+        const extensions = ['', '.hbs'];
+        for (const extension of extensions) {
+          let result = await build.resolve(path + extension, {
+            namespace,
+            resolveDir,
+            importer,
+            kind,
+            // avoid reentrance
+            pluginData: { ...pluginData, embroiderExtensionResolving: true },
+          });
+          console.log('path + extension', path + extension, result.errors.length);
+          if (result.errors.length) continue;
+          if (result.errors.length === 0 && !result.external) {
+            let syntheticPath = needsSyntheticComponentJS(path, result.path, resolverLoader.resolver.packageCache);
+            if (syntheticPath) {
+              return { path: syntheticPath, namespace: 'embroider-template-only-component' };
+            }
           }
+          return result;
         }
-
-        return result;
       });
 
       // we need to handle everything from one of our three special namespaces:

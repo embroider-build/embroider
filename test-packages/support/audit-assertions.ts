@@ -31,6 +31,20 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
     }
   }
 
+  async function visitWithRetries() {
+    for (let i = 0; i < 30; i++) {
+      try {
+        await visit();
+        return;
+      } catch (e) {
+        if (!e.message.includes('oops status code 504 - Outdated Optimize Dep for')) {
+          throw e;
+        }
+      }
+    }
+    throw new Error('failed to rerun');
+  }
+
   function prepareResult(assert: Assert) {
     let o = opts();
     let pathRewriter: (p: string) => string;
@@ -43,7 +57,7 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
   }
 
   hooks.before(async () => {
-    await visit();
+    await visitWithRetries();
   });
 
   hooks.beforeEach(assert => {
@@ -53,7 +67,7 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
 
   return {
     async rerun() {
-      await visit();
+      await visitWithRetries();
       prepareResult(expectAudit.assert);
     },
     module(name: string | RegExp) {

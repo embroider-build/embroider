@@ -537,7 +537,7 @@ stage2Scenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false', '--force'], { cwd: app.dir });
         [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
       });
 

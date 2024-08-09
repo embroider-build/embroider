@@ -34,6 +34,20 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
   project.addDevDependency(myServicesAddon);
 });
 
+async function rerunUntilReady(expectAudit: ReturnType<typeof setupAuditTest>) {
+  for (let i = 0; i < 30; i++) {
+    try {
+      await expectAudit.rerun();
+      return;
+    } catch (e) {
+      if (!e.message.includes('oops status code 504 - Outdated Optimize Dep for')) {
+        throw e;
+      }
+    }
+  }
+  throw new Error('failed to rerun');
+}
+
 app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
@@ -185,7 +199,7 @@ app.forEachScenario(scenario => {
       `
         );
         await server.waitFor(/page reload/, 90000);
-        await expectAudit.rerun();
+        await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
           let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
@@ -215,7 +229,7 @@ app.forEachScenario(scenario => {
       `
         );
         await server.waitFor(/page reload/, 90000);
-        await expectAudit.rerun();
+        await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
           let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
@@ -236,7 +250,7 @@ app.forEachScenario(scenario => {
       `
         );
         await server.waitFor(/page reload/, 90000);
-        await expectAudit.rerun();
+        await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
           let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
@@ -262,7 +276,7 @@ app.forEachScenario(scenario => {
       `
         );
         await server.waitFor(/page reload/, 90000);
-        await expectAudit.rerun();
+        await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
           let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
@@ -312,7 +326,7 @@ app.forEachScenario(scenario => {
         `
         );
         await server.waitFor(/page reload/, 90000);
-        await expectAudit.rerun();
+        await rerunUntilReady(expectAudit);
 
         expectAudit
           .module(/dep-tests\.js/)

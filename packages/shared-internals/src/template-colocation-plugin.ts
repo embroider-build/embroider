@@ -69,7 +69,7 @@ export default function main(babel: typeof Babel) {
 
           if (state.opts.packageGuard) {
             let owningPackage = PackageCache.shared('embroider', state.opts.appRoot).ownerOfFile(filename);
-            if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
+            if (!owningPackage || !owningPackage.needsLooseResolving()) {
               debug('not handling colocation for %s', filename);
               return;
             }

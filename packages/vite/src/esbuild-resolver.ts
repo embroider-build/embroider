@@ -52,8 +52,22 @@ export function esBuildResolver(): EsBuildPlugin {
           return null;
         }
         let resolution = await resolverLoader.resolver.resolve(request);
+        const imp = importer.replace(/\\/g, '/');
+        const appRoot = resolverLoader.appRoot.replace(/\\/g, '/');
         switch (resolution.type) {
           case 'found':
+            // if some addon imports app files we do not want to bundle it
+            const isInNodeModules = resolution.filename.slice(appRoot.length).includes('/node_modules/');
+            const isInAppRoot = resolution.filename.replace(/\\/g, '/').startsWith(appRoot);
+            if (isInAppRoot && !isInNodeModules && importer !== '<stdin>') {
+              const isFromApp = imp.startsWith(appRoot) && !importer.slice(appRoot.length).includes('/node_modules/');
+              if (!isFromApp) {
+                return {
+                  path: resolution.filename,
+                  external: true,
+                };
+              }
+            }
           case 'ignored':
             return resolution.result;
           case 'not_found':

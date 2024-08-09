@@ -494,23 +494,25 @@ export class CompatAppBuilder {
       pkgLayers.push(fastbootConfig.packageJSON);
     }
 
+    let meta: AppMeta = {
+      type: 'app',
+      version: 2,
+      assets: assetPaths,
+      babel: {
+        filename: '_babel_config_.js',
+        isParallelSafe: true, // TODO
+        majorVersion: this.compatApp.babelMajorVersion(),
+        fileFilter: '_babel_filter_.js',
+      },
+      'root-url': this.rootURL(),
+    };
+
     if ((this.origAppPackage.packageJSON['ember-addon']?.version ?? 0) < 2) {
-      // the app has no v2 metdata, so we must be auto-upgrading it
-      let meta: AppMeta = {
-        type: 'app',
-        version: 2,
-        assets: assetPaths,
-        babel: {
-          filename: '_babel_config_.js',
-          isParallelSafe: true, // TODO
-          majorVersion: this.compatApp.babelMajorVersion(),
-          fileFilter: '_babel_filter_.js',
-        },
-        'root-url': this.rootURL(),
-        'auto-upgraded': true,
-      };
-      pkgLayers.push({ 'ember-addon': meta });
+      meta['auto-upgraded'] = true;
     }
+
+    pkgLayers.push({ 'ember-addon': meta });
+
     return combinePackageJSON(...pkgLayers);
   }
 

@@ -1006,6 +1006,11 @@ export class Resolver {
     // ember-source might provide backburner via module renaming, but if you
     // have an explicit dependency on backburner you should still get that real
     // copy.
+
+    // if (pkg.root === this.options.engines[0].root && request.specifier === `${pkg.name}/environment/config`) {
+    //   return logTransition('legacy config location', request, request.alias(`${pkg.name}/app/environment/config`));
+    // }
+
     if (!pkg.hasDependency(packageName)) {
       for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
         if (candidate === request.specifier) {
@@ -1148,14 +1153,15 @@ export class Resolver {
 
       // if the requesting file is in an addon's app-js, the relative request
       // should really be understood as a request for a module in the containing
-      // engine
+      // engine. Because we're using a relative url we need to make sure that
+      // we're searching in the app folder
       let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
       if (logicalLocation) {
         return logTransition(
           'beforeResolve: relative import in app-js',
           request,
           request
-            .alias('./' + posix.join(dirname(logicalLocation.inAppName), request.specifier))
+            .alias('./app/' + posix.join(dirname(logicalLocation.inAppName), request.specifier))
             // it's important that we're rehoming this to the root of the engine
             // (which we know really exists), and not to a subdir like
             // logicalLocation.inAppName (which might not physically exist),

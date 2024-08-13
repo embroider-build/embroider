@@ -42,14 +42,14 @@ appScenarios
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
         const { maybeEmbroider } = require('@embroider/test-setup');
-        
+
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
             ...(process.env.FORCE_BUILD_TESTS ? {
               tests: true,
             } : undefined),
           });
-        
+
           return maybeEmbroider(app, {
             availableContentForTypes: ['custom'],
             skipBabel: [
@@ -69,26 +69,26 @@ appScenarios
               <title>AppTemplate</title>
               <meta name="description" content="">
               <meta name="viewport" content="width=device-width, initial-scale=1">
-          
+
               {{content-for "head"}}
-          
+
               <link integrity="" rel="stylesheet" href="/@embroider/core/vendor.css">
               <link integrity="" rel="stylesheet" href="/assets/app-template.css">
-          
+
               {{content-for "head-footer"}}
             </head>
             <body>
               {{content-for "body"}}
               {{content-for "custom"}}
-          
+
               <script src="/@embroider/core/vendor.js"></script>
               <script type="module">
-                import Application from './app';
-                import environment from './config/environment';
+                import Application from './app/app.js';
+                import environment from './app/config/environment';
 
                 Application.create(environment.APP);
               </script>
-          
+
               {{content-for "body-footer"}}
             </body>
           </html>

@@ -98,6 +98,7 @@ class TemplateTagCodemodPlugin extends Plugin {
                 },
               ],
             ],
+            filename: current_file,
           })?.code ?? '';
         const import_bucket: NodePath<t.ImportDeclaration>[] = [];
         let transformed_template_value = '';

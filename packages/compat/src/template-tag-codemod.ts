@@ -68,24 +68,26 @@ class TemplateTagCodemodPlugin extends Plugin {
     const emberSourceEntrypoint = require.resolve('ember-source', { paths: [process.cwd()] });
     const emberVersion = JSON.parse(readFileSync(join(emberSourceEntrypoint, '../../package.json')).toString()).version;
 
+    const ember_template_compiler = resolver.nodeResolve(
+      'ember-source/vendor/ember/ember-template-compiler',
+      resolve(locateEmbroiderWorkingDir(process.cwd()), 'rewritten-app', 'package.json')
+    );
+    if (ember_template_compiler.type === 'not_found') {
+      throw 'This will not ever be true';
+    }
+
+    const embroider_compat_path = require.resolve('@embroider/compat', { paths: [process.cwd()] });
+    const babel_plugin_ember_template_compilation = require.resolve('babel-plugin-ember-template-compilation', {
+      paths: [embroider_compat_path],
+    });
+    const babel_plugin_syntax_decorators = require.resolve('@babel/plugin-syntax-decorators', {
+      paths: [embroider_compat_path],
+    });
+
     for await (const current_file of walkSync(tmp_path)) {
       if (hbs_file_test.test(current_file) && this.options.shouldTransformPath(current_file)) {
         const template_file_src = readFileSync(current_file).toLocaleString();
-        const ember_template_compiler = resolver.nodeResolve(
-          'ember-source/vendor/ember/ember-template-compiler',
-          resolve(locateEmbroiderWorkingDir(process.cwd()), 'rewritten-app', 'package.json')
-        );
-        if (ember_template_compiler.type === 'not_found') {
-          throw 'This will not ever be true';
-        }
 
-        const embroider_compat_path = require.resolve('@embroider/compat', { paths: [process.cwd()] });
-        const babel_plugin_ember_template_compilation = require.resolve('babel-plugin-ember-template-compilation', {
-          paths: [embroider_compat_path],
-        });
-        const babel_plugin_syntax_decorators = require.resolve('@babel/plugin-syntax-decorators', {
-          paths: [embroider_compat_path],
-        });
         let src =
           transformSync(hbsToJS(template_file_src), {
             plugins: [
@@ -98,6 +100,7 @@ class TemplateTagCodemodPlugin extends Plugin {
                 },
               ],
             ],
+            filename: current_file,
           })?.code ?? '';
         const import_bucket: NodePath<t.ImportDeclaration>[] = [];
         let transformed_template_value = '';

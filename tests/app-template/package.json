@@ -11,7 +11,7 @@
     "test": "tests"
   },
   "exports": {
-    "./tests": "/tests/*",
+    "./tests/*": "./tests/*",
     "./*": "./app/*"
   },
   "scripts": {

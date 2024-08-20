@@ -18,8 +18,8 @@
 
     <script src="/@embroider/core/vendor.js"></script>
     <script type="module">
-      import Application from './app';
-      import environment from './config/environment';
+      import Application from './app/app.js';
+      import environment from './app/config/environment';
 
       window.LoadedFromCustomAppBoot = true;
       Application.create(environment.APP);

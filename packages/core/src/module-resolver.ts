@@ -1006,6 +1006,11 @@ export class Resolver {
     // ember-source might provide backburner via module renaming, but if you
     // have an explicit dependency on backburner you should still get that real
     // copy.
+
+    // if (pkg.root === this.options.engines[0].root && request.specifier === `${pkg.name}/environment/config`) {
+    //   return logTransition('legacy config location', request, request.alias(`${pkg.name}/app/environment/config`));
+    // }
+
     if (!pkg.hasDependency(packageName)) {
       for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
         if (candidate === request.specifier) {
@@ -1043,34 +1048,32 @@ export class Resolver {
         let owningEngine = this.owningEngine(pkg);
         let addonConfig = owningEngine.activeAddons.find(a => a.root === pkg.root);
         if (addonConfig) {
+          // auto-upgraded addons get special support for self-resolving here.
           return logTransition(`v1 addon self-import`, request, request.rehome(addonConfig.canResolveFromFile));
         } else {
-          let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
-          return logTransition(
-            `v1 app self-import`,
-            request,
-            request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
-          );
+          // auto-upgraded apps will necessarily have packageJSON.exports
+          // because we insert them, so for that support we can fall through to
+          // that support below.
         }
-      } else {
-        // v2 packages are supposed to use package.json `exports` to enable
-        // self-imports, but not all build tools actually follow the spec. This
-        // is a workaround for badly behaved packagers.
-        //
-        // Known upstream bugs this works around:
-        // - https://github.com/vitejs/vite/issues/9731
-        if (pkg.packageJSON.exports) {
-          let found = resolveExports(pkg.packageJSON, request.specifier, {
-            browser: true,
-            conditions: ['default', 'imports'],
-          });
-          if (found?.[0]) {
-            return logTransition(
-              `v2 self-import with package.json exports`,
-              request,
-              request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
-            );
-          }
+      }
+
+      // v2 packages are supposed to use package.json `exports` to enable
+      // self-imports, but not all build tools actually follow the spec. This
+      // is a workaround for badly behaved packagers.
+      //
+      // Known upstream bugs this works around:
+      // - https://github.com/vitejs/vite/issues/9731
+      if (pkg.packageJSON.exports) {
+        let found = resolveExports(pkg.packageJSON, request.specifier, {
+          browser: true,
+          conditions: ['default', 'imports'],
+        });
+        if (found?.[0]) {
+          return logTransition(
+            `v2 self-import with package.json exports`,
+            request,
+            request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
+          );
         }
       }
     }
@@ -1148,21 +1151,15 @@ export class Resolver {
 
       // if the requesting file is in an addon's app-js, the relative request
       // should really be understood as a request for a module in the containing
-      // engine
+      // engine.
       let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
       if (logicalLocation) {
         return logTransition(
           'beforeResolve: relative import in app-js',
           request,
-          request
-            .alias('./' + posix.join(dirname(logicalLocation.inAppName), request.specifier))
-            // it's important that we're rehoming this to the root of the engine
-            // (which we know really exists), and not to a subdir like
-            // logicalLocation.inAppName (which might not physically exist),
-            // because some environments (including node's require.resolve) will
-            // refuse to do resolution from a notional path that doesn't
-            // physically exist.
-            .rehome(resolve(logicalLocation.owningEngine.root, 'package.json'))
+          request.alias(
+            posix.join(logicalLocation.owningEngine.packageName, dirname(logicalLocation.inAppName), request.specifier)
+          )
         );
       }
 

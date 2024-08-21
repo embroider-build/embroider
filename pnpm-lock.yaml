@@ -1609,6 +1609,9 @@ importers:
       '@ember/string':
         specifier: ^3.0.0
         version: 3.1.1
+      '@ember/string-4':
+        specifier: npm:@ember/string@^4.0.0
+        version: /@ember/string@4.0.0
       '@ember/test-helpers-3':
         specifier: npm:@ember/test-helpers@^3.2.0
         version: /@ember/test-helpers@3.3.0(ember-source@3.28.12)
@@ -5480,6 +5483,10 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
+  /@ember/string@4.0.0:
+    resolution: {integrity: sha512-IMVyVE72twuAMSYcHzWSgtgYTtzlHlKSGW8vEbztnnmkU6uo7kVHmiqSN9R4RkBhzvh0VD4G76Eph+55t3iNIA==}
+    dev: true
+
   /@ember/test-helpers@2.9.4(@babel/core@7.24.7)(@glint/environment-ember-loose@1.4.0)(@glint/template@1.4.0)(ember-source@4.6.0):
     resolution: {integrity: sha512-z+Qs1NYWyIVDmrY6WdmOS5mdG1lJ5CFfzh6dRhLfs9lq45deDaDrVNcaCYhnNeJZTvUBK2XR2SvPcZm0RloXdA==}
     engines: {node: 10.* || 12.* || 14.* || 15.* || >= 16.*}
@@ -8899,9 +8906,6 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependenciesMeta:
-      ajv:
-        optional: true
     dependencies:
       ajv: 8.16.0
 

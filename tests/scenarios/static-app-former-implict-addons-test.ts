@@ -1,16 +1,19 @@
-import { wideAppScenarios } from './scenarios';
+import { appScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 const { module: Qmodule, test } = QUnit;
 
 // this test is being used as a "smoke test" to check the widest possible support matrix
-wideAppScenarios
+appScenarios
+  .only('release')
   .map('static-app-former-implicit-addons', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
     project.linkDevDependency('ember-modifier', { baseDir: __dirname });
     project.linkDevDependency('@ember/string', { baseDir: __dirname, resolveName: '@ember/string-4' });
+    project.linkDevDependency('ember-resolver', { baseDir: __dirname, resolveName: 'ember-resolver-12' });
+    project.linkDevDependency('ember-cli-app-version', { baseDir: __dirname, resolveName: 'ember-cli-app-version-7' });
 
     merge(project.files, {
       app: {

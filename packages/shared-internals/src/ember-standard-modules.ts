@@ -45,6 +45,13 @@ emberVirtualPeerDeps.add('ember-source');
 // the modules-api-polyfill. Newer APIs need to be added here.
 emberVirtualPackages.add('@ember/owner');
 
+// Added in ember-source 4.5.0-beta.1
+emberVirtualPackages.add('@ember/renderer');
+
+// Not provided by rfc176-data, but is needed for special librarys
+// that know the dangers of importing private APIs
+emberVirtualPackages.add('@ember/-internals');
+
 // these are not public API but they're included in ember-source, so for
 // correctness we still want to understand that they come from there.
 emberVirtualPackages.add('@glimmer/validator');

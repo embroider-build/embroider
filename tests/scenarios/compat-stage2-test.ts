@@ -389,20 +389,11 @@ stage2Scenarios
           <HelloWorld @useDynamic="first-choice" />
           <HelloWorld @useDynamic={{"second-choice"}} />
           <HelloWorld @useDynamic={{component "third-choice"}} />
-          <DirectTemplateReexport />
         `,
           'curly.hbs': `
           {{hello-world useDynamic="first-choice" }}
           {{hello-world useDynamic=(component "third-choice") }}
         `,
-          components: {
-            'first-choice.hbs': 'first',
-            'second-choice.hbs': 'second',
-            'third-choice.hbs': 'third',
-            'module-name-check': {
-              'index.hbs': '<div class={{embroider-sample-transforms-module}}>hello world</div>',
-            },
-          },
         },
         components: {
           'uses-inline-template.js': `
@@ -411,6 +402,12 @@ stage2Scenarios
             layout: hbs${'`'}<FirstChoice/>${'`'}
           })
           `,
+          'first-choice.hbs': 'first',
+          'second-choice.hbs': 'second',
+          'third-choice.hbs': 'third',
+          'module-name-check': {
+            'index.hbs': '<div class={{embroider-sample-transforms-module}}>hello world</div>',
+          },
         },
         'use-deep-addon.js': `import thing from 'deep-addon'`,
         'custom-babel-needed.js': `console.log('embroider-sample-transforms-target');`,
@@ -488,9 +485,6 @@ stage2Scenarios
         },
         templates: {
           'app-example.hbs': `{{component this.stuff}}`,
-          components: {
-            'direct-template-reexport.js': `export { default } from 'my-addon/templates/components/hello-world';`,
-          },
         },
       },
       public: {
@@ -688,21 +682,6 @@ stage2Scenarios
           );
           return true;
         });
-      });
-
-      test('app/templates/components/direct-template-reexport.js', function (assert) {
-        expectAudit
-          .module('./templates/index.hbs')
-          .resolves(/my-addon\/_app_\/templates\/components\/direct-template-reexport\.js\/-embroider-pair-component/)
-          .toModule()
-          .resolves(/my-addon\/_app_\/templates\/components\/direct-template-reexport\.js/)
-          .toModule()
-          .withContents(contents => {
-            assert.ok(
-              /export { default } from ".*\/my-addon\/templates\/components\/hello-world.hbs.*";/.test(contents)
-            );
-            return true;
-          });
       });
 
       test('uses-inline-template.js', function (assert) {

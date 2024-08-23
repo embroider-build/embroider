@@ -550,7 +550,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             // write all the stats output to the console
             this.consoleWrite(
               stats.toString({
-                color: Boolean(supportsColor.stdout),
+                colors: Boolean(supportsColor.stdout),
               })
             );
 

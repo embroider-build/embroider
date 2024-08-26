@@ -36,9 +36,14 @@
     <script src="{{rootURL}}apple.js"></script>
     <script src="{{rootURL}}ordered.js"></script>
     <script src="/@embroider/core/test-support.js"></script>
-    <script src="/@embroider/core/test-entrypoint" type="module"></script>
+    <script type="module">import "ember-testing";</script>
+
+    <script type="module">
+      import { start } from './test-helper';
+      import.meta.glob("./**/*.js", { eager: true });
+      start();
+    </script>
 
     {{content-for "body-footer"}}
-    {{content-for "test-body-footer"}}
   </body>
 </html>

@@ -31,6 +31,7 @@ emberVirtualPeerDeps.add('@ember/string');
 // (like snowpack) not to worry about these packages.
 emberVirtualPackages.add('@glimmer/env');
 emberVirtualPackages.add('ember');
+emberVirtualPackages.add('ember-testing');
 
 // this is a real package and even though most of its primary API is implemented
 // as transforms, it does include some runtime code.

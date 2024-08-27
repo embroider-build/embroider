@@ -40,7 +40,7 @@
 
     <script type="module">
       import { start } from './test-helper';
-      import.meta.glob("./**/*.js", { eager: true });
+      import.meta.glob("./**/*.{js,gjs,gts}", { eager: true });
       start();
     </script>
 

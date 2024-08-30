@@ -79,9 +79,9 @@ appScenarios
 
       test('dot files are not included as app modules', function (assert) {
         // dot files should exist on disk
-        expectFile('./.foobar.js').exists();
-        expectFile('./.barbaz.js').exists();
-        expectFile('./bizbiz.js').exists();
+        expectFile('./app/.foobar.js').exists();
+        expectFile('./app/.barbaz.js').exists();
+        expectFile('./app/bizbiz.js').exists();
 
         // but not be picked up in the entrypoint
         expectAudit

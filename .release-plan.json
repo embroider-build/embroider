@@ -10,25 +10,51 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "3.5.7",
-      "newVersion": "3.6.0",
+      "impact": "patch",
+      "oldVersion": "3.6.0",
+      "newVersion": "3.6.1",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.14"
+      "impact": "patch",
+      "oldVersion": "3.4.14",
+      "newVersion": "3.4.15",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.5"
+      "impact": "patch",
+      "oldVersion": "1.16.5",
+      "newVersion": "1.16.6",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -37,7 +63,16 @@
       "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.6.2"
+      "impact": "patch",
+      "oldVersion": "2.6.2",
+      "newVersion": "2.6.3",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -49,8 +84,21 @@
       "oldVersion": "0.2.0"
     },
     "@embroider/webpack": {
-      "oldVersion": "4.0.4"
+      "impact": "patch",
+      "oldVersion": "4.0.4",
+      "newVersion": "4.0.5",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2024-07-18)\n\n@embroider/compat 3.6.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#1842](https://github.com/embroider-build/embroider/pull/1842) [beta] template-tag code mod ([@void-mAlex](https://github.com/void-mAlex))\n\n#### Committers: 1\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n"
+  "description": "## Release (2024-08-30)\n\n@embroider/compat 3.6.1 (patch)\n@embroider/core 3.4.15 (patch)\n@embroider/macros 1.16.6 (patch)\n@embroider/shared-internals 2.6.3 (patch)\n@embroider/webpack 4.0.5 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/shared-internals`\n  * [#2075](https://github.com/embroider-build/embroider/pull/2075) Update ember standard modules to include @ember/renderer and @ember/-internals and ember-testing ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/compat`\n  * [#2067](https://github.com/embroider-build/embroider/pull/2067) codemod fixes ([@void-mAlex](https://github.com/void-mAlex))\n\n#### :memo: Documentation\n* [#2055](https://github.com/embroider-build/embroider/pull/2055) document templateTagCodemod usage ([@void-mAlex](https://github.com/void-mAlex))\n\n#### :house: Internal\n* `@embroider/webpack`\n  * [#2076](https://github.com/embroider-build/embroider/pull/2076) [Stable]: Follow upstream type change from webpack ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* Other\n  * [#2058](https://github.com/embroider-build/embroider/pull/2058) Set the packageManager field ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

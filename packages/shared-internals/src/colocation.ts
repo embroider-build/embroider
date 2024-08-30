@@ -42,7 +42,7 @@ function correspondingJSExists(id: string): boolean {
 
 function isInComponents(id: string, packageCache: Pick<PackageCache, 'ownerOfFile'>) {
   const pkg = packageCache.ownerOfFile(id);
-  return pkg?.isV2App() && id.slice(pkg?.root.length).split(sep).join('/').startsWith('/components');
+  return pkg?.isV2App() && id.slice(pkg?.root.length).split(sep).join('/').startsWith('/app/components');
 }
 
 export function templateOnlyComponentSource() {

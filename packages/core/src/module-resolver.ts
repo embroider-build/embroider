@@ -201,7 +201,6 @@ export class Resolver {
     request = this.handleVendorStyles(request);
     request = this.handleTestSupportStyles(request);
     request = this.handleEntrypoint(request);
-    request = this.handleTestEntrypoint(request);
     request = this.handleRouteEntrypoint(request);
     request = this.handleRenaming(request);
     request = this.handleVendor(request);
@@ -474,41 +473,6 @@ export class Resolver {
       'entrypoint',
       request,
       request.virtualize(resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'))
-    );
-  }
-
-  private handleTestEntrypoint<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
-      return request;
-    }
-
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/core/test-entrypoint',
-      '/@embroider/core/test-entrypoint',
-      './@embroider/core/test-entrypoint',
-    ];
-
-    if (!candidates.some(c => request.specifier === c)) {
-      return request;
-    }
-
-    const pkg = this.packageCache.ownerOfFile(request.fromFile);
-
-    if (!pkg?.isV2Ember() || !pkg.isV2App()) {
-      throw new Error(
-        `bug: found test entrypoint import from somewhere other than the top-level app engine: ${request.fromFile}`
-      );
-    }
-
-    let matched = resolveExports(pkg.packageJSON, '-embroider-test-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
-    return logTransition(
-      'test-entrypoint',
-      request,
-      request.virtualize(resolve(pkg.root, matched?.[0] ?? '-embroider-test-entrypoint.js'))
     );
   }
 

@@ -446,19 +446,19 @@ splitScenarios
       });
 
       test('helper is consumed only from the template that uses it', function () {
-        expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
+        expectAudit.module('./app/helpers/capitalize.js').hasConsumers(['./app/components/one-person.hbs']);
       });
 
       test('component is consumed only from the template that uses it', function () {
-        expectAudit.module('./components/one-person.js').hasConsumers(['./pods/people/show/template.hbs']);
+        expectAudit.module('./app/components/one-person.js').hasConsumers(['./app/pods/people/show/template.hbs']);
       });
 
       test('modifier is consumed only from the template that uses it', function () {
-        expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./pods/people/edit/template.hbs']);
+        expectAudit.module('./app/modifiers/auto-focus.js').hasConsumers(['./app/pods/people/edit/template.hbs']);
       });
 
       test('does not include unused component', function () {
-        expectAudit.module('./components/unused.hbs').doesNotExist();
+        expectAudit.module('./app/components/unused.hbs').doesNotExist();
       });
     });
   });
@@ -622,19 +622,19 @@ splitScenarios
       });
 
       test('helper is consumed only from the template that uses it', function () {
-        expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
+        expectAudit.module('./app/helpers/capitalize.js').hasConsumers(['./app/components/one-person.hbs']);
       });
 
       test('component is consumed only from the template that uses it', function () {
-        expectAudit.module('./components/one-person.js').hasConsumers(['./routes/people/show/template.hbs']);
+        expectAudit.module('./app/components/one-person.js').hasConsumers(['./app/routes/people/show/template.hbs']);
       });
 
       test('modifier is consumed only from the template that uses it', function () {
-        expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./routes/people/edit/template.hbs']);
+        expectAudit.module('./app/modifiers/auto-focus.js').hasConsumers(['./app/routes/people/edit/template.hbs']);
       });
 
       test('does not include unused component', function () {
-        expectAudit.module('./components/unused.hbs').doesNotExist();
+        expectAudit.module('./app/components/unused.hbs').doesNotExist();
       });
     });
   });

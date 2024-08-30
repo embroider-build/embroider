@@ -392,12 +392,12 @@ appScenarios
           .module('./index.html')
           .resolves(/\/index.html.*/) // in-html app-boot script
           .toModule()
-          .resolves(/\/app\.js.*/)
+          .resolves(/\/app\/app\.js.*/)
           .toModule()
           .resolves(/.*\/-embroider-entrypoint.js/)
           .toModule()
           .withContents(content => {
-            let result = /import \* as (\w+) from "\/components\/pod-component\/component\.js"/.exec(content);
+            let result = /import \* as (\w+) from "\/app\/components\/pod-component\/component\.js"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component');
@@ -409,7 +409,7 @@ appScenarios
               'expected module is in the export list'
             );
 
-            result = /import \* as (\w+) from "\/components\/pod-component\/template\.hbs.*"/.exec(content);
+            result = /import \* as (\w+) from "\/app\/components\/pod-component\/template\.hbs.*"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component template');
@@ -421,7 +421,7 @@ appScenarios
               'expected module is in the export list'
             );
 
-            result = /import \* as (\w+) from "\/components\/template-only\/template\.hbs.*"/.exec(content);
+            result = /import \* as (\w+) from "\/app\/components\/template-only\/template\.hbs.*"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find template only component');

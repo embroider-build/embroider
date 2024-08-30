@@ -493,7 +493,16 @@ export class Resolver {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
     }
 
-    return logTransition('route entrypoint', request, request.virtualize(encodeRouteEntrypoint(pkg.root, routeName)));
+    let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+
+    return logTransition(
+      'route entrypoint',
+      request,
+      request.virtualize(encodeRouteEntrypoint(pkg.root, matched?.[0], routeName))
+    );
   }
 
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {

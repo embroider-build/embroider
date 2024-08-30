@@ -23,9 +23,9 @@ describe(`macroMaybeAttrs`, function () {
 
     test('macroMaybeAttrs leaves other modifiers alone', function () {
       let code = transform(
-        `<div data-test-target {{action this.doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`
+        `<div data-test-target {{some-modifier this.doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`
       );
-      expect(code).toMatch(/<div data-test-target {{action this.doThing}}/);
+      expect(code).toMatch(/<div data-test-target {{some-modifier this.doThing}}/);
     });
   });
 });

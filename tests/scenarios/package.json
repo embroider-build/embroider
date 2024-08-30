@@ -93,7 +93,7 @@
     "ember-source-5.4": "npm:ember-source@~5.4.0",
     "ember-source-5.8": "npm:ember-source@~5.8.0",
     "ember-source-beta": "npm:ember-source@beta",
-    "ember-source-canary": "https://s3.amazonaws.com/builds.emberjs.com/canary/shas/370cf34f9e86df17b880f11fef35a5a0f24ff38a.tgz",
+    "ember-source-canary": "npm:ember-source@alpha",
     "ember-source-latest": "npm:ember-source@latest",
     "ember-test-helpers-2": "npm:@ember/test-helpers@^2.0.0",
     "ember-truth-helpers": "^3.0.0",

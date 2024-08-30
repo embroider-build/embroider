@@ -68,7 +68,7 @@ class TemplateTagCodemodPlugin extends Plugin {
     const emberSourceEntrypoint = require.resolve('ember-source', { paths: [process.cwd()] });
     const emberVersion = JSON.parse(readFileSync(join(emberSourceEntrypoint, '../../package.json')).toString()).version;
 
-    const ember_template_compiler = resolver.nodeResolve(
+    const ember_template_compiler = await resolver.nodeResolve(
       'ember-source/vendor/ember/ember-template-compiler',
       resolve(locateEmbroiderWorkingDir(process.cwd()), 'rewritten-app', 'package.json')
     );
@@ -109,10 +109,10 @@ class TemplateTagCodemodPlugin extends Plugin {
             function template_tag_extractor(): unknown {
               return {
                 visitor: {
-                  ImportDeclaration(import_declaration: NodePath<t.ImportDeclaration>) {
+                  async ImportDeclaration(import_declaration: NodePath<t.ImportDeclaration>) {
                     const extractor = import_declaration.node.source.value.match(compatPattern);
                     if (extractor) {
-                      const result = resolver.nodeResolve(extractor[0], current_file);
+                      const result = await resolver.nodeResolve(extractor[0], current_file);
                       if (result.type === 'real') {
                         // find package
                         const owner_package = resolver.packageCache.ownerOfFile(result.filename);
@@ -144,7 +144,7 @@ class TemplateTagCodemodPlugin extends Plugin {
         });
 
         //find backing class
-        const backing_class_resolution = resolver.nodeResolve(
+        const backing_class_resolution = await resolver.nodeResolve(
           '#embroider_compat/' + relative(tmp_path, current_file).replace(/[\\]/g, '/').slice(0, -4),
           tmp_path
         );

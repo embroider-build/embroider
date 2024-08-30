@@ -31,6 +31,7 @@ emberVirtualPeerDeps.add('@ember/string');
 // (like snowpack) not to worry about these packages.
 emberVirtualPackages.add('@glimmer/env');
 emberVirtualPackages.add('ember');
+emberVirtualPackages.add('ember-testing');
 
 // this is a real package and even though most of its primary API is implemented
 // as transforms, it does include some runtime code.
@@ -44,6 +45,13 @@ emberVirtualPeerDeps.add('ember-source');
 // rfc176-data only covers things up to the point where Ember stopped needing
 // the modules-api-polyfill. Newer APIs need to be added here.
 emberVirtualPackages.add('@ember/owner');
+
+// Added in ember-source 4.5.0-beta.1
+emberVirtualPackages.add('@ember/renderer');
+
+// Not provided by rfc176-data, but is needed for special librarys
+// that know the dangers of importing private APIs
+emberVirtualPackages.add('@ember/-internals');
 
 // these are not public API but they're included in ember-source, so for
 // correctness we still want to understand that they come from there.

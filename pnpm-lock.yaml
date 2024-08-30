@@ -178,6 +178,9 @@ importers:
       '@babel/core':
         specifier: ^7.14.5
         version: 7.25.2
+      '@babel/plugin-syntax-decorators':
+        specifier: ^7.24.7
+        version: 7.24.7(@babel/core@7.25.2)
       '@babel/plugin-syntax-dynamic-import':
         specifier: ^7.8.3
         version: 7.8.3(@babel/core@7.25.2)

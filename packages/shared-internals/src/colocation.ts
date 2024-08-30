@@ -2,6 +2,7 @@ import { existsSync } from 'fs-extra';
 import { cleanUrl } from './paths';
 import type PackageCache from './package-cache';
 import { sep } from 'path';
+import { resolve as resolveExports } from 'resolve.exports';
 
 export function syntheticJStoHBS(source: string): string | null {
   // explicit js is the only case we care about here. Synthetic template JS is
@@ -40,9 +41,18 @@ function correspondingJSExists(id: string): boolean {
   return ['js', 'ts'].some(ext => existsSync(id.slice(0, -3) + ext));
 }
 
-function isInComponents(id: string, packageCache: Pick<PackageCache, 'ownerOfFile'>) {
+export function isInComponents(id: string, packageCache: Pick<PackageCache, 'ownerOfFile'>) {
   const pkg = packageCache.ownerOfFile(id);
-  return pkg?.isV2App() && id.slice(pkg?.root.length).split(sep).join('/').startsWith('/app/components');
+  if (!pkg?.isV2App()) {
+    return false;
+  }
+
+  let tryResolve = resolveExports(pkg.packageJSON, './components', {
+    browser: true,
+    conditions: ['default', 'imports'],
+  });
+  let componentsDir = tryResolve?.[0] ?? './components';
+  return ('.' + id.slice(pkg?.root.length).split(sep).join('/')).startsWith(componentsDir);
 }
 
 export function templateOnlyComponentSource() {

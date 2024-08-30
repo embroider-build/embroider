@@ -68,7 +68,7 @@ function checkContents(
     .module('./index.html')
     .resolves(/\/index.html.*/) // in-html app-boot script
     .toModule()
-    .resolves(/\/app\.js.*/)
+    .resolves(/\/app\/app\.js.*/)
     .toModule()
     .resolves(/.*\/-embroider-entrypoint.js/);
 
@@ -112,7 +112,9 @@ function inEntrypointFunction(expectAudit: ReturnType<typeof setupAuditTest>) {
         if (Array.isArray(text)) {
           text.forEach(t => {
             if (!contents.includes(t)) {
-              throw new Error(`${t} should be found in entrypoint`);
+              throw new Error(`${t} should be found in entrypoint:
+---
+${contents}`);
             }
           });
         } else if (text instanceof RegExp) {
@@ -229,21 +231,21 @@ splitScenarios
 
       test('has split controllers in route entrypoint', function () {
         inEntrypoint(
-          ['controllers/people', 'controllers/people/show'],
+          ['app/controllers/people', 'app/controllers/people/show'],
           /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split route templates in route entrypoint', function () {
         inEntrypoint(
-          ['templates/people', 'templates/people/index', 'templates/people/show'],
+          ['app/templates/people', 'app/templates/people/index', 'app/templates/people/show'],
           /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split routes in route entrypoint', function () {
         inEntrypoint(
-          ['routes/people', 'routes/people/show'],
+          ['app/routes/people', 'app/routes/people/show'],
           /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
         );
       });
@@ -268,19 +270,19 @@ splitScenarios
       });
 
       test('helper is consumed only from the template that uses it', function () {
-        expectAudit.module('./helpers/capitalize.js').hasConsumers(['./components/one-person.hbs']);
+        expectAudit.module('./app/helpers/capitalize.js').hasConsumers(['./app/components/one-person.hbs']);
       });
 
       test('component is consumed only from the template that uses it', function () {
-        expectAudit.module('./components/one-person.js').hasConsumers(['./templates/people/show.hbs']);
+        expectAudit.module('./app/components/one-person.js').hasConsumers(['./app/templates/people/show.hbs']);
       });
 
       test('modifier is consumed only from the template that uses it', function () {
-        expectAudit.module('./modifiers/auto-focus.js').hasConsumers(['./templates/people/edit.hbs']);
+        expectAudit.module('./app/modifiers/auto-focus.js').hasConsumers(['./app/templates/people/edit.hbs']);
       });
 
       test('does not include unused component', function () {
-        expectAudit.module('./components/unused.hbs').doesNotExist();
+        expectAudit.module('./app/components/unused.hbs').doesNotExist();
       });
     });
   });

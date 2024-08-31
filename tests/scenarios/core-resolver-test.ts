@@ -30,6 +30,10 @@ Scenarios.fromProject(() => new Project())
       name: 'my-app',
       keywords: ['ember-addon'],
       'ember-addon': appMeta as any,
+      exports: {
+        './*': './*',
+        './tests/*': './tests/*',
+      },
     };
     app.mergeFiles({
       'index.html': '<script src="./app.js" type="module"></script>',

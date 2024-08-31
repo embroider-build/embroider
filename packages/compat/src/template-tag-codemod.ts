@@ -68,12 +68,33 @@ class TemplateTagCodemodPlugin extends Plugin {
     const emberSourceEntrypoint = require.resolve('ember-source', { paths: [process.cwd()] });
     const emberVersion = JSON.parse(readFileSync(join(emberSourceEntrypoint, '../../package.json')).toString()).version;
 
-    const ember_template_compiler = await resolver.nodeResolve(
+    /**
+     * In embroider 3 we rewrite the app and place the template-compiler in this directory.
+     * However, in newer embroider-using projects, we leave ember-source in node_modules,
+     * so we need to check both places.
+     */
+
+    /**
+     * For embroider 3
+     */
+    const ember_template_compiler3 = await resolver.nodeResolve(
       'ember-source/vendor/ember/ember-template-compiler',
       resolve(locateEmbroiderWorkingDir(process.cwd()), 'rewritten-app', 'package.json')
     );
+
+    /**
+     * For embroider > 3
+     */
+    const ember_template_compiler4 = await resolver.nodeResolve(
+      'ember-source/dist/ember-template-compiler',
+      process.cwd()
+    );
+
+    const ember_template_compiler =
+      ember_template_compiler3.type === 'not_found' ? ember_template_compiler4 : ember_template_compiler3;
+
     if (ember_template_compiler.type === 'not_found') {
-      throw 'This will not ever be true';
+      throw `Could not find the ember template complier.`;
     }
 
     const embroider_compat_path = require.resolve('@embroider/compat', { paths: [process.cwd()] });

@@ -158,7 +158,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
           expectAudit,
           contents => {
             assert.ok(
-              /import TEMPLATE from ['"]\/components\/has-colocated-template.hbs.*['"];/.test(contents),
+              /import TEMPLATE from ['"]\/app\/components\/has-colocated-template.hbs.*['"];/.test(contents),
               'imported template'
             );
             assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
@@ -176,7 +176,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
           expectAudit,
           contents => {
             assert.ok(
-              /import TEMPLATE from ['"]\/components\/template-only-component.hbs.*['"];/.test(contents),
+              /import TEMPLATE from ['"]\/app\/components\/template-only-component.hbs.*['"];/.test(contents),
               'imported template'
             );
             assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
@@ -193,7 +193,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
 
       test(`app's colocated components are implicitly included correctly`, function (assert) {
         checkContents(expectAudit, contents => {
-          const result = /import \* as (\w+) from "\/components\/has-colocated-template.js.*";/.exec(contents);
+          const result = /import \* as (\w+) from "\/app\/components\/has-colocated-template.js.*";/.exec(contents);
 
           if (!result) {
             console.log(contents);

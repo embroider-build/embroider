@@ -475,7 +475,6 @@ class TemplateResolver implements ASTPlugin {
     }
     if (component.type === 'path') {
       let ownComponentRules = this.findRules(this.env.filename);
-      debugger;
       if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
         return null;
       }

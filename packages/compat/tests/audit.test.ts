@@ -104,6 +104,10 @@ describe('audit', function () {
     merge(app.pkg, {
       'ember-addon': appMeta,
       keywords: ['ember-addon'],
+      exports: {
+        './*': './*',
+        './tests/*': './tests/*',
+      },
     });
   });
 

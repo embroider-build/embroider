@@ -465,8 +465,15 @@ export class Resolver {
     } else {
       pkg = requestingPkg;
     }
-
-    return logTransition('entrypoint', request, request.virtualize(resolve(pkg.root, '-embroider-entrypoint.js')));
+    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+    return logTransition(
+      'entrypoint',
+      request,
+      request.virtualize(resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'))
+    );
   }
 
   private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
@@ -486,7 +493,16 @@ export class Resolver {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
     }
 
-    return logTransition('route entrypoint', request, request.virtualize(encodeRouteEntrypoint(pkg.root, routeName)));
+    let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+
+    return logTransition(
+      'route entrypoint',
+      request,
+      request.virtualize(encodeRouteEntrypoint(pkg.root, matched?.[0], routeName))
+    );
   }
 
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
@@ -963,6 +979,11 @@ export class Resolver {
     // ember-source might provide backburner via module renaming, but if you
     // have an explicit dependency on backburner you should still get that real
     // copy.
+
+    // if (pkg.root === this.options.engines[0].root && request.specifier === `${pkg.name}/environment/config`) {
+    //   return logTransition('legacy config location', request, request.alias(`${pkg.name}/app/environment/config`));
+    // }
+
     if (!pkg.hasDependency(packageName)) {
       for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
         if (candidate === request.specifier) {
@@ -1000,34 +1021,32 @@ export class Resolver {
         let owningEngine = this.owningEngine(pkg);
         let addonConfig = owningEngine.activeAddons.find(a => a.root === pkg.root);
         if (addonConfig) {
+          // auto-upgraded addons get special support for self-resolving here.
           return logTransition(`v1 addon self-import`, request, request.rehome(addonConfig.canResolveFromFile));
         } else {
-          let selfImportPath = request.specifier === pkg.name ? './' : request.specifier.replace(pkg.name, '.');
-          return logTransition(
-            `v1 app self-import`,
-            request,
-            request.alias(selfImportPath).rehome(resolve(pkg.root, 'package.json'))
-          );
+          // auto-upgraded apps will necessarily have packageJSON.exports
+          // because we insert them, so for that support we can fall through to
+          // that support below.
         }
-      } else {
-        // v2 packages are supposed to use package.json `exports` to enable
-        // self-imports, but not all build tools actually follow the spec. This
-        // is a workaround for badly behaved packagers.
-        //
-        // Known upstream bugs this works around:
-        // - https://github.com/vitejs/vite/issues/9731
-        if (pkg.packageJSON.exports) {
-          let found = resolveExports(pkg.packageJSON, request.specifier, {
-            browser: true,
-            conditions: ['default', 'imports'],
-          });
-          if (found?.[0]) {
-            return logTransition(
-              `v2 self-import with package.json exports`,
-              request,
-              request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
-            );
-          }
+      }
+
+      // v2 packages are supposed to use package.json `exports` to enable
+      // self-imports, but not all build tools actually follow the spec. This
+      // is a workaround for badly behaved packagers.
+      //
+      // Known upstream bugs this works around:
+      // - https://github.com/vitejs/vite/issues/9731
+      if (pkg.packageJSON.exports) {
+        let found = resolveExports(pkg.packageJSON, request.specifier, {
+          browser: true,
+          conditions: ['default', 'imports'],
+        });
+        if (found?.[0]) {
+          return logTransition(
+            `v2 self-import with package.json exports`,
+            request,
+            request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
+          );
         }
       }
     }
@@ -1105,21 +1124,15 @@ export class Resolver {
 
       // if the requesting file is in an addon's app-js, the relative request
       // should really be understood as a request for a module in the containing
-      // engine
+      // engine.
       let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
       if (logicalLocation) {
         return logTransition(
           'beforeResolve: relative import in app-js',
           request,
-          request
-            .alias('./' + posix.join(dirname(logicalLocation.inAppName), request.specifier))
-            // it's important that we're rehoming this to the root of the engine
-            // (which we know really exists), and not to a subdir like
-            // logicalLocation.inAppName (which might not physically exist),
-            // because some environments (including node's require.resolve) will
-            // refuse to do resolution from a notional path that doesn't
-            // physically exist.
-            .rehome(resolve(logicalLocation.owningEngine.root, 'package.json'))
+          request.alias(
+            posix.join(logicalLocation.owningEngine.packageName, dirname(logicalLocation.inAppName), request.specifier)
+          )
         );
       }
 
@@ -1301,11 +1314,15 @@ export class Resolver {
       if (withinEngine) {
         // it's a relative import inside an engine (which also means app), which
         // means we may need to satisfy the request via app tree merging.
-        let appJSMatch = await this.searchAppTree(
-          request,
-          withinEngine,
-          explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier))
-        );
+
+        let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
+        if (!logicalName) {
+          return logTransition(
+            'fallbackResolve: relative failure because this file is not externally accessible',
+            request
+          );
+        }
+        let appJSMatch = await this.searchAppTree(request, withinEngine, logicalName);
         if (appJSMatch) {
           return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
         } else {
@@ -1462,16 +1479,10 @@ export class Resolver {
     if (engineConfig) {
       // we're directly inside an engine, so we're potentially resolvable as a
       // global component
-
-      // this kind of mapping is not true in general for all packages, but it
-      // *is* true for all classical engines (which includes apps) since they
-      // don't support package.json `exports`. As for a future v2 engine or app:
-      // this whole method is only relevant for implementing packageRules, which
-      // should only be for classic stuff. v2 packages should do the right
-      // things from the beginning and not need packageRules about themselves.
-      let inAppName = explicitRelative(engineConfig.root, filename);
-
-      return this.tryReverseComponent(engineConfig.packageName, inAppName);
+      let inAppName = engineRelativeName(owningPackage, filename);
+      if (inAppName) {
+        return this.tryReverseComponent(engineConfig.packageName, inAppName);
+      }
     }
 
     let engineInfo = this.reverseSearchAppTree(owningPackage, filename);
@@ -1522,4 +1533,11 @@ function reliablyResolvable(pkg: V2Package, packageName: string) {
 //
 function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, importedPackageName: string): boolean {
   return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
+}
+
+function engineRelativeName(pkg: Package, filename: string): string | undefined {
+  let outsideName = externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
+  if (outsideName) {
+    return '.' + outsideName.slice(pkg.name.length);
+  }
 }

@@ -76,7 +76,8 @@ dummyAppScenarios
       });
 
       test('production build contains public assets from both addon and dummy app after a build', async function (assert) {
-        await app.execute(`pnpm vite build`);
+        let result = await app.execute(`pnpm vite build`);
+        assert.equal(result.exitCode, 0, result.output);
         let content = readFileSync(`${app.dir}/dist/robots.txt`).toString();
         assert.strictEqual(content, 'go away bots');
         content = readFileSync(`${app.dir}/dist/addon-template/from-addon.txt`).toString();

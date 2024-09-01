@@ -509,6 +509,13 @@ export class CompatAppBuilder {
 
     if ((this.origAppPackage.packageJSON['ember-addon']?.version ?? 0) < 2) {
       meta['auto-upgraded'] = true;
+      // our rewriting keeps app in app directory, etc.
+      pkgLayers.push({
+        exports: {
+          './*': './app/*',
+          './tests/*': './tests/*',
+        },
+      });
     }
 
     pkgLayers.push({ 'ember-addon': meta });

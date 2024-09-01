@@ -9,11 +9,11 @@ import { getAppFiles, getFastbootFiles, importPaths, splitRoute, staticAppPathsP
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-route-entrypoint.js:route=(?<route>.*)/;
 
-export function encodeRouteEntrypoint(packagePath: string, routeName: string): string {
-  return resolve(packagePath, `-embroider-route-entrypoint.js:route=${routeName}`);
+export function encodeRouteEntrypoint(packagePath: string, matched: string | undefined, routeName: string): string {
+  return resolve(packagePath, `${matched}:route=${routeName}` ?? `-embroider-route-entrypoint.js:route=${routeName}`);
 }
 
-export function decodeRouteEntrypoint(filename: string): { fromFile: string; route: string } | undefined {
+export function decodeRouteEntrypoint(filename: string): { fromDir: string; route: string } | undefined {
   // Performance: avoid paying regex exec cost unless needed
   if (!filename.includes('-embroider-route-entrypoint')) {
     return;
@@ -21,7 +21,7 @@ export function decodeRouteEntrypoint(filename: string): { fromFile: string; rou
   let m = entrypointPattern.exec(filename);
   if (m) {
     return {
-      fromFile: m.groups!.filename,
+      fromDir: m.groups!.filename,
       route: m.groups!.route,
     };
   }
@@ -42,9 +42,9 @@ export function decodePublicRouteEntrypoint(specifier: string): string | null {
 
 export function renderRouteEntrypoint(
   resolver: Resolver,
-  { fromFile, route }: { fromFile: string; route: string }
+  { fromDir, route }: { fromDir: string; route: string }
 ): { src: string; watches: string[] } {
-  const owner = resolver.packageCache.ownerOfFile(fromFile);
+  const owner = resolver.packageCache.ownerOfFile(fromDir);
 
   if (!owner) {
     throw new Error('Owner expected'); // ToDo: Really bad error, update message
@@ -67,7 +67,7 @@ export function renderRouteEntrypoint(
       modulePrefix: isApp ? resolver.options.modulePrefix : engine.packageName,
       appRelativePath: 'NOT_USED_DELETE_ME',
     },
-    getAppFiles(owner.root),
+    getAppFiles(fromDir),
     hasFastboot ? getFastbootFiles(owner.root) : new Set(),
     extensionsPattern(resolver.options.resolvableExtensions),
     staticAppPathsPattern(resolver.options.staticAppPaths),

@@ -158,7 +158,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
           expectAudit,
           contents => {
             assert.ok(
-              /import TEMPLATE from ['"]\/components\/has-colocated-template.hbs.*['"];/.test(contents),
+              /import TEMPLATE from ['"]\/app\/components\/has-colocated-template.hbs.*['"];/.test(contents),
               'imported template'
             );
             assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
@@ -176,7 +176,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
           expectAudit,
           contents => {
             assert.ok(
-              /import TEMPLATE from ['"]\/components\/template-only-component.hbs.*['"];/.test(contents),
+              /import TEMPLATE from ['"]\/app\/components\/template-only-component.hbs.*['"];/.test(contents),
               'imported template'
             );
             assert.ok(/import \{ setComponentTemplate \}/.test(contents), 'found setComponentTemplate');
@@ -193,7 +193,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
 
       test(`app's colocated components are implicitly included correctly`, function (assert) {
         checkContents(expectAudit, contents => {
-          const result = /import \* as (\w+) from "\/components\/has-colocated-template.js.*";/.exec(contents);
+          const result = /import \* as (\w+) from "\/app\/components\/has-colocated-template.js.*";/.exec(contents);
 
           if (!result) {
             console.log(contents);
@@ -392,12 +392,12 @@ appScenarios
           .module('./index.html')
           .resolves(/\/index.html.*/) // in-html app-boot script
           .toModule()
-          .resolves(/\/app\.js.*/)
+          .resolves(/\/app\/app\.js.*/)
           .toModule()
           .resolves(/.*\/-embroider-entrypoint.js/)
           .toModule()
           .withContents(content => {
-            let result = /import \* as (\w+) from "\/components\/pod-component\/component\.js"/.exec(content);
+            let result = /import \* as (\w+) from "\/app\/components\/pod-component\/component\.js"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component');
@@ -409,7 +409,7 @@ appScenarios
               'expected module is in the export list'
             );
 
-            result = /import \* as (\w+) from "\/components\/pod-component\/template\.hbs.*"/.exec(content);
+            result = /import \* as (\w+) from "\/app\/components\/pod-component\/template\.hbs.*"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find pod component template');
@@ -421,7 +421,7 @@ appScenarios
               'expected module is in the export list'
             );
 
-            result = /import \* as (\w+) from "\/components\/template-only\/template\.hbs.*"/.exec(content);
+            result = /import \* as (\w+) from "\/app\/components\/template-only\/template\.hbs.*"/.exec(content);
 
             if (!result) {
               throw new Error('Could not find template only component');

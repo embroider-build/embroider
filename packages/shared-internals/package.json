@@ -37,6 +37,7 @@
     "fs-extra": "^9.1.0",
     "lodash": "^4.17.21",
     "minimatch": "^3.0.4",
+    "resolve.exports": "^2.0.2",
     "semver": "^7.3.5"
   },
   "devDependencies": {

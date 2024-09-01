@@ -11,7 +11,8 @@
     "test": "tests"
   },
   "exports": {
-    "./*": "./*"
+    "./tests/*": "./tests/*",
+    "./*": "./app/*"
   },
   "scripts": {
     "build": "ember build --environment=production",

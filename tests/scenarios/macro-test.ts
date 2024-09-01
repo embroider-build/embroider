@@ -108,7 +108,7 @@ appScenarios
   });
 
 appScenarios
-  .map('macro-tests-classic', project => {
+  .map('classic-macro-tests', project => {
     scenarioSetup(project);
     merge(project.files, loadFromFixtureData('macro-test-classic'));
   })
@@ -120,7 +120,7 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      test(`EMBROIDER_TEST_SETUP_FORCE=classic pnpm test`, async function (assert) {
+      test(`EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test`, async function (assert) {
         // throw_unless_parallelizable is enabled to ensure that @embroider/macros is parallelizable
         let result = await app.execute(`pnpm ember test`, {
           env: {

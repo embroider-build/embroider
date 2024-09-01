@@ -24,7 +24,7 @@ function resolveEntryPoint(expectAudit: ReturnType<typeof setupAuditTest>) {
     .module('./index.html')
     .resolves(/\/index.html.*/) // in-html app-boot script
     .toModule()
-    .resolves(/\/app\.js.*/)
+    .resolves(/\/app\/app\.js.*/)
     .toModule()
     .resolves(/.*\/-embroider-entrypoint.js/)
     .toModule();
@@ -563,7 +563,7 @@ stage2Scenarios
       });
 
       test('index.hbs', function (assert) {
-        let expectModule = expectAudit.module('./templates/index.hbs');
+        let expectModule = expectAudit.module('./app/templates/index.hbs');
 
         // explicit dependency
         expectModule
@@ -606,7 +606,7 @@ stage2Scenarios
       });
 
       test('curly.hbs', function (assert) {
-        let expectModule = expectAudit.module('./templates/curly.hbs');
+        let expectModule = expectAudit.module('./app/templates/curly.hbs');
         expectModule
           .resolves(/my-addon\/_app_\/components\/hello-world/)
           .toModule()
@@ -635,7 +635,7 @@ stage2Scenarios
 
       test('app/hello-world.js', function (assert) {
         expectAudit
-          .module('./templates/index.hbs')
+          .module('./app/templates/index.hbs')
           .resolves(/my-addon\/_app_\/components\/hello-world/)
           .toModule()
           .withContents(contents => {
@@ -655,7 +655,7 @@ stage2Scenarios
 
       test('addon/hello-world.js', function (assert) {
         const expectModule = expectAudit
-          .module('./templates/index.hbs')
+          .module('./app/templates/index.hbs')
           .resolves(/my-addon\/_app_\/components\/hello-world/)
           .toModule()
           .resolves(/my-addon\/components\/hello-world\.js/) // remapped to precise copy of my-addon
@@ -692,7 +692,7 @@ stage2Scenarios
 
       test('app/templates/components/direct-template-reexport.js', function (assert) {
         expectAudit
-          .module('./templates/index.hbs')
+          .module('./app/templates/index.hbs')
           .resolves(/my-addon\/_app_\/templates\/components\/direct-template-reexport\.js\/-embroider-pair-component/)
           .toModule()
           .resolves(/my-addon\/_app_\/templates\/components\/direct-template-reexport\.js/)
@@ -707,7 +707,7 @@ stage2Scenarios
 
       test('uses-inline-template.js', function (assert) {
         expectAudit
-          .module('./components/uses-inline-template.js')
+          .module('./app/components/uses-inline-template.js')
           .resolves(/\/components\/first-choice.hbs\/-embroider-pair-component/)
           .toModule()
           .withContents(contents => {
@@ -720,7 +720,7 @@ stage2Scenarios
 
       test('component with relative import of arbitrarily placed template', function () {
         expectAudit
-          .module(/\/app\.js.*/)
+          .module(/\/app\/app\.js.*/)
           .resolves(/.*\/-embroider-entrypoint\.js/)
           .toModule()
           .resolves(/.*\/-embroider-implicit-modules\.js/)
@@ -734,7 +734,7 @@ stage2Scenarios
 
       test('app can import a deep addon', function () {
         expectAudit
-          .module('./use-deep-addon.js')
+          .module('./app/use-deep-addon.js')
           .resolves(/deep-addon\/index.js/)
           .toModule()
           .codeContains('export default function () {}');
@@ -771,27 +771,27 @@ stage2Scenarios
       });
 
       test(`app's babel plugins ran`, async function () {
-        let assertFile = expectFile('custom-babel-needed.js').transform(build.transpile);
+        let assertFile = expectFile('app/custom-babel-needed.js').transform(build.transpile);
         assertFile.matches(/console\.log\(['"]embroider-sample-transforms-result['"]\)/);
       });
 
       test('dynamic import is preserved', function () {
-        expectFile('./does-dynamic-import.js')
+        expectFile('./app/does-dynamic-import.js')
           .transform(build.transpile)
           .matches(/return import\(['"]some-library['"]\)/);
       });
 
       test('hbs transform sees expected module name', function () {
-        let assertFile = expectFile('templates/components/module-name-check/index.hbs').transform(build.transpile);
+        let assertFile = expectFile('app/templates/components/module-name-check/index.hbs').transform(build.transpile);
         assertFile.matches(
-          '"my-app/templates/components/module-name-check/index.hbs"',
+          '"my-app/app/templates/components/module-name-check/index.hbs"',
           'our sample transform injected the expected moduleName into the compiled template'
         );
       });
 
       test('non-static other paths are included in the entrypoint', function (assert) {
         resolveEntryPoint(expectAudit).withContents(contents => {
-          const result = /import \* as (\w+) from "\/non-static-dir\/another-library.js";/.exec(contents);
+          const result = /import \* as (\w+) from "\/app\/non-static-dir\/another-library.js";/.exec(contents);
 
           if (!result) {
             throw new Error('Could not find import for non-static-dir/another-library');
@@ -900,7 +900,7 @@ dummyAppScenarios
       });
 
       test('dummy app sees that its being developed', function () {
-        let assertFile = expectFile('../../tmp/rewritten-app/components/inside-dummy-app.js').transform(
+        let assertFile = expectFile('../../tmp/rewritten-app/app/components/inside-dummy-app.js').transform(
           build.transpile
         );
         assertFile.matches(/console\.log\(true\)/);

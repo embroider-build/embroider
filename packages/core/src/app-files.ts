@@ -9,7 +9,6 @@ export interface RouteFiles {
 }
 
 export class AppFiles {
-  readonly tests: ReadonlyArray<string>;
   readonly components: ReadonlyArray<string>;
   readonly helpers: ReadonlyArray<string>;
   readonly modifiers: ReadonlyArray<string>;
@@ -26,7 +25,6 @@ export class AppFiles {
     staticAppPathsPattern: RegExp | undefined,
     podModulePrefix?: string
   ) {
-    let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
     let modifiers: string[] = [];
@@ -78,7 +76,7 @@ export class AppFiles {
       }
 
       if (relativePath.startsWith('tests/')) {
-        tests.push(relativePath);
+        // skip tests because they are dealt with separately
         continue;
       }
 
@@ -134,7 +132,6 @@ export class AppFiles {
         otherAppFiles.push(relativePath);
       }
     }
-    this.tests = tests;
     this.components = components;
     this.helpers = helpers;
     this.modifiers = modifiers;

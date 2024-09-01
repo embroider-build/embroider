@@ -114,10 +114,13 @@ appScenarios
       });
 
       test('app has correct path embedded in comment', () => {
-        const assertFile = expectFile('./components/from-the-app.js');
+        const assertFile = expectFile('./app/components/from-the-app.js');
         assertFile.exists();
         // This is the expected output during an classic build.
-        assertFile.matches(/path@app-template\/components\/from-the-app\.js/, 'has a path comment in app components');
+        assertFile.matches(
+          /path@app-template\/app\/components\/from-the-app\.js/,
+          'has a path comment in app components'
+        );
       });
 
       test('addon has correct path embedded in comment', () => {

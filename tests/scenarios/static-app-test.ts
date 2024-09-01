@@ -349,7 +349,7 @@ wideAppScenarios
               {
                 package: 'app-template',
                 appModules: {
-                  'components/fancy-box.js': {
+                  'app/components/fancy-box.js': {
                     dependsOnComponents: ['{{default-title}}'],
                   },
                 },

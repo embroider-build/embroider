@@ -57,6 +57,7 @@
     "lodash": "^4.17.21",
     "pkg-up": "^3.1.0",
     "resolve": "^1.20.0",
+    "resolve.exports": "^2.0.2",
     "resolve-package-path": "^4.0.1",
     "semver": "^7.3.5",
     "symlink-or-copy": "^1.3.1",

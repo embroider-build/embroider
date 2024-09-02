@@ -174,11 +174,10 @@ export class CompatAppBuilder {
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.origAppPackage.root,
-      engines: engines.map((appFiles, index) => ({
+      engines: engines.map(appFiles => ({
         packageName: appFiles.engine.package.name,
-        // first engine is the app, which has been relocated to this.root
         // we need to use the real path here because webpack requests always use the real path i.e. follow symlinks
-        root: realpathSync(index === 0 ? this.root : appFiles.engine.package.root),
+        root: realpathSync(appFiles.engine.package.root),
         fastbootFiles: appFiles.fastbootFiles,
         activeAddons: [...appFiles.engine.addons]
           .map(([addon, canResolveFromFile]) => ({

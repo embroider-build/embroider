@@ -96,10 +96,6 @@ export default class CompatApp {
     return require(resolve.sync(specifier, { basedir: this.emberCLILocation }));
   }
 
-  private get configReplace() {
-    return this.requireFromEmberCLI('broccoli-config-replace');
-  }
-
   private get configLoader() {
     return this.requireFromEmberCLI('broccoli-config-loader');
   }
@@ -182,45 +178,6 @@ export default class CompatApp {
       contentFor: this.configReplacePatterns.find((pattern: any) => filter.includes(pattern.match.toString())),
       others: this.configReplacePatterns.filter((pattern: any) => !filter.includes(pattern.match.toString())),
     };
-  }
-
-  private get htmlTree() {
-    if (this.legacyEmberAppInstance.tests) {
-      return mergeTrees([this.indexTree, this.testIndexTree]);
-    } else {
-      return this.indexTree;
-    }
-  }
-
-  private get indexTree() {
-    let indexFilePath = this.legacyEmberAppInstance.options.outputPaths.app.html;
-    let index = buildFunnel(this.legacyEmberAppInstance.trees.app, {
-      allowEmpty: true,
-      include: [`index.html`],
-      getDestinationPath: () => indexFilePath,
-      annotation: 'app/index.html',
-    });
-    return new this.configReplace(index, this.configTree, {
-      configPath: join('environments', `${this.legacyEmberAppInstance.env}.json`),
-      files: [indexFilePath],
-      patterns: this.filteredPatternsByContentFor.others,
-      annotation: 'ConfigReplace/indexTree',
-    });
-  }
-
-  private get testIndexTree() {
-    let index = buildFunnel(this.legacyEmberAppInstance.trees.tests, {
-      allowEmpty: true,
-      include: [`index.html`],
-      destDir: 'tests',
-      annotation: 'tests/index.html',
-    });
-    return new this.configReplace(index, this.configTree, {
-      configPath: join('environments', `test.json`),
-      files: ['tests/index.html'],
-      patterns: this.filteredPatternsByContentFor.others,
-      annotation: 'ConfigReplace/testIndexTree',
-    });
   }
 
   @Memoize()
@@ -727,7 +684,6 @@ export default class CompatApp {
 
     return {
       appJS: this.processAppJS().appJS,
-      htmlTree: this.htmlTree,
       publicTree,
       configTree,
       contentForTree,

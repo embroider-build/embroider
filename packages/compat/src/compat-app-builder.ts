@@ -127,13 +127,13 @@ export class CompatAppBuilder {
     return ['.wasm', '.mjs', '.js', '.json', '.ts', '.hbs', '.hbs.js', '.gjs', '.gts'];
   }
 
-  private addEmberEntrypoints(htmlTreePath: string): string[] {
+  private addEmberEntrypoints(): string[] {
     let classicEntrypoints = ['index.html', 'tests/index.html'];
     if (!this.compatApp.shouldBuildTests) {
       classicEntrypoints.pop();
     }
     for (let entrypoint of classicEntrypoints) {
-      let sourcePath = join(htmlTreePath, entrypoint);
+      let sourcePath = join(this.compatApp.root, entrypoint);
       let rewrittenAppPath = join(this.root, entrypoint);
       writeFileSync(rewrittenAppPath, readFileSync(sourcePath));
     }
@@ -463,7 +463,7 @@ export class CompatAppBuilder {
     }
 
     let appFiles = this.updateAppJS(inputPaths.appJS);
-    let assetPaths = this.addEmberEntrypoints(inputPaths.htmlTree);
+    let assetPaths = this.addEmberEntrypoints();
 
     if (this.activeFastboot) {
       // when using fastboot, our own package.json needs to be in the output so fastboot can read it.
@@ -741,7 +741,6 @@ function addCachablePlugin(babelConfig: TransformOptions) {
 
 interface TreeNames {
   appJS: BroccoliNode;
-  htmlTree: BroccoliNode;
   publicTree: BroccoliNode | undefined;
   configTree: BroccoliNode;
 }

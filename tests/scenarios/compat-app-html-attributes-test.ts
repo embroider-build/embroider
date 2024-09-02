@@ -8,13 +8,7 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('compat-app-script-attributes', app => {
-    let appFolder = app.files.app;
-
-    if (appFolder === null || typeof appFolder !== 'object') {
-      throw new Error('app folder unexpectedly missing');
-    }
-
-    let indexHtml = appFolder['index.html'];
+    let indexHtml = app.files['index.html'];
 
     if (typeof indexHtml !== 'string') {
       throw new Error('index.html unexpectedly missing');
@@ -38,9 +32,7 @@ appScenarios
     indexHtml = indexHtml.replace(/<script /g, '<script defer ');
 
     app.mergeFiles({
-      app: {
-        'index.html': indexHtml,
-      },
+      'index.html': indexHtml,
     });
   })
   .forEachScenario(scenario => {

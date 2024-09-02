@@ -128,10 +128,7 @@ export class CompatAppBuilder {
   }
 
   private addEmberEntrypoints(): string[] {
-    let classicEntrypoints = ['index.html', 'tests/index.html'];
-    if (!this.compatApp.shouldBuildTests) {
-      classicEntrypoints.pop();
-    }
+    let classicEntrypoints = ['index.html'];
     for (let entrypoint of classicEntrypoints) {
       let sourcePath = join(this.compatApp.root, entrypoint);
       let rewrittenAppPath = join(this.root, entrypoint);

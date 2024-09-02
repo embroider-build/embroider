@@ -60,8 +60,7 @@ appScenarios
           });
         };
       `,
-      app: {
-        'index.html': `
+      'index.html': `
           <!DOCTYPE html>
           <html>
             <head>
@@ -93,7 +92,6 @@ appScenarios
             </body>
           </html>
         `,
-      },
     });
   })
   .forEachScenario(scenario => {

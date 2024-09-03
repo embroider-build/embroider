@@ -38,8 +38,8 @@ export default defineConfig({
     outDir: resolve(process.cwd(), 'dist'),
     rollupOptions: {
       input: {
-        main: resolve(root, 'index.html'),
-        tests: resolve(root, 'tests/index.html'),
+        main: 'index.html',
+        tests: 'tests/index.html',
       },
     },
   },

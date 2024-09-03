@@ -7,7 +7,12 @@ import merge from 'lodash/merge';
 import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
+// skipping this entire test suite. As of inversion-of-control, we don't have
+// support for custom JS preprocessors applied to app code. We may choose to
+// reimplement in the future.
 appScenarios
+  .only('canary') // scenario-tester doesn't have a "skip('*')", but this achieves the same thing
+  .skip('canary')
   .map('compat-preprocessors', app => {
     function makePreprocessor() {
       let addonPreprocessor = baseAddon();

@@ -299,15 +299,7 @@ export class CompatAppBuilder {
       if (!child.isEngine()) {
         this.findActiveAddons(child, engine, true);
       }
-      let canResolveFrom: string;
-      if (pkg === this.appPackageWithMovedDeps) {
-        // we want canResolveFrom to always be a rewritten package path, and our
-        // app's package is not rewritten yet here.
-        canResolveFrom = resolvePath(this.root, 'package.json');
-      } else {
-        // whereas our addons are already moved
-        canResolveFrom = resolvePath(pkg.root, 'package.json');
-      }
+      let canResolveFrom = resolvePath(pkg.root, 'package.json');
       engine.addons.set(child, canResolveFrom);
     }
     // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)

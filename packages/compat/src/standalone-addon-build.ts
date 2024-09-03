@@ -42,7 +42,7 @@ ${summarizePeerDepViolations(violations)}
   }
 
   let v1Addons = findV1Addons(appPackage);
-  let index = buildAddonIndex(v1Addons);
+  let index = buildAddonIndex(appPackage, v1Addons);
 
   let interiorTrees: Node[] = [];
   let exteriorTrees = [...v1Addons].map(pkg => {
@@ -73,7 +73,7 @@ ${summarizePeerDepViolations(violations)}
   ]);
 }
 
-function buildAddonIndex(packages: Set<Package>): RewrittenPackageIndex {
+function buildAddonIndex(appPackage: Package, packages: Set<Package>): RewrittenPackageIndex {
   let content: RewrittenPackageIndex = {
     packages: {},
     extraResolutions: {},
@@ -86,6 +86,15 @@ function buildAddonIndex(packages: Set<Package>): RewrittenPackageIndex {
       content.extraResolutions[newRoot] = [...nonResolvableDeps.values()].map(v => v.root);
     }
   }
+
+  let nonResolvableDeps = appPackage.nonResolvableDeps;
+  if (nonResolvableDeps) {
+    let extraRoots = [...nonResolvableDeps.values()].map(v => v.root);
+    // the app gets extraResolutions registered against its *original*
+    // location
+    content.extraResolutions[appPackage.root] = extraRoots;
+  }
+
   return content;
 }
 

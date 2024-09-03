@@ -1664,8 +1664,8 @@ importers:
         specifier: ^3.23.0
         version: 3.29.4
       scenario-tester:
-        specifier: ^4.0.0
-        version: 4.0.0
+        specifier: ^4.1.0
+        version: 4.1.0
       semver:
         specifier: ^7.3.8
         version: 7.6.3
@@ -23187,8 +23187,8 @@ packages:
       yargs: 16.2.0
     dev: true
 
-  /scenario-tester@4.0.0:
-    resolution: {integrity: sha512-5wKKuQcSM+FUOw6ZLMwgnHN5tsiCG/dtIL0M5bYnZX1J9zCw53QDFsZymiQ9586kaY3LJVTeSYN397WF7ltCMg==}
+  /scenario-tester@4.1.0:
+    resolution: {integrity: sha512-kaEL+iG3snSoXRnxUNXmyoKMpcGinnmqjacy44qNFKKoJSAkrb3QbgpgUcBu/DjuA5DH9dZeEQvSq6wDa5Ql2g==}
     hasBin: true
     dependencies:
       fixturify-project: 7.1.2

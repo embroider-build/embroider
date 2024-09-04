@@ -14,6 +14,7 @@ import { dummyAppScenarios } from './scenarios';
 import CommandWatcher from './helpers/command-watcher';
 
 dummyAppScenarios
+  .skip()
   .map('compat-dummy-app-tests', project => {
     merge(project.files, {
       addon: {

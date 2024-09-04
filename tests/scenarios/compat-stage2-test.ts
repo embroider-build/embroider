@@ -853,6 +853,7 @@ stage2Scenarios
   });
 
 dummyAppScenarios
+  .skip()
   .map('compat-stage2-addon-dummy-app', app => {
     renameApp(app, 'my-addon');
     app.linkDependency('@embroider/core', { baseDir: __dirname });

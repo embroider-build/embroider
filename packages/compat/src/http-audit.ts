@@ -17,8 +17,24 @@ export async function httpAudit(
     return new URL(specifier, fromFile).href;
   }
 
+  async function fetchWithRetry(id: string, options: HTTPAuditOptions) {
+    let remainingTries = 5;
+    let backoffMS = 666;
+
+    for (;;) {
+      try {
+        return await (options.fetch ?? globalThis.fetch)(id);
+      } catch (err) {
+        if (remainingTries-- > 0) {
+          backoffMS *= 1.5;
+          await new Promise(r => setTimeout(r, backoffMS));
+        }
+      }
+    }
+  }
+
   async function load(id: string): Promise<{ content: string | Buffer; type: ContentType }> {
-    let response = await (options.fetch ?? globalThis.fetch)(id);
+    let response = await fetchWithRetry(id, options);
     let content = await response.text();
     let type: ContentType;
     if (response.status !== 200) {

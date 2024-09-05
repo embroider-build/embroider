@@ -542,58 +542,12 @@ export default class CompatApp {
     return './' + asset;
   }
 
-  private preprocessJS(tree: BroccoliNode): BroccoliNode {
-    // we're saving all our babel compilation for the final stage packager
-    this.legacyEmberAppInstance.registry.remove('js', 'ember-cli-babel');
-
-    // auto-import is supported natively so we don't need it here
-    this.legacyEmberAppInstance.registry.remove('js', 'ember-auto-import-analyzer');
-
-    tree = buildFunnel(tree, { destDir: this.name });
-
-    tree = this.preprocessors.preprocessJs(tree, `/`, '/', {
-      annotation: 'v1-app-preprocess-js',
-      registry: this.legacyEmberAppInstance.registry,
-    });
-
-    tree = buildFunnel(tree, { srcDir: this.name });
-
-    return tree;
-  }
-
   get htmlbarsPlugins(): Transform[] {
     let plugins = loadAstPlugins(this.legacyEmberAppInstance.registry);
     // even if the app was using @embroider/macros, we drop it from the config
     // here in favor of our globally-configured one.
     plugins = plugins.filter((p: any) => !isEmbroiderMacrosPlugin(p));
     return plugins;
-  }
-
-  // our own appTree. Not to be confused with the one that combines the app js
-  // from all addons too.
-  private get appTree(): BroccoliNode {
-    return this.preprocessJS(
-      buildFunnel(this.legacyEmberAppInstance.trees.app, {
-        exclude: ['styles/**', '*.html'],
-        destDir: 'app',
-      })
-    );
-  }
-
-  private get testsTree(): BroccoliNode | undefined {
-    if (this.shouldBuildTests && this.legacyEmberAppInstance.trees.tests) {
-      return this.preprocessJS(
-        buildFunnel(this.legacyEmberAppInstance.trees.tests, {
-          destDir: 'tests',
-        })
-      );
-    }
-  }
-
-  private get lintTree(): BroccoliNode | undefined {
-    if (this.shouldBuildTests) {
-      return this.legacyEmberAppInstance.getLintTests();
-    }
   }
 
   private get vendorTree(): BroccoliNode | undefined {
@@ -620,29 +574,6 @@ export default class CompatApp {
   @Memoize()
   private get preprocessors(): Preprocessors {
     return this.requireFromEmberCLI('ember-cli-preprocess-registry/preprocessors');
-  }
-
-  private get publicTree(): BroccoliNode | undefined {
-    return this.ensureTree(this.legacyEmberAppInstance.trees.public);
-  }
-
-  private processAppJS(): { appJS: BroccoliNode } {
-    let appTree = this.appTree;
-    let testsTree = this.testsTree;
-    let lintTree = this.lintTree;
-
-    let trees: BroccoliNode[] = [];
-    trees.push(appTree);
-
-    if (testsTree) {
-      trees.push(testsTree);
-    }
-    if (lintTree) {
-      trees.push(lintTree);
-    }
-    return {
-      appJS: mergeTrees(trees, { overwrite: true }),
-    };
   }
 
   readonly macrosConfig: MacrosConfig;
@@ -674,17 +605,10 @@ export default class CompatApp {
   }
 
   private inTrees(prevStageTree: BroccoliNode) {
-    let publicTree = this.publicTree;
     let configTree = this.config;
     let contentForTree = this.contentFor;
 
-    if (this.options.extraPublicTrees.length > 0) {
-      publicTree = mergeTrees([publicTree, ...this.options.extraPublicTrees].filter(Boolean) as BroccoliNode[]);
-    }
-
     return {
-      appJS: this.processAppJS().appJS,
-      publicTree,
       configTree,
       contentForTree,
       prevStageTree,

@@ -105,7 +105,7 @@ export default class CommandWatcher {
 
   async shutdown(): Promise<void> {
     if (this.exitCode != null) {
-      this.maybeEmitLogs();
+      this.emitLogs();
       return;
     }
 
@@ -120,14 +120,12 @@ export default class CommandWatcher {
     });
 
     await this.waitForExit();
-    this.maybeEmitLogs();
+    this.emitLogs();
   }
 
-  private maybeEmitLogs() {
-    if (this.exitCode !== 0) {
-      console.error(`CommandWatcher saw non-zero exit, dumping logs:`);
-      console.error(this.lines.join('\n'));
-    }
+  private emitLogs() {
+    console.log(`CommandWatcher dumping logs:`);
+    console.log(this.lines.join('\n'));
   }
 
   async waitForExit(): Promise<number> {

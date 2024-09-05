@@ -49,9 +49,6 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: optimizeDeps(),
     server: {
       port: 4200,
-      watch: {
-        ignored: ["!**/tmp/**"],
-      },
     },
     build: {
       outDir: "dist",

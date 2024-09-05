@@ -250,9 +250,6 @@ importers:
       debug:
         specifier: ^4.3.2
         version: 4.3.6(supports-color@8.1.1)
-      escape-string-regexp:
-        specifier: ^4.0.0
-        version: 4.0.0
       fast-sourcemap-concat:
         specifier: ^2.1.1
         version: 2.1.1

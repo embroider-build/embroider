@@ -708,7 +708,6 @@ export default class CompatApp {
   }
 
   private async instantiate(
-    root: string,
     packageCache: RewrittenPackageCache,
     configTree: V1Config,
     contentForTree: ContentForConfig
@@ -717,7 +716,6 @@ export default class CompatApp {
     let movedAppPkg = packageCache.withRewrittenDeps(origAppPkg);
     let workingDir = locateEmbroiderWorkingDir(this.root);
     return new CompatAppBuilder(
-      root,
       origAppPkg,
       movedAppPkg,
       this.options,
@@ -735,14 +733,14 @@ export default class CompatApp {
 
     let tree = () => {
       let inTrees = this.inTrees(prevStage.tree);
-      return new WaitForTrees(inTrees, this.annotation, async treePaths => {
+      return new WaitForTrees(inTrees, this.annotation, async _treePaths => {
         if (!this.active) {
           let { outputPath } = await prevStage.ready();
           let packageCache = RewrittenPackageCache.shared('embroider', this.root);
-          this.active = await this.instantiate(outputPath, packageCache, inTrees.configTree, inTrees.contentForTree);
+          this.active = await this.instantiate(packageCache, inTrees.configTree, inTrees.contentForTree);
           resolve({ outputPath });
         }
-        await this.active.build(treePaths);
+        await this.active.build();
       });
     };
 

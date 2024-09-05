@@ -1,8 +1,6 @@
-import type { Node as BroccoliNode } from 'broccoli-node-api';
-import type { OutputPaths, AddonPackage, Engine, AppMeta, TemplateColocationPluginOptions } from '@embroider/core';
+import type { AddonPackage, Engine, TemplateColocationPluginOptions } from '@embroider/core';
 import {
   explicitRelative,
-  extensionsPattern,
   warn,
   jsHandlebarsCompile,
   templateColocationPluginPath,
@@ -17,15 +15,13 @@ import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
-import mergeWith from 'lodash/mergeWith';
 import cloneDeep from 'lodash/cloneDeep';
 import bind from 'bind-decorator';
-import { outputJSONSync, readFileSync, readJSONSync, rmSync, writeFileSync, realpathSync } from 'fs-extra';
+import { outputJSONSync, writeFileSync, realpathSync } from 'fs-extra';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
 import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import { makePortable } from '@embroider/core/src/portable-babel-config';
-import { AppFiles } from '@embroider/core/src/app-files';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion } from '@embroider/core/src/portable';
 import { Memoize } from 'typescript-memoize';
@@ -33,21 +29,18 @@ import { join, dirname } from 'path';
 import resolve from 'resolve';
 import type ContentForConfig from './content-for-config';
 import type { V1Config } from './v1-config';
-import type { Package, PackageInfo } from '@embroider/core';
-import { readdirSync, pathExistsSync } from 'fs-extra';
+import type { Package } from '@embroider/core';
+import { readdirSync } from 'fs-extra';
 import type { TransformOptions } from '@babel/core';
 import { MacrosConfig } from '@embroider/macros/src/node';
-import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
-import { SyncDir } from './sync-dir';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
 
 export class CompatAppBuilder {
   constructor(
-    private root: string,
     private origAppPackage: Package,
     private appPackageWithMovedDeps: Package,
     private options: Required<Options>,
@@ -57,14 +50,6 @@ export class CompatAppBuilder {
     private synthVendor: Package,
     private synthStyles: Package
   ) {}
-
-  @Memoize()
-  private fastbootJSSrcDir() {
-    let target = join(this.compatApp.root, 'fastboot');
-    if (pathExistsSync(target)) {
-      return target;
-    }
-  }
 
   private activeAddonChildren(pkg: Package): AddonPackage[] {
     let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
@@ -127,16 +112,6 @@ export class CompatAppBuilder {
     return ['.wasm', '.mjs', '.js', '.json', '.ts', '.hbs', '.hbs.js', '.gjs', '.gts'];
   }
 
-  private addEmberEntrypoints(): string[] {
-    let classicEntrypoints = ['index.html'];
-    for (let entrypoint of classicEntrypoints) {
-      let sourcePath = join(this.compatApp.root, entrypoint);
-      let rewrittenAppPath = join(this.root, entrypoint);
-      writeFileSync(rewrittenAppPath, readFileSync(sourcePath));
-    }
-    return classicEntrypoints;
-  }
-
   private modulePrefix(): string {
     return this.configTree.readConfig().modulePrefix;
   }
@@ -145,19 +120,15 @@ export class CompatAppBuilder {
     return this.configTree.readConfig().podModulePrefix;
   }
 
-  private rootURL(): string {
-    return this.configTree.readConfig().rootURL;
-  }
-
   @Memoize()
   private activeRules() {
     return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-      { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.root },
+      { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.origAppPackage.root },
       ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
     ]);
   }
 
-  private resolverConfig(engines: AppFiles[]): CompatResolverOptions {
+  private resolverConfig(engines: Engine[]): CompatResolverOptions {
     let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
     let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
 
@@ -174,12 +145,12 @@ export class CompatAppBuilder {
       renamePackages,
       resolvableExtensions: this.resolvableExtensions(),
       appRoot: this.origAppPackage.root,
-      engines: engines.map(appFiles => ({
-        packageName: appFiles.engine.package.name,
+      engines: engines.map(engine => ({
+        packageName: engine.package.name,
         // we need to use the real path here because webpack requests always use the real path i.e. follow symlinks
-        root: realpathSync(appFiles.engine.package.root),
-        fastbootFiles: appFiles.fastbootFiles,
-        activeAddons: [...appFiles.engine.addons]
+        root: realpathSync(engine.package.root),
+        fastbootFiles: {},
+        activeAddons: [...engine.addons]
           .map(([addon, canResolveFromFile]) => ({
             name: addon.name,
             root: addon.root,
@@ -189,7 +160,7 @@ export class CompatAppBuilder {
           // that the last one wins. Our resolver's order is the order to
           // search, so first one wins.
           .reverse(),
-        isLazy: appFiles.engine.package.isLazyEngine(),
+        isLazy: engine.package.isLazyEngine(),
       })),
       amdCompatibility: this.options.amdCompatibility,
 
@@ -205,11 +176,6 @@ export class CompatAppBuilder {
     };
 
     return config;
-  }
-
-  @Memoize()
-  private get resolvableExtensionsPattern(): RegExp {
-    return extensionsPattern(this.resolvableExtensions());
   }
 
   @Memoize()
@@ -285,7 +251,7 @@ export class CompatAppBuilder {
       { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
     ]);
 
-    const portable = makePortable(babel, { basedir: this.root }, this.portableHints);
+    const portable = makePortable(babel, { basedir: this.origAppPackage.root }, this.portableHints);
     addCachablePlugin(portable.config);
     return portable;
   }
@@ -338,18 +304,13 @@ export class CompatAppBuilder {
             addons: new Map(),
             isApp: !current,
             modulePrefix: addon.name,
-            appRelativePath: explicitRelative(this.root, addon.root),
+            appRelativePath: explicitRelative(this.origAppPackage.root, addon.root),
           });
         }
       }
       done.push(current);
     }
     return done;
-  }
-
-  @Memoize()
-  private get activeFastboot() {
-    return this.activeAddonChildren(this.appPackageWithMovedDeps).find(a => a.name === 'ember-cli-fastboot');
   }
 
   private emberVersion() {
@@ -360,108 +321,18 @@ export class CompatAppBuilder {
     return pkg.version;
   }
 
-  @Memoize()
-  private get fastbootConfig():
-    | { packageJSON: PackageInfo; extraAppFiles: string[]; extraVendorFiles: string[] }
-    | undefined {
-    if (this.activeFastboot) {
-      // this is relying on work done in stage1 by @embroider/compat/src/compat-adapters/ember-cli-fastboot.ts
-      let packageJSON = readJSONSync(join(this.activeFastboot.root, '_fastboot_', 'package.json'));
-      let { extraAppFiles, extraVendorFiles } = packageJSON['embroider-fastboot'];
-      delete packageJSON['embroider-fastboot'];
-      extraVendorFiles.push('assets/embroider_macros_fastboot_init.js');
-      return { packageJSON, extraAppFiles, extraVendorFiles };
-    }
-  }
+  private engines: Engine[] | undefined;
 
-  private engines: { engine: Engine; appSync: SyncDir; fastbootSync: SyncDir | undefined }[] | undefined;
-
-  private updateAppJS(appJSPath: string): AppFiles[] {
-    if (!this.engines) {
-      this.engines = this.partitionEngines().map(engine => {
-        if (engine.isApp) {
-          // this is the app. We have more to do for the app than for other
-          // engines.
-          let fastbootSync: SyncDir | undefined;
-          if (this.activeFastboot) {
-            let fastbootDir = this.fastbootJSSrcDir();
-            if (fastbootDir) {
-              fastbootSync = new SyncDir(fastbootDir, resolvePath(this.root, '_fastboot_'));
-            }
-          }
-          return {
-            engine,
-            appSync: new SyncDir(appJSPath, this.root),
-            fastbootSync,
-          };
-        } else {
-          // this is not the app, so it's some other engine. Engines are already
-          // built by stage1 like all other addons, so we only need to observe
-          // their files, not doing any actual copying or building.
-          return {
-            engine,
-            appSync: new SyncDir(engine.package.root, undefined),
-
-            // AFAIK, we've never supported a fastboot overlay directory in an
-            // engine. But if we do need that, it would go here.
-            fastbootSync: undefined,
-          };
-        }
-      });
-    }
-
-    for (let engine of this.engines) {
-      engine.appSync.update();
-      engine.fastbootSync?.update();
-    }
-
-    return this.engines.map(
-      ({ engine, appSync, fastbootSync }) =>
-        new AppFiles(
-          engine,
-          appSync.files,
-          fastbootSync?.files ?? new Set(),
-          this.resolvableExtensionsPattern,
-          this.staticAppPathsPattern,
-          this.podModulePrefix()
-        )
-    );
-  }
-
-  @Memoize()
-  private get staticAppPathsPattern(): RegExp | undefined {
-    if (this.options.staticAppPaths.length > 0) {
-      return new RegExp(
-        '^(?:' + this.options.staticAppPaths.map(staticAppPath => escapeRegExp(staticAppPath)).join('|') + ')(?:$|/)'
-      );
-    }
-  }
-
-  private firstBuild = true;
-
-  async build(inputPaths: OutputPaths<TreeNames>) {
+  async build() {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
     this.compatApp.macrosConfig.finalize();
 
-    // on first build, clear the output directory completely
-    if (this.firstBuild) {
-      rmSync(this.root, { recursive: true, force: true });
-      this.firstBuild = false;
+    if (!this.engines) {
+      this.engines = this.partitionEngines();
     }
 
-    let appFiles = this.updateAppJS(inputPaths.appJS);
-    let assetPaths = this.addEmberEntrypoints();
-
-    if (this.activeFastboot) {
-      // when using fastboot, our own package.json needs to be in the output so fastboot can read it.
-      assetPaths.push('package.json');
-    }
-
-    let pkg = this.combinePackageJSON(assetPaths);
-    writeFileSync(join(this.root, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
-
-    let resolverConfig = this.resolverConfig(appFiles);
+    let resolverConfig = this.resolverConfig(this.engines);
     let config = this.configTree.readConfig();
     let contentForConfig = this.contentForTree.readContents();
 
@@ -472,43 +343,6 @@ export class CompatAppBuilder {
     let babelConfig = await this.babelConfig(resolverConfig);
     this.addBabelConfig(babelConfig);
     this.addMacrosConfig(this.compatApp.macrosConfig.babelPluginConfig()[0]);
-  }
-
-  private combinePackageJSON(assetPaths: string[]): object {
-    let pkgLayers: any[] = [this.origAppPackage.packageJSON];
-    let fastbootConfig = this.fastbootConfig;
-    if (fastbootConfig) {
-      // fastboot-specific package.json output is allowed to add to our original package.json
-      pkgLayers.push(fastbootConfig.packageJSON);
-    }
-
-    let meta: AppMeta = {
-      type: 'app',
-      version: 2,
-      assets: assetPaths,
-      babel: {
-        filename: '_babel_config_.js',
-        isParallelSafe: true, // TODO
-        majorVersion: this.compatApp.babelMajorVersion(),
-        fileFilter: '_babel_filter_.js',
-      },
-      'root-url': this.rootURL(),
-    };
-
-    if ((this.origAppPackage.packageJSON['ember-addon']?.version ?? 0) < 2) {
-      meta['auto-upgraded'] = true;
-      // our rewriting keeps app in app directory, etc.
-      pkgLayers.push({
-        exports: {
-          './*': './app/*',
-          './tests/*': './tests/*',
-        },
-      });
-    }
-
-    pkgLayers.push({ 'ember-addon': meta });
-
-    return combinePackageJSON(...pkgLayers);
   }
 
   private async etcOptions(resolverConfig: CompatResolverOptions): Promise<EtcOptions> {
@@ -536,10 +370,10 @@ export class CompatAppBuilder {
     let resolver = new Resolver(resolverConfig);
     let resolution = await resolver.nodeResolve(
       'ember-source/vendor/ember/ember-template-compiler',
-      resolvePath(this.root, 'package.json')
+      resolvePath(this.origAppPackage.root, 'package.json')
     );
     if (resolution.type !== 'real') {
-      throw new Error(`bug: unable to resolve ember-template-compiler from ${this.root}`);
+      throw new Error(`bug: unable to resolve ember-template-compiler from ${this.origAppPackage.root}`);
     }
 
     return {
@@ -689,17 +523,6 @@ const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/cor
 module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
 `) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
 
-function combinePackageJSON(...layers: object[]) {
-  function custom(objValue: any, srcValue: any, key: string, _object: any, _source: any, stack: { size: number }) {
-    if (key === 'keywords' && stack.size === 0) {
-      if (Array.isArray(objValue)) {
-        return objValue.concat(srcValue);
-      }
-    }
-  }
-  return mergeWith({}, ...layers, custom);
-}
-
 function addCachablePlugin(babelConfig: TransformOptions) {
   if (Array.isArray(babelConfig.plugins) && babelConfig.plugins.length > 0) {
     const plugins = Object.create(null);
@@ -725,10 +548,4 @@ function addCachablePlugin(babelConfig: TransformOptions) {
       },
     ]);
   }
-}
-
-interface TreeNames {
-  appJS: BroccoliNode;
-  publicTree: BroccoliNode | undefined;
-  configTree: BroccoliNode;
 }

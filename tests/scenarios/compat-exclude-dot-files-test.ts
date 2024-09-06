@@ -32,9 +32,9 @@ appScenarios
       };
       `,
       app: {
-        '.foobar.js': `// foobar content`,
-        '.barbaz.js': `// barbaz content`,
-        'bizbiz.js': `// bizbiz content`,
+        '.foobar.js': `// foobar content\nexport {}`,
+        '.barbaz.js': `// barbaz content\nexport {}`,
+        'bizbiz.js': `// bizbiz content\nexport {}`,
       },
     });
 
@@ -42,8 +42,8 @@ appScenarios
     addon.pkg.name = 'my-addon';
     merge(addon.files, {
       addon: {
-        '.fooaddon.js': `// fooaddon content`,
-        'baraddon.js': `// bizbiz content`,
+        '.fooaddon.js': `// fooaddon content\nexport {}`,
+        'baraddon.js': `// bizbiz content\nexport {}`,
       },
     });
     app.addDevDependency(addon);

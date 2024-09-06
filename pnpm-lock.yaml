@@ -250,9 +250,6 @@ importers:
       debug:
         specifier: ^4.3.2
         version: 4.3.6(supports-color@8.1.1)
-      escape-string-regexp:
-        specifier: ^4.0.0
-        version: 4.0.0
       fast-sourcemap-concat:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1664,8 +1661,8 @@ importers:
         specifier: ^3.23.0
         version: 3.29.4
       scenario-tester:
-        specifier: ^4.1.0
-        version: 4.1.0
+        specifier: ^4.1.1
+        version: 4.1.1
       semver:
         specifier: ^7.3.8
         version: 7.6.3
@@ -23187,8 +23184,8 @@ packages:
       yargs: 16.2.0
     dev: true
 
-  /scenario-tester@4.1.0:
-    resolution: {integrity: sha512-kaEL+iG3snSoXRnxUNXmyoKMpcGinnmqjacy44qNFKKoJSAkrb3QbgpgUcBu/DjuA5DH9dZeEQvSq6wDa5Ql2g==}
+  /scenario-tester@4.1.1:
+    resolution: {integrity: sha512-wJ6u1TqnvRsPgLKOA8RRAePKFrduxuynE2uZo98PPuWc9BzqQuEMQmNPKS2sFbhHwgY88VstqpDSjWoxdtkONw==}
     hasBin: true
     dependencies:
       fixturify-project: 7.1.2

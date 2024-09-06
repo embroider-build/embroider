@@ -54,3 +54,5 @@ jobs:
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ matrix.dir }}
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"

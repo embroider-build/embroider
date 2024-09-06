@@ -1,5 +1,4 @@
 import type { V1AddonConstructor } from './v1-addon';
-import type { Node } from 'broccoli-node-api';
 import type { Options as CoreOptions } from '@embroider/core';
 import { optionsWithDefaults as coreWithDefaults } from '@embroider/core';
 import type { PackageRules } from './dependency-rules';
@@ -70,11 +69,6 @@ export default interface Options extends CoreOptions {
   // behaviors in popular addons. You can override the default adapters by
   // setting your own value here (including null to completely disable it).
   compatAdapters?: Map<string, V1AddonConstructor | null>;
-
-  // optional list of additional broccoli trees that should be incorporated into
-  // the final build. This exists because the classic `app.toTree()` method
-  // accepts an optional tree argument that has the same purpose.
-  extraPublicTrees?: Node[];
 
   // Allows you to tell Embroider about otherwise dynamic dependencies within
   // your app and addons that it can't figure out on its own. These are combined

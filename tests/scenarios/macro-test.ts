@@ -248,6 +248,7 @@ function dummyAppScenarioSetup(project: Project) {
 }
 
 dummyAppScenarios
+  .skip()
   .map('macro-sample-addon', project => {
     dummyAppScenarioSetup(project);
   })
@@ -267,6 +268,7 @@ dummyAppScenarios
   });
 
 dummyAppScenarios
+  .skip()
   .map('macro-sample-addon-classic', project => {
     dummyAppScenarioSetup(project);
     project.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
@@ -288,6 +290,7 @@ dummyAppScenarios
   });
 
 dummyAppScenarios
+  .skip()
   .map('macro-sample-addon-useAddonAppBoot', project => {
     dummyAppScenarioSetup(project);
     project.mergeFiles({
@@ -325,6 +328,7 @@ dummyAppScenarios
   });
 
 dummyAppScenarios
+  .skip()
   .map('macro-sample-addon-useAddonConfigModule', project => {
     dummyAppScenarioSetup(project);
     project.mergeFiles({

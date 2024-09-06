@@ -42,7 +42,7 @@ ${summarizePeerDepViolations(violations)}
   }
 
   let v1Addons = findV1Addons(appPackage);
-  let index = buildAddonIndex(compatApp, appPackage, v1Addons);
+  let index = buildAddonIndex(appPackage, v1Addons);
 
   let interiorTrees: Node[] = [];
   let exteriorTrees = [...v1Addons].map(pkg => {
@@ -73,7 +73,7 @@ ${summarizePeerDepViolations(violations)}
   ]);
 }
 
-function buildAddonIndex(compatApp: CompatApp, appPackage: Package, packages: Set<Package>): RewrittenPackageIndex {
+function buildAddonIndex(appPackage: Package, packages: Set<Package>): RewrittenPackageIndex {
   let content: RewrittenPackageIndex = {
     packages: {},
     extraResolutions: {},
@@ -87,23 +87,11 @@ function buildAddonIndex(compatApp: CompatApp, appPackage: Package, packages: Se
     }
   }
 
-  // adding an entry for the app itself to have a place in the
-  // rewritten-packages, even though this stage hasn't actually put it there
-  // yet. This directory lives outside our rewritten-pacakges directory because
-  // it's produced by a separate build stage, and it's easier to have them
-  // writing into separate directories.
-  content.packages[compatApp.root] = join('..', '..', '..', 'tmp', 'rewritten-app');
-
   let nonResolvableDeps = appPackage.nonResolvableDeps;
   if (nonResolvableDeps) {
     let extraRoots = [...nonResolvableDeps.values()].map(v => v.root);
-
-    // the app gets extraResolutions support just like every addon does
-    content.extraResolutions[join('..', '..', '..', 'tmp', 'rewritten-app')] = extraRoots;
-
-    // but it also gets extraResolutions registered against its *original*
-    // location, because the app is unique because stage2 needs a Package
-    // representing the *unmoved* app but seeing *moved* deps.
+    // the app gets extraResolutions registered against its *original*
+    // location
     content.extraResolutions[appPackage.root] = extraRoots;
   }
 

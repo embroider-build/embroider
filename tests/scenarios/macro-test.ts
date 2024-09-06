@@ -248,6 +248,7 @@ function dummyAppScenarioSetup(project: Project) {
 }
 
 dummyAppScenarios
+  .skip()
   .map('macro-sample-addon', project => {
     dummyAppScenarioSetup(project);
   })

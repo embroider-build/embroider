@@ -67,6 +67,7 @@ appScenarios
       },
     });
 
+    proxyV1Addon.linkDependency('ember-auto-import', { baseDir: __dirname });
     proxyV1Addon.addDependency(nestedAddon);
     project.addDevDependency(addon);
     project.addDevDependency(proxyV1Addon);

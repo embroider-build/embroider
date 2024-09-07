@@ -83,8 +83,7 @@ appScenarios
     merge(project.files, loadFromFixtureData('fastboot-app'));
   })
   // TODO remove once https://github.com/ember-fastboot/ember-cli-fastboot/issues/925 is fixed
-  .skip('lts_5_8-fastboot-app-test')
-  .skip('canary-fastboot-app-test')
+  .skip()
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;

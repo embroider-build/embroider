@@ -47,7 +47,14 @@ export function esBuildResolver(): EsBuildPlugin {
     setup(build) {
       // Embroider Resolver
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let request = EsBuildModuleRequest.from(build, kind, path, importer, pluginData);
+        let request = EsBuildModuleRequest.from(
+          resolverLoader.resolver.packageCache,
+          build,
+          kind,
+          path,
+          importer,
+          pluginData
+        );
         if (!request) {
           return null;
         }

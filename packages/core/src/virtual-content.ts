@@ -172,14 +172,14 @@ function decodeVirtualExternalCJSModule(filename: string) {
 }
 
 const pairComponentMarker = '-embroider-pair-component';
-const pairComponentPattern = /^(?<hbsModule>.*)\/(?<jsModule>[^\/]*)-embroider-pair-component$/;
+const pairComponentPattern = /^(?<hbsModule>.*)__vpc__(?<jsModule>[^\/]*)-embroider-pair-component$/;
 
 export function virtualPairComponent(hbsModule: string, jsModule: string | undefined): string {
   let relativeJSModule = '';
   if (jsModule) {
-    relativeJSModule = explicitRelative(hbsModule, jsModule);
+    relativeJSModule = explicitRelative(dirname(hbsModule), jsModule);
   }
-  return `${hbsModule}/${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
+  return `${hbsModule}__vpc__${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
 }
 
 function decodeVirtualPairComponent(

@@ -971,20 +971,13 @@ export class Resolver {
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (!pkg || !pkg.isV2Ember()) {
-      return request;
-    }
 
     // real deps take precedence over renaming rules. That is, a package like
     // ember-source might provide backburner via module renaming, but if you
     // have an explicit dependency on backburner you should still get that real
     // copy.
 
-    // if (pkg.root === this.options.engines[0].root && request.specifier === `${pkg.name}/environment/config`) {
-    //   return logTransition('legacy config location', request, request.alias(`${pkg.name}/app/environment/config`));
-    // }
-
-    if (!pkg.hasDependency(packageName)) {
+    if (!pkg?.hasDependency(packageName)) {
       for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
         if (candidate === request.specifier) {
           return logTransition(`renameModules`, request, request.alias(replacement));
@@ -1006,6 +999,10 @@ export class Resolver {
           request.alias(request.specifier.replace(packageName, this.options.renamePackages[packageName]))
         );
       }
+    }
+
+    if (!pkg || !pkg.isV2Ember()) {
+      return request;
     }
 
     if (pkg.name === packageName) {
@@ -1285,63 +1282,42 @@ export class Resolver {
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (!pkg) {
-      return logTransition('no identifiable owningPackage', request);
+
+    if (pkg) {
+      ({ pkg, request } = this.restoreRehomedRequest(pkg, request));
     }
 
-    // meta.originalFromFile gets set when we want to try to rehome a request
-    // but then come back to the original location here in the fallback when the
-    // rehomed request fails
-    let movedPkg = this.packageCache.maybeMoved(pkg);
-    if (movedPkg !== pkg) {
-      let originalFromFile = request.meta?.originalFromFile;
-      if (typeof originalFromFile !== 'string') {
-        throw new Error(`bug: embroider resolver's meta is not propagating`);
+    if (!pkg?.isV2Ember()) {
+      // this request is coming from a file that appears to be owned by no ember
+      // package. We offer one fallback behavior for such files. They're allowed
+      // to resolve from the app's namespace.
+      //
+      // This makes it possible for integrations like vite to leave references
+      // to the app in their pre-bundled dependencies, which will end up in an
+      // arbitrary cache that is not inside any particular package.
+      let description = pkg ? 'non-ember package' : 'unowned module';
+
+      let packageName = getPackageName(request.specifier);
+      if (packageName === this.options.modulePrefix) {
+        return logTransition(
+          `fallbackResolver: ${description} resolved app namespace`,
+          request,
+          request.rehome(this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root)
+        );
       }
-      request = request.rehome(originalFromFile);
-      pkg = movedPkg;
-    }
-
-    if (!pkg.isV2Ember()) {
-      return logTransition('fallbackResolve: not in an ember package', request);
+      return logTransition(`fallbackResolver: ${description}`, request);
     }
 
     let packageName = getPackageName(request.specifier);
     if (!packageName) {
       // this is a relative import
-
-      let withinEngine = this.engineConfig(pkg.name);
-      if (withinEngine) {
-        // it's a relative import inside an engine (which also means app), which
-        // means we may need to satisfy the request via app tree merging.
-
-        let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
-        if (!logicalName) {
-          return logTransition(
-            'fallbackResolve: relative failure because this file is not externally accessible',
-            request
-          );
-        }
-        let appJSMatch = await this.searchAppTree(request, withinEngine, logicalName);
-        if (appJSMatch) {
-          return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
-        } else {
-          return logTransition('fallbackResolve: relative appJs search failure', request);
-        }
-      } else {
-        // nothing else to do for relative imports
-        return logTransition('fallbackResolve: relative failure', request);
-      }
+      return this.relativeFallbackResolve(pkg, request);
     }
 
-    // auto-upgraded packages can fall back to the set of known active addons
     if (pkg.needsLooseResolving()) {
-      let addon = this.locateActiveAddon(packageName);
-      if (addon) {
-        const rehomed = request.rehome(addon.canResolveFromFile);
-        if (rehomed !== request) {
-          return logTransition(`activeAddons`, request, rehomed);
-        }
+      let activeAddon = this.maybeFallbackToActiveAddon(request, packageName);
+      if (activeAddon) {
+        return activeAddon;
       }
     }
 
@@ -1389,6 +1365,58 @@ export class Resolver {
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
     return logTransition('fallbackResolve final exit', request);
+  }
+
+  private restoreRehomedRequest<R extends ModuleRequest>(pkg: Package, request: R): { pkg: Package; request: R } {
+    // meta.originalFromFile gets set when we want to try to rehome a request
+    // but then come back to the original location here in the fallback when the
+    // rehomed request fails
+    let movedPkg = this.packageCache.maybeMoved(pkg);
+    if (movedPkg !== pkg) {
+      let originalFromFile = request.meta?.originalFromFile;
+      if (typeof originalFromFile !== 'string') {
+        throw new Error(`bug: embroider resolver's meta is not propagating`);
+      }
+      request = request.rehome(originalFromFile);
+      pkg = movedPkg;
+    }
+    return { pkg, request };
+  }
+
+  private async relativeFallbackResolve<R extends ModuleRequest>(pkg: Package, request: R): Promise<R> {
+    let withinEngine = this.engineConfig(pkg.name);
+    if (withinEngine) {
+      // it's a relative import inside an engine (which also means app), which
+      // means we may need to satisfy the request via app tree merging.
+
+      let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
+      if (!logicalName) {
+        return logTransition(
+          'fallbackResolve: relative failure because this file is not externally accessible',
+          request
+        );
+      }
+      let appJSMatch = await this.searchAppTree(request, withinEngine, logicalName);
+      if (appJSMatch) {
+        return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
+      } else {
+        return logTransition('fallbackResolve: relative appJs search failure', request);
+      }
+    } else {
+      // nothing else to do for relative imports
+      return logTransition('fallbackResolve: relative failure', request);
+    }
+  }
+
+  private maybeFallbackToActiveAddon<R extends ModuleRequest>(request: R, requestedPackageName: string): R | undefined {
+    // auto-upgraded packages can fall back to the set of known active addons
+    let addon = this.locateActiveAddon(requestedPackageName);
+    if (addon) {
+      const rehomed = request.rehome(addon.canResolveFromFile);
+      if (rehomed !== request) {
+        return logTransition(`activeAddons`, request, rehomed);
+      }
+    }
   }
 
   private getEntryFromMergeMap(

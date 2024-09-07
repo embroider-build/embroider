@@ -43,7 +43,7 @@ async function lts_5_8(project: Project) {
 }
 
 async function release(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.11' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
@@ -83,7 +83,7 @@ export function supportMatrix(scenarios: Scenarios) {
       // new vite based system is working as we like
       .skip('lts_3_28')
       .skip('lts_4_4')
-      .skip('release')
+      .skip('lts_5_8')
   );
 }
 

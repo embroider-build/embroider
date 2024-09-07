@@ -11,6 +11,9 @@ overrides:
   babel-plugin-module-resolver@5.0.1: 5.0.0
 
 patchedDependencies:
+  ember-source@5.11.0:
+    hash: bo72463n2ws4z6rctmcukxpqeq
+    path: patches/ember-source@5.11.0.patch
   ember-source@5.8.0:
     hash: qsivfx5huurlb5tuvochap65l4
     path: patches/ember-source@5.8.0.patch
@@ -1844,6 +1847,9 @@ importers:
       ember-source-4.8:
         specifier: npm:ember-source@~4.8.0
         version: /ember-source@4.8.6(@babel/core@7.25.2)(webpack@5.94.0)
+      ember-source-5.11:
+        specifier: npm:ember-source@5.11.0
+        version: /ember-source@5.11.0(patch_hash=bo72463n2ws4z6rctmcukxpqeq)(webpack@5.94.0)
       ember-source-5.4:
         specifier: npm:ember-source@~5.4.0
         version: /ember-source@5.4.1(@babel/core@7.25.2)(webpack@5.94.0)
@@ -1858,7 +1864,7 @@ importers:
         version: '@s3.amazonaws.com/builds.emberjs.com/canary/shas/370cf34f9e86df17b880f11fef35a5a0f24ff38a.tgz(@babel/core@7.25.2)(webpack@5.94.0)'
       ember-source-latest:
         specifier: npm:ember-source@latest
-        version: /ember-source@5.11.0(webpack@5.94.0)
+        version: /ember-source@5.11.0(patch_hash=bo72463n2ws4z6rctmcukxpqeq)(webpack@5.94.0)
       ember-test-helpers-2:
         specifier: npm:@ember/test-helpers@^2.0.0
         version: /@ember/test-helpers@2.9.4(@babel/core@7.25.2)(ember-source@3.28.12)
@@ -16051,7 +16057,7 @@ packages:
       - webpack
     dev: true
 
-  /ember-source@5.11.0(webpack@5.94.0):
+  /ember-source@5.11.0(patch_hash=bo72463n2ws4z6rctmcukxpqeq)(webpack@5.94.0):
     resolution: {integrity: sha512-ufjjTyyaVKBpgTf0NrX7HQqzphcgpNQdkMss2SENkHkM9cidcdEPxulqcMNFxjHCsLBE7rGxmPFSci3x7LdIzA==}
     engines: {node: '>= 18.*'}
     peerDependencies:
@@ -16104,6 +16110,7 @@ packages:
       - supports-color
       - webpack
     dev: true
+    patched: true
 
   /ember-source@5.12.0-beta.1(webpack@5.94.0):
     resolution: {integrity: sha512-bPOK0XELQ4Chwa9zTyt1ge6Y1knLpjgNLXLzB8RDjzbTgj6IxjhEf3BkXkMpaXv752iHNAJXzl1Rw167n0+h2Q==}

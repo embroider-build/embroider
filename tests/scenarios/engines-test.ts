@@ -81,11 +81,7 @@ let engineScenarios = appScenarios.map('engines', project => {
 });
 
 engineScenarios
-  .skip('lts_3_28-engines') // this skip should be removed before https://github.com/embroider-build/embroider/pull/1435 is merged
-  .skip('lts_4_4-engines') // this skip should be removed before https://github.com/embroider-build/embroider/pull/1435 is merged
-  .skip('release-engines') // this skip should be removed before https://github.com/embroider-build/embroider/pull/1435 is merged
-  .skip('lts_5_8-engines') // this shouldn't be run
-  .skip('canary-engines') // this shouldn't be run
+  .skip()
   .map('without-fastboot', () => {})
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

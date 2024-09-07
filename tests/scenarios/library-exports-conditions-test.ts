@@ -118,7 +118,7 @@ export default class Application extends Route {};
             if (hasProdText) found = true;
           }
 
-          assert.ok(found, `Found text '${nativeESM.prodText}' within ${app.dir}/dist`);
+          assert.ok(found, `Expected text '${nativeESM.prodText}' within ${app.dir}/dist`);
         });
 
         test(`nested-native-esm`, async function (assert) {
@@ -138,7 +138,7 @@ export default class Application extends Route {};
             if (hasProdText) found = true;
           }
 
-          assert.ok(found, `Found text '${nestedNativeESM.prodText}' within ${app.dir}/dist`);
+          assert.ok(found, `Expected text '${nestedNativeESM.prodText}' within ${app.dir}/dist`);
         });
       });
     });

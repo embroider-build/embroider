@@ -95,7 +95,7 @@ export default class Application extends Route {};
 
       hooks.before(async assert => {
         app = await scenario.prepare();
-        let result = await app.execute('pnpm build');
+        let result = await app.execute('pnpm ember build --environment=production');
         assert.equal(result.exitCode, 0, result.output);
 
         let files = await globby('**/*.js', { cwd: join(app.dir, 'dist') });

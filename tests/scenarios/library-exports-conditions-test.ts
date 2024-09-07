@@ -30,6 +30,7 @@ appScenarios
         },
       },
     });
+    addon.pkg.type = 'module';
     addon.pkg.files = ['dist'];
     addon.pkg.exports = {
       '.': {
@@ -47,6 +48,7 @@ appScenarios
         },
       },
     });
+    nestedAddon.pkg.type = 'module';
     nestedAddon.pkg.files = ['dist'];
     nestedAddon.pkg.exports = {
       '.': {

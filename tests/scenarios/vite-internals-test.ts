@@ -74,6 +74,7 @@ appScenarios
           'gamma.hbs': `
             <div class="gamma">{{this.message}}</div>
           `,
+          'epsilon.hbs': `<div class="epsilon">Epsilon</div>`,
           'fancy-button.hbs': `<h1>I'm fancy</h1>`,
         },
         templates: {
@@ -86,6 +87,16 @@ appScenarios
             <WelcomePage />
           `,
         },
+        lib: {
+          'app-lib-one.js': `
+            globalThis.appLibOneLoaded = (globalThis.appLibOneLoaded ?? 0) + 1;
+            export default function() { return 'app-lib-one'; }
+          `,
+          'app-lib-two.js': `
+            globalThis.appLibTwoLoaded = (globalThis.appLibTwoLoaded ?? 0) + 1;
+            export default function() { return 'app-lib-two'; }
+          `,
+        },
       },
       tests: {
         integration: {
@@ -95,6 +106,9 @@ appScenarios
               import { setupRenderingTest } from 'app-template/tests/helpers';
               import { render } from '@ember/test-helpers';
               import { hbs } from 'ember-cli-htmlbars';
+              import { appLibOne as libOneViaAddon, appLibTwo as libTwoViaAddon } from '../v1-example-addon';
+              import appLibOne from '../lib/app-lib-one';
+              import appLibTwo from '../lib/app-lib-two';
 
               module('Integration | Component | example', function (hooks) {
                 setupRenderingTest(hooks);
@@ -117,15 +131,19 @@ appScenarios
                 });
 
                 test("addon depends on an app's hbs-only component", async function (assert) {
-                  assert.ok(false, 'not implemented');
+                  await render(hbs\`<Zeta />\`);
+                  assert.dom('.zeta').hasText('Zeta');
+                  assert.dom('.epsilon').hasText('Epsilon');
                 });
 
                 test("addon depends on an app's module via relative import", async function (assert) {
-                  assert.ok(false, 'not implemented');
+                  assert.strictEqual(appLibOne(), libOneViaAddon(), 'lib one works the same');
+                  assert.strictEqual(globalThis.appLibOneLoaded, 1, 'app lib one loaded once');
                 });
 
                 test("addon depends on an app's module via named import", async function (assert) {
-                  assert.ok(false, 'not implemented');
+                  assert.strictEqual(appLibTwo(), libTwoViaAddon(), 'lib two works the same');
+                  assert.strictEqual(globalThis.appLibTwoLoaded, 1, 'app lib two loaded once');
                 });
               });
             `,
@@ -149,12 +167,24 @@ appScenarios
             <div class="beta">{{this.message}}</div>
             <Gamma />
           `,
+          'zeta.hbs': `
+            <div class="zeta">Zeta</div>
+            <Epsilon />
+          `,
         },
       },
       app: {
+        'v1-example-addon.js': `
+          import appLibOne from './lib/app-lib-one';
+          import appLibTwo from 'app-template/lib/app-lib-two';
+          export { appLibOne, appLibTwo };
+        `,
         components: {
           'beta.js': `
             export { default } from 'v1-example-addon/components/beta';
+          `,
+          'zeta.js': `
+            export { default } from 'v1-example-addon/components/zeta';
           `,
         },
       },

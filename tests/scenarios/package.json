@@ -90,9 +90,9 @@
     "ember-source-4.12": "npm:ember-source@~4.12.0",
     "ember-source-4.4": "npm:ember-source@~4.4.0",
     "ember-source-4.8": "npm:ember-source@~4.8.0",
+    "ember-source-5.11": "npm:ember-source@5.11.0",
     "ember-source-5.4": "npm:ember-source@~5.4.0",
     "ember-source-5.8": "npm:ember-source@~5.8.0",
-    "ember-source-5.11": "npm:ember-source@5.11.0",
     "ember-source-beta": "npm:ember-source@beta",
     "ember-source-canary": "https://s3.amazonaws.com/builds.emberjs.com/canary/shas/370cf34f9e86df17b880f11fef35a5a0f24ff38a.tgz",
     "ember-source-latest": "npm:ember-source@latest",
@@ -103,6 +103,7 @@
     "node-fetch": "2.7.0",
     "popper.js": "^1.16.1",
     "strip-ansi": "^6.0.0",
+    "testem": "^3.10.1",
     "tslib": "^2.6.0",
     "typescript": "^5.4.5",
     "webpack": "^5.90.3"

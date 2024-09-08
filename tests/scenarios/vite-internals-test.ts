@@ -106,9 +106,9 @@ appScenarios
               import { setupRenderingTest } from 'app-template/tests/helpers';
               import { render } from '@ember/test-helpers';
               import { hbs } from 'ember-cli-htmlbars';
-              import { appLibOne as libOneViaAddon, appLibTwo as libTwoViaAddon } from '../v1-example-addon';
-              import appLibOne from '../lib/app-lib-one';
-              import appLibTwo from '../lib/app-lib-two';
+              import { appLibOne as libOneViaAddon, appLibTwo as libTwoViaAddon } from 'app-template/v1-example-addon';
+              import appLibOne from 'app-template/lib/app-lib-one';
+              import appLibTwo from 'app-template/lib/app-lib-two';
 
               module('Integration | Component | example', function (hooks) {
                 setupRenderingTest(hooks);

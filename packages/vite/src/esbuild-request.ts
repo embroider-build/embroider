@@ -1,14 +1,9 @@
 import { type ModuleRequest, cleanUrl, packageName } from '@embroider/core';
-import type { ImportKind, OnResolveResult, PluginBuild, ResolveResult } from 'esbuild';
-import { dirname, extname } from 'path';
+import type { ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
+import { dirname } from 'path';
 
 import type { PackageCache as _PackageCache, Resolution } from '@embroider/core';
 import { externalName } from '@embroider/reverse-exports';
-
-// TODO: make this share with vite config. We may need to pass it directly as an
-// argument to our esbuild plugin, or perhaps share it via embroider's
-// resolver-config.json
-const extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.json'];
 
 type PublicAPI<T> = { [K in keyof T]: T[K] };
 type PackageCache = PublicAPI<_PackageCache>;
@@ -16,6 +11,7 @@ type PackageCache = PublicAPI<_PackageCache>;
 export class EsBuildModuleRequest implements ModuleRequest {
   static from(
     packageCache: PackageCache,
+    phase: 'bundling' | 'scanning',
     context: PluginBuild,
     kind: ImportKind,
     source: string,
@@ -30,6 +26,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
       let fromFile = cleanUrl(importer);
       return new EsBuildModuleRequest(
         packageCache,
+        phase,
         context,
         kind,
         source,
@@ -44,6 +41,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
   private constructor(
     private packageCache: PackageCache,
+    private phase: 'bundling' | 'scanning',
     private context: PluginBuild,
     private kind: ImportKind,
     readonly specifier: string,
@@ -52,16 +50,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
     readonly isVirtual: boolean,
     readonly isNotFound: boolean,
     readonly resolvedTo: Resolution<OnResolveResult, OnResolveResult> | undefined
-  ) {
-    let plugins = (this.context.initialOptions.plugins ?? []).map(p => p.name);
-    if (plugins.includes('vite:dep-pre-bundle')) {
-      this.phase = 'bundling';
-    } else if (plugins.includes('vite:dep-scan')) {
-      this.phase = 'scanning';
-    } else {
-      throw new Error(`cannot identify what phase vite is in. Saw plugins: ${plugins.join(', ')}`);
-    }
-  }
+  ) {}
 
   get debugType() {
     return 'esbuild';
@@ -70,6 +59,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
   alias(newSpecifier: string) {
     return new EsBuildModuleRequest(
       this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       newSpecifier,
@@ -86,6 +76,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
     } else {
       return new EsBuildModuleRequest(
         this.packageCache,
+        this.phase,
         this.context,
         this.kind,
         this.specifier,
@@ -100,6 +91,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
   virtualize(filename: string) {
     return new EsBuildModuleRequest(
       this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       filename,
@@ -113,6 +105,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
   withMeta(meta: Record<string, any> | undefined): this {
     return new EsBuildModuleRequest(
       this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       this.specifier,
@@ -126,6 +119,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
   notFound(): this {
     return new EsBuildModuleRequest(
       this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       this.specifier,
@@ -140,6 +134,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
   resolveTo(resolution: Resolution<OnResolveResult, OnResolveResult>): this {
     return new EsBuildModuleRequest(
       this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       this.specifier,
@@ -149,24 +144,6 @@ export class EsBuildModuleRequest implements ModuleRequest {
       this.isNotFound,
       resolution
     ) as this;
-  }
-
-  private phase: 'bundling' | 'scanning';
-
-  private *extensionSearch(specifier: string): Generator<string> {
-    yield specifier;
-    // when there's no explicit extension, we may do extension search
-    if (extname(specifier) === '') {
-      // during the bundling phase, esbuild is not configured with any extension
-      // search of its own, so we need to do it. (During the scanning phase, all
-      // of vite's resolver is plugged into esbuild, which *does* already handle
-      // the resolvable extensions.)
-      if (this.phase === 'bundling') {
-        for (let ext of extensions) {
-          yield specifier + ext;
-        }
-      }
-    }
   }
 
   async defaultResolve(): Promise<Resolution<OnResolveResult, OnResolveResult>> {
@@ -189,73 +166,61 @@ export class EsBuildModuleRequest implements ModuleRequest {
       };
     }
 
-    let firstResult: ResolveResult | undefined;
+    requestStatus(request.specifier);
 
-    for (let requestName of this.extensionSearch(request.specifier)) {
-      requestStatus(requestName);
-
-      let result = await this.context.resolve(requestName, {
-        importer: request.fromFile,
-        resolveDir: dirname(request.fromFile),
-        kind: this.kind,
-        pluginData: {
-          embroider: {
-            enableCustomResolver: false,
-            meta: request.meta,
-          },
+    let result = await this.context.resolve(request.specifier, {
+      importer: request.fromFile,
+      resolveDir: dirname(request.fromFile),
+      kind: this.kind,
+      pluginData: {
+        embroider: {
+          enableCustomResolver: false,
+          meta: request.meta,
         },
-      });
+      },
+    });
 
-      let status = readStatus(requestName);
+    let status = readStatus(request.specifier);
 
-      if (result.errors.length > 0 || status === 'not_found') {
-        if (!firstResult) {
-          // if extension search fails, we want to let the first failure be the
-          // one that propagates, so that the error message makes sense.
-          firstResult = result;
-        }
-        // let extension search continue
-      } else if (result.external) {
-        return { type: 'ignored', result };
-      } else {
-        if (this.phase === 'bundling') {
-          // we need to ensure that we don't traverse back into the app while
-          // doing dependency pre-bundling. There are multiple ways an addon can
-          // resolve things from the app, due to the existince of both app-js
-          // (modules in addons that are logically part of the app's namespace)
-          // and non-strict handlebars (which resolves
-          // components/helpers/modifiers against the app's global pool).
-          let pkg = this.packageCache.ownerOfFile(result.path);
-          if (pkg?.root === this.packageCache.appRoot) {
-            let externalizedName = requestName;
-            if (!packageName(externalizedName)) {
-              // the request was a relative path. This won't remain valid once
-              // it has been bundled into vite/deps. But we know it targets the
-              // app, so we can always convert it into a non-relative import
-              // from the app's namespace
-              //
-              // IMPORTANT: whenever an addon resolves a relative path to the
-              // app, it does so because our code in the core resolver has
-              // rewritten the request to be relative to the app's root. So here
-              // we will only ever encounter relative paths that are already
-              // relative to the app's root directory.
-              externalizedName = externalName(pkg.packageJSON, externalizedName) || externalizedName;
-            }
-            return {
-              type: 'ignored',
-              result: {
-                path: externalizedName,
-                external: true,
-              },
-            };
+    if (result.errors.length > 0 || status === 'not_found') {
+      return { type: 'not_found', err: result };
+    } else if (result.external) {
+      return { type: 'ignored', result };
+    } else {
+      if (this.phase === 'bundling') {
+        // we need to ensure that we don't traverse back into the app while
+        // doing dependency pre-bundling. There are multiple ways an addon can
+        // resolve things from the app, due to the existince of both app-js
+        // (modules in addons that are logically part of the app's namespace)
+        // and non-strict handlebars (which resolves
+        // components/helpers/modifiers against the app's global pool).
+        let pkg = this.packageCache.ownerOfFile(result.path);
+        if (pkg?.root === this.packageCache.appRoot) {
+          let externalizedName = request.specifier;
+          if (!packageName(externalizedName)) {
+            // the request was a relative path. This won't remain valid once
+            // it has been bundled into vite/deps. But we know it targets the
+            // app, so we can always convert it into a non-relative import
+            // from the app's namespace
+            //
+            // IMPORTANT: whenever an addon resolves a relative path to the
+            // app, it does so because our code in the core resolver has
+            // rewritten the request to be relative to the app's root. So here
+            // we will only ever encounter relative paths that are already
+            // relative to the app's root directory.
+            externalizedName = externalName(pkg.packageJSON, externalizedName) || externalizedName;
           }
+          return {
+            type: 'ignored',
+            result: {
+              path: externalizedName,
+              external: true,
+            },
+          };
         }
-        return { type: 'found', filename: result.path, result, isVirtual: this.isVirtual };
       }
+      return { type: 'found', filename: result.path, result, isVirtual: this.isVirtual };
     }
-
-    // cast is safe because we know extensionSearch always yields >0 entries
-    return { type: 'not_found', err: firstResult! };
   }
 }
 

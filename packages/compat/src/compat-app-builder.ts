@@ -1,29 +1,15 @@
-import type { AddonPackage, Engine, TemplateColocationPluginOptions } from '@embroider/core';
-import {
-  explicitRelative,
-  warn,
-  jsHandlebarsCompile,
-  templateColocationPluginPath,
-  cacheBustingPluginVersion,
-  cacheBustingPluginPath,
-  Resolver,
-  locateEmbroiderWorkingDir,
-} from '@embroider/core';
+import type { AddonPackage, Engine } from '@embroider/core';
+import { explicitRelative, locateEmbroiderWorkingDir } from '@embroider/core';
 import { resolve as resolvePath } from 'path';
 import type Options from './options';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
 import flatMap from 'lodash/flatMap';
-import cloneDeep from 'lodash/cloneDeep';
 import bind from 'bind-decorator';
 import { outputJSONSync, writeFileSync, realpathSync } from 'fs-extra';
-import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
-import type { Options as ResolverTransformOptions } from './resolver-transform';
-import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
-import { makePortable } from '@embroider/core/src/portable-babel-config';
 import type { PortableHint } from '@embroider/core/src/portable';
-import { maybeNodeModuleVersion } from '@embroider/core/src/portable';
+import { maybeNodeModuleVersion, Portable } from '@embroider/core/src/portable';
 import { Memoize } from 'typescript-memoize';
 import { join, dirname } from 'path';
 import resolve from 'resolve';
@@ -31,10 +17,10 @@ import type ContentForConfig from './content-for-config';
 import type { V1Config } from './v1-config';
 import type { Package } from '@embroider/core';
 import { readdirSync } from 'fs-extra';
-import type { TransformOptions } from '@babel/core';
-import { MacrosConfig } from '@embroider/macros/src/node';
 
 import type CompatApp from './compat-app';
+import type { CompatBabelState } from './babel';
+import { MacrosConfig } from '@embroider/macros/src/node';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -171,87 +157,10 @@ export class CompatAppBuilder {
       options,
       autoRun: this.compatApp.autoRun,
       staticAppPaths: this.options.staticAppPaths,
+      emberVersion: this.emberVersion(),
     };
 
     return config;
-  }
-
-  @Memoize()
-  private async babelConfig(resolverConfig: CompatResolverOptions) {
-    let babel = cloneDeep(this.compatApp.babelConfig());
-
-    if (!babel.plugins) {
-      babel.plugins = [];
-    }
-
-    // Our stage3 code is always allowed to use dynamic import. We may emit it
-    // ourself when splitting routes.
-    babel.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
-
-    // https://github.com/webpack/webpack/issues/12154
-    babel.plugins.push(require.resolve('./rename-require-plugin'));
-
-    babel.plugins.push([
-      require.resolve('babel-plugin-ember-template-compilation'),
-      await this.etcOptions(resolverConfig),
-    ]);
-
-    // this is @embroider/macros configured for full stage3 resolution
-    babel.plugins.push(...this.compatApp.macrosConfig.babelPluginConfig());
-
-    let colocationOptions: TemplateColocationPluginOptions = {
-      appRoot: this.origAppPackage.root,
-
-      // This extra weirdness is a compromise in favor of build performance.
-      //
-      // 1. When auto-upgrading an addon from v1 to v2, we definitely want to
-      //    run any custom AST transforms in stage1.
-      //
-      // 2. In general case, AST transforms are allowed to manipulate Javascript
-      //    scope. This means that running transforms -- even when we're doing
-      //    source-to-source compilation that emits handlebars and not wire
-      //    format -- implies changing .hbs files into .js files.
-      //
-      // 3. So stage1 may need to rewrite .hbs to .hbs.js (to avoid colliding
-      //    with an existing co-located .js file).
-      //
-      // 4. But stage1 doesn't necessarily want to run babel over the
-      //    corresponding JS file. Most of the time, that's just an
-      //    unnecessarily expensive second parse. (We only run it in stage1 to
-      //    eliminate an addon's custom babel plugins, and many addons don't
-      //    have any.)
-      //
-      // 5. Therefore, the work of template-colocation gets defered until here,
-      //    and it may see co-located templates named `.hbs.js` instead of the
-      //    usual `.hbs.
-      templateExtensions: ['.hbs', '.hbs.js'],
-
-      // All of the above only applies to auto-upgraded packages that were
-      // authored in v1. V2 packages don't get any of this complexity, they're
-      // supposed to take care of colocating their own templates explicitly.
-      packageGuard: true,
-    };
-    babel.plugins.push([templateColocationPluginPath, colocationOptions]);
-
-    babel.plugins.push([
-      require.resolve('./babel-plugin-adjust-imports'),
-      (() => {
-        let pluginConfig: AdjustImportsOptions = {
-          appRoot: resolverConfig.appRoot,
-        };
-        return pluginConfig;
-      })(),
-    ]);
-
-    // we can use globally shared babel runtime by default
-    babel.plugins.push([
-      require.resolve('@babel/plugin-transform-runtime'),
-      { absoluteRuntime: __dirname, useESModules: true, regenerator: false },
-    ]);
-
-    const portable = makePortable(babel, { basedir: this.origAppPackage.root }, this.portableHints);
-    addCachablePlugin(portable.config);
-    return portable;
   }
 
   // recurse to find all active addons that don't cross an engine boundary.
@@ -338,47 +247,7 @@ export class CompatAppBuilder {
     this.addContentForConfig(contentForConfig);
     this.addEmberEnvConfig(config.EmberENV);
     this.outputAppBootError(config.modulePrefix, config.APP, contentForConfig);
-    let babelConfig = await this.babelConfig(resolverConfig);
-    this.addBabelConfig(babelConfig);
-    this.addMacrosConfig(this.compatApp.macrosConfig.babelPluginConfig()[0]);
-  }
-
-  private async etcOptions(resolverConfig: CompatResolverOptions): Promise<EtcOptions> {
-    let transforms = this.compatApp.htmlbarsPlugins;
-
-    let { plugins: macroPlugins, setConfig } = MacrosConfig.transforms();
-    setConfig(this.compatApp.macrosConfig);
-    for (let macroPlugin of macroPlugins) {
-      transforms.push(macroPlugin as any);
-    }
-
-    if (
-      this.options.staticComponents ||
-      this.options.staticHelpers ||
-      this.options.staticModifiers ||
-      (globalThis as any).embroider_audit
-    ) {
-      let opts: ResolverTransformOptions = {
-        appRoot: resolverConfig.appRoot,
-        emberVersion: this.emberVersion(),
-      };
-      transforms.push([require.resolve('./resolver-transform'), opts]);
-    }
-
-    let resolver = new Resolver(resolverConfig);
-    let resolution = await resolver.nodeResolve(
-      'ember-source/vendor/ember/ember-template-compiler',
-      resolvePath(this.origAppPackage.root, 'package.json')
-    );
-    if (resolution.type !== 'real') {
-      throw new Error(`bug: unable to resolve ember-template-compiler from ${this.origAppPackage.root}`);
-    }
-
-    return {
-      transforms,
-      compilerPath: resolution.filename,
-      enableLegacyModules: ['ember-cli-htmlbars', 'ember-cli-htmlbars-inline-precompile', 'htmlbars-inline-precompile'],
-    };
+    this.addBabelCompat();
   }
 
   @Memoize()
@@ -401,18 +270,31 @@ export class CompatAppBuilder {
     });
   }
 
-  private addBabelConfig(pconfig: { config: TransformOptions; isParallelSafe: boolean }) {
-    if (!pconfig.isParallelSafe) {
-      warn('Your build is slower because some babel plugins are non-serializable');
+  private addBabelCompat() {
+    let plugins = this.compatApp.extraBabelPlugins();
+    let templateTransforms = this.compatApp.htmlbarsPlugins;
+    let babelMacros = this.compatApp.macrosConfig.babelPluginConfig();
+    let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
+    setConfig(this.compatApp.macrosConfig);
+
+    let config: CompatBabelState = {
+      plugins,
+      templateTransforms,
+      babelMacros,
+      templateMacros: templateMacros as any,
+    };
+
+    let portableConfig = new Portable({ hints: this.portableHints }).dehydrate(config);
+    if (!portableConfig.isParallelSafe) {
+      throw new Error(`non-serializble babel plugins or AST transforms found in your app`);
     }
+
     writeFileSync(
-      join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_config_.js'),
-      `module.exports = ${JSON.stringify(pconfig.config, null, 2)}`,
-      'utf8'
-    );
-    writeFileSync(
-      join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_filter_.js'),
-      babelFilterTemplate({ skipBabel: this.options.skipBabel, appRoot: this.origAppPackage.root }),
+      join(locateEmbroiderWorkingDir(this.compatApp.root), '_babel_compat_.js'),
+      `
+      const { Portable } = require('@embroider/core/src/portable');
+      module.exports = new Portable().hydrate(${JSON.stringify(portableConfig.value, null, 2)});
+      `,
       'utf8'
     );
   }
@@ -464,12 +346,6 @@ export class CompatAppBuilder {
     });
   }
 
-  private addMacrosConfig(macrosConfig: any) {
-    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'macros-config.json'), macrosConfig, {
-      spaces: 2,
-    });
-  }
-
   // Classic addons providing custom content-for "app-boot" is no longer supported.
   // The purpose of this error message is to help developers to move the classic addons code.
   // Developers can deactivate it with useAddonAppBoot build option.
@@ -514,36 +390,4 @@ function defaultAddonPackageRules(): PackageRules[] {
     })
     .filter(Boolean)
     .reduce((a, b) => a.concat(b), []);
-}
-
-const babelFilterTemplate = jsHandlebarsCompile(`
-const { babelFilter } = require(${JSON.stringify(require.resolve('@embroider/core'))});
-module.exports = babelFilter({{json-stringify skipBabel}}, "{{js-string-escape appRoot}}");
-`) as (params: { skipBabel: Options['skipBabel']; appRoot: string }) => string;
-
-function addCachablePlugin(babelConfig: TransformOptions) {
-  if (Array.isArray(babelConfig.plugins) && babelConfig.plugins.length > 0) {
-    const plugins = Object.create(null);
-    plugins[cacheBustingPluginPath] = cacheBustingPluginVersion;
-
-    for (const plugin of babelConfig.plugins) {
-      let absolutePathToPlugin: string;
-      if (Array.isArray(plugin) && typeof plugin[0] === 'string') {
-        absolutePathToPlugin = plugin[0] as string;
-      } else if (typeof plugin === 'string') {
-        absolutePathToPlugin = plugin;
-      } else {
-        throw new Error(`[Embroider] a babel plugin without an absolute path was from: ${plugin}`);
-      }
-
-      plugins[absolutePathToPlugin] = maybeNodeModuleVersion(absolutePathToPlugin);
-    }
-
-    babelConfig.plugins.push([
-      cacheBustingPluginPath,
-      {
-        plugins,
-      },
-    ]);
-  }
 }

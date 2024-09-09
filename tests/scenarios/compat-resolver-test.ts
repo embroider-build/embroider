@@ -110,6 +110,7 @@ Scenarios.fromProject(() => new Project())
             ],
             autoRun: true,
             staticAppPaths: [],
+            emberVersion: '4.0.0',
           };
 
           givenFiles({

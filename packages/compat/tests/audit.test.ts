@@ -8,7 +8,6 @@ import { Audit } from '../src/audit';
 import type { CompatResolverOptions } from '../src/resolver-transform';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
-import { makePortable } from '@embroider/core/src/portable-babel-config';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from '../src/resolver-transform';
 
@@ -53,6 +52,7 @@ describe('audit', function () {
       resolvableExtensions,
       autoRun: true,
       staticAppPaths: [],
+      emberVersion: '4.0.0',
     };
 
     let babel: TransformOptions = {
@@ -77,11 +77,6 @@ describe('audit', function () {
       'index.html': `<script type="module" src="./app.js"></script>`,
       'app.js': `import Hello from './hello.hbs';`,
       'hello.hbs': ``,
-      'babel_config.js': `module.exports = ${JSON.stringify(
-        makePortable(babel, { basedir: '.' }, []).config,
-        null,
-        2
-      )}`,
       node_modules: {
         '.embroider': {
           'resolver.json': JSON.stringify(resolverConfig),

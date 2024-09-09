@@ -16,12 +16,12 @@ import type { AddonMeta, EmberAppInstance, OutputFileToInputFileMap, PackageInfo
 import { writeJSONSync, ensureDirSync, copySync, pathExistsSync, existsSync, writeFileSync } from 'fs-extra';
 import AddToTree from './add-to-tree';
 import DummyPackage from './dummy-package';
-import type { TransformOptions } from '@babel/core';
+import type { PluginItem, TransformOptions } from '@babel/core';
 import { isEmbroiderMacrosPlugin, MacrosConfig } from '@embroider/macros/src/node';
 import resolvePackagePath from 'resolve-package-path';
 import Concat from 'broccoli-concat';
 import mapKeys from 'lodash/mapKeys';
-import { isEmberAutoImportDynamic, isInlinePrecompilePlugin } from './detect-babel-plugins';
+import { isEmberAutoImportDynamic, isHtmlbarColocation, isInlinePrecompilePlugin } from './detect-babel-plugins';
 import loadAstPlugins from './prepare-htmlbars-ast-plugins';
 import { readFileSync } from 'fs';
 import semver from 'semver';
@@ -181,63 +181,31 @@ export default class CompatApp {
   }
 
   @Memoize()
-  babelConfig(): TransformOptions {
-    // this finds all the built-in babel configuration that comes with ember-cli-babel
-    const babelAddon = (this.legacyEmberAppInstance.project as any).findAddonByName('ember-cli-babel');
-    const babelConfig = babelAddon.buildBabelOptions({
-      'ember-cli-babel': {
-        ...this.legacyEmberAppInstance.options['ember-cli-babel'],
-        includeExternalHelpers: true,
-        compileModules: false,
-        disableDebugTooling: false,
-        disablePresetEnv: false,
-        disableEmberModulesAPIPolyfill: false,
-      },
-    });
-
-    let plugins = babelConfig.plugins as any[];
-    let presets = babelConfig.presets;
-
-    // this finds any custom babel configuration that's on the app (either
-    // because the app author explicitly added some, or because addons have
-    // pushed plugins into it).
-    let appBabel = this.legacyEmberAppInstance.options.babel;
+  extraBabelPlugins(): PluginItem[] {
+    // this finds any custom babel plugins on the app (either because the app
+    // author explicitly added some, or because addons have pushed plugins into
+    // it).
+    let appBabel: TransformOptions = this.legacyEmberAppInstance.options.babel;
     if (appBabel) {
       if (appBabel.plugins) {
-        plugins = appBabel.plugins.concat(plugins);
-      }
-      if (appBabel.presets) {
-        presets = appBabel.presets.concat(presets);
+        return appBabel.plugins.filter(p => {
+          // even if the app was using @embroider/macros, we drop it from the config
+          // here in favor of our globally-configured one.
+          return (
+            !isEmbroiderMacrosPlugin(p) &&
+            // similarly, if the app was already using an inline template compiler
+            // babel plugin, we remove it here because we have our own
+            // always-installed version of that (v2 addons are allowed to assume it
+            // will be present in the final app build, the app doesn't get to turn
+            // that off or configure it.)
+            !isInlinePrecompilePlugin(p) &&
+            !isEmberAutoImportDynamic(p) &&
+            !isHtmlbarColocation(p)
+          );
+        });
       }
     }
-
-    plugins = plugins.filter(p => {
-      // even if the app was using @embroider/macros, we drop it from the config
-      // here in favor of our globally-configured one.
-      return (
-        !isEmbroiderMacrosPlugin(p) &&
-        // similarly, if the app was already using an inline template compiler
-        // babel plugin, we remove it here because we have our own
-        // always-installed version of that (v2 addons are allowed to assume it
-        // will be present in the final app build, the app doesn't get to turn
-        // that off or configure it.)
-        !isInlinePrecompilePlugin(p) &&
-        !isEmberAutoImportDynamic(p)
-      );
-    });
-
-    const config: TransformOptions = {
-      babelrc: false,
-      plugins,
-      presets,
-      // this is here because broccoli-middleware can't render a codeFrame full
-      // of terminal codes. It would be nice to add something like
-      // https://github.com/mmalecki/ansispan to broccoli-middleware so we can
-      // leave color enabled.
-      highlightCode: false,
-    };
-
-    return config;
+    return [];
   }
 
   @Memoize()

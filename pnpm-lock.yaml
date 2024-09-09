@@ -211,6 +211,9 @@ importers:
       babel-import-util:
         specifier: ^2.0.0
         version: 2.1.1
+      babel-plugin-debug-macros:
+        specifier: ^1.0.2
+        version: 1.0.2(@babel/core@7.25.2)
       babel-plugin-ember-template-compilation:
         specifier: ^2.1.1
         version: 2.2.5
@@ -1475,9 +1478,12 @@ importers:
       '@babel/eslint-parser':
         specifier: ^7.22.5
         version: 7.25.1(@babel/core@7.25.2)(eslint@8.57.0)
-      '@babel/plugin-proposal-decorators':
-        specifier: ^7.22.5
-        version: 7.24.7(@babel/core@7.25.2)
+      '@babel/plugin-transform-runtime':
+        specifier: ^7.25.4
+        version: 7.25.4(@babel/core@7.25.2)
+      '@babel/runtime':
+        specifier: ^7.25.6
+        version: 7.25.6
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.1.0
@@ -1514,12 +1520,15 @@ importers:
       '@rollup/plugin-babel':
         specifier: ^5.3.1
         version: 5.3.1(@babel/core@7.25.2)(rollup@3.29.4)
-      broccoli-asset-rev:
-        specifier: ^3.0.0
-        version: 3.0.0
+      babel-plugin-ember-template-compilation:
+        specifier: ^2.2.5
+        version: 2.2.5
       concurrently:
         specifier: ^8.2.0
         version: 8.2.2
+      decorator-transforms:
+        specifier: ^2.0.0
+        version: 2.0.0(@babel/core@7.25.2)
       ember-auto-import:
         specifier: ^2.6.3
         version: 2.7.4
@@ -9842,6 +9851,17 @@ packages:
     dependencies:
       '@babel/core': 7.25.2
       semver: 5.7.2
+
+  /babel-plugin-debug-macros@1.0.2(@babel/core@7.25.2):
+    resolution: {integrity: sha512-ADkMh1LL45678c+4iGn3Fp8hdI9qvxGBkH5x9HNiIlgYJGdQWmYNcA2cS3XAr76N85kDCg4VpqsTN1hFX2jbEA==}
+    engines: {node: '>=16'}
+    peerDependencies:
+      '@babel/core': ^7.0.0
+    dependencies:
+      '@babel/core': 7.25.2
+      babel-import-util: 2.1.1
+      semver: 7.6.3
+    dev: false
 
   /babel-plugin-ember-data-packages-polyfill@0.1.2:
     resolution: {integrity: sha512-kTHnOwoOXfPXi00Z8yAgyD64+jdSXk3pknnS7NlqnCKAU6YDkXZ4Y7irl66kaZjZn0FBBt0P4YOZFZk85jYOww==}

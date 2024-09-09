@@ -21,12 +21,6 @@ Scenarios.fromProject(() => new Project())
       'auto-upgraded': true,
       assets: ['index.html'],
       'root-url': '/',
-      babel: {
-        majorVersion: 7,
-        filename: '_babel_config.js',
-        isParallelSafe: true,
-        fileFilter: '_babel_filter.js',
-      },
     };
     app.pkg = {
       name: 'my-app',

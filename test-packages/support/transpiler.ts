@@ -3,7 +3,6 @@ import { join } from 'path';
 import type { TransformOptions } from '@babel/core';
 import { transform } from '@babel/core';
 import type { BoundExpectFile } from './file-assertions';
-import type { AppMeta } from '../../packages/core/src/index';
 import { hbsToJS, locateEmbroiderWorkingDir, RewrittenPackageCache } from '../../packages/core/src/index';
 import { Memoize } from 'typescript-memoize';
 import { getRewrittenLocation } from './rewritten-path';
@@ -47,20 +46,8 @@ export class Transpiler {
     return readJSONSync(join(this.appOutputPath, 'package.json'));
   }
 
-  private get emberMeta(): AppMeta {
-    return this.pkgJSON['ember-addon'] as AppMeta;
-  }
-
   @Memoize()
   private get babelConfig() {
-    if (this.emberMeta['babel'].majorVersion !== 7) {
-      throw new Error(`@embroider/test-support only suports babel 7`);
-    }
-
-    // Depending on how the app builds, the babel config is not at the same location
-    let embroiderLocation = join(locateEmbroiderWorkingDir(this.appDir), '_babel_config_.js');
-    return existsSync(embroiderLocation)
-      ? (require(embroiderLocation) as TransformOptions)
-      : (require(join(this.appDir, this.emberMeta['babel'].filename)) as TransformOptions);
+    return require(join(this.appOutputPath, './babel.config.cjs')) as TransformOptions;
   }
 }

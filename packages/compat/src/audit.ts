@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readJSONSync } from 'fs-extra';
+import { readFileSync, readJSONSync } from 'fs-extra';
 import { join, resolve as resolvePath, dirname } from 'path';
 import type { AppMeta, ResolverOptions } from '@embroider/core';
 import { explicitRelative, hbsToJS, locateEmbroiderWorkingDir, Resolver, RewrittenPackageCache } from '@embroider/core';
@@ -122,15 +122,6 @@ export class Audit {
     }
 
     let audit = new this(options.app, options);
-    if (options['reuse-build']) {
-      if (!audit.meta.babel.isParallelSafe) {
-        throw new BuildError(
-          `You can't use the ${chalk.red(
-            '--reuse-build'
-          )} option because some of your babel or HBS plugins are non-serializable`
-        );
-      }
-    }
     return audit.run();
   }
 
@@ -153,13 +144,8 @@ export class Audit {
 
   @Memoize()
   private get babelConfig() {
-    // Depending on how the app builds, the babel config is not at the same location
-    let embroiderLocation = join(locateEmbroiderWorkingDir(this.originAppRoot), '_babel_config_.js');
-    let config = existsSync(embroiderLocation)
-      ? // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require(embroiderLocation)
-      : // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require(join(this.movedAppRoot, this.meta.babel.filename));
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    let config = require(join(this.originAppRoot, 'babel.config.cjs'));
 
     config = Object.assign({}, config);
     config.plugins = config.plugins.filter((p: any) => !isMacrosPlugin(p));

@@ -102,14 +102,12 @@ export class CompatAppBuilder {
   }
 
   private resolvableExtensions(): string[] {
-    // webpack's default is ['.wasm', '.mjs', '.js', '.json']. Keeping that
-    // subset in that order is sensible, since many third-party libraries will
-    // expect it to work that way.
-    //
-    // For TS, we defer to ember-cli-babel, and the setting for
-    // "enableTypescriptTransform" can be set with and without
-    // ember-cli-typescript
-    return ['.wasm', '.mjs', '.js', '.json', '.ts', '.hbs', '.hbs.js', '.gjs', '.gts'];
+    let fromEnv = process.env.EMBROIDER_RESOLVABLE_EXTENSIONS;
+    if (fromEnv) {
+      return fromEnv.split(',');
+    } else {
+      return ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
+    }
   }
 
   private modulePrefix(): string {

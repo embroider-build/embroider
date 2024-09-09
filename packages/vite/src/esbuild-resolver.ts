@@ -114,7 +114,7 @@ export function esBuildResolver(): EsBuildPlugin {
 
           let firstResult: ResolveResult | undefined;
 
-          for (let requestName of extensionSearch(path)) {
+          for (let requestName of extensionSearch(path, resolverLoader.resolver.options.resolvableExtensions)) {
             let result = await build.resolve(requestName, {
               namespace,
               resolveDir,
@@ -162,12 +162,7 @@ function detectPhase(build: PluginBuild): 'bundling' | 'scanning' {
   }
 }
 
-// TODO: make this share with vite config. We may need to pass it directly as an
-// argument to our esbuild plugin, or perhaps share it via embroider's
-// resolver-config.json
-const extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.json'];
-
-function* extensionSearch(specifier: string): Generator<string> {
+function* extensionSearch(specifier: string, extensions: string[]): Generator<string> {
   yield specifier;
   // when there's no explicit extension, we may do extension search
   if (extname(specifier) === '') {

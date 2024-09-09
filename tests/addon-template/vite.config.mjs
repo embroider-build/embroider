@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
         ".gts",
         ".ts",
         ".hbs",
+        ".hbs.js",
         ".json",
       ],
     },

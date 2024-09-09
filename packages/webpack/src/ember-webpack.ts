@@ -238,7 +238,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             ]),
           },
           {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
             use: nonNullArray([
               maybeThreadLoader(this.extraThreadLoaderOptions),
               makeBabelLoaderOptions(variant, join(this.appRoot, 'babel.config.cjs'), this.extraBabelLoaderOptions),

@@ -10,7 +10,10 @@ import { getAppFiles, getFastbootFiles, importPaths, splitRoute, staticAppPathsP
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-route-entrypoint.js:route=(?<route>.*)/;
 
 export function encodeRouteEntrypoint(packagePath: string, matched: string | undefined, routeName: string): string {
-  return resolve(packagePath, `${matched}:route=${routeName}` ?? `-embroider-route-entrypoint.js:route=${routeName}`);
+  return resolve(
+    packagePath,
+    matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`
+  );
 }
 
 export function decodeRouteEntrypoint(filename: string): { fromDir: string; route: string } | undefined {

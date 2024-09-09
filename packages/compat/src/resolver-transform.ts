@@ -781,14 +781,14 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.type !== 'PathExpression') {
         return;
       }
-      let rootName = node.path.parts[0];
+      let rootName = headOf(node.path);
       if (this.scopeStack.inScope(rootName, path)) {
         return;
       }
-      if (node.path.this === true) {
+      if (isThisHead(node.path)) {
         return;
       }
-      if (node.path.parts.length > 1) {
+      if (parts(node.path).length > 1) {
         // paths with a dot in them (which therefore split into more than
         // one "part") are classically understood by ember to be contextual
         // components, which means there's nothing to resolve at this
@@ -820,10 +820,10 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.type !== 'PathExpression') {
         return;
       }
-      if (node.path.this === true) {
+      if (isThisHead(node.path)) {
         return;
       }
-      if (this.scopeStack.inScope(node.path.parts[0], path)) {
+      if (this.scopeStack.inScope(headOf(node.path), path)) {
         return;
       }
       if (node.path.original === 'component' && node.params.length > 0) {
@@ -859,14 +859,14 @@ class TemplateResolver implements ASTPlugin {
         if (node.path.type !== 'PathExpression') {
           return;
         }
-        let rootName = node.path.parts[0];
+        let rootName = headOf(node.path);
         if (this.scopeStack.inScope(rootName, path)) {
           return;
         }
-        if (node.path.this === true) {
+        if (isThisHead(node.path)) {
           return;
         }
-        if (node.path.parts.length > 1) {
+        if (parts(node.path).length > 1) {
           // paths with a dot in them (which therefore split into more than
           // one "part") are classically understood by ember to be contextual
           // components, which means there's nothing to resolve at this
@@ -921,16 +921,16 @@ class TemplateResolver implements ASTPlugin {
       if (node.path.type !== 'PathExpression') {
         return;
       }
-      if (this.scopeStack.inScope(node.path.parts[0], path)) {
+      if (this.scopeStack.inScope(headOf(node.path), path)) {
         return;
       }
-      if (node.path.this === true) {
+      if (isThisHead(node.path)) {
         return;
       }
-      if (node.path.data === true) {
+      if (isAtHead(node.path)) {
         return;
       }
-      if (node.path.parts.length > 1) {
+      if (parts(node.path).length > 1) {
         // paths with a dot in them (which therefore split into more than
         // one "part") are classically understood by ember to be contextual
         // components. With the introduction of `Template strict mode` in Ember 3.25
@@ -1160,4 +1160,36 @@ function appendArrays(objValue: any, srcValue: any) {
   if (Array.isArray(objValue)) {
     return objValue.concat(srcValue);
   }
+}
+
+function headOf(path: any) {
+  if (!path) return;
+
+  return 'head' in path ? path.head.name : path.parts[0];
+}
+
+function isThisHead(path: any) {
+  if (!path) return;
+
+  if ('head' in path) {
+    return path.head.type === 'ThisHead';
+  }
+
+  return path.this === true;
+}
+
+function isAtHead(path: any) {
+  if (!path) return;
+
+  if ('head' in path) {
+    return path.head.type === 'AtHead';
+  }
+
+  return path.data === true;
+}
+
+function parts(path: any) {
+  if (!path) return;
+
+  return 'original' in path ? path.original.split('.') : path.parts;
 }

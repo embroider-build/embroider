@@ -181,6 +181,9 @@ importers:
       '@babel/core':
         specifier: ^7.14.5
         version: 7.25.2
+      '@babel/plugin-syntax-decorators':
+        specifier: ^7.24.7
+        version: 7.24.7(@babel/core@7.25.2)
       '@babel/plugin-syntax-dynamic-import':
         specifier: ^7.8.3
         version: 7.8.3(@babel/core@7.25.2)
@@ -22407,7 +22410,6 @@ packages:
     engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
     deprecated: |-
       You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
-
       (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
     dev: true
 

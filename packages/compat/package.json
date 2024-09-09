@@ -12,7 +12,7 @@
   "author": "Edward Faulkner",
   "main": "src/index.js",
   "files": [
-    "babel.cjs",
+    "babel.js",
     "src/**/*.js",
     "src/**/*.d.ts",
     "src/**/*.js.map"

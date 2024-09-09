@@ -1,5 +1,65 @@
 # Embroider Changelog
 
+## Release (2024-08-30)
+
+@embroider/compat 3.6.1 (patch)
+@embroider/core 3.4.15 (patch)
+@embroider/macros 1.16.6 (patch)
+@embroider/shared-internals 2.6.3 (patch)
+@embroider/webpack 4.0.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`
+  * [#2075](https://github.com/embroider-build/embroider/pull/2075) Update ember standard modules to include @ember/renderer and @ember/-internals and ember-testing ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/compat`
+  * [#2067](https://github.com/embroider-build/embroider/pull/2067) codemod fixes ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :memo: Documentation
+* [#2055](https://github.com/embroider-build/embroider/pull/2055) document templateTagCodemod usage ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :house: Internal
+* `@embroider/webpack`
+  * [#2076](https://github.com/embroider-build/embroider/pull/2076) [Stable]: Follow upstream type change from webpack ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* Other
+  * [#2058](https://github.com/embroider-build/embroider/pull/2058) Set the packageManager field ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2024-07-18)
+
+@embroider/compat 3.6.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#1842](https://github.com/embroider-build/embroider/pull/1842) [beta] template-tag code mod ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
+## Release (2024-07-16)
+
+@embroider/compat 3.5.7 (patch)
+@embroider/util 1.13.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2033](https://github.com/embroider-build/embroider/pull/2033) Remove deprecations warnings in resolver transform ([@mkszepp](https://github.com/mkszepp))
+  * [#2047](https://github.com/embroider-build/embroider/pull/2047) Add semver to power select with create ([@mkszepp](https://github.com/mkszepp))
+
+#### :house: Internal
+* `@embroider/test-scenarios`
+  * [#1930](https://github.com/embroider-build/embroider/pull/1930) create a smoke test for the widest possible matrix ([@mansona](https://github.com/mansona))
+* Other
+  * [#2015](https://github.com/embroider-build/embroider/pull/2015) update github actions ([@mansona](https://github.com/mansona))
+* `@embroider/util`, `@embroider/sample-transforms`, `@embroider/test-support`, `@embroider/test-scenarios`
+  * [#1931](https://github.com/embroider-build/embroider/pull/1931) update scenario-tester ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
 ## Release (2024-07-03)
 
 @embroider/compat 3.5.6 (patch)

@@ -1,11 +1,6 @@
 const {
-  transformsFromV1Addons,
-  looseModeSupport,
-  templateMacros,
-  babelMacros,
-  adjustImports,
-  oldDebugMacros,
-  templateColocation,
+  babelCompatSupport,
+  templateCompatSupport,
 } = require("@embroider/compat/babel");
 
 module.exports = {
@@ -19,14 +14,9 @@ module.exports = {
           "ember-cli-htmlbars-inline-precompile",
           "htmlbars-inline-precompile",
         ],
-        transforms: [
-          ...transformsFromV1Addons(),
-          looseModeSupport(),
-          ...templateMacros(),
-        ],
+        transforms: [...templateCompatSupport()],
       },
     ],
-    ...babelMacros(),
     [
       "module:decorator-transforms",
       {
@@ -41,8 +31,10 @@ module.exports = {
         regenerator: false,
       },
     ],
-    adjustImports(),
-    ...oldDebugMacros(),
-    templateColocation(),
+    ...babelCompatSupport(),
   ],
+
+  generatorOpts: {
+    compact: false,
+  },
 };

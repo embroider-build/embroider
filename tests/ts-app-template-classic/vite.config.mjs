@@ -6,7 +6,7 @@ import { babel } from '@rollup/plugin-babel';
 export default defineConfig({
   cacheDir: resolve('node_modules', '.vite'),
   resolve: {
-    extensions: ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.json'],
+    extensions: ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'],
   },
 
   plugins: [

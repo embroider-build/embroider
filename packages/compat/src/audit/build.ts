@@ -50,11 +50,11 @@ async function execute(
   let stderrBuffer: string[] = [];
   let stdoutBuffer: string[] = [];
   let combinedBuffer: string[] = [];
-  child.stderr.on('data', data => {
+  child.stderr!.on('data', data => {
     stderrBuffer.push(data);
     combinedBuffer.push(data);
   });
-  child.stdout.on('data', data => {
+  child.stdout!.on('data', data => {
     stdoutBuffer.push(data);
     combinedBuffer.push(data);
   });

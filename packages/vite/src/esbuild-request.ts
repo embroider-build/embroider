@@ -1,11 +1,17 @@
-import { type ModuleRequest, cleanUrl } from '@embroider/core';
+import { type ModuleRequest, cleanUrl, packageName } from '@embroider/core';
 import type { ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
 import { dirname } from 'path';
 
-import type { Resolution } from '@embroider/core';
+import type { PackageCache as _PackageCache, Resolution } from '@embroider/core';
+import { externalName } from '@embroider/reverse-exports';
+
+type PublicAPI<T> = { [K in keyof T]: T[K] };
+type PackageCache = PublicAPI<_PackageCache>;
 
 export class EsBuildModuleRequest implements ModuleRequest {
   static from(
+    packageCache: PackageCache,
+    phase: 'bundling' | 'scanning',
     context: PluginBuild,
     kind: ImportKind,
     source: string,
@@ -19,6 +25,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
     if (source && importer && source[0] !== '\0' && !source.startsWith('virtual-module:')) {
       let fromFile = cleanUrl(importer);
       return new EsBuildModuleRequest(
+        packageCache,
+        phase,
         context,
         kind,
         source,
@@ -32,6 +40,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
   }
 
   private constructor(
+    private packageCache: PackageCache,
+    private phase: 'bundling' | 'scanning',
     private context: PluginBuild,
     private kind: ImportKind,
     readonly specifier: string,
@@ -48,6 +58,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
   alias(newSpecifier: string) {
     return new EsBuildModuleRequest(
+      this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       newSpecifier,
@@ -63,6 +75,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
       return this;
     } else {
       return new EsBuildModuleRequest(
+        this.packageCache,
+        this.phase,
         this.context,
         this.kind,
         this.specifier,
@@ -76,6 +90,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
   }
   virtualize(filename: string) {
     return new EsBuildModuleRequest(
+      this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       filename,
@@ -88,6 +104,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
   }
   withMeta(meta: Record<string, any> | undefined): this {
     return new EsBuildModuleRequest(
+      this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       this.specifier,
@@ -100,6 +118,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
   }
   notFound(): this {
     return new EsBuildModuleRequest(
+      this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       this.specifier,
@@ -113,6 +133,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
   resolveTo(resolution: Resolution<OnResolveResult, OnResolveResult>): this {
     return new EsBuildModuleRequest(
+      this.packageCache,
+      this.phase,
       this.context,
       this.kind,
       this.specifier,
@@ -165,6 +187,38 @@ export class EsBuildModuleRequest implements ModuleRequest {
     } else if (result.external) {
       return { type: 'ignored', result };
     } else {
+      if (this.phase === 'bundling') {
+        // we need to ensure that we don't traverse back into the app while
+        // doing dependency pre-bundling. There are multiple ways an addon can
+        // resolve things from the app, due to the existince of both app-js
+        // (modules in addons that are logically part of the app's namespace)
+        // and non-strict handlebars (which resolves
+        // components/helpers/modifiers against the app's global pool).
+        let pkg = this.packageCache.ownerOfFile(result.path);
+        if (pkg?.root === this.packageCache.appRoot) {
+          let externalizedName = request.specifier;
+          if (!packageName(externalizedName)) {
+            // the request was a relative path. This won't remain valid once
+            // it has been bundled into vite/deps. But we know it targets the
+            // app, so we can always convert it into a non-relative import
+            // from the app's namespace
+            //
+            // IMPORTANT: whenever an addon resolves a relative path to the
+            // app, it does so because our code in the core resolver has
+            // rewritten the request to be relative to the app's root. So here
+            // we will only ever encounter relative paths that are already
+            // relative to the app's root directory.
+            externalizedName = externalName(pkg.packageJSON, externalizedName) || externalizedName;
+          }
+          return {
+            type: 'ignored',
+            result: {
+              path: externalizedName,
+              external: true,
+            },
+          };
+        }
+      }
       return { type: 'found', filename: result.path, result, isVirtual: this.isVirtual };
     }
   }

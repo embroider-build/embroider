@@ -59,6 +59,19 @@ export function isInlinePrecompilePlugin(item: PluginItem) {
   return false;
 }
 
+export function isHtmlbarColocation(item: PluginItem): boolean {
+  let pluginPath: string;
+  if (typeof item === 'string') {
+    pluginPath = item;
+  } else if (Array.isArray(item) && item.length > 0 && typeof item[0] === 'string') {
+    pluginPath = item[0];
+  } else {
+    return false;
+  }
+
+  return pluginPath.includes(join(sep, 'ember-cli-htmlbars', sep, 'lib', sep, 'colocated-babel-plugin'));
+}
+
 function matchesSourceFile(filename: string) {
   return Boolean(htmlbarPathMatches.find(match => filename.endsWith(match)));
 }

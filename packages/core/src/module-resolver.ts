@@ -97,6 +97,7 @@ export interface Options {
   amdCompatibility: Required<UserOptions['amdCompatibility']>;
   autoRun: boolean;
   staticAppPaths: string[];
+  emberVersion: string;
 }
 
 // TODO: once we can remove the stage2 entrypoint this type can get streamlined

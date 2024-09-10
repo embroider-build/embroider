@@ -9,12 +9,6 @@ export interface AppMeta {
   main?: string;
   'auto-upgraded'?: true;
   assets: Filename[];
-  babel: {
-    filename: string;
-    isParallelSafe: boolean;
-    majorVersion: 7;
-    fileFilter: string;
-  };
   'root-url': string;
   version: 2;
 }

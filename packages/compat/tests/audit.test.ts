@@ -8,9 +8,9 @@ import { Audit } from '../src/audit';
 import type { CompatResolverOptions } from '../src/resolver-transform';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
-import { makePortable } from '@embroider/core/src/portable-babel-config';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from '../src/resolver-transform';
+import { resolve } from 'path';
 
 describe('audit', function () {
   throwOnWarnings();
@@ -19,12 +19,23 @@ describe('audit', function () {
 
   async function audit() {
     await app.write();
-    let audit = new Audit(app.baseDir);
-    return await audit.run();
+    let origCwd = process.cwd();
+    try {
+      process.chdir(app.baseDir);
+      let audit = new Audit(app.baseDir);
+      return await audit.run();
+    } finally {
+      process.chdir(origCwd);
+    }
   }
 
   beforeEach(async function () {
     app = new Project('audit-this-app');
+    app.linkDevDependency('babel-plugin-ember-template-compilation', {
+      baseDir: __dirname,
+    });
+    app.linkDevDependency('@embroider/compat', { target: resolve(__dirname, '..') });
+    app.linkDevDependency('@embroider/core', { baseDir: __dirname });
 
     const resolvableExtensions = ['.js', '.hbs'];
 
@@ -53,6 +64,7 @@ describe('audit', function () {
       resolvableExtensions,
       autoRun: true,
       staticAppPaths: [],
+      emberVersion: '4.0.0',
     };
 
     let babel: TransformOptions = {
@@ -77,11 +89,25 @@ describe('audit', function () {
       'index.html': `<script type="module" src="./app.js"></script>`,
       'app.js': `import Hello from './hello.hbs';`,
       'hello.hbs': ``,
-      'babel_config.js': `module.exports = ${JSON.stringify(
-        makePortable(babel, { basedir: '.' }, []).config,
-        null,
-        2
-      )}`,
+      'babel.config.cjs': `
+        const {
+          babelCompatSupport,
+          templateCompatSupport,
+        } = require("@embroider/compat/babel");
+        module.exports = {
+          plugins: [
+            ['babel-plugin-ember-template-compilation', {
+              transforms: [
+                ...templateCompatSupport(),
+              ],
+              enableLegacyModules: [
+                'ember-cli-htmlbars'
+              ]
+            }],
+            ...babelCompatSupport()
+          ]
+        }
+      `,
       node_modules: {
         '.embroider': {
           'resolver.json': JSON.stringify(resolverConfig),
@@ -92,12 +118,6 @@ describe('audit', function () {
       type: 'app',
       version: 2,
       assets: ['index.html'],
-      babel: {
-        filename: 'babel_config.js',
-        isParallelSafe: true,
-        majorVersion: 7,
-        fileFilter: 'babel_filter.js',
-      },
       'root-url': '/',
       'auto-upgraded': true,
     };

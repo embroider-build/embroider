@@ -154,5 +154,5 @@ export function babelCompatSupport(): PluginItem[] {
 }
 
 export function templateCompatSupport(): Transform[] {
-  return [looseModeSupport(), ...templateMacros(), ...transformsFromV1Addons()];
+  return [...transformsFromV1Addons(), ...templateMacros(), looseModeSupport()];
 }

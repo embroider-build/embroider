@@ -48,6 +48,12 @@ export class Transpiler {
 
   @Memoize()
   private get babelConfig() {
-    return require(join(this.appOutputPath, './babel.config.cjs')) as TransformOptions;
+    let origDir = process.cwd();
+    process.chdir(this.appOutputPath);
+    try {
+      return require(join(this.appOutputPath, './babel.config.cjs')) as TransformOptions;
+    } finally {
+      process.chdir(origDir);
+    }
   }
 }

@@ -144,14 +144,20 @@ export class Audit {
 
   @Memoize()
   private get babelConfig() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    let config = require(join(this.originAppRoot, 'babel.config.cjs'));
+    let origCwd = process.cwd();
+    process.chdir(this.originAppRoot);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      let config = require(join(this.originAppRoot, 'babel.config.cjs'));
 
-    config = Object.assign({}, config);
-    config.plugins = config.plugins.filter((p: any) => !isMacrosPlugin(p));
+      config = Object.assign({}, config);
+      config.plugins = config.plugins.filter((p: any) => !isMacrosPlugin(p));
 
-    config.ast = true;
-    return config;
+      config.ast = true;
+      return config;
+    } finally {
+      process.chdir(origCwd);
+    }
   }
 
   private get resolverParams(): ResolverOptions {

@@ -37,6 +37,11 @@ Scenarios.fromProject(() => new Project())
         'index.js': '',
       },
     });
+    app.linkDevDependency('babel-plugin-ember-template-compilation', {
+      baseDir: __dirname,
+    });
+    app.linkDevDependency('@embroider/compat', { baseDir: __dirname });
+    app.linkDevDependency('@embroider/core', { baseDir: __dirname });
 
     let v1Addon = baseAddon();
     v1Addon.name = 'a-v1-addon';
@@ -136,14 +141,27 @@ Scenarios.fromProject(() => new Project())
           };
 
           givenFiles({
-            'node_modules/.embroider/_babel_config_.js': `
-            module.exports = {
-              plugins: []
-            }
+            'babel.config.cjs': `
+              const {
+                babelCompatSupport,
+                templateCompatSupport,
+              } = require("@embroider/compat/babel");
+              module.exports = {
+                plugins: [
+                  ['babel-plugin-ember-template-compilation', {
+                    targetFormat: 'hbs',
+                    transforms: [
+                      ...templateCompatSupport(),
+                    ],
+                    enableLegacyModules: [
+                      'ember-cli-htmlbars'
+                    ]
+                  }],
+                  ...babelCompatSupport()
+                ]
+              }
             `,
-            'node_modules/.embroider/_babel_filter.js': `
-              module.exports = function(filename) { return true }
-            `,
+
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
             'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
           });

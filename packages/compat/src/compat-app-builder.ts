@@ -50,6 +50,7 @@ export class CompatAppBuilder {
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
       splitAtRoutes: this.options.splitAtRoutes,
+      staticAppPaths: this.options.staticAppPaths,
       extraDeps: new Map([[this.appPackageWithMovedDeps.root, [this.synthVendor, this.synthStyles] as AddonPackage[]]]),
       extend: (options: CompatResolverOptions, allActiveAddons) => {
         options.activePackageRules = activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [

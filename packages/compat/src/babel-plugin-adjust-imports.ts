@@ -136,7 +136,7 @@ function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, 
 function preprocessExtraImports(loader: ResolverLoader): ExtraImports {
   let extraImports: ExtraImports = {};
   let config = loader.resolver.options as CompatResolverOptions;
-  for (let rule of config.activePackageRules) {
+  for (let rule of config.activePackageRules ?? []) {
     if (rule.addonModules) {
       for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
         for (let root of rule.roots) {
@@ -200,7 +200,7 @@ function lazyPackageLookup(config: InternalConfig, filename: string) {
 function preprocessComponentExtraImports(loader: ResolverLoader): ExtraImports {
   let extraImports: ExtraImports = {};
   let config = loader.resolver.options as CompatResolverOptions;
-  for (let rule of config.activePackageRules) {
+  for (let rule of config.activePackageRules ?? []) {
     if (rule.components) {
       for (let [componentName, rules] of Object.entries(rule.components)) {
         if (rules.invokes) {

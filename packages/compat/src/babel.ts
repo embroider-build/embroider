@@ -28,6 +28,7 @@ function loadCompatConfig(): CompatBabelState {
   let macros = MacrosConfig.for({}, process.cwd());
   let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
   setConfig(macros);
+  macros.finalize();
   return {
     plugins: [],
     templateTransforms: [],

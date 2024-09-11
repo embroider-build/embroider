@@ -1348,21 +1348,6 @@ export class Resolver {
       }
     }
 
-    if (pkg.needsLooseResolving() && (request.meta?.runtimeFallback ?? true)) {
-      // auto-upgraded packages can fall back to attempting to find dependencies at
-      // runtime. Native v2 packages can only get this behavior in the
-      // isExplicitlyExternal case above because they need to explicitly ask for
-      // externals.
-      return this.external('v1 catch-all fallback', request, request.specifier);
-    } else {
-      // native v2 packages don't automatically externalize *everything* the way
-      // auto-upgraded packages do, but they still externalize known and approved
-      // ember virtual packages (like @ember/component)
-      if (emberVirtualPackages.has(packageName)) {
-        return this.external('emberVirtualPackages', request, request.specifier);
-      }
-    }
-
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
     return logTransition('fallbackResolve final exit', request);

@@ -13,18 +13,10 @@ import assertNever from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
 
-import {
-  virtualExternalESModule,
-  virtualExternalCJSModule,
-  virtualPairComponent,
-  fastbootSwitch,
-  decodeFastbootSwitch,
-  decodeImplicitModules,
-} from './virtual-content';
+import { virtualPairComponent, fastbootSwitch, decodeFastbootSwitch, decodeImplicitModules } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
-import type UserOptions from './options';
 import { nodeResolve } from './node-resolve';
 import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
 
@@ -94,7 +86,6 @@ export interface Options {
   modulePrefix: string;
   splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
-  amdCompatibility: Required<UserOptions['amdCompatibility']>;
   autoRun: boolean;
   staticAppPaths: string[];
   emberVersion: string;
@@ -189,10 +180,6 @@ export class Resolver {
       // It might not get compiled away until *after* our plugin has run, which is
       // why we need to know about it.
       return logTransition('early exit', request);
-    }
-
-    if (request.specifier === 'require') {
-      return this.external('early require', request, request.specifier);
     }
 
     request = this.handleFastbootSwitch(request);
@@ -1099,11 +1086,6 @@ export class Resolver {
 
     let packageName = getPackageName(specifier);
     if (!packageName) {
-      // This is a relative import. We don't automatically externalize those
-      // because it's rare, and by keeping them static we give better errors. But
-      // we do allow them to be explicitly externalized by the package author (or
-      // a compat adapter). In the metadata, they would be listed in
-      // package-relative form, so we need to convert this specifier to that.
       let absoluteSpecifier = resolve(dirname(fromFile), specifier);
 
       if (!absoluteSpecifier.startsWith(pkg.root)) {
@@ -1112,12 +1094,6 @@ export class Resolver {
         // case comes up especially when babel transforms are trying to insert
         // references to runtime utilities, like we do in @embroider/macros.
         return logTransition('beforeResolve: relative path escapes its package', request);
-      }
-
-      let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
-      if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
-        let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
-        return this.external('beforeResolve', request, publicSpecifier);
       }
 
       // if the requesting file is in an addon's app-js, the relative request
@@ -1135,16 +1111,6 @@ export class Resolver {
       }
 
       return request;
-    }
-
-    // absolute package imports can also be explicitly external based on their
-    // full specifier name
-    if (isExplicitlyExternal(specifier, pkg)) {
-      return this.external('beforeResolve', request, specifier);
-    }
-
-    if (emberVirtualPackages.has(packageName) && !pkg.hasDependency(packageName)) {
-      return this.external('beforeResolve emberVirtualPackages', request, specifier);
     }
 
     if (emberVirtualPeerDeps.has(packageName) && !pkg.hasDependency(packageName)) {
@@ -1170,7 +1136,7 @@ export class Resolver {
         if (!dep.isEmberAddon()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
-          return this.external('v1 package without auto-import', request, specifier);
+          return logTransition('v1 package without auto-import', request, request.notFound());
         }
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {
@@ -1210,43 +1176,6 @@ export class Resolver {
           return addon;
         }
       }
-    }
-  }
-
-  private external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
-    if (this.options.amdCompatibility === 'cjs') {
-      let filename = virtualExternalCJSModule(specifier);
-      return logTransition(label, request, request.virtualize(filename));
-    } else if (this.options.amdCompatibility) {
-      let entry = this.options.amdCompatibility.es.find(
-        entry => entry[0] === specifier || entry[0] + '/index' === specifier
-      );
-      if (!entry && request.specifier === 'require') {
-        entry = ['require', ['default', 'has']];
-      }
-      if (!entry) {
-        throw new Error(
-          `[${request.debugType}] A module tried to resolve "${request.specifier}" and didn't find it (${label}).
-
- - Maybe a dependency declaration is missing?
- - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.
- - If this dependency is available in the AMD loader (because someone manually called "define()" for it), you can configure a shim like:
-
-  amdCompatibility: {
-    es: [
-      ["${request.specifier}", ["default", "yourNamedExportsGoHere"]],
-    ]
-  }
-
-`
-        );
-      }
-      let filename = virtualExternalESModule(specifier, entry[1]);
-      return logTransition(label, request, request.virtualize(filename));
-    } else {
-      throw new Error(
-        `Embroider's amdCompatibility option is disabled, but something tried to use it to access "${request.specifier}"`
-      );
     }
   }
 
@@ -1345,21 +1274,6 @@ export class Resolver {
       let appJSMatch = await this.searchAppTree(request, targetingEngine, request.specifier.replace(packageName, '.'));
       if (appJSMatch) {
         return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
-      }
-    }
-
-    if (pkg.needsLooseResolving() && (request.meta?.runtimeFallback ?? true)) {
-      // auto-upgraded packages can fall back to attempting to find dependencies at
-      // runtime. Native v2 packages can only get this behavior in the
-      // isExplicitlyExternal case above because they need to explicitly ask for
-      // externals.
-      return this.external('v1 catch-all fallback', request, request.specifier);
-    } else {
-      // native v2 packages don't automatically externalize *everything* the way
-      // auto-upgraded packages do, but they still externalize known and approved
-      // ember virtual packages (like @ember/component)
-      if (emberVirtualPackages.has(packageName)) {
-        return this.external('emberVirtualPackages', request, request.specifier);
       }
     }
 
@@ -1532,10 +1446,6 @@ export class Resolver {
     }
     return undefined;
   }
-}
-
-function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
-  return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
 }
 
 // we don't want to allow things that resolve only by accident that are likely

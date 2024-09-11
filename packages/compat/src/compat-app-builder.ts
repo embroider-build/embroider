@@ -146,7 +146,6 @@ export class CompatAppBuilder {
           .reverse(),
         isLazy: engine.package.isLazyEngine(),
       })),
-      amdCompatibility: this.options.amdCompatibility,
 
       // this is the additional stufff that @embroider/compat adds on top to do
       // global template resolving

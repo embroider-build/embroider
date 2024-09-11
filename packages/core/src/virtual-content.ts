@@ -10,9 +10,6 @@ import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-
 import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
 import { decodeRouteEntrypoint, renderRouteEntrypoint } from './virtual-route-entrypoint';
 
-const externalESPrefix = '/@embroider/ext-es/';
-const externalCJSPrefix = '/@embroider/ext-cjs/';
-
 export interface VirtualContentResult {
   src: string;
   watches: string[];
@@ -23,11 +20,6 @@ export interface VirtualContentResult {
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
 export function virtualContent(filename: string, resolver: Resolver): VirtualContentResult {
-  let cjsExtern = decodeVirtualExternalCJSModule(filename);
-  if (cjsExtern) {
-    return renderCJSExternalShim(cjsExtern);
-  }
-
   let entrypoint = decodeEntrypoint(filename);
   if (entrypoint) {
     return renderEntrypoint(resolver, entrypoint);
@@ -38,10 +30,6 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
     return renderRouteEntrypoint(resolver, routeEntrypoint);
   }
 
-  let extern = decodeVirtualExternalESModule(filename);
-  if (extern) {
-    return renderESExternalShim(extern);
-  }
   let match = decodeVirtualPairComponent(filename);
   if (match) {
     return pairedComponentShim(match);
@@ -80,41 +68,6 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
 }
 
-const externalESShim = compile(`
-{{#if (eq moduleName "require")}}
-const m = window.requirejs;
-export default m;
-const has = m.has;
-export { has }
-{{else}}
-const m = window.require("{{{js-string-escape moduleName}}}");
-{{#if default}}
-export default m.default;
-{{/if}}
-{{#if names}}
-const { {{#each names as |name|}}{{name}}, {{/each}} } = m;
-export { {{#each names as |name|}}{{name}}, {{/each}} }
-{{/if}}
-{{/if}}
-`) as (params: { moduleName: string; default: boolean; names: string[] }) => string;
-
-function renderESExternalShim({
-  moduleName,
-  exports,
-}: {
-  moduleName: string;
-  exports: string[];
-}): VirtualContentResult {
-  return {
-    src: externalESShim({
-      moduleName,
-      default: exports.includes('default'),
-      names: exports.filter(n => n !== 'default'),
-    }),
-    watches: [],
-  };
-}
-
 interface PairedComponentShimParams {
   relativeHBSModule: string;
   relativeJSModule: string | null;
@@ -139,37 +92,6 @@ import templateOnlyComponent from "@ember/component/template-only";
 export default setComponentTemplate(template, templateOnlyComponent(undefined, "{{{js-string-escape debugName}}}"));
 {{/if}}
 `) as (params: PairedComponentShimParams) => string;
-
-export function virtualExternalESModule(specifier: string, exports: string[] | undefined): string {
-  if (exports) {
-    return externalESPrefix + specifier + `/exports=${exports.join(',')}`;
-  } else {
-    return externalESPrefix + specifier;
-  }
-}
-
-export function virtualExternalCJSModule(specifier: string): string {
-  return externalCJSPrefix + specifier;
-}
-
-function decodeVirtualExternalESModule(filename: string): { moduleName: string; exports: string[] } | undefined {
-  if (filename.startsWith(externalESPrefix)) {
-    let exports: string[] = [];
-    let components = filename.split('/exports=');
-    let nameString = components[1];
-    if (nameString) {
-      exports = nameString.split(',');
-    }
-    let moduleName = components[0].slice(externalESPrefix.length);
-    return { moduleName, exports };
-  }
-}
-
-function decodeVirtualExternalCJSModule(filename: string) {
-  if (filename.startsWith(externalCJSPrefix)) {
-    return { moduleName: filename.slice(externalCJSPrefix.length) };
-  }
-}
 
 const pairComponentMarker = '-embroider-pair-component';
 const pairComponentPattern = /^(?<hbsModule>.*)__vpc__(?<jsModule>[^\/]*)-embroider-pair-component$/;
@@ -398,42 +320,3 @@ function orderAddons(depA: Package, depB: Package): number {
 
   return depAIdx - depBIdx;
 }
-
-function renderCJSExternalShim(params: { moduleName: string }): VirtualContentResult {
-  return {
-    src: renderCJSExternalShimTemplate(params),
-    watches: [],
-  };
-}
-
-const renderCJSExternalShimTemplate = compile(`
-module.exports = new Proxy({}, {
-  get(target, prop) {
-
-    {{!- our proxy always presents as ES module so that we can intercept "get('default')" -}}
-    if (prop === '__esModule') {
-      return true;
-    }
-
-    {{#if (eq moduleName "require")}}
-      const m = window.requirejs;
-    {{else}}
-      const m = window.require("{{{js-string-escape moduleName}}}");
-    {{/if}}
-
-    {{!-
-      There are plenty of hand-written AMD defines floating around
-      that lack an __esModule declaration.
-
-      As far as I can tell, Ember's loader was already treating the Boolean(m.default)===true
-      case as a module, so in theory we aren't breaking anything by
-      treating it as such when other packagers come looking.
-    -}}
-    if (prop === 'default' && !m.__esModule && !m.default) {
-      return m;
-    }
-
-    return m[prop];
-  }
-});
-`) as (params: { moduleName: string }) => string;

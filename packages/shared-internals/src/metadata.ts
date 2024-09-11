@@ -24,7 +24,6 @@ export interface AddonMeta {
   'auto-upgraded'?: true;
   'app-js'?: { [appName: string]: Filename };
   'fastboot-js'?: { [appName: string]: Filename };
-  externals?: string[];
   'implicit-modules'?: string[];
   'implicit-scripts'?: Filename[];
   'implicit-styles'?: Filename[];

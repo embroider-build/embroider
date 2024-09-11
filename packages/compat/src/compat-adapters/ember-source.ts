@@ -18,10 +18,6 @@ export default class extends V1Addon {
     return mergeTrees([super.v2Tree, buildFunnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);
   }
 
-  private get useStaticEmber(): boolean {
-    return this.app.options.staticEmberSource;
-  }
-
   // versions of ember-source prior to
   // https://github.com/emberjs/ember.js/pull/20675 ship dist/packages and
   // dist/dependencies separately and the imports between them are package-name
@@ -60,37 +56,30 @@ export default class extends V1Addon {
 
   get newPackageJSON() {
     let json = super.newPackageJSON;
-    if (this.useStaticEmber) {
-      for (let name of this.includedDependencies) {
-        // weirdly, many of the inlined dependency are still listed as real
-        // dependencies too. If we don't delete them here, they will take
-        // precedence over the inlined ones, because the embroider module-resolver
-        // tries to prioritize real deps.
-        delete json.dependencies?.[name];
-      }
+
+    for (let name of this.includedDependencies) {
+      // weirdly, many of the inlined dependency are still listed as real
+      // dependencies too. If we don't delete them here, they will take
+      // precedence over the inlined ones, because the embroider module-resolver
+      // tries to prioritize real deps.
+      delete json.dependencies?.[name];
     }
+
     return json;
   }
 
   customizes(treeName: string) {
-    if (this.useStaticEmber) {
-      // we are adding custom implementations of these
-      return treeName === 'treeForAddon' || treeName === 'treeForVendor' || super.customizes(treeName);
-    } else {
-      return super.customizes(treeName);
-    }
+    // we are adding custom implementations of these
+    return treeName === 'treeForAddon' || treeName === 'treeForVendor' || super.customizes(treeName);
   }
 
-  invokeOriginalTreeFor(name: string, opts: { neuterPreprocessors: boolean } = { neuterPreprocessors: false }) {
-    if (this.useStaticEmber) {
-      if (name === 'addon') {
-        return this.customAddonTree();
-      }
-      if (name === 'vendor') {
-        return this.customVendorTree();
-      }
+  invokeOriginalTreeFor(name: string) {
+    if (name === 'addon') {
+      return this.customAddonTree();
     }
-    return super.invokeOriginalTreeFor(name, opts);
+    if (name === 'vendor') {
+      return this.customVendorTree();
+    }
   }
 
   // Our addon tree is all of the "packages" we share. @embroider/compat already
@@ -137,22 +126,22 @@ export default class extends V1Addon {
 
   get packageMeta() {
     let meta = super.packageMeta;
-    if (this.useStaticEmber) {
-      if (!meta['implicit-modules']) {
-        meta['implicit-modules'] = [];
-      }
-      meta['implicit-modules'].push('./ember/index.js');
-      // before 5.6, Ember uses the AMD loader to decide if it's test-only parts
-      // are present, so we must ensure they're registered. After that it's
-      // enough to evaluate ember-testing, which @embroider/core is hard-coded
-      // to do in the backward-compatible tests bundle.
-      if (!satisfies(this.packageJSON.version, '>= 5.6.0-alpha.0', { includePrerelease: true })) {
-        if (!meta['implicit-test-modules']) {
-          meta['implicit-test-modules'] = [];
-        }
-        meta['implicit-test-modules'].push('./ember-testing/index.js');
-      }
+
+    if (!meta['implicit-modules']) {
+      meta['implicit-modules'] = [];
     }
+    meta['implicit-modules'].push('./ember/index.js');
+    // before 5.6, Ember uses the AMD loader to decide if it's test-only parts
+    // are present, so we must ensure they're registered. After that it's
+    // enough to evaluate ember-testing, which @embroider/core is hard-coded
+    // to do in the backward-compatible tests bundle.
+    if (!satisfies(this.packageJSON.version, '>= 5.6.0-alpha.0', { includePrerelease: true })) {
+      if (!meta['implicit-test-modules']) {
+        meta['implicit-test-modules'] = [];
+      }
+      meta['implicit-test-modules'].push('./ember-testing/index.js');
+    }
+
     return meta;
   }
 }

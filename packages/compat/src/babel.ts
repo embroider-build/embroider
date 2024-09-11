@@ -28,6 +28,10 @@ function loadCompatConfig(): CompatBabelState {
   let macros = MacrosConfig.for({}, process.cwd());
   let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
   setConfig(macros);
+  if (process.env.NODE_ENV === 'development') {
+    macros.enablePackageDevelopment(process.cwd());
+    macros.enableRuntimeMode();
+  }
   macros.finalize();
   return {
     plugins: [],

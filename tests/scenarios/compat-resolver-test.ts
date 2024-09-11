@@ -96,7 +96,6 @@ Scenarios.fromProject(() => new Project())
                 ...extraOpts?.appPackageRules,
               },
             ],
-            autoRun: true,
             staticAppPaths: [],
             emberVersion,
           };

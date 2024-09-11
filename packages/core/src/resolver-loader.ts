@@ -1,5 +1,5 @@
-import { readJSONSync } from 'fs-extra';
-import type { Options } from './module-resolver';
+import { existsSync, readJSONSync } from 'fs-extra';
+import { buildResolverOptions, type Options } from './module-resolver-options';
 import { Resolver } from './module-resolver';
 import { locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import { join } from 'path';
@@ -26,7 +26,12 @@ export class ResolverLoader {
 
   get resolver(): Resolver {
     if (!this.#resolver) {
-      let config: Options = readJSONSync(join(locateEmbroiderWorkingDir(this.appRoot), 'resolver.json'));
+      let config: Options;
+      if (existsSync(this.#configFile)) {
+        config = readJSONSync(this.#configFile);
+      } else {
+        config = buildResolverOptions({});
+      }
       this.#resolver = new Resolver(config);
     }
     return this.#resolver;

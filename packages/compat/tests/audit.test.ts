@@ -61,7 +61,6 @@ describe('audit', function () {
         },
       ],
       resolvableExtensions,
-      autoRun: true,
       staticAppPaths: [],
       emberVersion: '4.0.0',
     };

@@ -134,7 +134,6 @@ Scenarios.fromProject(() => new Project())
                 roots: [app.dir],
               },
             ],
-            autoRun: true,
             staticAppPaths: [],
             emberVersion: '4.0.0',
           };

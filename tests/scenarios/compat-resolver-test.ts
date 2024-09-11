@@ -2112,10 +2112,11 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('components/my-thing.hbs').equalsCode(`
           window.define("my-app/components/alpha", function () {
-            return importSync("@embroider/virtual/components/alpha");
+            return esc(_importSync0);
           });
           import { precompileTemplate } from "@ember/template-compilation";
-          import { importSync } from "@embroider/macros";
+          import esc from  "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
+          import * as _importSync0 from "@embroider/virtual/components/alpha";
           export default precompileTemplate("{{component this.which}}", {
             moduleName: "my-app/components/my-thing.hbs"
           });
@@ -2141,10 +2142,11 @@ Scenarios.fromProject(() => new Project())
 
         expectTranspiled('templates/index.hbs').equalsCode(`
           window.define("my-app/components/alpha", function () {
-            return importSync("@embroider/virtual/components/alpha");
+            return esc(_importSync0);
           });
           import { precompileTemplate } from "@ember/template-compilation";
-          import { importSync } from "@embroider/macros";
+          import esc from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
+          import * as _importSync0 from "@embroider/virtual/components/alpha";
           export default precompileTemplate("{{component this.which}}", {
             moduleName: "my-app/templates/index.hbs"
           });

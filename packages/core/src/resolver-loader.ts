@@ -1,5 +1,5 @@
 import { readJSONSync } from 'fs-extra';
-import type { Options } from './module-resolver';
+import type { Options } from './module-resolver-options';
 import { Resolver } from './module-resolver';
 import { locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import { join } from 'path';

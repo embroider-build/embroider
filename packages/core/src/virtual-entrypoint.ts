@@ -147,7 +147,7 @@ export function renderEntrypoint(
 
   return {
     src: entryTemplate(params),
-    watches: [],
+    watches: ['app/**/*'],
   };
 }
 
@@ -330,7 +330,7 @@ function shouldSplitRoute(routeName: string, splitAtRoutes: (RegExp | string)[] 
 
 export function getAppFiles(appRoot: string): Set<string> {
   const files: string[] = walkSync(appRoot, {
-    ignore: ['_babel_filter_.js', 'app.js', 'assets', 'testem.js', 'node_modules'],
+    directories: false,
   });
   return new Set(files);
 }

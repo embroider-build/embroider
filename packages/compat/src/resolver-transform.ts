@@ -11,10 +11,9 @@ import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
 import { join, sep } from 'path';
-import { readJSONSync } from 'fs-extra';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import type { ResolverOptions as CoreResolverOptions } from '@embroider/core';
-import { Resolver, cleanUrl, locateEmbroiderWorkingDir } from '@embroider/core';
+import { Resolver, ResolverLoader, cleanUrl } from '@embroider/core';
 import type CompatOptions from './options';
 import type { AuditMessage, Loc } from './audit';
 import { camelCase, mergeWith } from 'lodash';
@@ -976,7 +975,8 @@ class TemplateResolver implements ASTPlugin {
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
 export default function makeResolverTransform({ appRoot, emberVersion }: Options) {
-  let config: CompatResolverOptions = readJSONSync(join(locateEmbroiderWorkingDir(appRoot), 'resolver.json'));
+  let loader = new ResolverLoader(appRoot);
+  let config = loader.resolver.options as CompatResolverOptions;
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     if (env.strictMode) {
       return {

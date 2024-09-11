@@ -24,9 +24,9 @@ import {
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
-import type UserOptions from './options';
 import { nodeResolve } from './node-resolve';
 import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
+import type { Options, EngineConfig } from './module-resolver-options';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -79,35 +79,6 @@ function logTransition<R extends ModuleRequest>(reason: string, before: R, after
 
 function isTerminal(request: ModuleRequest): boolean {
   return request.isVirtual || request.isNotFound || Boolean(request.resolvedTo);
-}
-
-export interface Options {
-  renamePackages: {
-    [fromName: string]: string;
-  };
-  renameModules: {
-    [fromName: string]: string;
-  };
-  resolvableExtensions: string[];
-  appRoot: string;
-  engines: EngineConfig[];
-  modulePrefix: string;
-  splitAtRoutes?: (RegExp | string)[];
-  podModulePrefix?: string;
-  amdCompatibility: Required<UserOptions['amdCompatibility']>;
-  autoRun: boolean;
-  staticAppPaths: string[];
-  emberVersion: string;
-}
-
-// TODO: once we can remove the stage2 entrypoint this type can get streamlined
-// to the parts we actually need
-export interface EngineConfig {
-  packageName: string;
-  activeAddons: { name: string; root: string; canResolveFromFile: string }[];
-  fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
-  root: string;
-  isLazy: boolean;
 }
 
 type MergeEntry =

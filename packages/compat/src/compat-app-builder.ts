@@ -1,13 +1,10 @@
-import type { AddonPackage, Engine } from '@embroider/core';
-import { explicitRelative, locateEmbroiderWorkingDir } from '@embroider/core';
-import { resolve as resolvePath } from 'path';
+import type { AddonPackage } from '@embroider/core';
+import { locateEmbroiderWorkingDir } from '@embroider/core';
 import type Options from './options';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
-import flatMap from 'lodash/flatMap';
-import bind from 'bind-decorator';
-import { outputJSONSync, writeFileSync, realpathSync } from 'fs-extra';
+import { outputJSONSync, writeFileSync } from 'fs-extra';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion, Portable } from '@embroider/core/src/portable';
 import { Memoize } from 'typescript-memoize';
@@ -21,6 +18,7 @@ import { readdirSync } from 'fs-extra';
 import type CompatApp from './compat-app';
 import type { CompatBabelState } from './babel';
 import { MacrosConfig } from '@embroider/macros/src/node';
+import { buildResolverOptions } from '@embroider/core/src/module-resolver-options';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -37,65 +35,6 @@ export class CompatAppBuilder {
     private synthStyles: Package
   ) {}
 
-  private activeAddonChildren(pkg: Package): AddonPackage[] {
-    let result = (pkg.dependencies.filter(this.isActiveAddon) as AddonPackage[]).filter(
-      // When looking for child addons, we want to ignore 'peerDependencies' of
-      // a given package, to align with how ember-cli resolves addons. So here
-      // we only include dependencies that are definitely active due to one of
-      // the other sections.
-      addon => pkg.categorizeDependency(addon.name) !== 'peerDependencies'
-    );
-    if (pkg === this.appPackageWithMovedDeps) {
-      let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
-      result = [...result, ...extras];
-    }
-    return result.sort(this.orderAddons);
-  }
-
-  @Memoize()
-  private get allActiveAddons(): AddonPackage[] {
-    let result = this.appPackageWithMovedDeps.findDescendants(this.isActiveAddon) as AddonPackage[];
-    let extras = [this.synthVendor, this.synthStyles].filter(this.isActiveAddon) as AddonPackage[];
-    let extraDescendants = flatMap(extras, dep => dep.findDescendants(this.isActiveAddon)) as AddonPackage[];
-    result = [...result, ...extras, ...extraDescendants];
-    return result.sort(this.orderAddons);
-  }
-
-  @bind
-  private isActiveAddon(pkg: Package): boolean {
-    // stage1 already took care of converting everything that's actually active
-    // into v2 addons. If it's not a v2 addon, we don't want it.
-    //
-    // We can encounter v1 addons here when there is inactive stuff floating
-    // around in the node_modules that accidentally satisfy something like an
-    // optional peer dep.
-    return pkg.isV2Addon();
-  }
-
-  @bind
-  private orderAddons(depA: Package, depB: Package): number {
-    let depAIdx = 0;
-    let depBIdx = 0;
-
-    if (depA && depA.meta && depA.isV2Addon()) {
-      depAIdx = depA.meta['order-index'] || 0;
-    }
-    if (depB && depB.meta && depB.isV2Addon()) {
-      depBIdx = depB.meta['order-index'] || 0;
-    }
-
-    return depAIdx - depBIdx;
-  }
-
-  private resolvableExtensions(): string[] {
-    let fromEnv = process.env.EMBROIDER_RESOLVABLE_EXTENSIONS;
-    if (fromEnv) {
-      return fromEnv.split(',');
-    } else {
-      return ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
-    }
-  }
-
   private modulePrefix(): string {
     return this.configTree.readConfig().modulePrefix;
   }
@@ -105,141 +44,36 @@ export class CompatAppBuilder {
   }
 
   @Memoize()
-  private activeRules() {
-    return activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-      { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.origAppPackage.root },
-      ...this.allActiveAddons.filter(p => p.meta['auto-upgraded']),
-    ]);
-  }
-
-  private resolverConfig(engines: Engine[]): CompatResolverOptions {
-    let renamePackages = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-packages']));
-    let renameModules = Object.assign({}, ...this.allActiveAddons.map(dep => dep.meta['renamed-modules']));
-
-    let options: CompatResolverOptions['options'] = {
-      staticHelpers: this.options.staticHelpers,
-      staticModifiers: this.options.staticModifiers,
-      staticComponents: this.options.staticComponents,
-      allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
-    };
-
-    let config: CompatResolverOptions = {
-      // this part is the base ModuleResolverOptions as required by @embroider/core
-      renameModules,
-      renamePackages,
-      resolvableExtensions: this.resolvableExtensions(),
-      appRoot: this.origAppPackage.root,
-      engines: engines.map(engine => ({
-        packageName: engine.package.name,
-        // we need to use the real path here because webpack requests always use the real path i.e. follow symlinks
-        root: realpathSync(engine.package.root),
-        fastbootFiles: {},
-        activeAddons: [...engine.addons]
-          .map(([addon, canResolveFromFile]) => ({
-            name: addon.name,
-            root: addon.root,
-            canResolveFromFile,
-          }))
-          // the traditional order is the order in which addons will run, such
-          // that the last one wins. Our resolver's order is the order to
-          // search, so first one wins.
-          .reverse(),
-        isLazy: engine.package.isLazyEngine(),
-      })),
-      amdCompatibility: this.options.amdCompatibility,
-
-      // this is the additional stufff that @embroider/compat adds on top to do
-      // global template resolving
+  private get resolverConfig(): CompatResolverOptions {
+    return buildResolverOptions({
+      appPackage: this.appPackageWithMovedDeps,
       modulePrefix: this.modulePrefix(),
-      splitAtRoutes: this.options.splitAtRoutes,
       podModulePrefix: this.podModulePrefix(),
-      activePackageRules: this.activeRules(),
-      options,
-      autoRun: this.compatApp.autoRun,
+      splitAtRoutes: this.options.splitAtRoutes,
       staticAppPaths: this.options.staticAppPaths,
-      emberVersion: this.emberVersion(),
-    };
-
-    return config;
-  }
-
-  // recurse to find all active addons that don't cross an engine boundary.
-  // Inner engines themselves will be returned, but not those engines' children.
-  // The output set's insertion order is the proper ember-cli compatible
-  // ordering of the addons.
-  private findActiveAddons(pkg: Package, engine: Engine, isChild = false): void {
-    for (let child of this.activeAddonChildren(pkg)) {
-      if (!child.isEngine()) {
-        this.findActiveAddons(child, engine, true);
-      }
-      let canResolveFrom = resolvePath(pkg.root, 'package.json');
-      engine.addons.set(child, canResolveFrom);
-    }
-    // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
-    if (!isChild) {
-      engine.addons = new Map(
-        [...engine.addons].sort(([a], [b]) => {
-          return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
-        })
-      );
-    }
-  }
-
-  private partitionEngines(): Engine[] {
-    let queue: Engine[] = [
-      {
-        package: this.appPackageWithMovedDeps,
-        addons: new Map(),
-        isApp: true,
-        modulePrefix: this.modulePrefix(),
-        appRelativePath: '.',
+      extraDeps: new Map([[this.appPackageWithMovedDeps.root, [this.synthVendor, this.synthStyles] as AddonPackage[]]]),
+      extend: (options: CompatResolverOptions, allActiveAddons) => {
+        options.activePackageRules = activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
+          { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.origAppPackage.root },
+          ...allActiveAddons.filter(p => p.meta['auto-upgraded']),
+        ]);
+        options.options = {
+          staticHelpers: this.options.staticHelpers,
+          staticModifiers: this.options.staticModifiers,
+          staticComponents: this.options.staticComponents,
+          allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
+        };
+        return options;
       },
-    ];
-    let done: Engine[] = [];
-    let seenEngines: Set<Package> = new Set();
-    while (true) {
-      let current = queue.shift();
-      if (!current) {
-        break;
-      }
-      this.findActiveAddons(current.package, current);
-      for (let addon of current.addons.keys()) {
-        if (addon.isEngine() && !seenEngines.has(addon)) {
-          seenEngines.add(addon);
-          queue.push({
-            package: addon,
-            addons: new Map(),
-            isApp: !current,
-            modulePrefix: addon.name,
-            appRelativePath: explicitRelative(this.origAppPackage.root, addon.root),
-          });
-        }
-      }
-      done.push(current);
-    }
-    return done;
+    });
   }
-
-  private emberVersion() {
-    let pkg = this.activeAddonChildren(this.appPackageWithMovedDeps).find(a => a.name === 'ember-source');
-    if (!pkg) {
-      throw new Error('no ember version!');
-    }
-    return pkg.version;
-  }
-
-  private engines: Engine[] | undefined;
 
   async build() {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
     this.compatApp.macrosConfig.finalize();
 
-    if (!this.engines) {
-      this.engines = this.partitionEngines();
-    }
-
-    let resolverConfig = this.resolverConfig(this.engines);
+    let resolverConfig = this.resolverConfig;
     let config = this.configTree.readConfig();
     let contentForConfig = this.contentForTree.readContents();
 

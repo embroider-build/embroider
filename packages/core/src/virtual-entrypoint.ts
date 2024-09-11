@@ -9,6 +9,7 @@ import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
 import escapeRegExp from 'escape-string-regexp';
+import { optionsWithDefaults } from './options';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
 
@@ -68,7 +69,7 @@ export function renderEntrypoint(
     resolver.options.podModulePrefix
   );
 
-  let options = (resolver.options as CompatResolverOptions).options;
+  let options = (resolver.options as CompatResolverOptions).options ?? optionsWithDefaults();
 
   let requiredAppFiles = [appFiles.otherAppFiles];
   if (!options.staticComponents) {

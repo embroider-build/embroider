@@ -5,6 +5,37 @@ import get from 'lodash/get';
 import type { AddonMeta, AppMeta, PackageInfo } from './metadata';
 import type PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
+
+// This is controllable via env var because there are many different contexts
+// (babel/rollup/vite/webpack/handlebars plugins) that can all depend on
+// `@embroider/shared-internals` to help understand the structure of packages,
+// and we want one clear way to signal to all of those whether this feature is
+// configured.
+//
+// The initial motivating use case for this is that new-enough ember-source can
+// function as a v2 addon despite not declaring itself to be a v2 addon, because
+// that would be potentially-breaking for people who still consume it via AMD
+// and/or depend on the specific timng of the classic vendor.js file. We don't
+// want to break people but we also want people on the bleeding edge to be able
+// to take advantage of the capability.
+const forcedV2Packages = (() => {
+  let cached: string[] | undefined;
+  return () => {
+    if (!cached) {
+      if (
+        typeof process !== undefined &&
+        typeof process.env !== undefined &&
+        process.env.EMBROIDER_FORCED_V2_PACKAGES
+      ) {
+        cached = process.env.EMBROIDER_FORCED_V2_PACKAGES.split(',');
+      } else {
+        cached = [];
+      }
+    }
+    return cached;
+  };
+})();
+
 export default class Package {
   // order here matters because we rely on it in categorizeDependency
   private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
@@ -38,6 +69,23 @@ export default class Package {
       for (let dep of this.nonResolvableDeps.values()) {
         json.dependencies[dep.name] = dep.version || '*';
       }
+    }
+    if (forcedV2Packages().includes(json.name)) {
+      let defaults: AddonMeta | AppMeta;
+      if (this.isApp) {
+        defaults = {
+          version: 2,
+          type: 'app',
+          assets: [],
+          'root-url': '/',
+        };
+      } else {
+        defaults = {
+          version: 2,
+          type: 'addon',
+        };
+      }
+      json['ember-addon'] = Object.assign(defaults, json['ember-addon']);
     }
     return json;
   }

@@ -219,20 +219,33 @@ appScenarios
 
         test(`dep optimization of a v2 addon`, async function (assert) {
           expectAudit
-            .module('./index.html')
-            .resolves(/\/index.html.*/) // in-html app-boot script
-            .toModule()
-            .resolves(/\/app\.js.*/)
-            .toModule()
+            .module(/\/app\.js.*/)
             .resolves(/.*\/-embroider-entrypoint.js/)
             .toModule()
             .withContents((_src, imports) => {
               let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
-              assert.ok(pageTitleImports.length > 0, 'should have at least one import from page-title');
+              assert.ok(pageTitleImports.length > 0, 'should not have at least one import from page-title');
               for (let pageTitleImport of pageTitleImports) {
-                assert.ok(
+                assert.notOk(
                   /\.vite\/deps/.test(pageTitleImport.source),
-                  `expected ${pageTitleImport.source} to be in vite deps`
+                  `expected ${pageTitleImport.source} not to be in vite deps`
+                );
+              }
+              return true;
+            });
+          expectAudit
+            .module(/\/app\.js.*/)
+            .resolves(/.*\/-embroider-entrypoint.js/)
+            .toModule()
+            .resolves(/page-title/)
+            .toModule()
+            .withContents((_src, imports) => {
+              let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
+              assert.ok(pageTitleImports.length > 0, 'should not have at least one import from page-title');
+              for (let pageTitleImport of pageTitleImports) {
+                assert.notOk(
+                  /\.vite\/deps/.test(pageTitleImport.source),
+                  `expected ${pageTitleImport.source} not to be in vite deps`
                 );
               }
               return true;

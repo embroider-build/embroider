@@ -1,5 +1,5 @@
-import { dirname, basename, resolve, posix, sep, join } from 'path';
-import type { Resolver, AddonPackage, Package } from '.';
+import { basename, dirname, join, posix, resolve, sep } from 'path';
+import type { AddonPackage, Package, Resolver } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
@@ -9,6 +9,7 @@ import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-
 
 import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
 import { decodeRouteEntrypoint, renderRouteEntrypoint } from './virtual-route-entrypoint';
+import { readFileSync } from 'fs-extra';
 
 const externalESPrefix = '/@embroider/ext-es/';
 const externalCJSPrefix = '/@embroider/ext-cjs/';
@@ -50,6 +51,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let fb = decodeFastbootSwitch(filename);
   if (fb) {
     return renderFastbootSwitchTemplate(fb);
+  }
+
+  let appjs = decodeAppJsMatch(filename);
+  if (appjs) {
+    return renderAppJs(appjs.filename);
   }
 
   let im = decodeImplicitModules(filename);
@@ -200,6 +206,36 @@ function decodeVirtualPairComponent(
     relativeHBSModule,
     relativeJSModule: decodeURIComponent(jsModule) || null,
     debugName: basename(relativeHBSModule).replace(/\.(js|hbs)$/, ''),
+  };
+}
+
+const appJsMatchSuffix = '/embroider_appjs_match';
+const appJsMatchPattern = /(?<original>.+)\/embroider_appjs_match$/;
+export function encodeAppJsMatch(specifier: string, fromFile: string): string {
+  return `${fromFile}::${specifier}${appJsMatchSuffix}`;
+}
+
+export function decodeAppJsMatch(filename: string) {
+  // Performance: avoid paying regex exec cost unless needed
+  if (!filename.includes(appJsMatchSuffix)) {
+    return;
+  }
+  let match = appJsMatchPattern.exec(filename);
+  if (match) {
+    let [from, to] = match.groups!.original.split('::');
+    console.log('from', from, to);
+    return {
+      filename: require.resolve(to, {
+        paths: [dirname(from)],
+      }),
+    };
+  }
+}
+
+function renderAppJs(filename: string) {
+  return {
+    src: readFileSync(filename).toString(),
+    watches: [filename],
   };
 }
 

@@ -20,6 +20,7 @@ import {
   fastbootSwitch,
   decodeFastbootSwitch,
   decodeImplicitModules,
+  encodeAppJsMatch,
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -1425,7 +1426,9 @@ export class Resolver {
       case undefined:
         return undefined;
       case 'app-only':
-        return request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile);
+        return request.virtualize(
+          encodeAppJsMatch(matched.entry['app-js'].specifier, matched.entry['app-js'].fromFile)
+        );
       case 'fastboot-only':
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':

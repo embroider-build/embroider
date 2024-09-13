@@ -90,11 +90,17 @@ appScenarios
         lib: {
           'app-lib-one.js': `
             globalThis.appLibOneLoaded = (globalThis.appLibOneLoaded ?? 0) + 1;
-            export default function() { return 'app-lib-one'; }
+            const localObject = {
+              message: 'app-lib-one'
+            };
+            export default function() { return localObject; }
           `,
           'app-lib-two.js': `
             globalThis.appLibTwoLoaded = (globalThis.appLibTwoLoaded ?? 0) + 1;
-            export default function() { return 'app-lib-two'; }
+            const localObject = {
+              message: 'app-lib-two'
+            };
+            export default function() { return localObject; }
           `,
         },
       },

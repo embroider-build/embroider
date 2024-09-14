@@ -209,20 +209,21 @@ function decodeVirtualPairComponent(
   };
 }
 
-const appJsMatchPrefix = '/embroider_appjs_match/';
-const appJsMatchPattern = /\/embroider_appjs_match\/(?<original>.+)$/;
+const appJsMatchMarker = '__embroider_appjs_match__';
+const appJsMatchPattern = /(?<from>.+)__embroider_appjs_match__(?<to>.+)$/;
 export function encodeAppJsMatch(specifier: string, fromFile: string): string {
-  return `${appJsMatchPrefix}${fromFile}::${specifier}`;
+  return `${fromFile}${appJsMatchMarker}${encodeURIComponent(specifier)}`;
 }
 
 export function decodeAppJsMatch(filename: string) {
   // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes(appJsMatchPrefix)) {
+  if (!filename.includes(appJsMatchMarker)) {
     return;
   }
   let match = appJsMatchPattern.exec(filename);
   if (match) {
-    let [from, to] = match.groups!.original.split('::');
+    let from = match.groups!.from;
+    let to = decodeURIComponent(match.groups!.to);
     console.log('from', from, to);
     return {
       filename: require.resolve(to, {

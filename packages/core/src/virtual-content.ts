@@ -209,15 +209,15 @@ function decodeVirtualPairComponent(
   };
 }
 
-const appJsMatchSuffix = '/embroider_appjs_match';
-const appJsMatchPattern = /(?<original>.+)\/embroider_appjs_match$/;
+const appJsMatchPrefix = '/embroider_appjs_match/';
+const appJsMatchPattern = /\/embroider_appjs_match\/(?<original>.+)$/;
 export function encodeAppJsMatch(specifier: string, fromFile: string): string {
-  return `${fromFile}::${specifier}${appJsMatchSuffix}`;
+  return `${appJsMatchPrefix}${fromFile}::${specifier}`;
 }
 
 export function decodeAppJsMatch(filename: string) {
   // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes(appJsMatchSuffix)) {
+  if (!filename.includes(appJsMatchPrefix)) {
     return;
   }
   let match = appJsMatchPattern.exec(filename);

@@ -170,7 +170,7 @@ export class Resolver {
 
     request = this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
-    request = this.handleEncodedAppJsMatch(request);
+    // request = this.handleEncodedAppJsMatch(request);
     request = this.handleImplicitModules(request);
     request = this.handleImplicitTestScripts(request);
     request = this.handleVendorStyles(request);

@@ -21,6 +21,7 @@ import {
   decodeFastbootSwitch,
   decodeImplicitModules,
   encodeAppJsMatch,
+  decodeAppJsMatch,
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -167,6 +168,7 @@ export class Resolver {
       return this.external('early require', request, request.specifier);
     }
 
+    request = this.handleEncodedAppJsMatch(request);
     request = this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
@@ -185,6 +187,7 @@ export class Resolver {
     // rehome requests to their un-rewritten locations, and for the most part we
     // want to be dealing with the rewritten packages.
     request = this.handleRewrittenPackages(request);
+    request = this.handleAppJsMatch(request);
     return request;
   }
 
@@ -371,6 +374,27 @@ export class Resolver {
     }
 
     return logTransition('failed to match in fastboot switch', request);
+  }
+
+  private handleAppJsMatch<R extends ModuleRequest>(request: R): R {
+    if (request.specifier.includes('_app_') && !request.meta?.isAppJsMatch) {
+      throw new Error('failed to transport meta for appjs match');
+    }
+    if (request.meta?.isAppJsMatch) {
+      return request.virtualize(encodeAppJsMatch(request.specifier, request.fromFile));
+    }
+    return request;
+  }
+
+  private handleEncodedAppJsMatch<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+    let match = decodeAppJsMatch(request.fromFile);
+    if (!match) {
+      return request;
+    }
+    return request.rehome(match.filename);
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {
@@ -920,7 +944,7 @@ export class Resolver {
           request
             // setting meta here because if this fails, we want the fallback
             // logic to revert our rehome and continue from the *moved* package.
-            .withMeta({ originalFromFile: request.fromFile })
+            .withMeta({ originalFromFile: request.fromFile, isAppJsMatch: request.meta?.isAppJsMatch })
             .rehome(resolve(originalRequestingPkg.root, 'package.json'))
         );
       } else {
@@ -1056,7 +1080,7 @@ export class Resolver {
 
     // setting meta because if this fails, we want the fallback to pick up back
     // in the original requesting package.
-    return newRequest.withMeta({ originalFromFile });
+    return newRequest.withMeta({ originalFromFile, isAppJsMatch: request.meta?.isAppJsMatch });
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
@@ -1426,9 +1450,13 @@ export class Resolver {
       case undefined:
         return undefined;
       case 'app-only':
-        return request.virtualize(
-          encodeAppJsMatch(matched.entry['app-js'].specifier, matched.entry['app-js'].fromFile)
-        );
+        return request
+          .alias(matched.entry['app-js'].specifier)
+          .rehome(matched.entry['app-js'].fromFile)
+          .withMeta({
+            ...request.meta,
+            isAppJsMatch: true,
+          });
       case 'fastboot-only':
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':

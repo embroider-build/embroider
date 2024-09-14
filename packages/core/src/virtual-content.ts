@@ -226,7 +226,7 @@ export function decodeAppJsMatch(filename: string) {
     console.log('from', from, to);
     return {
       filename: require.resolve(to, {
-        paths: [dirname(from)],
+        paths: [resolve(dirname(from), 'node_modules')],
       }),
     };
   }

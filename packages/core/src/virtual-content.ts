@@ -186,8 +186,8 @@ const pairComponentPattern = /^(?<hbsModule>.*)__vpc__(?<jsModule>[^\/]*)-embroi
 
 export function virtualPairComponent(hbsModule: string, jsModule: string | undefined): string {
   let relativeJSModule = '';
-  if (jsModule) {
-    relativeJSModule = explicitRelative(dirname(hbsModule), jsModule);
+  if (jsModule && !jsModule.includes(appJsMatchMarker)) {
+    relativeJSModule = explicitRelative(hbsModule, jsModule);
   }
   return `${hbsModule}__vpc__${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
 }

@@ -21,6 +21,7 @@ import {
   decodeFastbootSwitch,
   decodeImplicitModules,
   encodeAppJsMatch,
+  decodeAppJsMatch,
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -169,6 +170,7 @@ export class Resolver {
 
     request = this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
+    request = this.handleEncodedAppJsMatch(request);
     request = this.handleImplicitModules(request);
     request = this.handleImplicitTestScripts(request);
     request = this.handleVendorStyles(request);
@@ -379,6 +381,17 @@ export class Resolver {
       return request.virtualize(encodeAppJsMatch(request.specifier, request.fromFile));
     }
     return request;
+  }
+
+  private handleEncodedAppJsMatch<R extends ModuleRequest>(request: R): R {
+    if (isTerminal(request)) {
+      return request;
+    }
+    let match = decodeAppJsMatch(request.fromFile);
+    if (!match) {
+      return request;
+    }
+    return request.rehome(match.filename);
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {

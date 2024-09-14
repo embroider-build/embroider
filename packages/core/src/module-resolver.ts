@@ -391,7 +391,7 @@ export class Resolver {
     if (!match || match.virtual) {
       return request;
     }
-    return request.rehome('./package.json');
+    return request.rehome(match.filename);
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {

@@ -168,9 +168,9 @@ export class Resolver {
       return this.external('early require', request, request.specifier);
     }
 
-    request = this.handleEncodedAppJsMatch(request);
     request = this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
+    request = this.handleEncodedAppJsMatch(request);
     request = this.handleImplicitModules(request);
     request = this.handleImplicitTestScripts(request);
     request = this.handleVendorStyles(request);

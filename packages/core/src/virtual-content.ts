@@ -229,6 +229,9 @@ export function decodeAppJsMatch(filename: string) {
     let from = match.groups!.from;
     let to = decodeURIComponent(match.groups!.to);
     if (to.includes(pairComponentMarker)) {
+      if (from.includes('_vpc_')) {
+        return null;
+      }
       return {
         filename: to,
         virtual: true,

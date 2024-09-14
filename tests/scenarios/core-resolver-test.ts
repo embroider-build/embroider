@@ -510,7 +510,7 @@ Scenarios.fromProject(() => new Project())
           expectAudit
             .module('./app.js')
             .resolves('my-app/hello-world')
-            .to('./node_modules/my-addon/_app_/hello-world.js');
+            .to('./package.json::my-addon/_app_/hello-world.js/embroider_appjs_match');
         });
 
         test('app-js module in addon can still do relative imports that escape its package', async function () {
@@ -527,7 +527,7 @@ Scenarios.fromProject(() => new Project())
           });
 
           expectAudit
-            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .module('./package.json::my-addon/_app_/hello-world.js/embroider_appjs_match')
             .resolves('../../extra.js')
             .to('./node_modules/extra.js');
         });
@@ -547,7 +547,7 @@ Scenarios.fromProject(() => new Project())
           expectAudit
             .module('./app.js')
             .resolves('my-app/templates/hello-world')
-            .to('./node_modules/my-addon/_app_/templates/hello-world.hbs');
+            .to('./package.json::my-addon/_app_/templates/hello-world.hbs/embroider_appjs_match');
         });
 
         test(`relative import in addon's app tree resolves to app`, async function () {
@@ -564,7 +564,7 @@ Scenarios.fromProject(() => new Project())
           });
 
           expectAudit
-            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .module('./package.json::my-addon/_app_/hello-world.js/embroider_appjs_match')
             .resolves('./secondary')
             .to('./secondary.js');
         });
@@ -584,7 +584,7 @@ Scenarios.fromProject(() => new Project())
           });
 
           expectAudit
-            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .module('./package.json::my-addon/_app_/hello-world.js/embroider_appjs_match')
             .resolves('./secondary')
             .to('./secondary.js');
         });
@@ -602,7 +602,7 @@ Scenarios.fromProject(() => new Project())
           });
 
           expectAudit
-            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .module('./package.json::my-addon/_app_/hello-world.js/embroider_appjs_match')
             .resolves('the-apps-dep')
             .to('./node_modules/the-apps-dep/index.js');
         });
@@ -621,7 +621,7 @@ Scenarios.fromProject(() => new Project())
           });
 
           expectAudit
-            .module('./node_modules/my-addon/_app_/hello-world.js')
+            .module('./package.json::my-addon/_app_/hello-world.js/embroider_appjs_match')
             .resolves('my-app/secondary')
             .to('./secondary.js');
         });

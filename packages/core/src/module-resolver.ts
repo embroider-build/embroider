@@ -388,8 +388,11 @@ export class Resolver {
       return request;
     }
     let match = decodeAppJsMatch(request.fromFile);
-    if (!match || match.virtual) {
+    if (!match) {
       return request;
+    }
+    if (match.virtual) {
+      return request.rehome('./package.json');
     }
     return request.rehome(match.filename);
   }

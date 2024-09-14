@@ -43,6 +43,15 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   if (extern) {
     return renderESExternalShim(extern);
   }
+
+  let appjs = decodeAppJsMatch(filename);
+  if (appjs) {
+    if (!appjs.virtual) {
+      return renderAppJs(appjs.filename);
+    }
+    filename = appjs.filename;
+  }
+
   let match = decodeVirtualPairComponent(filename);
   if (match) {
     return pairedComponentShim(match);
@@ -51,11 +60,6 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let fb = decodeFastbootSwitch(filename);
   if (fb) {
     return renderFastbootSwitchTemplate(fb);
-  }
-
-  let appjs = decodeAppJsMatch(filename);
-  if (appjs) {
-    return renderAppJs(appjs.filename);
   }
 
   let im = decodeImplicitModules(filename);
@@ -224,7 +228,12 @@ export function decodeAppJsMatch(filename: string) {
   if (match) {
     let from = match.groups!.from;
     let to = decodeURIComponent(match.groups!.to);
-    console.log('from', from, to);
+    if (to.includes(pairComponentMarker)) {
+      return {
+        filename: to,
+        virtual: true,
+      };
+    }
     return {
       filename: require.resolve(to, {
         paths: [resolve(dirname(from), 'node_modules')],

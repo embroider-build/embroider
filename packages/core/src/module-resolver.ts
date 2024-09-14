@@ -388,7 +388,7 @@ export class Resolver {
       return request;
     }
     let match = decodeAppJsMatch(request.fromFile);
-    if (!match || match.isVirtual) {
+    if (!match || match.virtual) {
       return request;
     }
     return request.rehome(match.filename);

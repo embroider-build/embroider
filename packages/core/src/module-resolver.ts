@@ -21,7 +21,6 @@ import {
   decodeFastbootSwitch,
   decodeImplicitModules,
   encodeAppJsMatch,
-  decodeAppJsMatch,
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';

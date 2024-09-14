@@ -377,9 +377,6 @@ export class Resolver {
   }
 
   private handleAppJsMatch<R extends ModuleRequest>(request: R): R {
-    if (request.specifier.includes('_app_') && !request.meta?.isAppJsMatch) {
-      throw new Error('failed to transport meta for appjs match');
-    }
     if (request.meta?.isAppJsMatch) {
       return request.virtualize(encodeAppJsMatch(request.specifier, request.fromFile));
     }

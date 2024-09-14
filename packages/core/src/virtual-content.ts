@@ -230,7 +230,7 @@ export function decodeAppJsMatch(filename: string) {
     let to = decodeURIComponent(match.groups!.to);
     if (to.includes(pairComponentMarker)) {
       if (from.includes('_vpc_')) {
-        return null;
+        to = filename;
       }
       return {
         filename: to,

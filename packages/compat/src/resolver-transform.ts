@@ -365,9 +365,7 @@ class TemplateResolver implements ASTPlugin {
         for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
           for (let root of rule.roots) {
-            let f = join(appTreeRulesDir(root, this.moduleResolver), path);
-            f = f + '__embroider_appjs_match__' + extname(f);
-            files.set(f, processedRules);
+            files.set(join(appTreeRulesDir(root, this.moduleResolver), path), processedRules);
           }
         }
       }

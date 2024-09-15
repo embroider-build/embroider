@@ -53,6 +53,16 @@ export default function main(babel: typeof Babel) {
   }
 
   return {
+    pre(state: any) {
+      console.log('pre', state.filename)
+      let filename: string = cleanUrl(state.filename);
+      if (filename.includes('__embroider_appjs_match__')) {
+        console.log('addExtraImports', filename);
+        filename = filename.split('__embroider_appjs_match__')[0].split('embroider_virtual:')[1];
+        console.log('filename', filename);
+        state.filename = filename;
+      }
+    },
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
@@ -69,10 +79,6 @@ export default function main(babel: typeof Babel) {
 
 function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: InternalConfig) {
   let filename: string = cleanUrl((path.hub as any).file.opts.filename);
-  if (filename.includes('__embroider_appjs_match__')) {
-    filename = filename.split('__embroider_appjs_match__')[0];
-    (path.hub as any).file.opts.filename = filename;
-  }
   let entry = config.extraImports[filename];
   let adder = new ImportUtil(t, path);
   if (entry) {

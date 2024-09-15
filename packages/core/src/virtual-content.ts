@@ -188,6 +188,7 @@ export function virtualPairComponent(hbsModule: string, jsModule: string | undef
   let relativeJSModule = jsModule || '';
   if (jsModule && !jsModule.includes(appJsMatchMarker)) {
     relativeJSModule = explicitRelative(hbsModule, jsModule);
+    console.log('virtualPairComponent', jsModule, hbsModule, relativeJSModule);
   }
   return `${hbsModule}__vpc__${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
 }

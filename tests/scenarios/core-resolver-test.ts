@@ -205,12 +205,12 @@ Scenarios.fromProject(() => new Project())
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
             import template from "./hello-world.hbs";
-            import component from "../../components/hello-world.js";
+            import component from "../../../components/hello-world.js";
             export default setComponentTemplate(template, component);
           `);
 
           pairModule.resolves('./hello-world.hbs').to('./templates/components/hello-world.hbs');
-          pairModule.resolves('../../components/hello-world.js').to('./components/hello-world.js');
+          pairModule.resolves('../../../components/hello-world.js').to('./components/hello-world.js');
         });
 
         test('hbs-only component', async function () {

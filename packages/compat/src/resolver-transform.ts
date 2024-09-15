@@ -10,7 +10,7 @@ import { preprocessComponentRule, appTreeRulesDir } from './dependency-rules';
 import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
-import { join, sep, extname } from 'path';
+import { join, sep } from 'path';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import type { ResolverOptions as CoreResolverOptions } from '@embroider/core';
 import { Resolver, ResolverLoader, cleanUrl } from '@embroider/core';

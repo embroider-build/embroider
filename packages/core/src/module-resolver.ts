@@ -21,6 +21,7 @@ import {
   decodeFastbootSwitch,
   decodeImplicitModules,
   decodeAppJsMatch,
+  encodeAppJsMatch
 } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -377,10 +378,7 @@ export class Resolver {
 
   private handleAppJsMatch<R extends ModuleRequest>(request: R): R {
     if (request.meta?.isAppJsMatch) {
-      let to = require.resolve(request.specifier, {
-        paths: [resolve(request.fromFile, 'node_modules')],
-      });
-      return request.alias(to);
+      return request.virtualize(encodeAppJsMatch(request.specifier, request.fromFile));
     }
     return request;
   }

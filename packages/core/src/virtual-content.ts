@@ -1,4 +1,4 @@
-import { basename, dirname, join, posix, resolve, sep } from 'path';
+import { basename, dirname, join, posix, resolve, sep, extname } from 'path';
 import type { AddonPackage, Package, Resolver } from '.';
 import { explicitRelative, extensionsPattern } from '.';
 import { compile } from './js-handlebars';
@@ -217,9 +217,12 @@ function decodeVirtualPairComponent(
 }
 
 const appJsMatchMarker = '__embroider_appjs_match__';
-const appJsMatchPattern = /(?<from>.+)__embroider_appjs_match__(?<to>.+)$/;
+const appJsMatchPattern = /(?<to>.+)__embroider_appjs_match__.{2,5}$/;
 export function encodeAppJsMatch(specifier: string, fromFile: string): string {
-  return `${fromFile}${appJsMatchMarker}${encodeURIComponent(specifier)}`;
+  let to = require.resolve(to, {
+    paths: [resolve(dirname(from), 'node_modules')],
+  }),
+  return `${to}${appJsMatchMarker}${extname(to)}`;
 }
 
 export function decodeAppJsMatch(filename: string) {
@@ -229,10 +232,9 @@ export function decodeAppJsMatch(filename: string) {
   }
   let match = appJsMatchPattern.exec(filename);
   if (match) {
-    let from = match.groups!.from;
-    let to = decodeURIComponent(match.groups!.to);
+    let to = match.groups!.to;
     if (to.includes(pairComponentMarker)) {
-      if (from.includes('_vpc_')) {
+      if (to.includes('_vpc_')) {
         to = filename;
       }
       return {
@@ -241,9 +243,7 @@ export function decodeAppJsMatch(filename: string) {
       };
     }
     return {
-      filename: require.resolve(to, {
-        paths: [resolve(dirname(from), 'node_modules')],
-      }),
+      filename: to
     };
   }
 }

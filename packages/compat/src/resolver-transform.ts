@@ -10,7 +10,7 @@ import { preprocessComponentRule, appTreeRulesDir } from './dependency-rules';
 import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
-import { join, sep } from 'path';
+import { join, sep, extname } from 'path';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import type { ResolverOptions as CoreResolverOptions } from '@embroider/core';
 import { Resolver, ResolverLoader, cleanUrl } from '@embroider/core';
@@ -365,8 +365,9 @@ class TemplateResolver implements ASTPlugin {
         for (let [path, templateRules] of Object.entries(rule.appTemplates)) {
           let processedRules = preprocessComponentRule(templateRules);
           for (let root of rule.roots) {
-            root = root.split('__embroider_appjs_match__')[0];
-            files.set(join(appTreeRulesDir(root, this.moduleResolver), path), processedRules);
+            let f = join(appTreeRulesDir(root, this.moduleResolver), path);
+            f = f + '__embroider_appjs_match__' + extname(f);
+            files.set(f, processedRules);
           }
         }
       }

@@ -185,8 +185,8 @@ const pairComponentMarker = '-embroider-pair-component';
 const pairComponentPattern = /^(?<hbsModule>.*)__vpc__(?<jsModule>[^\/]*)-embroider-pair-component$/;
 
 export function virtualPairComponent(hbsModule: string, jsModule: string | undefined): string {
-  let relativeJSModule = '';
-  if (jsModule) {
+  let relativeJSModule = jsModule || '';
+  if (jsModule && !jsModule.includes(appJsMatchMarker)) {
     relativeJSModule = explicitRelative(hbsModule, jsModule);
   }
   return `${hbsModule}__vpc__${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
@@ -205,7 +205,10 @@ function decodeVirtualPairComponent(
   }
   let { hbsModule, jsModule } = match.groups! as { hbsModule: string; jsModule: string };
   // target our real hbs module from our virtual module
-  let relativeHBSModule = explicitRelative(dirname(filename), hbsModule);
+  let relativeHBSModule = hbsModule;
+  if (!hbsModule.includes(appJsMatchMarker)) {
+    relativeHBSModule = explicitRelative(dirname(filename), hbsModule);
+  }
   return {
     relativeHBSModule,
     relativeJSModule: decodeURIComponent(jsModule) || null,

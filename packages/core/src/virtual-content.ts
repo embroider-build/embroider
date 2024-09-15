@@ -221,7 +221,7 @@ const appJsMatchPattern = /(?<to>.+)__embroider_appjs_match__.{2,5}$/;
 export function encodeAppJsMatch(specifier: string, from: string): string {
   let to = require.resolve(specifier, {
     paths: [resolve(dirname(from), 'node_modules')],
-  })
+  });
   return `${to}${appJsMatchMarker}${extname(to)}`;
 }
 
@@ -243,7 +243,7 @@ export function decodeAppJsMatch(filename: string) {
       };
     }
     return {
-      filename: to
+      filename: to,
     };
   }
 }

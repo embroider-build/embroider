@@ -218,8 +218,8 @@ function decodeVirtualPairComponent(
 
 const appJsMatchMarker = '__embroider_appjs_match__';
 const appJsMatchPattern = /(?<to>.+)__embroider_appjs_match__.{2,5}$/;
-export function encodeAppJsMatch(specifier: string, fromFile: string): string {
-  let to = require.resolve(to, {
+export function encodeAppJsMatch(specifier: string, from: string): string {
+  let to = require.resolve(specifier, {
     paths: [resolve(dirname(from), 'node_modules')],
   }),
   return `${to}${appJsMatchMarker}${extname(to)}`;

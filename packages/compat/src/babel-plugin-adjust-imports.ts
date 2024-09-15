@@ -71,7 +71,7 @@ function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: Inter
   let filename: string = cleanUrl((path.hub as any).file.opts.filename);
   if (filename.includes('__embroider_appjs_match__')) {
     filename = filename.split('__embroider_appjs_match__')[0];
-    (path.hub as any).file.opts.filename = filename;    
+    (path.hub as any).file.opts.filename = filename;
   }
   let entry = config.extraImports[filename];
   let adder = new ImportUtil(t, path);

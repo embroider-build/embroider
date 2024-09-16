@@ -54,9 +54,14 @@ export default function main(babel: typeof Babel) {
 
   return {
     manipulateOptions(opts: any, parserOpts: any) {
-      let filename: string = cleanUrl(opts.filename);
+      let filename: string = opts.filename || parserOpts.sourceFileName;
+      if (!filename) return;
+      filename = cleanUrl(filename);
       if (filename.includes('__embroider_appjs_match__')) {
-        filename = filename.split('__embroider_appjs_match__')[0].split('embroider_virtual:')[1];
+        filename = filename.split('__embroider_appjs_match__')[0];
+        if (filename.includes('embroider_virtual:')) {
+          filename = filename.split('embroider_virtual:')[1];
+        }
         opts.filename = filename;
         parserOpts.sourceFileName = filename;
       }

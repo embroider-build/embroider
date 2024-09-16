@@ -309,6 +309,7 @@ class ModuleVisitor {
         transpiledContent: result.transpiledContent,
       };
     } catch (err) {
+      console.error(err);
       if (['BABEL_PARSE_ERROR', 'BABEL_TRANSFORM_ERROR'].includes(err.code)) {
         return [
           {

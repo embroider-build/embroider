@@ -157,6 +157,9 @@ function detectPhase(build: PluginBuild): 'bundling' | 'scanning' {
     return 'bundling';
   } else if (plugins.includes('vite:dep-scan')) {
     return 'scanning';
+  } else if (plugins.includes('embroider-esbuild-resolver') && plugins.length === 1) {
+    // export scanning
+    return 'scanning';
   } else {
     throw new Error(`cannot identify what phase vite is in. Saw plugins: ${plugins.join(', ')}`);
   }

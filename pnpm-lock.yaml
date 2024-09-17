@@ -1934,6 +1934,9 @@ importers:
       '@babel/plugin-proposal-decorators':
         specifier: ^7.21.0
         version: 7.24.7(@babel/core@7.25.2)
+      '@babel/plugin-transform-typescript':
+        specifier: ^7.21.3
+        version: 7.25.2(@babel/core@7.25.2)
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.1.0
@@ -9168,6 +9171,9 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
     dependencies:
       ajv: 8.17.1
 

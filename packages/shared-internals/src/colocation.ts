@@ -15,18 +15,13 @@ export function syntheticJStoHBS(source: string): string | null {
   return null;
 }
 
-export function needsSyntheticComponentJS(
-  requestedSpecifier: string,
-  foundFile: string,
-  packageCache: Pick<PackageCache, 'ownerOfFile'>
-): string | null {
+export function needsSyntheticComponentJS(requestedSpecifier: string, foundFile: string): string | null {
   requestedSpecifier = cleanUrl(requestedSpecifier);
   foundFile = cleanUrl(foundFile);
   if (
     discoveredImplicitHBS(requestedSpecifier, foundFile) &&
     !foundFile.split(sep).join('/').endsWith('/template.hbs') &&
-    !correspondingJSExists(foundFile) &&
-    isInComponents(foundFile, packageCache)
+    !correspondingJSExists(foundFile)
   ) {
     return foundFile.slice(0, -3) + 'js';
   }
@@ -41,7 +36,9 @@ function correspondingJSExists(id: string): boolean {
   return ['js', 'ts'].some(ext => existsSync(id.slice(0, -3) + ext));
 }
 
-export function isInComponents(id: string, packageCache: Pick<PackageCache, 'ownerOfFile'>) {
+export function isInComponents(url: string, packageCache: Pick<PackageCache, 'ownerOfFile'>) {
+  const id = cleanUrl(url);
+
   const pkg = packageCache.ownerOfFile(id);
   if (!pkg?.isV2App()) {
     return false;

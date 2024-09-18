@@ -1,15 +1,16 @@
 import { appScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import globby from 'globby';
 import fs from 'fs/promises';
 import { pathExists } from 'fs-extra';
 import path from 'path';
 import CommandWatcher, { DEFAULT_TIMEOUT } from './helpers/command-watcher';
+import puppeteer, { type Browser, type Page } from 'puppeteer';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 const { module: Qmodule, test } = QUnit;
 
-let app = appScenarios.skip().map('watch-mode', () => {
+let app = appScenarios.map('watch-mode', () => {
   /**
    * We will create files as a part of the watch-mode tests,
    * because creating files should cause appropriate watch/update behavior
@@ -143,6 +144,9 @@ app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
     let server: CommandWatcher;
+    let appURL: string;
+    let browser: Browser;
+    let page: Page;
 
     function appFile(appPath: string): File {
       let fullPath = path.join(app.dir, ...appPath.split('/'));
@@ -153,62 +157,72 @@ app.forEachScenario(scenario => {
       await server.waitFor(...args);
     }
 
-    async function added(filePath: string): Promise<void> {
-      await waitFor(`file added ${path.join(...filePath.split('/'))}`);
+    async function added(_filePath: string): Promise<void> {
+      await waitFor(new RegExp(`page reload embroider_virtual:.*/app/-embroider-entrypoint.js`));
     }
 
     async function changed(filePath: string): Promise<void> {
-      await waitFor(`file changed ${path.join(...filePath.split('/'))}`);
+      await waitFor(`page reload ${path.join(...filePath.split('/'))}`);
     }
 
     async function deleted(filePath: string): Promise<void> {
-      await waitFor(`file deleted ${path.join(...filePath.split('/'))}`);
+      await waitFor(`page reload ${path.join(...filePath.split('/'))}`);
     }
 
-    async function checkScripts(distPattern: RegExp, needle: string) {
-      let root = app.dir;
-      let available = await globby('**/*', { cwd: path.join(root, 'dist') });
-
-      let matchingFiles = available.filter((item: string) => distPattern.test(item));
-      let matchingFileContents = await Promise.all(
-        matchingFiles.map(async (item: string) => {
-          return fs.readFile(path.join(app.dir, 'dist', item), 'utf8');
-        })
-      );
-      return matchingFileContents.some((item: string) => item.includes(needle));
-    }
-
-    hooks.beforeEach(async () => {
+    hooks.before(async () => {
       app = await scenario.prepare();
-      server = CommandWatcher.launch('ember', ['serve', '--port', '0'], { cwd: app.dir });
-      await waitFor(/Serving on http:\/\/localhost:[0-9]+\//, DEFAULT_TIMEOUT * 2);
+      server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+      [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+      // it's annoying but we need to have an open browser to truly test file reload functionality
+      browser = await puppeteer.launch();
+      page = await browser.newPage();
+      await page.goto(appURL);
     });
+
+    let expectAudit = setupAuditTest(hooks, () => ({
+      appURL,
+      startingFrom: ['index.html'],
+      fetch: fetch as unknown as typeof globalThis.fetch,
+    }));
 
     hooks.afterEach(async () => {
-      await server.shutdown();
+      await Promise.all([server.shutdown(), browser.close()]);
     });
 
-    test(`ember serve`, async function (assert) {
+    test(`adding a simple file`, async function (assert) {
+      expectAudit.module(/.*app\/-embroider-entrypoint.js/).withContents(contents => {
+        assert.ok(
+          !contents.includes('app/simple-file.js'),
+          'simple-file is not in the entrypoint before we add the file'
+        );
+        return true;
+      });
+
       const originalContent =
         'TWO IS A GREAT NUMBER< I LKE IT A LOT< IT IS THE POWER OF ALL  OF ELECTRONICS, MATH, ETC';
-      assert.false(await checkScripts(/js$/, originalContent), 'file has not been created yet');
+      // assert.false(await checkScripts(/js$/, originalContent), 'file has not been created yet');
 
       await appFile('app/simple-file.js').write(`export const two = "${originalContent}";`);
-      await added('simple-file.js');
-      await waitFor(/Build successful/);
+      await added('app/simple-file.js');
 
-      assert.true(await checkScripts(/js$/, originalContent), 'the file now exists');
+      await expectAudit.rerun();
 
+      expectAudit.module(/.*app\/-embroider-entrypoint.js/).withContents(contents => {
+        assert.ok(contents.includes('app/simple-file.js'), 'simple-file is in the entrypoint after we add the file');
+        return true;
+      });
+
+      expectAudit.module('./app/simple-file.js').codeContains(`export const two = "${originalContent}";`);
       const updatedContent = 'THREE IS A GREAT NUMBER TWO';
-      assert.false(await checkScripts(/js$/, updatedContent), 'file has not been created yet');
 
       await appFile('app/simple-file.js').write(`export const two = "${updatedContent}";`);
-      await changed('simple-file.js');
-      await waitFor(/Build successful/);
 
-      // TODO: find a better way to test this; this seems to linger around
-      // assert.false(await checkScripts(/js$/, originalContent), 'the original file does not exists');
-      assert.true(await checkScripts(/js$/, updatedContent), 'the updated file now exists');
+      await changed('app/simple-file.js');
+
+      await expectAudit.rerun();
+
+      expectAudit.module('./app/simple-file.js').codeContains(`export const two = "${updatedContent}";`);
     });
 
     Qmodule('[GH#1619] co-located components regressions', function (hooks) {

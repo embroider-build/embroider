@@ -48,6 +48,12 @@ const postfixRE = /[?#].*$/s;
 // cache-busting query params from leaking where they shouldn't.
 // includeHashSign true means #my-specifier is considered part of the pathname
 export function cleanUrl(url: string): string {
+  // a tiny bit of defensive programming to make sure that things won't explode
+  // a simple example is executing babel with @embroider/macros on a file without
+  // a filename (not on disk) will cause an error here
+  if (!url) {
+    return url;
+  }
   const regexp = postfixRE;
   return url.replace(regexp, '');
 }

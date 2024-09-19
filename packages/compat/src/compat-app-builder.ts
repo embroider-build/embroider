@@ -51,6 +51,7 @@ export class CompatAppBuilder {
       podModulePrefix: this.podModulePrefix(),
       splitAtRoutes: this.options.splitAtRoutes,
       staticAppPaths: this.options.staticAppPaths,
+      amdCompatibility: this.options.amdCompatibility,
       extraDeps: new Map([[this.appPackageWithMovedDeps.root, [this.synthVendor, this.synthStyles] as AddonPackage[]]]),
       extend: (options: CompatResolverOptions, allActiveAddons) => {
         options.activePackageRules = activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [

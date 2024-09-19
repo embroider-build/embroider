@@ -62,7 +62,7 @@ export function buildResolverOptions<T extends Options>(inputs: {
     resolvableExtensions: resolvableExtensions(),
     appRoot: appPackage.root,
     engines,
-    amdCompatibility: {
+    amdCompatibility: inputs.amdCompatibility ?? {
       es: [],
     },
     modulePrefix,

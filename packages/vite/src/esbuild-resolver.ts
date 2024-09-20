@@ -157,7 +157,7 @@ function detectPhase(build: PluginBuild): 'bundling' | 'scanning' {
     return 'bundling';
   } else if (plugins.includes('vite:dep-scan')) {
     return 'scanning';
-  } else if (plugins.includes('embroider-esbuild-resolver') && plugins.length === 1) {
+  } else if (plugins.includes('embroider-esbuild-resolver')) {
     // export scanning
     return 'scanning';
   } else {

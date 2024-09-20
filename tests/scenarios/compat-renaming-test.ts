@@ -1,7 +1,6 @@
 import type { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
 import QUnit from 'qunit';
-import { resolve } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';

@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-09-20)
+
+@embroider/core 3.4.16 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#2088](https://github.com/embroider-build/embroider/pull/2088) Implement ember's component-template-resolving deprecation ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2024-08-30)
 
 @embroider/compat 3.6.1 (patch)

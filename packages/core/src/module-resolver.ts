@@ -24,6 +24,7 @@ import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import type UserOptions from './options';
+import { satisfies } from 'semver';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -513,6 +514,11 @@ export class Resolver {
     }
 
     if (hbsModule) {
+      if (!this.emberVersionSupportsSeparateTemplates) {
+        throw new Error(
+          `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule}.`
+        );
+      }
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
@@ -721,6 +727,17 @@ export class Resolver {
       );
     }
     return owningEngine;
+  }
+
+  get emberVersion(): string {
+    return this.packageCache.get(this.options.engines[0].root).dependencies.find(d => d.name === 'ember-source')!
+      .version;
+  }
+
+  @Memoize() get emberVersionSupportsSeparateTemplates(): boolean {
+    return satisfies(this.emberVersion, '< 6.0.0-alpha.0', {
+      includePrerelease: true,
+    });
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {

@@ -1,8 +1,9 @@
-import { type ModuleRequest, cleanUrl, packageName } from '@embroider/core';
+import core from '@embroider/core';
+const { cleanUrl, packageName } = core;
 import type { ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
 import { dirname } from 'path';
 
-import type { PackageCache as _PackageCache, Resolution } from '@embroider/core';
+import type { PackageCache as _PackageCache, Resolution, ModuleRequest } from '@embroider/core';
 import { externalName } from '@embroider/reverse-exports';
 
 type PublicAPI<T> = { [K in keyof T]: T[K] };

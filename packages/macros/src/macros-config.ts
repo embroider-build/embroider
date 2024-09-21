@@ -71,7 +71,7 @@ function gatherAddonCacheKey(project: any): string {
 }
 
 const babelCacheBustingPluginPath: string = require.resolve(
-  '@embroider/shared-internals/src/babel-plugin-cache-busting.js'
+  '@embroider/shared-internals/src/babel-plugin-cache-busting'
 );
 
 export default class MacrosConfig {

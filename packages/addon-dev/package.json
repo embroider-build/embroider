@@ -35,8 +35,8 @@
   },
   "dependencies": {
     "@embroider/core": "workspace:^",
-    "@rollup/pluginutils": "^4.1.1",
-    "content-tag": "^2.0.1",
+    "@rollup/pluginutils": "^5.1.0",
+    "content-tag": "^2.0.2",
     "fs-extra": "^10.0.0",
     "minimatch": "^3.0.4",
     "rollup-plugin-copy-assets": "^2.0.3",

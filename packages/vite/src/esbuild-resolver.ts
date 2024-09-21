@@ -1,9 +1,11 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
 import { transform } from '@babel/core';
-import { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } from '@embroider/core';
-import { readFileSync } from 'fs-extra';
-import { EsBuildModuleRequest } from './esbuild-request';
-import assertNever from 'assert-never';
+import core from '@embroider/core';
+const { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } = core;
+import fs from 'fs-extra';
+const { readFileSync } = fs;
+import { EsBuildModuleRequest } from './esbuild-request.js';
+import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 import { extname } from 'path';

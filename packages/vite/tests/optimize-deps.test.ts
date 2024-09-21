@@ -1,4 +1,4 @@
-import { optimizeDeps } from '../src/optimize-deps';
+import { optimizeDeps } from '../src/optimize-deps.js';
 
 describe('optimizeDeps', function () {
   test('should produce default output when invoked without arguments', function () {

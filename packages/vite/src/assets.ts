@@ -1,9 +1,11 @@
 import type { Resolver } from '@embroider/core';
-import { ResolverLoader } from '@embroider/core';
+import core from '@embroider/core';
+const { ResolverLoader } = core;
 import type { Plugin } from 'vite';
 import * as process from 'process';
 import { join, posix } from 'path';
-import { existsSync, readFileSync, lstatSync } from 'fs-extra';
+import fs from 'fs-extra';
+const { existsSync, readFileSync, lstatSync } = fs;
 import send from 'send';
 import type { Readable } from 'stream';
 

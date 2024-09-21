@@ -11,7 +11,7 @@
     "@glimmer/component": "^1.0.0",
     "babel-preset-env": "^1.7.0",
     "broccoli": "^3.4.2",
-    "code-equality-assertions": "^0.9.0",
+    "code-equality-assertions": "^1.0.1",
     "console-ui": "^3.0.0",
     "ember-auto-import": "^2.2.0",
     "ember-cli": "~3.28.0",

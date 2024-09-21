@@ -34,10 +34,13 @@ import { EmbroiderPlugin } from './webpack-resolver-plugin';
 
 const debug = makeDebug('embroider:debug');
 
-// This is a type-only import, so it gets compiled away. At runtime, we load
-// terser lazily so it's only loaded for production builds that use it. Don't
-// add any non-type-only imports here.
-import type { MinifyOptions } from 'terser';
+// this function is never called. It exists to workaround typescript being
+// obtuse. https://github.com/microsoft/TypeScript/pull/53426
+async function loadTerser() {
+  let Terser = await import('terser');
+  return Terser.minify;
+}
+type MinifyOptions = NonNullable<Parameters<Awaited<ReturnType<typeof loadTerser>>>[1]>;
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
@@ -331,7 +334,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.minify(inCode, terserOpts);
     let finalFilename = this.getFingerprintedFilename(script, outCode!);
     outputFileSync(join(this.outputPath, finalFilename), outCode!);
     written.add(script);

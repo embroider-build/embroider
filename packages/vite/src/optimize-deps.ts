@@ -1,4 +1,4 @@
-import { esBuildResolver } from './esbuild-resolver';
+import { esBuildResolver } from './esbuild-resolver.js';
 
 export interface OptimizeDeps {
   exclude?: string[];

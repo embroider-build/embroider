@@ -1,5 +1,6 @@
 import type { ModuleRequest, Resolution } from '@embroider/core';
-import { cleanUrl, getUrlQueryParams } from '@embroider/core';
+import core from '@embroider/core';
+const { cleanUrl, getUrlQueryParams } = core;
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
 export const virtualPrefix = 'embroider_virtual:';

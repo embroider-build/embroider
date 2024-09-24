@@ -156,7 +156,7 @@ function detectPhase(build: PluginBuild): 'bundling' | 'other' {
   if (plugins.includes('vite:dep-pre-bundle')) {
     return 'bundling';
   } else {
-    throw 'other';
+    return 'other';
   }
 }
 

@@ -151,17 +151,12 @@ export function esBuildResolver(): EsBuildPlugin {
   };
 }
 
-function detectPhase(build: PluginBuild): 'bundling' | 'scanning' {
+function detectPhase(build: PluginBuild): 'bundling' | 'other' {
   let plugins = (build.initialOptions.plugins ?? []).map(p => p.name);
   if (plugins.includes('vite:dep-pre-bundle')) {
     return 'bundling';
-  } else if (plugins.includes('vite:dep-scan')) {
-    return 'scanning';
-  } else if (plugins.includes('embroider-esbuild-resolver')) {
-    // export scanning
-    return 'scanning';
   } else {
-    throw new Error(`cannot identify what phase vite is in. Saw plugins: ${plugins.join(', ')}`);
+    throw 'other';
   }
 }
 

@@ -1,7 +1,6 @@
 import type { PreparedApp } from 'scenario-tester';
 import { appScenarios, baseAddon } from './scenarios';
 import QUnit from 'qunit';
-import { resolve, sep } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
@@ -238,12 +237,12 @@ appScenarios
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package')
-          .to(resolve('/@embroider/ext-cjs/somebody-elses-package').split(sep).join('/'));
+          .to('/@embroider/ext-cjs/somebody-elses-package');
 
         expectAudit
           .module('./components/import-somebody-elses-original.js')
           .resolves('somebody-elses-package/deeper')
-          .to(resolve('/@embroider/ext-cjs/somebody-elses-package/deeper').split(sep).join('/'));
+          .to('/@embroider/ext-cjs/somebody-elses-package/deeper');
       });
       test('single file package gets captured and renamed', function () {
         expectAudit

@@ -1,6 +1,6 @@
 import type { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
 import { outputFileSync, readJsonSync, writeJSONSync } from 'fs-extra';
-import { resolve, sep } from 'path';
+import { resolve } from 'path';
 import QUnit from 'qunit';
 import type { PreparedApp } from 'scenario-tester';
 import { Project, Scenarios } from 'scenario-tester';
@@ -701,7 +701,7 @@ Scenarios.fromProject(() => new Project())
             'app.js': `import "rsvp"`,
           });
           await configure({});
-          expectAudit.module('./app.js').resolves('rsvp').to(resolve('/@embroider/ext-cjs/rsvp').split(sep).join('/'));
+          expectAudit.module('./app.js').resolves('rsvp').to('/@embroider/ext-cjs/rsvp');
         });
 
         test(`known ember-source-provided virtual packages are not externalized when explicitly included in deps`, async function () {

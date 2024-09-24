@@ -12,7 +12,7 @@ export function explicitRelative(fromDir: string, toFile: string) {
   if (!isAbsolute(result) && !result.startsWith('.')) {
     result = './' + result;
   }
-  if (isAbsolute(toFile) && result.endsWith(toFile)) {
+  if (isAbsolute(toFile) && result.split(sep).join('/').endsWith(toFile)) {
     // this prevents silly "relative" paths like
     // "../../../../../Users/you/projects/your/stuff" when we could have just
     // said "/Users/you/projects/your/stuff". The silly path isn't incorrect,

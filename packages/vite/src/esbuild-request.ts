@@ -12,7 +12,7 @@ type PackageCache = PublicAPI<_PackageCache>;
 export class EsBuildModuleRequest implements ModuleRequest {
   static from(
     packageCache: PackageCache,
-    phase: 'bundling' | 'scanning',
+    phase: 'bundling' | 'other',
     context: PluginBuild,
     kind: ImportKind,
     source: string,
@@ -42,7 +42,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
   private constructor(
     private packageCache: PackageCache,
-    private phase: 'bundling' | 'scanning',
+    private phase: 'bundling' | 'other',
     private context: PluginBuild,
     private kind: ImportKind,
     readonly specifier: string,

@@ -76,6 +76,12 @@ appScenarios
           `,
           'epsilon.hbs': `<div class="epsilon">Epsilon</div>`,
           'fancy-button.hbs': `<h1>I'm fancy</h1>`,
+          'delta.js': `
+            import Component from '@glimmer/component';
+            export default class extends Component {
+              message = "delta";
+            }
+          `,
         },
         templates: {
           'application.hbs': `
@@ -136,6 +142,11 @@ appScenarios
                   assert.dom('.epsilon').hasText('Epsilon');
                 });
 
+                 test("paired component between app and addon", async function (assert) {
+                  await render(hbs\`<Delta />\`);
+                  assert.dom('.delta').hasText('delta');
+                });
+
                 test("addon depends on an app's module via relative import", async function (assert) {
                   assert.strictEqual(appLibOne(), libOneViaAddon(), 'lib one works the same');
                   assert.strictEqual(globalThis.appLibOneLoaded, 1, 'app lib one loaded once');
@@ -179,6 +190,13 @@ appScenarios
           import appLibTwo from 'app-template/lib/app-lib-two';
           export { appLibOne, appLibTwo };
         `,
+        templates: {
+          components: {
+            'delta.hbs': `
+              <div class="delta">delta</div>
+            `,
+          },
+        },
         components: {
           'beta.js': `
             export { default } from 'v1-example-addon/components/beta';

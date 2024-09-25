@@ -15,7 +15,7 @@
     "content-tag": "^2.0.1",
     "debug": "^4.3.2",
     "fs-extra": "^10.0.0",
-    "jsdom": "^16.6.0",
+    "jsdom": "^25.0.0",
     "source-map-url": "^0.4.1",
     "terser": "^5.7.0"
   },

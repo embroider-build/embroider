@@ -68,5 +68,9 @@
       "unlabeled": ":question: Unlabeled"
     },
     "wildcardLabel": "unlabeled"
+  },
+  "volta": {
+    "node": "20.14.0",
+    "pnpm": "8.15.9"
   }
 }

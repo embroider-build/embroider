@@ -1759,6 +1759,9 @@ importers:
       ember-source-latest:
         specifier: npm:ember-source@latest
         version: /ember-source@5.9.0(@babel/core@7.24.7)
+      ember-template-imports:
+        specifier: ^4.1.2
+        version: 4.1.2
       ember-truth-helpers:
         specifier: ^3.0.0
         version: 3.1.1
@@ -11828,7 +11831,6 @@ packages:
 
   /content-tag@2.0.1:
     resolution: {integrity: sha512-jxsETSDs5NbNwyiDuIp672fUMhUyu8Qxc5MOBOJOcgW/fQESI6o5K1LBDrnEE7Bh810a685lWEZHTF4jQYGEEw==}
-    dev: false
 
   /content-type@1.0.5:
     resolution: {integrity: sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==}
@@ -16354,6 +16356,17 @@ packages:
       parse-static-imports: 1.1.0
       string.prototype.matchall: 4.0.11
       validate-peer-dependencies: 1.2.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /ember-template-imports@4.1.2:
+    resolution: {integrity: sha512-6A7s+9QlmKkkpTkI0VGDFqyX+HrAsHQKB32VB/vbj/ITTDN/l/CCtEfvN4/LANKoG5yAvbg6q9wzcOjK9XwmWw==}
+    engines: {node: 16.* || >= 18}
+    dependencies:
+      broccoli-stew: 3.0.0
+      content-tag: 2.0.1
+      ember-cli-version-checker: 5.1.2
     transitivePeerDependencies:
       - supports-color
     dev: true

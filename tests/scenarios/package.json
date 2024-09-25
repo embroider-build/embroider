@@ -94,6 +94,7 @@
     "ember-source-canary": "https://s3.amazonaws.com/builds.emberjs.com/canary/shas/756f0e3f98b8ca5edf443fe57318b4dac692bffa.tgz",
     "ember-source-latest": "npm:ember-source@latest",
     "ember-truth-helpers": "^3.0.0",
+    "ember-template-imports": "^4.1.2",
     "execa": "^5.1.1",
     "popper.js": "^1.16.1",
     "tslib": "^2.6.0",

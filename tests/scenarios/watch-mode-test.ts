@@ -140,7 +140,7 @@ app.forEachScenario(scenario => {
       fetch: fetch as unknown as typeof globalThis.fetch,
     }));
 
-    hooks.afterEach(async () => {
+    hooks.after(async () => {
       await Promise.all([server.shutdown(), browser.close()]);
     });
 

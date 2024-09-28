@@ -180,6 +180,42 @@ export class ExpectModule {
     });
   }
 
+  doesNotIncludeContent(src: string, message?: string) {
+    if (!this.module) {
+      this.emitMissingModule();
+      return;
+    }
+    if (this.module.type === 'unparseable') {
+      this.emitUnparsableModule(message);
+      return;
+    }
+
+    this.expectAudit.assert.pushResult({
+      result: !this.module.content.includes(src),
+      actual: this.module.content,
+      expected: true,
+      message: message ?? `Expected ${this.inputName} to not contain ${src}`,
+    });
+  }
+
+  includesContent(src: string, message?: string) {
+    if (!this.module) {
+      this.emitMissingModule();
+      return;
+    }
+    if (this.module.type === 'unparseable') {
+      this.emitUnparsableModule(message);
+      return;
+    }
+
+    this.expectAudit.assert.pushResult({
+      result: this.module.content.includes(src),
+      actual: this.module.content,
+      expected: true,
+      message: message ?? `Expected ${this.inputName} to contain ${src}`,
+    });
+  }
+
   private emitUnparsableModule(message?: string) {
     this.expectAudit.assert.pushResult({
       result: false,
@@ -327,6 +363,8 @@ class EmptyExpectModule implements PublicAPI<ExpectModule> {
   codeEquals() {}
   codeContains() {}
   withContents() {}
+  doesNotIncludeContent() {}
+  includesContent() {}
 
   resolves(): PublicAPI<ExpectResolution> {
     return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;

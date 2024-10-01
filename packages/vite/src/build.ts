@@ -42,6 +42,10 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
   });
 }
 
+// we need a bare specifier for rewritten packages that is resolvable from root
+// we cannot use a bare specifier that starts with .embroider, that is not a bare import
+// according to vite
+// which is why we make this symlink
 function createSymlinkToRewrittenPackages(appRoot: string = process.cwd()) {
   const resolvableRewrittenPackages = resolve(
     locateEmbroiderWorkingDir(appRoot),

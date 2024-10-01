@@ -254,6 +254,86 @@ stage2Scenarios
   });
 
 stage2Scenarios
+  .map('gts-files-in-addons-are-pre-processed-with-template-compilation', app => {
+    let depA = addAddon(app, 'dep-a');
+    depA.linkDependency('ember-template-imports', { baseDir: __dirname });
+    depA.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+
+    merge(depA.files, {
+      'index.js': `
+        'use strict';
+        module.exports = {
+          name: require('./package').name,
+          options: {
+            'ember-cli-babel': { enableTypeScriptTransform: true },
+          },
+        };`,
+      addon: {
+        components: {
+          'other.gts': `
+          import Component from '@glimmer/component';
+
+          export default class extends Component {
+            abc: string;
+            <template>
+              other
+            </template>
+          };
+          `,
+          'gts-component.gts': `
+          import Component from '@glimmer/component';
+          import OtherComponent from './other';
+
+          export default class extends Component {
+            abc: string;
+            <template>
+              this is gts
+              with <OtherComponent />
+            </template>
+          };
+          `,
+        },
+      },
+      app: {
+        components: {
+          'gts-component.js': 'export { default } from "dep-a/components/gts-component"',
+        },
+      },
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      throwOnWarnings(hooks);
+
+      let app: PreparedApp;
+
+      hooks.before(async assert => {
+        app = await scenario.prepare();
+        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      let expectAudit = setupAuditTest(hooks, () => ({ app: app.dir, 'reuse-build': true }));
+
+      test('no audit issues', function () {
+        expectAudit.hasNoFindings();
+      });
+
+      test('gts is processed with template-compilation', function () {
+        let expectModule = expectAudit.module('./assets/my-app.js');
+        // this is to make sure that the babel plugin template compilation runs and thus
+        // make imports that are only used in templates bound and not removed by typescript
+        expectModule
+          .resolves('my-app/components/gts-component.js')
+          .toModule()
+          .resolves('dep-a/components/gts-component')
+          .toModule()
+          .codeContains(`import OtherComponent from './other';`);
+      });
+    });
+  });
+
+stage2Scenarios
   .map('static-with-rules', app => {
     app.addDependency('some-library', '1.0.0');
     app.linkDependency('@embroider/sample-transforms', { baseDir: __dirname });

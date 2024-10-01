@@ -415,11 +415,11 @@ export class Resolver {
       return request;
     }
 
-    const result = /\.?\/?@embroider\/core\/entrypoint(?:\/(?<packageName>.*))?/.exec(request.specifier);
+    const regex = /\.?\/?@embroider\/core\/entrypoint(?:\/(?<packageName>.*))?/;
+    const result = regex.exec(request.specifier);
 
     if (!result) {
-      // TODO make a better error
-      throw new Error('entrypoint does not match pattern' + request.specifier);
+      throw new Error(`entrypoint, ${request.specifier}, does not match pattern: ${regex.toString()}`);
     }
 
     const { packageName } = result.groups!;

@@ -40,9 +40,14 @@ export interface CompatResolverOptions extends CoreResolverOptions {
   options: UserConfig;
 }
 
+export interface ExternalNameHint {
+  (path: string): string | null;
+}
+
 export interface Options {
   appRoot: string;
   emberVersion: string;
+  externalNameHint?: ExternalNameHint;
 }
 
 type BuiltIn = {
@@ -178,7 +183,8 @@ class TemplateResolver implements ASTPlugin {
   constructor(
     private env: Env,
     private config: CompatResolverOptions,
-    private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>
+    private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>,
+    private externalNameHint?: ExternalNameHint
   ) {
     this.moduleResolver = new Resolver(config);
     if ((globalThis as any).embroider_audit) {
@@ -728,7 +734,7 @@ class TemplateResolver implements ASTPlugin {
 
     // the extra underscore here guarantees that we will never collide with an
     // HTML element.
-    return parts[parts.length - 1] + '_';
+    return this.externalNameHint?.(path) ?? parts[parts.length - 1] + '_';
   }
 
   private handleDynamicModifier(param: ASTv1.Expression): ModifierResolution | ResolutionFail | null {
@@ -971,7 +977,7 @@ class TemplateResolver implements ASTPlugin {
 }
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-export default function makeResolverTransform({ appRoot, emberVersion }: Options) {
+export default function makeResolverTransform({ appRoot, emberVersion, externalNameHint }: Options) {
   let config: CompatResolverOptions = readJSONSync(join(locateEmbroiderWorkingDir(appRoot), 'resolver.json'));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     if (env.strictMode) {
@@ -980,7 +986,7 @@ export default function makeResolverTransform({ appRoot, emberVersion }: Options
         visitor: {},
       };
     }
-    return new TemplateResolver(env, config, builtInKeywords(emberVersion));
+    return new TemplateResolver(env, config, builtInKeywords(emberVersion), externalNameHint);
   };
   (resolverTransform as any).parallelBabel = {
     requireFile: __filename,

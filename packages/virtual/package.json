@@ -1,0 +1,21 @@
+{
+  "name":"@embroider/virtual",
+  "version": "0.0.0",
+  "description": "Provides types for virtual modules",
+  "exports": {
+    ".": "./src/not-used.js",
+    "./compat-modules": {
+      "types": "./src/compat-modules.d.ts",
+      "default": "./src/not-used.js"
+    },
+    "./*": "./src/not-used.js"
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["./src/*"]
+    }
+  },
+  "files": [
+    "src"
+  ]
+}

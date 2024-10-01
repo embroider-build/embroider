@@ -39,6 +39,7 @@
     "@embroider/compat": "workspace:*",
     "@embroider/core": "workspace:*",
     "@embroider/test-setup": "workspace:*",
+    "@embroider/virtual": "workspace:*",
     "@embroider/vite": "workspace:*",
     "@glimmer/component": "^1.1.2",
     "@glimmer/tracking": "^1.1.2",

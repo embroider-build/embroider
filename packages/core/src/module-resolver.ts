@@ -409,13 +409,17 @@ export class Resolver {
     }
 
     //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = ['@embroider/core/entrypoint', '/@embroider/core/entrypoint', './@embroider/core/entrypoint'];
+    const candidates = [
+      '@embroider/virtual/compat-modules',
+      '/@embroider/virtual/compat-modules',
+      './@embroider/virtual/compat-modules',
+    ];
 
     if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
       return request;
     }
 
-    const result = /\.?\/?@embroider\/core\/entrypoint(?:\/(?<packageName>.*))?/.exec(request.specifier);
+    const result = /\.?\/?@embroider\/virtual\/compat-modules(?:\/(?<packageName>.*))?/.exec(request.specifier);
 
     if (!result) {
       // TODO make a better error

@@ -945,6 +945,8 @@ importers:
         specifier: ^5.74.0
         version: 5.94.0
 
+  packages/virtual: {}
+
   packages/vite:
     dependencies:
       '@babel/core':
@@ -1364,6 +1366,9 @@ importers:
       '@embroider/test-setup':
         specifier: workspace:*
         version: link:../../packages/test-setup
+      '@embroider/virtual':
+        specifier: workspace:*
+        version: link:../../packages/virtual
       '@embroider/vite':
         specifier: workspace:*
         version: link:../../packages/vite
@@ -1505,6 +1510,9 @@ importers:
       '@embroider/test-setup':
         specifier: workspace:*
         version: link:../../packages/test-setup
+      '@embroider/virtual':
+        specifier: workspace:*
+        version: link:../../packages/virtual
       '@embroider/vite':
         specifier: workspace:*
         version: link:../../packages/vite
@@ -1952,6 +1960,9 @@ importers:
       '@embroider/test-setup':
         specifier: workspace:*
         version: link:../../packages/test-setup
+      '@embroider/virtual':
+        specifier: workspace:*
+        version: link:../../packages/virtual
       '@embroider/vite':
         specifier: workspace:*
         version: link:../../packages/vite
@@ -2114,6 +2125,9 @@ importers:
       '@embroider/test-setup':
         specifier: workspace:*
         version: link:../../packages/test-setup
+      '@embroider/virtual':
+        specifier: workspace:*
+        version: link:../../packages/virtual
       '@embroider/vite':
         specifier: workspace:*
         version: link:../../packages/vite

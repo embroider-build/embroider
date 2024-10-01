@@ -36,7 +36,9 @@ module.exports = function (defaults) {
         const fileContents = readFileSync(join(app.dir, 'app/components/face.gjs'), 'utf-8');
         assert.equal(
           fileContents,
-          `export default <template>
+          `
+
+export default <template>
 	<h1> this is a gjs file</h1>
 </template>;`
         );

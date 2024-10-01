@@ -5,6 +5,7 @@ import {
   hbsToJS,
   ResolverLoader,
   needsSyntheticComponentJS,
+  isInComponents,
   templateOnlyComponentSource,
   syntheticJStoHBS,
 } from '@embroider/core';
@@ -58,8 +59,8 @@ export function hbs(): Plugin {
         }
       }
 
-      let syntheticId = needsSyntheticComponentJS(source, resolution.id, resolverLoader.resolver.packageCache);
-      if (syntheticId) {
+      let syntheticId = needsSyntheticComponentJS(source, resolution.id);
+      if (syntheticId && isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
         return {
           id: syntheticId,
           meta: {

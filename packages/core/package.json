@@ -35,7 +35,6 @@
     "debug": "^4.3.2",
     "escape-string-regexp": "^4.0.0",
     "fast-sourcemap-concat": "^2.1.1",
-    "filesize": "^10.0.7",
     "fs-extra": "^9.1.0",
     "fs-tree-diff": "^2.0.1",
     "handlebars": "^4.7.7",

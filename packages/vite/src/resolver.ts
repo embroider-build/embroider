@@ -1,10 +1,11 @@
 import type { Plugin, ViteDevServer } from 'vite';
-import { virtualContent, ResolverLoader } from '@embroider/core';
-import { RollupModuleRequest, virtualPrefix } from './request';
-import assertNever from 'assert-never';
+import core from '@embroider/core';
+const { virtualContent, ResolverLoader } = core;
+import { RollupModuleRequest, virtualPrefix } from './request.js';
+import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
 import { resolve } from 'path';
-import { writeStatus } from './esbuild-request';
+import { writeStatus } from './esbuild-request.js';
 import type { PluginContext } from 'rollup';
 
 const debug = makeDebug('embroider:vite');

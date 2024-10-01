@@ -1,8 +1,9 @@
-import { type ModuleRequest, cleanUrl, packageName } from '@embroider/core';
+import core from '@embroider/core';
+const { cleanUrl, packageName } = core;
 import type { ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
 import { dirname } from 'path';
 
-import type { PackageCache as _PackageCache, Resolution } from '@embroider/core';
+import type { PackageCache as _PackageCache, Resolution, ModuleRequest } from '@embroider/core';
 import { externalName } from '@embroider/reverse-exports';
 
 type PublicAPI<T> = { [K in keyof T]: T[K] };
@@ -11,7 +12,7 @@ type PackageCache = PublicAPI<_PackageCache>;
 export class EsBuildModuleRequest implements ModuleRequest {
   static from(
     packageCache: PackageCache,
-    phase: 'bundling' | 'scanning',
+    phase: 'bundling' | 'other',
     context: PluginBuild,
     kind: ImportKind,
     source: string,
@@ -41,7 +42,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
   private constructor(
     private packageCache: PackageCache,
-    private phase: 'bundling' | 'scanning',
+    private phase: 'bundling' | 'other',
     private context: PluginBuild,
     private kind: ImportKind,
     readonly specifier: string,

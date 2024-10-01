@@ -1,7 +1,13 @@
 {
   "name": "@embroider/vite",
   "version": "0.2.0",
-  "main": "index.mjs",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./index.mjs",
+      "types": "./index.d.ts"
+    }
+  },
   "peerDependencies": {
     "@embroider/core": "workspace:^",
     "vite": "^5.2.0"
@@ -13,9 +19,9 @@
     "@babel/core": "^7.22.9",
     "@embroider/macros": "workspace:*",
     "@embroider/reverse-exports": "workspace:*",
-    "@rollup/pluginutils": "^4.1.1",
+    "@rollup/pluginutils": "^5.1.0",
     "assert-never": "^1.2.1",
-    "content-tag": "^2.0.1",
+    "content-tag": "^2.0.2",
     "debug": "^4.3.2",
     "esbuild": "^0.17.19",
     "fast-glob": "^3.3.2",

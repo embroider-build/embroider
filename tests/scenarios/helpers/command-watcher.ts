@@ -109,7 +109,8 @@ export default class CommandWatcher {
       return;
     }
 
-    this.process.kill('SIGINT');
+    console.log('kill')
+    this.process.kill('SIGTERM');
 
     // on windows the subprocess won't close if you don't end all the sockets
     // we don't just end stdout because when you register a listener for stdout it auto registers stdin and stderr... for some reason :(

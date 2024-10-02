@@ -125,6 +125,7 @@ export default class CommandWatcher {
 
   private emitLogs() {
     console.log(`CommandWatcher dumping logs:`);
+    console.log(`exited with`, this.exitCode);
     console.log(this.lines.join('\n'));
   }
 

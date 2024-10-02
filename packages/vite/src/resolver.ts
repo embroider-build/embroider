@@ -156,7 +156,8 @@ async function maybeCaptureNewOptimizedDep(
   }
   let target = externalName(pkg.packageJSON, explicitRelative(pkg.root, foundFile));
   if (!target) {
-    throw new Error(`Bug: we somehow resolved a non-exported file in ${pkg.name}: ${foundFile}`);
+    debug('maybeCaptureNewOptimizedDep: %s is not exported', foundFile);
+    return result;
   }
 
   if (notViteDeps.has(foundFile)) {

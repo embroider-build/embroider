@@ -13,17 +13,21 @@ export default function rollupGjsPlugin(
   return {
     name: PLUGIN_NAME,
 
-    transform(input: string, id: string) {
-      if (!gjsFilter(id)) {
-        return null;
-      }
-      let code = processor.process(input, {
-        filename: id,
-        inline_source_map,
-      });
-      return {
-        code,
-      };
+    transform: {
+      // Enforce running the gjs transform before any others like babel that expect valid JS
+      order: 'pre',
+      handler(input: string, id: string) {
+        if (!gjsFilter(id)) {
+          return null;
+        }
+        let code = processor.process(input, {
+          filename: id,
+          inline_source_map,
+        });
+        return {
+          code,
+        };
+      },
     },
   };
 }

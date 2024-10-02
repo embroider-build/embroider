@@ -109,7 +109,7 @@ export default class CommandWatcher {
       return;
     }
 
-    console.log('kill')
+    console.log('kill');
     this.process.kill('SIGTERM');
 
     // on windows the subprocess won't close if you don't end all the sockets

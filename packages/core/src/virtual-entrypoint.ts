@@ -87,7 +87,7 @@ export function renderEntrypoint(
   // will be inserted via a direct <link> tag.
   if (!appFiles.engine.isApp && appFiles.engine.package.isLazyEngine()) {
     styles.push({
-      path: '@embroider/core/vendor.css',
+      path: '@embroider/virtual/vendor.css',
     });
   }
 

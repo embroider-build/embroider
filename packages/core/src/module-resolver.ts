@@ -560,7 +560,7 @@ export class Resolver {
 
   private handleVendorStyles<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = ['@embroider/core/vendor.css', '/@embroider/core/vendor.css', './@embroider/core/vendor.css'];
+    const candidates = ['@embroider/virtual/vendor.css', '/@embroider/virtual/vendor.css', './@embroider/virtual/vendor.css'];
 
     if (!candidates.includes(request.specifier)) {
       return request;
@@ -569,7 +569,7 @@ export class Resolver {
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
     if (!pkg || !this.options.engines.some(e => e.root === pkg?.root)) {
       throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app or Engine. The top-level Ember app is the only one that has support for @embroider/core/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app or Engine. The top-level Ember app is the only one that has support for @embroider/virtual/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
       );
     }
 
@@ -1029,7 +1029,7 @@ export class Resolver {
 
   private handleVendor<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = ['@embroider/core/vendor.js', '/@embroider/core/vendor.js', './@embroider/core/vendor.js'];
+    const candidates = ['@embroider/virtual/vendor.js', '/@embroider/virtual/vendor.js', './@embroider/virtual/vendor.js'];
 
     if (!candidates.includes(request.specifier)) {
       return request;
@@ -1038,7 +1038,7 @@ export class Resolver {
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
     if (pkg?.root !== this.options.engines[0].root) {
       throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/vendor.js. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/virtual/vendor.js. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
       );
     }
 

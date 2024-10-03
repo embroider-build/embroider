@@ -560,7 +560,11 @@ export class Resolver {
 
   private handleVendorStyles<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = ['@embroider/virtual/vendor.css', '/@embroider/virtual/vendor.css', './@embroider/virtual/vendor.css'];
+    const candidates = [
+      '@embroider/virtual/vendor.css',
+      '/@embroider/virtual/vendor.css',
+      './@embroider/virtual/vendor.css',
+    ];
 
     if (!candidates.includes(request.specifier)) {
       return request;
@@ -1029,7 +1033,11 @@ export class Resolver {
 
   private handleVendor<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = ['@embroider/virtual/vendor.js', '/@embroider/virtual/vendor.js', './@embroider/virtual/vendor.js'];
+    const candidates = [
+      '@embroider/virtual/vendor.js',
+      '/@embroider/virtual/vendor.js',
+      './@embroider/virtual/vendor.js',
+    ];
 
     if (!candidates.includes(request.specifier)) {
       return request;

@@ -7,8 +7,11 @@ import fetch from 'node-fetch';
 import { writeFileSync, readdirSync, rmSync, existsSync } from 'fs-extra';
 import { join } from 'path';
 import execa from 'execa';
+import os from 'os';
 
 const { module: Qmodule, test } = QUnit;
+
+const rebuildTimeout = os.platform() === 'win32' ? 300000 : 5000;
 
 let app = appScenarios.map('vite-dep-optimizer', project => {
   let myServicesAddon = baseAddon();
@@ -198,7 +201,7 @@ app.forEachScenario(scenario => {
         import 'ember-page-title/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 90000);
+        await server.waitFor(/page reload/, rebuildTimeout);
         await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
@@ -228,7 +231,7 @@ app.forEachScenario(scenario => {
         import 'app-template/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 90000);
+        await server.waitFor(/page reload/, rebuildTimeout);
         await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
@@ -249,7 +252,7 @@ app.forEachScenario(scenario => {
         import './helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 90000);
+        await server.waitFor(/page reload/, rebuildTimeout);
         await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
@@ -275,7 +278,7 @@ app.forEachScenario(scenario => {
         // todo: import 'ember-page-title/_app_/helpers/page-title';
       `
         );
-        await server.waitFor(/page reload/, 90000);
+        await server.waitFor(/page reload/, rebuildTimeout);
         await rerunUntilReady(expectAudit);
 
         expectAudit.module(/dep-tests\.js/).withContents((_src, imports) => {
@@ -325,7 +328,7 @@ app.forEachScenario(scenario => {
         console.log(service);
         `
         );
-        await server.waitFor(/page reload/, 90000);
+        await server.waitFor(/page reload/, rebuildTimeout);
         await rerunUntilReady(expectAudit);
 
         expectAudit

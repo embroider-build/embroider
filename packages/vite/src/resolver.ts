@@ -70,7 +70,7 @@ export function resolver(): Plugin {
     buildEnd() {
       this.emitFile({
         type: 'asset',
-        fileName: '@embroider/core/vendor.js',
+        fileName: '@embroider/virtual/vendor.js',
         source: virtualContent(
           resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-vendor.js'),
           resolverLoader.resolver

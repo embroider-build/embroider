@@ -11,10 +11,16 @@
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",
+  "typesVersions": {
+    "*": {
+      "virtual": ["types/virtual"]
+    }
+  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "src/**/*.js.map",
+    "types"
   ],
   "scripts": {
     "test": "jest"

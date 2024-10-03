@@ -22,7 +22,7 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
     addon: {
       services: {
         'service.js': `
-            import app from 'app-template/app.js';
+            import app from 'app-template/config/environment';
 
             console.log(app);
             const foo=1;
@@ -335,7 +335,7 @@ app.forEachScenario(scenario => {
           .resolves(/chunk-.*\.js/)
           .toModule()
           .withContents((_src, imports) => {
-            const appImport = imports.find(i => i.source.match(/\/app\.js/));
+            const appImport = imports.find(i => i.source.match(/\/environment\.js/));
             assert.ok(appImport, 'should import app: ' + imports.map(i => i.source));
             return true;
           });

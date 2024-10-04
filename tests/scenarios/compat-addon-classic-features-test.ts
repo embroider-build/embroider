@@ -152,7 +152,7 @@ appScenarios
         assert.equal(result.exitCode, 0, result.output);
 
         assert.true(lstatSync(`${app.dir}/dist/@embroider/virtual/vendor.js`).isFile());
-        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/test-support.js`).isFile());
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/virtual/test-support.js`).isFile());
       });
 
       test('virtual scripts contents are served in dev mode', async function (assert) {
@@ -168,7 +168,7 @@ appScenarios
           let text = await response.text();
           assert.true(!text.includes('<!DOCTYPE html>'));
 
-          response = await fetch(`${url}/@embroider/core/test-support.js`);
+          response = await fetch(`${url}/@embroider/virtual/test-support.js`);
           assert.strictEqual(response.status, 200);
           // checking the response status 200 is not enough to assert test-support.js is served,
           // because when the URL is not recognized, the response contains the index.html
@@ -244,7 +244,7 @@ appScenarios
           let text = await response.text();
           assert.true(text.includes('.my-addon-p { color: blue; }'));
 
-          response = await fetch(`${url}/@embroider/core/test-support.css?direct`);
+          response = await fetch(`${url}/@embroider/virtual/test-support.css?direct`);
           text = await response.text();
           assert.true(text.includes('#qunit-tests'));
         } finally {

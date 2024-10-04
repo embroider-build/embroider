@@ -89,7 +89,7 @@ export function resolver(): Plugin {
       });
       this.emitFile({
         type: 'asset',
-        fileName: '@embroider/core/test-support.js',
+        fileName: '@embroider/virtual/test-support.js',
         source: virtualContent(
           resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
           resolverLoader.resolver

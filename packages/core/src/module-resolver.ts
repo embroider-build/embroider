@@ -484,9 +484,9 @@ export class Resolver {
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
     const candidates = [
-      '@embroider/core/test-support.js',
-      '/@embroider/core/test-support.js',
-      './@embroider/core/test-support.js',
+      '@embroider/virtual/test-support.js',
+      '/@embroider/virtual/test-support.js',
+      './@embroider/virtual/test-support.js',
     ];
 
     if (!candidates.includes(request.specifier)) {
@@ -496,7 +496,7 @@ export class Resolver {
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
     if (pkg?.root !== this.options.engines[0].root) {
       throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/test-support.js. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/virtual/test-support.js. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
       );
     }
 
@@ -506,9 +506,9 @@ export class Resolver {
   private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
     //TODO move the extra forwardslash handling out into the vite plugin
     const candidates = [
-      '@embroider/core/test-support.css',
-      '/@embroider/core/test-support.css',
-      './@embroider/core/test-support.css',
+      '@embroider/virtual/test-support.css',
+      '/@embroider/virtual/test-support.css',
+      './@embroider/virtual/test-support.css',
     ];
 
     if (!candidates.includes(request.specifier)) {
@@ -518,7 +518,7 @@ export class Resolver {
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
     if (pkg?.root !== this.options.engines[0].root) {
       throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/core/test-support.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/virtual/test-support.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
       );
     }
 

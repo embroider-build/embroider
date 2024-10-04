@@ -1,19 +1,25 @@
 import type { Plugin, ViteDevServer } from 'vite';
-import core from '@embroider/core';
-const { virtualContent, ResolverLoader } = core;
+import core, { type Resolver } from '@embroider/core';
+const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
 import { RollupModuleRequest, virtualPrefix } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 import { writeStatus } from './esbuild-request.js';
-import type { PluginContext } from 'rollup';
+import type { PluginContext, ResolveIdResult } from 'rollup';
+import { externalName } from '@embroider/reverse-exports';
+import fs from 'fs-extra';
+import { createHash } from 'crypto';
+
+const { ensureSymlinkSync, outputJSONSync } = fs;
 
 const debug = makeDebug('embroider:vite');
 
 export function resolver(): Plugin {
-  let resolverLoader = new ResolverLoader(process.cwd());
+  const resolverLoader = new ResolverLoader(process.cwd());
   let server: ViteDevServer;
-  let virtualDeps: Map<string, string[]> = new Map();
+  const virtualDeps: Map<string, string[]> = new Map();
+  const notViteDeps = new Set<string>();
 
   return {
     name: 'embroider-resolver',
@@ -50,6 +56,11 @@ export function resolver(): Plugin {
       let resolution = await resolverLoader.resolver.resolve(request);
       switch (resolution.type) {
         case 'found':
+          if (resolution.isVirtual) {
+            return resolution.result;
+          } else {
+            return await maybeCaptureNewOptimizedDep(this, resolverLoader.resolver, resolution.result, notViteDeps);
+          }
         case 'ignored':
           return resolution.result;
         case 'not_found':
@@ -107,4 +118,76 @@ async function observeDepScan(context: PluginContext, source: string, importer: 
   });
   writeStatus(source, result ? 'found' : 'not_found');
   return result;
+}
+
+function idFromResult(result: ResolveIdResult): string | undefined {
+  if (!result) {
+    return undefined;
+  }
+  if (typeof result === 'string') {
+    return cleanUrl(result);
+  }
+  return cleanUrl(result.id);
+}
+
+function hashed(path: string): string {
+  let h = createHash('sha1');
+  return h.update(path).digest('hex').slice(0, 8);
+}
+
+async function maybeCaptureNewOptimizedDep(
+  context: PluginContext,
+  resolver: Resolver,
+  result: ResolveIdResult,
+  notViteDeps: Set<string>
+): Promise<ResolveIdResult> {
+  let foundFile = idFromResult(result);
+  if (!foundFile) {
+    return result;
+  }
+  if (foundFile.startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))) {
+    debug('maybeCaptureNewOptimizedDep: %s already in vite deps', foundFile);
+    return result;
+  }
+  let pkg = resolver.packageCache.ownerOfFile(foundFile);
+  if (!pkg?.isV2Addon()) {
+    debug('maybeCaptureNewOptimizedDep: %s not in v2 addon', foundFile);
+    return result;
+  }
+  let target = externalName(pkg.packageJSON, explicitRelative(pkg.root, foundFile));
+  if (!target) {
+    debug('maybeCaptureNewOptimizedDep: %s is not exported', foundFile);
+    return result;
+  }
+
+  if (notViteDeps.has(foundFile)) {
+    debug('maybeCaptureNewOptimizedDep: already attmpted %s', foundFile);
+    return result;
+  }
+
+  debug('maybeCaptureNewOptimizedDep: doing re-resolve for %s ', foundFile);
+
+  let jumpRoot = join(tmpdir, 'embroider-vite-jump', hashed(pkg.root));
+  let fromFile = join(jumpRoot, 'package.json');
+  outputJSONSync(fromFile, {
+    name: 'jump-root',
+  });
+  ensureSymlinkSync(pkg.root, join(jumpRoot, 'node_modules', pkg.name));
+  let newResult = await context.resolve(target, fromFile);
+  if (newResult) {
+    if (idFromResult(newResult) === foundFile) {
+      // This case is normal. For example, people could be using
+      // `optimizeDeps.exclude` or they might be working in a monorepo where an
+      // addon is not in node_modules. In both cases vite will decide not to
+      // optimize the file, even though we gave it a chance to.
+      //
+      // We cache that result so we don't keep trying.
+      debug('maybeCaptureNewOptimizedDep: %s did not become an optimized dep', foundFile);
+      notViteDeps.add(foundFile);
+    }
+
+    return newResult;
+  } else {
+    return result;
+  }
 }

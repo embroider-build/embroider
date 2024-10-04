@@ -148,7 +148,7 @@ export function renderEntrypoint(
 
   return {
     src: entryTemplate(params),
-    watches: [],
+    watches: [fromDir],
   };
 }
 

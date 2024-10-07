@@ -12,6 +12,9 @@ async function lts_4_4(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.4' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.4' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.pkg.volta = {
+    node: '20.2.0',
+  };
 }
 
 async function lts_4_8(project: Project) {

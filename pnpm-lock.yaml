@@ -151,6 +151,21 @@ importers:
         specifier: workspace:^
         version: link:../core
 
+  packages/broccoli-side-watch:
+    dependencies:
+      '@embroider/shared-internals':
+        specifier: workspace:*
+        version: link:../shared-internals
+      broccoli-merge-trees:
+        specifier: ^4.2.0
+        version: 4.2.0
+      broccoli-source:
+        specifier: ^3.0.1
+        version: 3.0.1
+      resolve-package-path:
+        specifier: ^4.0.1
+        version: 4.0.3
+
   packages/compat:
     dependencies:
       '@babel/code-frame':

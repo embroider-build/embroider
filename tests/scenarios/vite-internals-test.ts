@@ -54,6 +54,15 @@ tsAppScenarios
 
       app: {
         components: {
+          'fancy-gts.gts': `
+            import Component from '@glimmer/component';
+            export default class extends Component {
+              message: string = "fancy gts";
+              <template>
+                <div class="fancy-gts">{{this.message}}</div>
+              </template>
+            }
+          `,
           'alpha.ts': `
             import Component from '@glimmer/component';
             export default class extends Component {

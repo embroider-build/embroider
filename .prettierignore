@@ -21,6 +21,8 @@
 /packages/webpack/**/*.d.ts
 /packages/hbs-loader/**/*.js
 /packages/hbs-loader/**/*.d.ts
+/packages/broccoli-side-watch/**/*.js
+/packages/broccoli-side-watch/**/*.d.ts
 /test-packages/support/**/*.js
 /test-packages/**/*.d.ts
 /test-packages/release/src/*.js

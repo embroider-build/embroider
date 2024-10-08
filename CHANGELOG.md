@@ -1,5 +1,23 @@
 # Embroider Changelog
 
+## Release (2024-10-08)
+
+@embroider/compat 3.6.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2133](https://github.com/embroider-build/embroider/pull/2133) fix typescript support for codemod and add option for renaming elements ([@void-mAlex](https://github.com/void-mAlex))
+  * [#2120](https://github.com/embroider-build/embroider/pull/2120) fix gts in v1 addons ([@patricklx](https://github.com/patricklx))
+
+#### :house: Internal
+* `@embroider/test-scenarios`
+  * [#2142](https://github.com/embroider-build/embroider/pull/2142) fixing test suite for ember >= 6 ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Patrick Pircher ([@patricklx](https://github.com/patricklx))
+
 ## Release (2024-10-01)
 
 @embroider/addon-dev 6.0.0 (major)

@@ -37,6 +37,15 @@ wideAppScenarios
               }
             }
           `,
+          'fancy-box.hbs': `
+          {{component this.titleComponentWithDefault title=@title}}
+          `,
+          'default-title.hbs': `
+            <div data-example="default" class="the-default-title-component">{{@title}}</div>
+          `,
+          'my-title.hbs': `
+            <div data-example="customized" class="my-title-component">{{@title}}</div>
+          `,
         },
         helpers: {
           'loaded-components.js': `
@@ -108,17 +117,6 @@ wideAppScenarios
           `,
         },
         templates: {
-          components: {
-            'default-title.hbs': `
-              <div data-example="default" class="the-default-title-component">{{@title}}</div>
-            `,
-            'fancy-box.hbs': `
-              {{component this.titleComponentWithDefault title=@title}}
-            `,
-            'my-title.hbs': `
-              <div data-example="customized" class="my-title-component">{{@title}}</div>
-            `,
-          },
           'components-example.hbs': `
             {{! this uses a component from ember-bootstrap }}
             <BsButton>Button</BsButton>

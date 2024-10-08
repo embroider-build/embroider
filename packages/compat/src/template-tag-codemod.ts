@@ -1,26 +1,41 @@
 import { default as compatBuild } from './default-pipeline';
 import type { EmberAppInstance } from '@embroider/core';
 import type { Node, InputNode } from 'broccoli-node-api';
-import { join, relative, resolve } from 'path';
+import { join, relative, resolve, extname } from 'path';
 import type { types as t } from '@babel/core';
 import type { NodePath } from '@babel/traverse';
 import { statSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import Plugin from 'broccoli-plugin';
 import { transformSync } from '@babel/core';
 import { hbsToJS, ResolverLoader } from '@embroider/core';
-import { ImportUtil } from 'babel-import-util';
-import ResolverTransform from './resolver-transform';
+import ResolverTransform, { type ExternalNameHint } from './resolver-transform';
 import { spawn } from 'child_process';
 import { locateEmbroiderWorkingDir } from '@embroider/core';
 
 export interface TemplateTagCodemodOptions {
   shouldTransformPath: (outputPath: string) => boolean;
+  nameHint: ExternalNameHint;
   dryRun: boolean;
 }
 
 export default function templateTagCodemod(
   emberApp: EmberAppInstance,
-  { shouldTransformPath = (() => true) as TemplateTagCodemodOptions['shouldTransformPath'], dryRun = false } = {}
+  {
+    shouldTransformPath = (() => true) as TemplateTagCodemodOptions['shouldTransformPath'],
+    nameHint = (path => {
+      return path
+        .split('/')
+        .map(part =>
+          part
+            .split('-')
+            // capitalize first letter
+            .map(inner_part => inner_part.charAt(0).toUpperCase() + inner_part.slice(1))
+            .join('')
+        )
+        .join('_');
+    }) as TemplateTagCodemodOptions['nameHint'],
+    dryRun = false,
+  } = {}
 ): Node {
   return new TemplateTagCodemodPlugin(
     [
@@ -36,9 +51,13 @@ export default function templateTagCodemod(
         },
       }),
     ],
-    { shouldTransformPath, dryRun }
+    { shouldTransformPath, nameHint, dryRun }
   );
 }
+
+const TEMPLATE_ONLY_MARKER = `import templateOnlyComponent from '@ember/component/template-only';`;
+const TEMPLATE_COLOCATION_MARKER = /\/\* import __COLOCATED_TEMPLATE__ from (.*) \*\//;
+
 class TemplateTagCodemodPlugin extends Plugin {
   constructor(inputNodes: InputNode[], readonly options: TemplateTagCodemodOptions) {
     super(inputNodes, {
@@ -83,28 +102,42 @@ class TemplateTagCodemodPlugin extends Plugin {
     const babel_plugin_syntax_decorators = require.resolve('@babel/plugin-syntax-decorators', {
       paths: [embroider_compat_path],
     });
+    const babel_plugin_syntax_typescript = require.resolve('@babel/plugin-syntax-typescript', {
+      paths: [embroider_compat_path],
+    });
+    const resolver_transform = ResolverTransform({
+      appRoot: process.cwd(),
+      emberVersion: emberVersion,
+      externalNameHint: this.options.nameHint,
+    });
 
     for await (const current_file of walkSync(tmp_path)) {
       if (hbs_file_test.test(current_file) && this.options.shouldTransformPath(current_file)) {
         const template_file_src = readFileSync(current_file).toLocaleString();
 
-        let src =
+        // run the template transformations using embroider resolver information
+        // to replace template values with js import syntax used in g(j/t)s
+        let transformed_source =
           transformSync(hbsToJS(template_file_src), {
             plugins: [
               [
                 babel_plugin_ember_template_compilation,
                 {
                   compilerPath: ember_template_compiler.filename,
-                  transforms: [ResolverTransform({ appRoot: process.cwd(), emberVersion: emberVersion })],
+                  transforms: [resolver_transform],
                   targetFormat: 'hbs',
                 },
               ],
             ],
             filename: current_file,
           })?.code ?? '';
+
+        // using transformSync to parse and traverse in one go
+        // we're only extracting the transformed template information from previous step
+        // and preserving it for later assembly in the backing class
         const import_bucket: NodePath<t.ImportDeclaration>[] = [];
-        let transformed_template_value = '';
-        transformSync(src, {
+        let template_tag_value = '';
+        transformSync(transformed_source, {
           plugins: [
             function template_tag_extractor(): unknown {
               return {
@@ -114,11 +147,19 @@ class TemplateTagCodemodPlugin extends Plugin {
                     if (extractor) {
                       const result = resolver.nodeResolve(extractor[0], current_file);
                       if (result.type === 'real') {
-                        // find package
+                        // find package there the resolver is pointing
                         const owner_package = resolver.packageCache.ownerOfFile(result.filename);
-                        // change import to real one
-                        import_declaration.node.source.value =
-                          owner_package!.name + '/' + extractor[1] + '/' + extractor[2];
+                        let relative_import_path = relative(owner_package!.root, result.filename);
+                        // for addons strip off appPublicationDir from relative path
+                        // we do this on app files as well as they don't contain the
+                        // path that we strip off
+                        // this makes sure that ambiguous imports get properly attributed
+                        relative_import_path = relative_import_path.replace('_app_/', '');
+                        // remove the extension to match what a developer would normally write
+                        relative_import_path = relative_import_path.slice(0, -extname(relative_import_path).length);
+
+                        // change import path to real one
+                        import_declaration.node.source.value = owner_package!.name + '/' + relative_import_path;
                         import_bucket.push(import_declaration);
                       }
                     } else if (import_declaration.node.source.value.indexOf('@ember/template-compilation') === -1) {
@@ -134,7 +175,7 @@ class TemplateTagCodemodPlugin extends Plugin {
                       path.node.arguments &&
                       'value' in path.node.arguments[0]
                     ) {
-                      transformed_template_value = `<template>\n\t${path.node.arguments[0].value}\n</template>`;
+                      template_tag_value = `<template>\n\t${path.node.arguments[0].value}\n</template>`;
                     }
                   },
                 },
@@ -150,55 +191,40 @@ class TemplateTagCodemodPlugin extends Plugin {
         );
 
         const backing_class_filename = 'filename' in backing_class_resolution ? backing_class_resolution.filename : '';
+        // this can be either a generated js file in case of template only components
+        // the js or ts file depending on what the app is configured
         const backing_class_src = readFileSync(backing_class_filename).toString();
-        const magic_string = '__MAGIC_STRING_FOR_TEMPLATE_TAG_REPLACE__';
-        const is_template_only =
-          backing_class_src.indexOf("import templateOnlyComponent from '@ember/component/template-only';") !== -1;
 
-        src = transformSync(backing_class_src, {
+        const is_typescript = extname(backing_class_filename) === '.ts';
+
+        let insert_imports_byte_count = null;
+        let insert_template_byte_count = null;
+
+        const is_template_only = backing_class_src.indexOf(TEMPLATE_ONLY_MARKER) !== -1;
+
+        // we parse the backing class to find the insert points for imports and template
+        transformSync(backing_class_src, {
           plugins: [
-            [babel_plugin_syntax_decorators, { decoratorsBeforeExport: true }],
-            function glimmer_syntax_creator(babel): unknown {
+            [
+              is_typescript ? babel_plugin_syntax_typescript : babel_plugin_syntax_decorators,
+              { decoratorsBeforeExport: true },
+            ],
+            function glimmer_syntax_creator(/* babel */): unknown {
               return {
                 name: 'test',
                 visitor: {
-                  Program: {
-                    enter(path: NodePath<t.Program>) {
-                      // Always instantiate the ImportUtil instance at the Program scope
-                      const importUtil = new ImportUtil(babel.types, path);
-                      const first_node = path.get('body')[0];
-                      if (
-                        first_node &&
-                        first_node.node &&
-                        first_node.node.leadingComments &&
-                        first_node.node.leadingComments[0]?.value.includes('__COLOCATED_TEMPLATE__')
-                      ) {
-                        //remove magic comment
-                        first_node.node.leadingComments.splice(0, 1);
-                      }
-                      for (const template_import of import_bucket) {
-                        for (let i = 0, len = template_import.node.specifiers.length; i < len; ++i) {
-                          const specifier = template_import.node.specifiers[i];
-                          if (specifier.type === 'ImportDefaultSpecifier') {
-                            importUtil.import(path, template_import.node.source.value, 'default', specifier.local.name);
-                          } else if (specifier.type === 'ImportSpecifier') {
-                            importUtil.import(path, template_import.node.source.value, specifier.local.name);
-                          }
-                        }
-                      }
-                    },
-                  },
                   ImportDeclaration(import_declaration: NodePath<t.ImportDeclaration>) {
-                    if (import_declaration.node.source.value.indexOf('@ember/component/template-only') !== -1) {
-                      import_declaration.remove();
-                    }
+                    insert_imports_byte_count = import_declaration.node.end;
                   },
                   ExportDefaultDeclaration(path: NodePath<t.ExportDefaultDeclaration>) {
+                    // convention is that we have a default export for each component
+                    // we look for the closing bracket of the class body
                     path.traverse({
                       ClassBody(path) {
-                        const classbody_nodes = path.get('body');
-                        //add magic string to be replaces with the contents of the template tag
-                        classbody_nodes[classbody_nodes.length - 1].addComment('trailing', magic_string, false);
+                        // we substract 1 to find the byte right before the final closing bracket `}`
+                        // this is the default insert point for template tag though it could live anywhere inside the class body
+                        // possible future point to add option for putting template first thing in class
+                        insert_template_byte_count = path.node.end ? path.node.end - 1 : 0;
                       },
                     });
                   },
@@ -206,23 +232,56 @@ class TemplateTagCodemodPlugin extends Plugin {
               };
             },
           ],
-        })!.code!.replace(`/*${magic_string}*/`, transformed_template_value);
+        });
+
+        // list of imports needed by the previous hbs template extracted in second step
+        const hbs_template_required_imports = import_bucket.join('\n');
+
+        // we extracted all we needed from transformed_source so we switch to the second phase
+        // transforming the backing class into what will be our final output
+        transformed_source = backing_class_src;
         if (is_template_only) {
           // because we can't inject a comment as the default export
           // we replace the known exported string
-          src = src.replace('templateOnlyComponent()', transformed_template_value);
+          transformed_source = transformed_source.replace('templateOnlyComponent()', template_tag_value);
+          // we clean known markers from generated files
+          transformed_source = transformed_source.replace(TEMPLATE_ONLY_MARKER, hbs_template_required_imports);
+          transformed_source = transformed_source.replace(TEMPLATE_COLOCATION_MARKER, '');
+        } else {
+          // we modify the source from end to start in order to keep our byte counts valid through the transforms
+          if (insert_template_byte_count) {
+            // first we split the backing class at the byte count we found during backing class parsing
+            // then concat the string back together adding the transformed template in the middle
+            transformed_source =
+              transformed_source.substring(0, insert_template_byte_count) +
+              '\n' +
+              template_tag_value +
+              '\n' +
+              transformed_source.substring(insert_template_byte_count, transformed_source.length);
+          }
+          if (insert_imports_byte_count) {
+            // first we split the backing class at the byte count we found during backing class parsing
+            // then concat the string back together adding the transformed template in the middle
+            transformed_source =
+              transformed_source.substring(0, insert_imports_byte_count) +
+              '\n' +
+              hbs_template_required_imports +
+              '\n' +
+              transformed_source.substring(insert_imports_byte_count, transformed_source.length);
+          }
+          transformed_source = transformed_source.replace(TEMPLATE_COLOCATION_MARKER, '');
         }
 
         const dryRun = this.options.dryRun ? '--dry-run' : '';
         // work out original file path in app tree
         const app_relative_path = join('app', relative(tmp_path, current_file));
-        const new_file_path = app_relative_path.slice(0, -4) + '.gjs';
+        const new_file_path = app_relative_path.slice(0, -4) + (is_typescript ? '.gts' : '.gjs');
 
         // write glimmer file out
         if (this.options.dryRun) {
-          console.log('Write new file', new_file_path, src);
+          console.log('Write new file', new_file_path, transformed_source);
         } else {
-          writeFileSync(join(process.cwd(), new_file_path), src, { flag: 'wx+' });
+          writeFileSync(join(process.cwd(), new_file_path), transformed_source, { flag: 'wx+' });
         }
 
         // git rm old files (js/ts if exists + hbs)
@@ -233,7 +292,7 @@ class TemplateTagCodemodPlugin extends Plugin {
 
         if (!is_template_only) {
           // remove backing class only if it's not a template only component
-          // resolve repative path to rewritten-app
+          // resolve relative path to rewritten-app
           const app_relative_path = join('app', relative(tmp_path, backing_class_filename));
           let rm_js = await execute(`git rm ${app_relative_path} ${dryRun}`, {
             pwd: process.cwd(),

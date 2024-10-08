@@ -1,7 +1,8 @@
 {
   "name": "@embroider/vite",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
+  "main": "index.mjs",
   "exports": {
     ".": {
       "default": "./index.mjs",
@@ -26,7 +27,7 @@
     "esbuild": "^0.17.19",
     "fast-glob": "^3.3.2",
     "fs-extra": "^10.0.0",
-    "jsdom": "^16.6.0",
+    "jsdom": "^25.0.0",
     "send": "^0.18.0",
     "source-map-url": "^0.4.1",
     "terser": "^5.7.0"

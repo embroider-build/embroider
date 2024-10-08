@@ -1,5 +1,45 @@
 # Embroider Changelog
 
+## Release (2024-10-01)
+
+@embroider/addon-dev 6.0.0 (major)
+@embroider/compat 3.6.2 (patch)
+@embroider/core 3.4.17 (patch)
+@embroider/macros 1.16.7 (patch)
+@embroider/shared-internals 2.7.0 (minor)
+@embroider/vite 0.2.1 (patch)
+@embroider/webpack 4.0.6 (patch)
+
+#### :boom: Breaking Change
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#2082](https://github.com/embroider-build/embroider/pull/2082) Hide base path from public URL of rollup-public-assets ([@simonihmig](https://github.com/simonihmig))
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`, `@embroider/shared-internals`, `@embroider/test-scenarios`
+  * [#2121](https://github.com/embroider-build/embroider/pull/2121) backport #1855 addon-dev: incremental updates to output ([@patricklx](https://github.com/patricklx))
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/vite`, `@embroider/webpack`, `@embroider/test-scenarios`
+  * [#2127](https://github.com/embroider-build/embroider/pull/2127) Bump jsdom to fix punycode deprecation messages from tr46, psl, and whatwg-url ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/shared-internals`, `@embroider/test-scenarios`
+  * [#2122](https://github.com/embroider-build/embroider/pull/2122) speedup windows ci on stable ([@patricklx](https://github.com/patricklx))
+
+#### Committers: 3
+- Patrick Pircher ([@patricklx](https://github.com/patricklx))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2024-09-20)
+
+@embroider/core 3.4.16 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#2088](https://github.com/embroider-build/embroider/pull/2088) Implement ember's component-template-resolving deprecation ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2024-08-30)
 
 @embroider/compat 3.6.1 (patch)

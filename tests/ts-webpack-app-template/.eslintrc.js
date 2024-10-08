@@ -31,6 +31,7 @@ module.exports = {
         './config/**/*.js',
         './lib/*/index.js',
         './server/**/*.js',
+        './webpack.config.cjs',
       ],
       parserOptions: {
         sourceType: 'script',

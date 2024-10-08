@@ -2,37 +2,59 @@ const path = require('path');
 
 const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const HtmlBundlerPlugin = require('html-bundler-webpack-plugin');
+// const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-const { resolver, hbs, scripts, templateTag, compatPrebuild, contentFor } = require('@embroider/webpack');
+// const { resolver, hbs, scripts, templateTag, compatPrebuild, contentFor } = require('@embroider/webpack');
 
 module.exports = function (env, argv) {
+  let isProduction = env.production;
+  let isDevelopment = !isProduction;
+
+  console.log({ isDevelopment, isProduction });
+
   return {
     mode: env.production ? 'production' : 'development',
     devtool: env.production ? 'source-map' : 'eval',
     devServer: {
       port: 4200,
     },
-    entry: './src/index.js',
+    resolve: {
+      extensions: ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json', '.wasm'],
+    },
     output: {
       path: path.resolve(__dirname, 'dist'),
-      filename: '[name].[contenthash].js',
     },
     plugins: [
-      hbs(),
-      // gjs
-      templateTag(),
-      scripts(),
-      resolver(),
-      compatPrebuild(),
-      contentFor(),
-      new CopyPlugin({
-        patterns: [{ from: 'public' }],
+      // hbs(),
+      // // gjs
+      // templateTag(),
+      // scripts(),
+      // resolver(),
+      // compatPrebuild(),
+      // contentFor(),
+      new HtmlBundlerPlugin({
+        // all the necessary options are in one place
+        entry: {
+          index: {
+            import: './index.html',
+          },
+          tests: {
+            import: './tests/index.html',
+          },
+        },
+        js: {
+          filename: 'assets/[name].[contenthash:8].js', // JS output filename
+        },
+        css: {
+          filename: 'assets/[name].[contenthash:8].css', // CSS output filename
+        },
       }),
     ],
     module: {
       rules: [
         {
-          test: /\.js$/,
+          test: /\.g?(j|t)s$/,
           use: 'babel-loader',
           exclude: /node_modules/,
         },
@@ -43,38 +65,37 @@ module.exports = function (env, argv) {
             {
               loader: 'css-loader',
               options: {
-                importLoaders: 1,
+                url: true,
+                import: true,
+                modules: 'global',
               },
             },
             'postcss-loader',
           ],
         },
         {
-          test: /\.svg$/,
-          use: 'file-loader',
-        },
-        {
-          test: /\.png$/,
-          use: [
-            {
-              loader: 'url-loader',
-              options: {
-                mimetype: 'image/png',
-              },
-            },
-          ],
+          test: /\.(png|svg|jpg|jpeg|gif|webp)$/i,
+          type: 'asset/resource',
         },
       ],
     },
+    performance: {
+      hints: false,
+    },
     optimization: {
-      minimizer: [
-        new TerserPlugin({
-          parallel: true,
-          terserOptions: {
-            // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
-          },
-        }),
-      ],
+      splitChunks: { chunks: 'all' },
+      ...(isProduction
+        ? {
+            minimizer: [
+              new TerserPlugin({
+                parallel: true,
+                terserOptions: {
+                  // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
+                },
+              }),
+            ],
+          }
+        : {}),
     },
   };
 };

@@ -1928,6 +1928,9 @@ importers:
       '@babel/plugin-proposal-decorators':
         specifier: ^7.21.0
         version: 7.24.7(@babel/core@7.25.2)
+      '@babel/plugin-transform-typescript':
+        specifier: ^7.21.3
+        version: 7.25.2(@babel/core@7.25.2)
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.1.0

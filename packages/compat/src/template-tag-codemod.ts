@@ -8,18 +8,34 @@ import { statSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import Plugin from 'broccoli-plugin';
 import { transformSync } from '@babel/core';
 import { hbsToJS, ResolverLoader } from '@embroider/core';
-import ResolverTransform from './resolver-transform';
+import ResolverTransform, { type ExternalNameHint } from './resolver-transform';
 import { spawn } from 'child_process';
 import { locateEmbroiderWorkingDir } from '@embroider/core';
 
 export interface TemplateTagCodemodOptions {
   shouldTransformPath: (outputPath: string) => boolean;
+  nameHint: ExternalNameHint;
   dryRun: boolean;
 }
 
 export default function templateTagCodemod(
   emberApp: EmberAppInstance,
-  { shouldTransformPath = (() => true) as TemplateTagCodemodOptions['shouldTransformPath'], dryRun = false } = {}
+  {
+    shouldTransformPath = (() => true) as TemplateTagCodemodOptions['shouldTransformPath'],
+    nameHint = (path => {
+      return path
+        .split('/')
+        .map(part =>
+          part
+            .split('-')
+            // capitalize first letter
+            .map(inner_part => inner_part.charAt(0).toUpperCase() + inner_part.slice(1))
+            .join('')
+        )
+        .join('_');
+    }) as TemplateTagCodemodOptions['nameHint'],
+    dryRun = false,
+  } = {}
 ): Node {
   return new TemplateTagCodemodPlugin(
     [
@@ -35,7 +51,7 @@ export default function templateTagCodemod(
         },
       }),
     ],
-    { shouldTransformPath, dryRun }
+    { shouldTransformPath, nameHint, dryRun }
   );
 }
 
@@ -89,6 +105,11 @@ class TemplateTagCodemodPlugin extends Plugin {
     const babel_plugin_syntax_typescript = require.resolve('@babel/plugin-syntax-typescript', {
       paths: [embroider_compat_path],
     });
+    const resolver_transform = ResolverTransform({
+      appRoot: process.cwd(),
+      emberVersion: emberVersion,
+      externalNameHint: this.options.nameHint,
+    });
 
     for await (const current_file of walkSync(tmp_path)) {
       if (hbs_file_test.test(current_file) && this.options.shouldTransformPath(current_file)) {
@@ -103,7 +124,7 @@ class TemplateTagCodemodPlugin extends Plugin {
                 babel_plugin_ember_template_compilation,
                 {
                   compilerPath: ember_template_compiler.filename,
-                  transforms: [ResolverTransform({ appRoot: process.cwd(), emberVersion: emberVersion })],
+                  transforms: [resolver_transform],
                   targetFormat: 'hbs',
                 },
               ],

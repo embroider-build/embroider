@@ -1,8 +1,16 @@
-const { dirname, join } = require('path');
+const { dirname, join, resolve } = require('path');
 const mergeTrees = require('broccoli-merge-trees');
 const { WatchedDir } = require('broccoli-source');
 const { getWatchedDirectories, packageName } = require('@embroider/shared-internals');
 const resolvePackagePath = require('resolve-package-path');
+const Plugin = require('broccoli-plugin');
+
+class BroccoliNoOp extends Plugin {
+  constructor(path) {
+    super([new WatchedDir(path)]);
+  }
+  build() {}
+}
 
 /*
   Doesn't change your actualTree, but causes a rebuild when any of opts.watching
@@ -12,8 +20,15 @@ const resolvePackagePath = require('resolve-package-path');
   dependencies that you're actively developing. For example, right now
   @embroider/webpack doesn't rebuild itself when non-ember libraries change.
 */
-module.exports = function sideWatch(actualTree, opts) {
+module.exports = function sideWatch(actualTree, opts = {}) {
   const cwd = opts.cwd ?? process.cwd();
+
+  if (!opts.watching || !Array.isArray(opts.watching)) {
+    console.warn(
+      'broccoli-side-watch expects a `watching` array. Returning the original tree without watching any additional trees.'
+    );
+    return actualTree;
+  }
 
   return mergeTrees([
     actualTree,
@@ -39,7 +54,7 @@ module.exports = function sideWatch(actualTree, opts) {
         }
       })
       .map(path => {
-        return new WatchedDir(path);
+        return new BroccoliNoOp(resolve(cwd, path));
       }),
   ]);
 };

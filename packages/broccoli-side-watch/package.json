@@ -6,12 +6,20 @@
   "keywords": [
     "ember"
   ],
+  "scripts": {
+    "test": "jest"
+  },
   "author": "Balint Erdi",
   "license": "MIT",
   "dependencies": {
     "@embroider/shared-internals": "workspace:^",
     "broccoli-merge-trees": "^4.2.0",
+    "broccoli-plugin": "^4.0.7",
     "broccoli-source": "^3.0.1",
     "resolve-package-path": "^4.0.1"
+  },
+  "devDependencies": {
+    "broccoli-test-helper": "^2.0.0",
+    "scenario-tester": "^4.0.0"
   }
 }

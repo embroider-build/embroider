@@ -1,3 +1,4 @@
+export * from './src/request.js';
 export * from './src/resolver.js';
 export * from './src/esbuild-resolver.js';
 export * from './src/hbs.js';

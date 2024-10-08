@@ -5,7 +5,15 @@ const TerserPlugin = require('terser-webpack-plugin');
 const HtmlBundlerPlugin = require('html-bundler-webpack-plugin');
 // const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-// const { resolver, hbs, scripts, templateTag, compatPrebuild, contentFor } = require('@embroider/webpack');
+const {
+  // foo
+  resolver,
+  hbs,
+  scripts,
+  templateTag,
+  compatPrebuild,
+  contentFor,
+} = require('@embroider/webpack');
 
 module.exports = function (env, argv) {
   let isProduction = env.production;
@@ -40,7 +48,7 @@ module.exports = function (env, argv) {
       // // gjs
       // templateTag(),
       // scripts(),
-      // resolver(),
+      resolver(),
       // compatPrebuild(),
       // contentFor(),
       new HtmlBundlerPlugin({

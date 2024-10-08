@@ -717,4 +717,6 @@ function makeBabelLoaderOptions(
   };
 }
 
-export { Webpack };
+import { resolver } from './resolver';
+
+export { Webpack, resolver };

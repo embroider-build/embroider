@@ -31,6 +31,24 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
     }
   }
 
+  async function visitWithRetries() {
+    for (let i = 0; i < 30; i++) {
+      try {
+        await visit();
+        return;
+      } catch (e) {
+        if (e.message.includes('oops status code 504 - Outdated Optimize Dep for')) {
+          continue;
+        }
+        if (e.message.includes('oops status code 404') && e.message.includes('.vite/deps')) {
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw new Error('failed to rerun');
+  }
+
   function prepareResult(assert: Assert) {
     let o = opts();
     let pathRewriter: (p: string) => string;
@@ -43,7 +61,7 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
   }
 
   hooks.before(async () => {
-    await visit();
+    await visitWithRetries();
   });
 
   hooks.beforeEach(assert => {
@@ -53,7 +71,7 @@ export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions
 
   return {
     async rerun() {
-      await visit();
+      await visitWithRetries();
       prepareResult(expectAudit.assert);
     },
     module(name: string | RegExp) {
@@ -162,14 +180,14 @@ export class ExpectModule {
     });
   }
 
-  withContents(fn: (src: string, imports: Import[]) => boolean, message?: string) {
+  withContents(fn: (src: string, imports: Import[]) => boolean, message?: string): PublicAPI<this> {
     if (!this.module) {
       this.emitMissingModule();
-      return;
+      return this;
     }
     if (this.module.type === 'unparseable') {
       this.emitUnparsableModule(message);
-      return;
+      return this;
     }
     const result = fn(this.module.content, this.module.imports);
     this.expectAudit.assert.pushResult({
@@ -178,6 +196,7 @@ export class ExpectModule {
       expected: true,
       message: message ?? `Expected passed function to return true for the contents of ${this.inputName}`,
     });
+    return this;
   }
 
   doesNotIncludeContent(src: string, message?: string) {
@@ -362,9 +381,11 @@ class EmptyExpectModule implements PublicAPI<ExpectModule> {
   doesNotExist() {}
   codeEquals() {}
   codeContains() {}
-  withContents() {}
   doesNotIncludeContent() {}
   includesContent() {}
+  withContents() {
+    return this;
+  }
 
   resolves(): PublicAPI<ExpectResolution> {
     return new EmptyExpectResolution() as PublicAPI<ExpectResolution>;

@@ -1,6 +1,10 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext } from 'rollup';
-import type { Plugin } from 'vite';
+import type { Plugin, ViteDevServer } from 'vite';
+import makeDebug from 'debug';
+
+const debug = makeDebug('embroider:vite');
+
 import {
   hbsToJS,
   ResolverLoader,
@@ -14,9 +18,31 @@ const resolverLoader = new ResolverLoader(process.cwd());
 const hbsFilter = createFilter('**/*.hbs?([?]*)');
 
 export function hbs(): Plugin {
+  let server: ViteDevServer;
+  let virtualDeps: Map<string, string[]> = new Map();
+
   return {
     name: 'rollup-hbs-plugin',
     enforce: 'pre',
+
+    configureServer(s) {
+      server = s;
+      server.watcher.on('all', (_eventName, path) => {
+        for (let [id, watches] of virtualDeps) {
+          for (let watch of watches) {
+            if (path.startsWith(watch)) {
+              debug('Invalidate %s because %s', id, path);
+              server.moduleGraph.onFileChange(id);
+              let m = server.moduleGraph.getModuleById(id);
+              if (m) {
+                server.reloadModule(m);
+              }
+            }
+          }
+        }
+      });
+    },
+
     async resolveId(source: string, importer: string | undefined, options) {
       if (options.custom?.depScan) {
         // during depscan we have a corresponding esbuild plugin that is
@@ -59,17 +85,34 @@ export function hbs(): Plugin {
         }
       }
 
-      let syntheticId = needsSyntheticComponentJS(source, resolution.id);
-      if (syntheticId && isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
-        return {
-          id: syntheticId,
-          meta: {
-            'rollup-hbs-plugin': {
-              type: 'template-only-component-js',
+      if (isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
+        let syntheticId = needsSyntheticComponentJS(source, resolution.id);
+        if (syntheticId) {
+          virtualDeps.set(syntheticId, [resolution.id]);
+          return {
+            id: syntheticId,
+            meta: {
+              'rollup-hbs-plugin': {
+                type: 'template-only-component-js',
+              },
             },
-          },
-        };
+          };
+        } else {
+          let correspondingHBS = syntheticJStoHBS(resolution.id);
+          if (correspondingHBS) {
+            virtualDeps.set(resolution.id, [correspondingHBS]);
+          }
+        }
       }
+
+      // we should be able to clear any earlier meta by returning
+      // resolution.meta here, but vite breaks that rollup feature.
+      let meta = getMeta(this, resolution.id);
+      if (meta) {
+        meta.type = null;
+      }
+
+      return resolution;
     },
 
     load(id: string) {
@@ -90,7 +133,7 @@ export function hbs(): Plugin {
 }
 
 type Meta = {
-  type: 'template-only-component-js';
+  type: 'template-only-component-js' | null;
 };
 
 function getMeta(context: PluginContext, id: string): Meta | null {

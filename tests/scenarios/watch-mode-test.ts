@@ -283,13 +283,12 @@ app.forEachScenario(scenario => {
           .codeContains(`import TEMPLATE from "/app/components/hello-world.hbs?import";`);
         expectAudit
           .module('./app/components/hello-world.js')
-          .codeContains(`export default setComponentTemplate(TEMPLATE, templateOnly());`);
+          .codeContains(`export default setComponentTemplate(TEMPLATE, class extends Component {});`);
 
         await appFile('app/components/hello-world.hbs').delete();
         await deleted('app/components/hello-world.hbs');
         await expectAudit.rerun();
 
-        // TODO I don't know why this is not working 🤔 it thinks it's a template only file?
         expectAudit.module('./app/components/hello-world.js').codeContains(`
           import Component from '@glimmer/component';
           export default class extends Component {}

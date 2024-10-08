@@ -7,7 +7,6 @@ import {
   needsSyntheticComponentJS,
   isInComponents,
   templateOnlyComponentSource,
-  syntheticJStoHBS,
 } from '@embroider/core';
 
 const resolverLoader = new ResolverLoader(process.cwd());
@@ -32,44 +31,21 @@ export function hbs(): Plugin {
         skipSelf: true,
       });
 
-      if (!resolution) {
-        let hbsSource = syntheticJStoHBS(source);
-        if (hbsSource) {
-          resolution = await this.resolve(hbsSource, importer, {
-            skipSelf: true,
-            custom: {
-              embroider: {
-                // we don't want to recurse into the whole embroider compatbility
-                // resolver here. It has presumably already steered our request to the
-                // correct place. All we want to do is slightly modify the request we
-                // were given (changing the extension) and check if that would resolve
-                // instead.
-                //
-                // Currently this guard is only actually exercised in rollup, not in
-                // vite, due to https://github.com/vitejs/vite/issues/13852
-                enableCustomResolver: false,
-                isExtensionSearch: true,
+      if (resolution) {
+        let syntheticId = needsSyntheticComponentJS(source, resolution.id);
+        if (syntheticId && isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
+          return {
+            id: syntheticId,
+            meta: {
+              'rollup-hbs-plugin': {
+                type: 'template-only-component-js',
               },
             },
-          });
-        }
-
-        if (!resolution) {
-          return null;
+          };
         }
       }
 
-      let syntheticId = needsSyntheticComponentJS(source, resolution.id);
-      if (syntheticId && isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
-        return {
-          id: syntheticId,
-          meta: {
-            'rollup-hbs-plugin': {
-              type: 'template-only-component-js',
-            },
-          },
-        };
-      }
+      return resolution;
     },
 
     load(id: string) {

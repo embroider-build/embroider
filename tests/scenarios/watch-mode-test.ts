@@ -290,7 +290,6 @@ app.forEachScenario(scenario => {
         await expectAudit.rerun();
 
         expectAudit.module('./app/components/hello-world.js').codeContains(`
-          import Component from '@glimmer/component';
           export default class extends Component {}
         `);
       });

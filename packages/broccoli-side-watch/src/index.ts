@@ -1,15 +1,22 @@
-const { dirname, join, resolve } = require('path');
-const mergeTrees = require('broccoli-merge-trees');
-const { WatchedDir } = require('broccoli-source');
-const { getWatchedDirectories, packageName } = require('@embroider/shared-internals');
-const resolvePackagePath = require('resolve-package-path');
-const Plugin = require('broccoli-plugin');
+import { dirname, join, resolve } from 'path';
+import mergeTrees from 'broccoli-merge-trees';
+import { WatchedDir } from 'broccoli-source';
+import { getWatchedDirectories, packageName } from '@embroider/shared-internals';
+import resolvePackagePath from 'resolve-package-path';
+import Plugin from 'broccoli-plugin';
+
+import type { InputNode } from 'broccoli-node-api';
 
 class BroccoliNoOp extends Plugin {
-  constructor(path) {
+  constructor(path: string) {
     super([new WatchedDir(path)]);
   }
   build() {}
+}
+
+interface SideWatchOptions {
+  watching?: string[];
+  cwd?: string;
 }
 
 /*
@@ -20,7 +27,7 @@ class BroccoliNoOp extends Plugin {
   dependencies that you're actively developing. For example, right now
   @embroider/webpack doesn't rebuild itself when non-ember libraries change.
 */
-module.exports = function sideWatch(actualTree, opts = {}) {
+export default function sideWatch(actualTree: InputNode, opts: SideWatchOptions = {}) {
   const cwd = opts.cwd ?? process.cwd();
 
   if (!opts.watching || !Array.isArray(opts.watching)) {
@@ -57,4 +64,4 @@ module.exports = function sideWatch(actualTree, opts = {}) {
         return new BroccoliNoOp(resolve(cwd, path));
       }),
   ]);
-};
+}

@@ -2,9 +2,14 @@
   "name": "@embroider/broccoli-side-watch",
   "version": "0.0.1",
   "description": "Watch changes in other folders to rebuild Ember app",
-  "main": "index.js",
   "keywords": [
     "ember"
+  ],
+  "main": "src/index.js",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
   ],
   "scripts": {
     "test": "jest"
@@ -19,7 +24,9 @@
     "resolve-package-path": "^4.0.1"
   },
   "devDependencies": {
+    "broccoli-node-api": "^1.7.0",
     "broccoli-test-helper": "^2.0.0",
-    "scenario-tester": "^4.0.0"
+    "scenario-tester": "^4.0.0",
+    "typescript": "^5.1.6"
   }
 }

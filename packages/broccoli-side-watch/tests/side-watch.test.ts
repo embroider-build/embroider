@@ -1,8 +1,7 @@
 'use strict';
 
 import { UnwatchedDir } from 'broccoli-source';
-// @ts-expect-error -- js module
-import sideWatch from '../index';
+import sideWatch from '../src';
 import { Project } from 'scenario-tester';
 import { join } from 'path';
 import { createBuilder } from 'broccoli-test-helper';

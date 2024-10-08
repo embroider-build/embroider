@@ -169,12 +169,18 @@ importers:
         specifier: ^4.0.1
         version: 4.0.3
     devDependencies:
+      broccoli-node-api:
+        specifier: ^1.7.0
+        version: 1.7.0
       broccoli-test-helper:
         specifier: ^2.0.0
         version: 2.0.0
       scenario-tester:
         specifier: ^4.0.0
         version: 4.0.0
+      typescript:
+        specifier: ^5.1.6
+        version: 5.5.3
 
   packages/compat:
     dependencies:

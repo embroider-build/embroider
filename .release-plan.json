@@ -1,20 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "major",
-      "oldVersion": "5.0.0",
-      "newVersion": "6.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        },
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "6.0.0"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.9"
@@ -24,13 +11,9 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.6.1",
-      "newVersion": "3.6.2",
+      "oldVersion": "3.6.2",
+      "newVersion": "3.6.3",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
@@ -39,39 +22,13 @@
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.16",
-      "newVersion": "3.4.17",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.4.17"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.16.6",
-      "newVersion": "1.16.7",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.7"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -80,20 +37,7 @@
       "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "impact": "minor",
-      "oldVersion": "2.6.3",
-      "newVersion": "2.7.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "2.7.0"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -102,33 +46,11 @@
       "oldVersion": "1.13.2"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "0.2.0",
-      "newVersion": "0.2.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.0.5",
-      "newVersion": "4.0.6",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.6"
     }
   },
-  "description": "## Release (2024-10-01)\n\n@embroider/addon-dev 6.0.0 (major)\n@embroider/compat 3.6.2 (patch)\n@embroider/core 3.4.17 (patch)\n@embroider/macros 1.16.7 (patch)\n@embroider/shared-internals 2.7.0 (minor)\n@embroider/vite 0.2.1 (patch)\n@embroider/webpack 4.0.6 (patch)\n\n#### :boom: Breaking Change\n* `@embroider/addon-dev`, `@embroider/test-scenarios`\n  * [#2082](https://github.com/embroider-build/embroider/pull/2082) Hide base path from public URL of rollup-public-assets ([@simonihmig](https://github.com/simonihmig))\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`, `@embroider/shared-internals`, `@embroider/test-scenarios`\n  * [#2121](https://github.com/embroider-build/embroider/pull/2121) backport #1855 addon-dev: incremental updates to output ([@patricklx](https://github.com/patricklx))\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/core`, `@embroider/vite`, `@embroider/webpack`, `@embroider/test-scenarios`\n  * [#2127](https://github.com/embroider-build/embroider/pull/2127) Bump jsdom to fix punycode deprecation messages from tr46, psl, and whatwg-url ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/shared-internals`, `@embroider/test-scenarios`\n  * [#2122](https://github.com/embroider-build/embroider/pull/2122) speedup windows ci on stable ([@patricklx](https://github.com/patricklx))\n\n#### Committers: 3\n- Patrick Pircher ([@patricklx](https://github.com/patricklx))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2024-10-08)\n\n@embroider/compat 3.6.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#2133](https://github.com/embroider-build/embroider/pull/2133) fix typescript support for codemod and add option for renaming elements ([@void-mAlex](https://github.com/void-mAlex))\n  * [#2120](https://github.com/embroider-build/embroider/pull/2120) fix gts in v1 addons ([@patricklx](https://github.com/patricklx))\n\n#### :house: Internal\n* `@embroider/test-scenarios`\n  * [#2142](https://github.com/embroider-build/embroider/pull/2142) fixing test suite for ember >= 6 ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Patrick Pircher ([@patricklx](https://github.com/patricklx))\n"
 }

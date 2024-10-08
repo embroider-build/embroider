@@ -17,10 +17,20 @@ module.exports = function (env, argv) {
     mode: env.production ? 'production' : 'development',
     devtool: env.production ? 'source-map' : 'eval',
     devServer: {
-      port: 4200,
+      port: 'auto',
+      client: {
+        progress: true,
+        overlay: true,
+      },
+      watchFiles: {
+        paths: ['app/**/*.*', 'tests/**/*.*'],
+        options: {
+          usePolling: true,
+        },
+      },
     },
     resolve: {
-      extensions: ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json', '.wasm'],
+      extensions: ['.gjs', '.js', '.gts', '.ts', '.hbs'],
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -37,7 +47,7 @@ module.exports = function (env, argv) {
         // all the necessary options are in one place
         entry: {
           index: {
-            import: './index.html',
+            import: path.resolve(__dirname, './index.html'),
           },
           tests: {
             import: './tests/index.html',

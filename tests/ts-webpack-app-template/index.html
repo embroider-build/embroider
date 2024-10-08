@@ -9,7 +9,6 @@
     {{content-for "head"}}
 
     <link integrity="" rel="stylesheet" href="/@embroider/virtual/vendor.css">
-    <link integrity="" rel="stylesheet" href="/assets/ts-app-template.css">
 
     {{content-for "head-footer"}}
   </head>
@@ -17,12 +16,7 @@
     {{content-for "body"}}
 
     <script src="/@embroider/virtual/vendor.js"></script>
-    <script type="module">
-      import Application from './app/app.ts';
-      import environment from './app/config/environment';
-
-      Application.create(environment.APP);
-    </script>
+    <script src="./app/webpack-boot.ts"></script>
 
     {{content-for "body-footer"}}
   </body>

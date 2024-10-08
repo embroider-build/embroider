@@ -50,6 +50,7 @@
     "@types/htmlbars-inline-precompile": "^3.0.0",
     "@types/qunit": "^2.19.6",
     "@types/rsvp": "^4.0.4",
+    "babel-loader": "^9.2.1",
     "concurrently": "^8.2.1",
     "copy-webpack-plugin": "^12.0.2",
     "ember-auto-import": "^2.6.3",
@@ -90,5 +91,8 @@
   "ember-addon": {
     "type": "app",
     "version": 2
+  },
+  "dependencies": {
+    "decorator-transforms": "^2.0.0"
   }
 }

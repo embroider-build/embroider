@@ -1,9 +1,6 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext } from 'rollup';
-import type { Plugin, ViteDevServer } from 'vite';
-import makeDebug from 'debug';
-
-const debug = makeDebug('embroider:vite');
+import type { Plugin } from 'vite';
 
 import {
   hbsToJS,
@@ -13,34 +10,20 @@ import {
   templateOnlyComponentSource,
   syntheticJStoHBS,
 } from '@embroider/core';
+import { DepTracker } from './dep-tracker.js';
 
 const resolverLoader = new ResolverLoader(process.cwd());
 const hbsFilter = createFilter('**/*.hbs?([?]*)');
 
 export function hbs(): Plugin {
-  let server: ViteDevServer;
-  let virtualDeps: Map<string, string[]> = new Map();
+  let depTracker: DepTracker | undefined;
 
   return {
     name: 'rollup-hbs-plugin',
     enforce: 'pre',
 
     configureServer(s) {
-      server = s;
-      server.watcher.on('all', (_eventName, path) => {
-        for (let [id, watches] of virtualDeps) {
-          for (let watch of watches) {
-            if (path.startsWith(watch)) {
-              debug('Invalidate %s because %s', id, path);
-              server.moduleGraph.onFileChange(id);
-              let m = server.moduleGraph.getModuleById(id);
-              if (m) {
-                server.reloadModule(m);
-              }
-            }
-          }
-        }
-      });
+      depTracker = new DepTracker(s);
     },
 
     async resolveId(source: string, importer: string | undefined, options) {
@@ -88,7 +71,7 @@ export function hbs(): Plugin {
       if (isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
         let syntheticId = needsSyntheticComponentJS(source, resolution.id);
         if (syntheticId) {
-          virtualDeps.set(syntheticId, [resolution.id]);
+          depTracker?.trackDeps(syntheticId, [resolution.id]);
           return {
             id: syntheticId,
             meta: {
@@ -100,7 +83,7 @@ export function hbs(): Plugin {
         } else {
           let correspondingHBS = syntheticJStoHBS(resolution.id);
           if (correspondingHBS) {
-            virtualDeps.set(resolution.id, [correspondingHBS]);
+            depTracker?.trackDeps(resolution.id, [correspondingHBS]);
           }
         }
       }

@@ -2,6 +2,17 @@
 
 ## Release (2024-10-09)
 
+@embroider/broccoli-side-watch 1.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/broccoli-side-watch`
+  * [#2148](https://github.com/embroider-build/embroider/pull/2148) Fix broken default export when required from CJS ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2024-10-09)
+
 @embroider/addon-dev 6.0.1 (patch)
 @embroider/broccoli-side-watch 1.0.0 (major)
 @embroider/compat 3.6.4 (patch)

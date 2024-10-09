@@ -116,9 +116,10 @@ export default class V1Addon {
   @Memoize()
   private get templateCompilerBabelPlugin(): PluginItem | undefined {
     let plugins = loadAstPlugins(this.addonInstance.registry);
+    let hasTemplateTag = this.addonInstance.addons.find((a: any) => a.name === 'ember-template-imports');
     // our macros don't run here in stage1
     plugins = plugins.filter((p: any) => !isEmbroiderMacrosPlugin(p));
-    if (plugins.length > 0) {
+    if (plugins.length > 0 || hasTemplateTag) {
       let compilerPath = require.resolve('ember-source/dist/ember-template-compiler.js', {
         paths: [findTopmostAddon(this.addonInstance).parent.root],
       });
@@ -203,6 +204,34 @@ export default class V1Addon {
     }
     if (this.addonInstance.addons.find((a: any) => a.name === 'ember-cli-htmlbars-inline-precompile')) {
       // the older inline template compiler is present
+      return true;
+    }
+    if (this.addonInstance.addons.find((a: any) => a.name === 'ember-template-imports')) {
+      /**
+       * Stage1 will always run custom broccoli preprocessors. So that's enough to convert:
+       *
+       * import Thing from './thing';
+       * <template><Thing/></template>
+       * to
+       *
+       * import Thing from './thing';
+       * import { template } from '@ember/template-compiler';
+       * export default template("Thing", {
+       *   eval: function() { return eval(arguments[0]) } })
+       * });
+       * This is really all we need to do at stage1, since this is now valid Javascript that could appear in a v2 addon.
+       *
+       * But if the addon is also using TS, we also need to run the typescript transform before it will be valid JS. And if the typescript transform was being truly correct it would not try to delete the import because the eval can see the imported binding. That's why we have an eval. It's a standards-compliant want of gaining access to everything in scope.
+       *
+       * Normally we only use babel-plugin-ember-template-compilation in stage1 to run custom AST transforms. Since there are none in the addon, we don't add it. The fix here is helping because there is a new reason to add it. It will further convert the above example to:
+       *
+       * import Thing from './thing';
+       * import { template } from '@ember/template-compiler';
+       * export default template("Thing", {
+       *   scope: () => ({ Thing })
+       * });
+       * which typescript then respects.
+       */
       return true;
     }
 

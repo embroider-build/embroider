@@ -131,6 +131,22 @@ function pairedComponentShim(params: PairedComponentShimParams): VirtualContentR
 const pairedComponentShimTemplate = compile(`
 import { setComponentTemplate } from "@ember/component";
 import template from "{{{js-string-escape relativeHBSModule}}}";
+import { deprecate } from "@ember/debug";
+
+
+deprecate("Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup '{{debugName}}'.",
+  false, {
+    id: 'component-template-resolving',
+    url: 'https://deprecations.emberjs.com/id/component-template-resolving',
+    until: '6.0.0',
+    for: 'ember-source',
+    since: {
+      available: '5.10.0',
+      enabled: '5.10.0',
+    },
+  }
+);
+
 {{#if relativeJSModule}}
 import component from "{{{js-string-escape relativeJSModule}}}";
 export default setComponentTemplate(template, component);

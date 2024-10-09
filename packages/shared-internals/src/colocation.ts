@@ -7,7 +7,7 @@ export function syntheticJStoHBS(source: string): string | null {
   // only ever JS (never TS or anything else). And extensionless imports are
   // handled by the default resolving system doing extension search.
   if (cleanUrl(source).endsWith('.js')) {
-    return source.replace(/.js(\?.*)?/, '.hbs$1');
+    return source.replace(/\.js(\?.*)?$/, '.hbs$1');
   }
 
   return null;

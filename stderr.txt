@@ -1,0 +1,31 @@
+Warning: unknown package "@embroider/test-support"
+Warning: unknown package "addon-template"
+Warning: unknown package "app-template"
+Warning: unknown package "@embroider/test-scenarios"
+Warning: unknown package "ts-app-template"
+Warning: unknown package "@embroider/sample-transforms"
+Warning: unknown package "@embroider/test-fixtures"
+Warning: unknown package "addon-template"
+Warning: unknown package "app-template"
+Warning: unknown package "@embroider/test-fixtures"
+Warning: unknown package "@embroider/test-scenarios"
+Warning: unknown package "ts-app-template"
+Warning: unknown package "@embroider/test-support"
+Warning: unknown package "@embroider/sample-transforms"
+Warning: unknown package "@embroider/test-support"
+Warning: unknown package "@embroider/test-scenarios"
+Warning: unknown package "@embroider/sample-transforms"
+Warning: unknown package "@embroider/test-support"
+Warning: unknown package "@embroider/test-scenarios"
+Warning: unknown package "addon-template"
+Warning: unknown package "@embroider/unstable-release"
+Warning: unknown package "app-template"
+Warning: unknown package "ts-app-template"
+Warning: unknown package "@embroider/test-fixtures"
+# Unlabeled Changes
+
+* `@embroider/test-scenarios`, `ts-app-template`
+  * [#2112](https://github.com/embroider-build/embroider/pull/2112) fix build with gts ([@patricklx](https://github.com/patricklx))
+
+
+*Cannot plan release until the above changes are labeled*.

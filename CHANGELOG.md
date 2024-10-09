@@ -2,6 +2,21 @@
 
 ## Release (2024-10-09)
 
+@embroider/compat 3.6.5 (patch)
+@embroider/core 3.4.19 (patch)
+@embroider/macros 1.16.9 (patch)
+@embroider/shared-internals 2.8.1 (patch)
+@embroider/webpack 4.0.8 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`
+  * [#2151](https://github.com/embroider-build/embroider/pull/2151) Fix hbs plugin not resolving .hbs due to broken Regex ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2024-10-09)
+
 @embroider/broccoli-side-watch 1.0.1 (patch)
 
 #### :bug: Bug Fix

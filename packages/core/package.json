@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "3.4.17",
+  "version": "3.4.18",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {

@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## Release (2024-10-09)
+
+@embroider/addon-dev 6.0.1 (patch)
+@embroider/broccoli-side-watch 1.0.0 (major)
+@embroider/compat 3.6.4 (patch)
+@embroider/core 3.4.18 (patch)
+@embroider/macros 1.16.8 (patch)
+@embroider/shared-internals 2.8.0 (minor)
+@embroider/webpack 4.0.7 (patch)
+
+#### :boom: Breaking Change
+* `@embroider/broccoli-side-watch`
+  * [#2146](https://github.com/embroider-build/embroider/pull/2146) Fix broccoli-side-watch so release-plan will release as 1.0.0 ([@simonihmig](https://github.com/simonihmig))
+
+#### :rocket: Enhancement
+* `@embroider/broccoli-side-watch`, `@embroider/shared-internals`
+  * [#2141](https://github.com/embroider-build/embroider/pull/2141) Add better broccoli-side-watch package ([@simonihmig](https://github.com/simonihmig))
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#2136](https://github.com/embroider-build/embroider/pull/2136) Enforce correct plugin order in addon-dev  ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2024-10-08)
 
 @embroider/compat 3.6.3 (patch)

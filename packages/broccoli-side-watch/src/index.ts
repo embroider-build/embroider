@@ -27,7 +27,7 @@ interface SideWatchOptions {
   dependencies that you're actively developing. For example, right now
   @embroider/webpack doesn't rebuild itself when non-ember libraries change.
 */
-export default function sideWatch(actualTree: InputNode, opts: SideWatchOptions = {}) {
+function sideWatch(actualTree: InputNode, opts: SideWatchOptions = {}) {
   const cwd = opts.cwd ?? process.cwd();
 
   if (!opts.watching || !Array.isArray(opts.watching)) {
@@ -65,3 +65,6 @@ export default function sideWatch(actualTree: InputNode, opts: SideWatchOptions 
       }),
   ]);
 }
+
+// We expose this as CJS, so make sure this transpiles to module.exports = sideWatch
+export = sideWatch;

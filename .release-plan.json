@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "6.0.0",
-      "newVersion": "6.0.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "6.0.1"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.8.9"
@@ -19,63 +10,28 @@
       "oldVersion": "3.1.1"
     },
     "@embroider/broccoli-side-watch": {
-      "impact": "major",
-      "oldVersion": "0.1.0",
-      "newVersion": "1.0.0",
+      "impact": "patch",
+      "oldVersion": "1.0.0",
+      "newVersion": "1.0.1",
       "constraints": [
         {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        },
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/broccoli-side-watch/package.json"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.6.3",
-      "newVersion": "3.6.4",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "3.6.4"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.17",
-      "newVersion": "3.4.18",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.4.18"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.16.7",
-      "newVersion": "1.16.8",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.8"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -84,16 +40,7 @@
       "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "impact": "minor",
-      "oldVersion": "2.7.0",
-      "newVersion": "2.8.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "2.8.0"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -105,17 +52,8 @@
       "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.0.6",
-      "newVersion": "4.0.7",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.7"
     }
   },
-  "description": "## Release (2024-10-09)\n\n@embroider/addon-dev 6.0.1 (patch)\n@embroider/broccoli-side-watch 1.0.0 (major)\n@embroider/compat 3.6.4 (patch)\n@embroider/core 3.4.18 (patch)\n@embroider/macros 1.16.8 (patch)\n@embroider/shared-internals 2.8.0 (minor)\n@embroider/webpack 4.0.7 (patch)\n\n#### :boom: Breaking Change\n* `@embroider/broccoli-side-watch`\n  * [#2146](https://github.com/embroider-build/embroider/pull/2146) Fix broccoli-side-watch so release-plan will release as 1.0.0 ([@simonihmig](https://github.com/simonihmig))\n\n#### :rocket: Enhancement\n* `@embroider/broccoli-side-watch`, `@embroider/shared-internals`\n  * [#2141](https://github.com/embroider-build/embroider/pull/2141) Add better broccoli-side-watch package ([@simonihmig](https://github.com/simonihmig))\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`, `@embroider/test-scenarios`\n  * [#2136](https://github.com/embroider-build/embroider/pull/2136) Enforce correct plugin order in addon-dev  ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 1\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2024-10-09)\n\n@embroider/broccoli-side-watch 1.0.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/broccoli-side-watch`\n  * [#2148](https://github.com/embroider-build/embroider/pull/2148) Fix broken default export when required from CJS ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 1\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
 }

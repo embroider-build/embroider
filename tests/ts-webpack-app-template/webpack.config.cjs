@@ -49,7 +49,7 @@ module.exports = function (env, argv) {
       // templateTag(),
       // scripts(),
       resolver(),
-      // compatPrebuild(),
+      compatPrebuild(),
       // contentFor(),
       new HtmlBundlerPlugin({
         // all the necessary options are in one place

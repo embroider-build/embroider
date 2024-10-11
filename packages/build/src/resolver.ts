@@ -38,8 +38,4 @@ function combinedPlugins(/* user options */): UnpluginFactory<any>[] {
   ];
 }
 
-const resolverPlugin = /* #__PURE__ */ createUnplugin<undefined, true>(combinedPlugins);
-
-export function resolver() {
-  return resolverPlugin.webpack();
-}
+export const resolver = /* #__PURE__ */ createUnplugin<undefined, true>(combinedPlugins);

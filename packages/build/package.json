@@ -1,0 +1,35 @@
+{
+  "name": "@embroider/build",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Plugins for building apps with embroider",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/build"
+  },
+  "license": "MIT",
+  "author": "Edward Faulkner",
+  "main": "src/index.js",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "scripts": {},
+  "dependencies": {
+    "@embroider/babel-loader-9": "workspace:*",
+    "@embroider/hbs-loader": "workspace:*",
+    "@embroider/shared-internals": "workspace:*",
+    "unplugin": "^1.14.1"
+  },
+  "devDependencies": {
+    "@embroider/core": "workspace:^"
+  },
+  "peerDependencies": {
+    "@embroider/core": "workspace:^"
+  },
+  "engines": {
+    "node": "12.* || 14.* || >= 16"
+  }
+}

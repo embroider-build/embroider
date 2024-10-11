@@ -1,21 +1,18 @@
 const path = require('path');
 
-const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const HtmlBundlerPlugin = require('html-bundler-webpack-plugin');
-// const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const {
-  // foo
   resolver,
-  hbs,
-  scripts,
-  templateTag,
+  // hbs,
+  // scripts,
+  // templateTag,
   compatPrebuild,
-  contentFor,
+  // contentFor,
 } = require('@embroider/webpack');
 
-module.exports = function (env, argv) {
+module.exports = function (env) {
   let isProduction = env.production;
   let isDevelopment = !isProduction;
 

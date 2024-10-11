@@ -996,6 +996,9 @@ importers:
       '@babel/core':
         specifier: ^7.22.9
         version: 7.25.2
+      '@embroider/build':
+        specifier: workspace:*
+        version: link:../build
       '@embroider/macros':
         specifier: workspace:*
         version: link:../macros

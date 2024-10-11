@@ -1,2 +1,2 @@
 export { resolver } from './resolver';
-export { compatPrebuild } from './build';
+export { compatPrebuild, emberBuild } from './build';

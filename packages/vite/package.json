@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.22.9",
+    "@embroider/build": "workspace:*",
     "@embroider/macros": "workspace:*",
     "@embroider/reverse-exports": "workspace:*",
     "@rollup/pluginutils": "^5.1.0",

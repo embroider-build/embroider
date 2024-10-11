@@ -38,15 +38,36 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
   });
 }
 
-const compatPrebuildFactory: UnpluginFactory<undefined> = () => {
+const compatPrebuildFactory: UnpluginFactory<undefined> = (_options, meta) => {
+  let packager = meta.framework;
+  let command: string | undefined;
+  let mode: string | undefined;
+  let resolvableExtensions: string[] | undefined;
+
   return {
     name: 'embroider-builder',
     enforce: 'pre',
-    async buildStart() {
+    vite: {
+      config(config: { resolve?: { extensions: string[] } }, env: { mode: string; command: string }) {
+        command = env.command;
+        mode = env.mode;
+        resolvableExtensions = config.resolve?.extensions;
+      },
+    },
+    webpack(/* compiler */) {
       // TODO: unhard-code all this
-      let command: 'build' | 'start' = 'start';
-      let mode: 'development' | 'production' = 'development';
-      let resolvableExtensions = ['.gjs', '.js', '.gts', '.ts', '.hbs'];
+      command ??= 'start';
+      mode ??= 'development';
+      resolvableExtensions ??= ['.gjs', '.js', '.gts', '.ts', '.hbs'];
+    },
+    async buildStart() {
+      if (!command) {
+        throw new Error(`bug: embroider compatPrebuild did not detect ${packager}'s command`);
+      }
+
+      if (!mode) {
+        throw new Error(`bug: embroider compatPrebuild did not detect ${packager}'s mode`);
+      }
 
       await emberBuild(command, mode, resolvableExtensions);
     },

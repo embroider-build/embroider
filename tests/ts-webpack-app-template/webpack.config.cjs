@@ -3,18 +3,18 @@ const path = require('path');
 const TerserPlugin = require('terser-webpack-plugin');
 const HtmlBundlerPlugin = require('html-bundler-webpack-plugin');
 
-const {
-  resolver,
-  // hbs,
-  // scripts,
-  // templateTag,
-  compatPrebuild,
-  // contentFor,
-} = require('@embroider/webpack');
-
-module.exports = function (env) {
+module.exports = async function (env) {
   let isProduction = env.production;
   let isDevelopment = !isProduction;
+
+  const {
+    resolver,
+    // hbs,
+    // scripts,
+    // templateTag,
+    compatPrebuild,
+    // contentFor,
+  } = await import('@embroider/build');
 
   console.log({ isDevelopment, isProduction });
 
@@ -45,8 +45,8 @@ module.exports = function (env) {
       // // gjs
       // templateTag(),
       // scripts(),
-      resolver(),
-      compatPrebuild(),
+      resolver.webpack(),
+      compatPrebuild.webpack(),
       // contentFor(),
       new HtmlBundlerPlugin({
         // all the necessary options are in one place

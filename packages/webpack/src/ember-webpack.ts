@@ -717,9 +717,4 @@ function makeBabelLoaderOptions(
   };
 }
 
-import * as buildPlugins from '@embroider/build';
-
-const compatPrebuild = buildPlugins.compatPrebuild.webpack;
-const resolver = buildPlugins.resolver.webpack;
-
-export { Webpack, resolver, compatPrebuild };
+export { Webpack };

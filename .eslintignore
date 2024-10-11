@@ -1,5 +1,7 @@
 /packages/build/**/*.js
 /packages/build/**/*.d.ts
+/packages/build/index.mjs
+/packages/build/index.d.ts
 /packages/core/**/*.js
 /packages/core/**/*.d.ts
 /packages/shared-internals/**/*.js

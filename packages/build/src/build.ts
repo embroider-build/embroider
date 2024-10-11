@@ -48,7 +48,7 @@ const compatPrebuildFactory: UnpluginFactory<undefined> = (_options, meta) => {
     name: 'embroider-builder',
     enforce: 'pre',
     vite: {
-      config(config: { resolve?: { extensions: string[] } }, env: { mode: string; command: string }) {
+      config(config, env) {
         command = env.command;
         mode = env.mode;
         resolvableExtensions = config.resolve?.extensions;

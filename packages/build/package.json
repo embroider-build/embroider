@@ -18,9 +18,18 @@
   ],
   "scripts": {},
   "dependencies": {
+    "@babel/core": "^7.22.9",
     "@embroider/babel-loader-9": "workspace:*",
     "@embroider/hbs-loader": "workspace:*",
     "@embroider/shared-internals": "workspace:*",
+    "@embroider/reverse-exports": "workspace:*",
+    "assert-never": "^1.2.1",
+    "content-tag": "^2.0.2",
+    "debug": "^4.3.2",
+    "esbuild": "^0.17.19",
+    "fs-extra": "^10.0.0",
+    "send": "^0.18.0",
+    "source-map-url": "^0.4.1",
     "unplugin": "^1.14.1"
   },
   "devDependencies": {

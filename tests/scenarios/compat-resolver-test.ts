@@ -67,7 +67,6 @@ Scenarios.fromProject(() => new Project())
           emberVersion = '4.6.0'
         ) {
           let resolverOptions: CompatResolverOptions = {
-            amdCompatibility: 'cjs',
             renameModules: {},
             renamePackages: {},
             resolvableExtensions: ['.js', '.hbs'],

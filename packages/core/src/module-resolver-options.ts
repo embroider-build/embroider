@@ -1,5 +1,4 @@
 import { explicitRelative, RewrittenPackageCache, type AddonPackage, type Package } from '@embroider/shared-internals';
-import type UserOptions from './options';
 import type { Engine } from './app-files';
 import { resolve as resolvePath } from 'path';
 import { realpathSync } from 'fs-extra';
@@ -18,7 +17,6 @@ export interface Options {
   modulePrefix: string;
   splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
-  amdCompatibility: Required<UserOptions['amdCompatibility']>;
   staticAppPaths: string[];
   emberVersion: string;
 }
@@ -62,9 +60,6 @@ export function buildResolverOptions<T extends Options>(inputs: {
     resolvableExtensions: resolvableExtensions(),
     appRoot: appPackage.root,
     engines,
-    amdCompatibility: {
-      es: [],
-    },
     modulePrefix,
     staticAppPaths: inputs.staticAppPaths ?? [],
     emberVersion: appPackage.dependencies.find(d => d.name === 'ember-source')!.version,

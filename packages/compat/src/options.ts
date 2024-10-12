@@ -43,16 +43,6 @@ export default interface Options extends CoreOptions {
   // apply.
   staticAddonTestSupportTrees?: boolean;
 
-  // when true, we will load ember-source as ES modules. This means unused parts
-  // of ember-source won't be included. But it also means that addons using old
-  // APIs to try to `require()` things from Ember -- particularly from within
-  // vendor.js -- cannot do that anymore.
-  //
-  // When false (the default) we load ember-source the traditional way, which is
-  // that a big ol' script gets smooshed into vendor.js, and none of ember's
-  // public module API actually exists as modules at build time.
-  staticEmberSource?: boolean;
-
   // Allows you to override how specific addons will build. Like:
   //
   //   import V1Addon from '@embroider/compat'; let compatAdapters = new Map();
@@ -112,7 +102,6 @@ export default interface Options extends CoreOptions {
 const defaults = Object.assign(coreWithDefaults(), {
   staticAddonTrees: false,
   staticAddonTestSupportTrees: false,
-  staticEmberSource: false,
   compatAdapters: new Map(),
   extraPublicTrees: [],
   workspaceDir: null,
@@ -139,7 +128,6 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
     staticHelpers: true,
     staticModifiers: true,
     staticComponents: true,
-    staticEmberSource: true,
     allowUnsafeDynamicComponents: false,
   }),
 });

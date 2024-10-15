@@ -1,4 +1,4 @@
-import type { Plugin, ViteDevServer } from 'vite';
+import type { Plugin } from 'vite';
 import core, { type Resolver } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
 import { RollupModuleRequest, virtualPrefix } from './request.js';
@@ -10,6 +10,7 @@ import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
 import fs from 'fs-extra';
 import { createHash } from 'crypto';
+import { DepTracker } from './dep-tracker.js';
 
 const { ensureSymlinkSync, outputJSONSync } = fs;
 
@@ -17,8 +18,7 @@ const debug = makeDebug('embroider:vite');
 
 export function resolver(): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
-  let server: ViteDevServer;
-  const virtualDeps: Map<string, string[]> = new Map();
+  let depTracker: DepTracker | undefined;
   const notViteDeps = new Set<string>();
 
   return {
@@ -26,21 +26,7 @@ export function resolver(): Plugin {
     enforce: 'pre',
 
     configureServer(s) {
-      server = s;
-      server.watcher.on('all', (_eventName, path) => {
-        for (let [id, watches] of virtualDeps) {
-          for (let watch of watches) {
-            if (path.startsWith(watch)) {
-              debug('Invalidate %s because %s', id, path);
-              server.moduleGraph.onFileChange(id);
-              let m = server.moduleGraph.getModuleById(id);
-              if (m) {
-                server.reloadModule(m);
-              }
-            }
-          }
-        }
-      });
+      depTracker = new DepTracker(s);
     },
 
     async resolveId(source, importer, options) {
@@ -73,8 +59,7 @@ export function resolver(): Plugin {
       if (id.startsWith(virtualPrefix)) {
         let { pathname } = new URL(id, 'http://example.com');
         let { src, watches } = virtualContent(pathname.slice(virtualPrefix.length + 1), resolverLoader.resolver);
-        virtualDeps.set(id, watches);
-        server?.watcher.add(watches);
+        depTracker?.trackDeps(id, watches);
         return src;
       }
     },

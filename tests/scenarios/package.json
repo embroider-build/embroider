@@ -102,6 +102,7 @@
     "execa": "^5.1.1",
     "node-fetch": "2.7.0",
     "popper.js": "^1.16.1",
+    "puppeteer": "^23.3.1",
     "strip-ansi": "^6.0.0",
     "testem": "^3.10.1",
     "tslib": "^2.6.0",

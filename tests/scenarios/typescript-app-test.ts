@@ -8,6 +8,31 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
   merge(project.files, {
     app: {
       components: {
+        'test-gts.gts': `
+            import Component from '@glimmer/component';
+            import { tracked } from '@glimmer/tracking';
+            import { action } from '@ember/object';
+            import { on } from '@ember/modifier';
+
+            interface Signature {
+              Element: HTMLDivElement;
+              Blocks: {
+                default: [number]
+              }
+            }
+
+            export default class Incrementer extends Component<Signature> {
+              @tracked count = 0;
+
+              @action increment() { this.count++ }
+              <template>
+                <div ...attributes>
+                  <button {{on 'click' this.increment}}>increment</button>
+                  {{yield this.count}}
+                </div>
+              </template>
+            }
+        `,
         'incrementer.ts': `
             import Component from '@glimmer/component';
             import { tracked } from '@glimmer/tracking';
@@ -36,6 +61,29 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
     },
     tests: {
       rendering: {
+        'gts-test.gts': `
+            import { module, test } from 'qunit';
+            import { setupRenderingTest } from 'ember-qunit';
+            import { render, click } from '@ember/test-helpers';
+            import TestGts from '/app/components/test-gts';
+
+            module('Rendering', function (hooks) {
+              setupRenderingTest(hooks);
+
+              test('increments', async function (assert) {
+                await render(<template>
+                  <TestGts as |count|>
+                    <out>{{count}}</out>
+                  </TestGts>
+                </template>);
+
+                assert.dom('out').hasText('0');
+
+                await click('button');
+                assert.dom('out').hasText('1');
+              });
+            });
+          `,
         'incrementer-test.ts': `
             import { module, test } from 'qunit';
             import { setupRenderingTest } from 'ember-qunit';

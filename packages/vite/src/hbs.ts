@@ -42,6 +42,9 @@ export function hbs(): Plugin {
       });
 
       if (!resolution) {
+        // vite already has extension search fallback for extensionless imports.
+        // This is different, it covers an explicit .js import fallback to the
+        // corresponding hbs.
         let hbsSource = syntheticJStoHBS(source);
         if (hbsSource) {
           resolution = await this.resolve(hbsSource, importer, {

@@ -2,6 +2,7 @@ const { babelCompatSupport, templateCompatSupport } = require('@embroider/compat
 
 module.exports = {
   plugins: [
+    ['@babel/plugin-transform-typescript'],
     [
       'babel-plugin-ember-template-compilation',
       {

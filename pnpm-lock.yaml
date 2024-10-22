@@ -498,6 +498,9 @@ importers:
       '@types/node':
         specifier: ^15.12.2
         version: 15.14.9
+      '@types/qunit':
+        specifier: ^2.19.11
+        version: 2.19.11
       '@types/resolve':
         specifier: ^1.20.0
         version: 1.20.6
@@ -8287,6 +8290,10 @@ packages:
   /@types/qunit@2.19.10:
     resolution: {integrity: sha512-gVB+rxvxmbyPFWa6yjjKgcumWal3hyqoTXI0Oil161uWfo1OCzWZ/rnEumsx+6uVgrwPrCrhpQbLkzfildkSbg==}
 
+  /@types/qunit@2.19.11:
+    resolution: {integrity: sha512-JYIrHO/FFMJ8t6zcw5O8Id6ctKyBaYFZOQI9D6pXOI9TwSF+tkvPZAouo6RtvjvZCBBVNBcxf1lqKWMmUH1yaA==}
+    dev: true
+
   /@types/range-parser@1.2.7:
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
 
@@ -8922,9 +8929,6 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
-    peerDependenciesMeta:
-      ajv:
-        optional: true
     dependencies:
       ajv: 8.16.0
 
@@ -24706,7 +24710,7 @@ packages:
     resolution: {integrity: sha512-EdRAaAyk2cUE1wOf2DkEhzxqOQvFOoRJFNS6NeyJ01Gp2beMRpBAINjM2iDXE3KCuKhwnvHIQCJm6ThL2Z+HzQ==}
     hasBin: true
     peerDependencies:
-      browserslist: '>= 4.21.0'
+      browserslist: ^4.14.0
     dependencies:
       browserslist: 4.23.1
       escalade: 3.1.2

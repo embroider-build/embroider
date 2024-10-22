@@ -4,7 +4,6 @@
     "./packages/*/tests/**/*.ts",
     "./test-packages/support/**/*.ts",
     "./test-packages/release/src/**/*.ts",
-    "./tests/scenarios/**/*.ts"
   ],
   "compilerOptions": {
     "target": "es2019",
@@ -33,5 +32,8 @@
     "tmp",
     "tests/scenarios/output",
     "packages/router/src"
+  ],
+  "references": [
+    { "path": "tests/scenarios" }
   ]
 }

@@ -6,7 +6,7 @@
   },
   "scripts": {
     "clean": "git clean -x -f",
-    "compile": "tsc",
+    "compile": "tsc -b",
     "dev": "tsc -b --watch",
     "lint": "concurrently 'npm:lint:*(!fix)' --names 'lint:'",
     "lint:fix": "concurrently 'npm:lint:*:fix' --names 'fix:'",
@@ -15,7 +15,7 @@
     "lint:prettier": "prettier . -c",
     "lint:prettier:fix": "prettier . -w",
     "lint:router-types": "cd packages/router && pnpm lint:types",
-    "prepare": "tsc && pnpm build-v2-addons",
+    "prepare": "tsc -b && pnpm build-v2-addons",
     "build-v2-addons": "concurrently 'pnpm:build-v2-addons:*'",
     "build-v2-addons:router": "cd packages/router && pnpm build",
     "test": "cd tests/scenarios && pnpm test"

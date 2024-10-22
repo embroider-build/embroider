@@ -86,7 +86,7 @@ typescriptApp.forEachScenario(scenario => {
     });
 
     test(`check types`, async function (assert) {
-      let result = await app.execute(`pnpm tsc`);
+      let result = await app.execute(`pnpm tsc -b`);
       assert.equal(result.exitCode, 0, result.output);
     });
   });

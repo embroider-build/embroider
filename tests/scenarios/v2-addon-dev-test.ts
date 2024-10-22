@@ -48,6 +48,7 @@ appScenarios
       'rollup.config.mjs': `
         import { babel } from '@rollup/plugin-babel';
         import { Addon } from '@embroider/addon-dev/rollup';
+        import { resolve, dirname } from 'path';
 
         const addon = new Addon({
           srcDir: 'src',
@@ -64,6 +65,7 @@ appScenarios
           plugins: [
             addon.publicEntrypoints([
               'components/**/*.js',
+              'asset-examples/**/*.js',
             ], {
               exclude: ['**/-excluded/**/*'],
             }),
@@ -79,6 +81,37 @@ appScenarios
             addon.gjs(),
             addon.dependencies(),
             addon.publicAssets('public'),
+            addon.keepAssets(["**/*.css"]),
+
+            // this works with custom-asset plugin below to exercise whether we can keepAssets
+            // for generated files that have exports
+            addon.keepAssets(["**/*.xyz"], "default"),
+            {
+              name: 'virtual-css',
+              resolveId(source, importer) {
+                if (source.endsWith('virtual.css')) {
+                  return { id: resolve(dirname(importer), source) }
+                }
+              },
+              load(id) {
+                if (id.endsWith('virtual.css')) {
+                  return '.my-blue-example { color: blue }'
+                }
+              }
+            },
+            {
+              name: 'custom-plugin',
+              resolveId(source, importer) {
+                if (source.endsWith('.xyz')) {
+                  return { id: resolve(dirname(importer), source) }
+                }
+              },
+              load(id) {
+                if (id.endsWith('.xyz')) {
+                  return 'Custom Content';
+                }
+              }
+            },
 
             babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
 
@@ -155,6 +188,23 @@ appScenarios
               throw new Exception('This should never have been imported!');
             `,
           },
+        },
+        'asset-examples': {
+          'has-css-import.js': `
+          import "./styles.css";
+          `,
+          'styles.css': `
+            .my-red-example { color: red }
+          `,
+          'has-virtual-css-import.js': `
+            import "./my-virtual.css";
+          `,
+          'has-custom-asset-import.js': `
+            import value from './custom.xyz';
+            export function example() {
+              return value;
+            }
+          `,
         },
       },
       public: {
@@ -286,8 +336,54 @@ appScenarios
             });
           });
         `,
+        'asset-test.js': `
+          import { module, test } from 'qunit';
+
+          module('keepAsset', function (hooks) {
+            let initialClassList;
+            hooks.beforeEach(function() {
+              initialClassList = document.body.classList;
+            });
+
+            hooks.afterEach(function() {
+              document.body.classList = initialClassList;
+            });
+
+            test('Normal CSS', async function (assert) {
+              await import("v2-addon/asset-examples/has-css-import");
+              document.body.classList.add('my-red-example');
+              assert.strictEqual(getComputedStyle(document.querySelector('body')).color, 'rgb(255, 0, 0)');
+            });
+
+            test("Virtual CSS", async function (assert) {
+              await import("v2-addon/asset-examples/has-virtual-css-import");
+              document.body.classList.add('my-blue-example');
+              assert.strictEqual(getComputedStyle(document.querySelector('body')).color, 'rgb(0, 0, 255)');
+            });
+
+            test("custom asset with export", async function(assert) {
+              let { example } = await import("v2-addon/asset-examples/has-custom-asset-import");
+              assert.strictEqual(example(), "Custom Content");
+            });
+          })
+        `,
       },
     });
+
+    project.files['vite.config.mjs'] = (project.files['vite.config.mjs'] as string).replace(
+      'contentFor(),',
+      `
+      contentFor(),
+      {
+        name: "xyz-handler",
+        transform(code, id) {
+          if (id.endsWith('.xyz')) {
+            return \`export default "\${code}"\`
+          }
+        }
+      },
+    `
+    );
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -398,6 +494,28 @@ export { SingleFileComponent as default };
           expectNoNamespaceFile('package.json').json('ember-addon.public-assets').deepEquals({
             './public/other.txt': '/other.txt',
           });
+        });
+
+        test('keepAssets works for real css files', async function () {
+          expectFile('dist/asset-examples/has-css-import.js').equalsCode(`import './styles.css'`);
+          expectFile('dist/asset-examples/styles.css').matches('.my-red-example { color: red }');
+        });
+
+        test('keepAssets works for css generated by another plugin', async function () {
+          expectFile('dist/asset-examples/has-virtual-css-import.js').equalsCode(`import './my-virtual.css'`);
+          expectFile('dist/asset-examples/my-virtual.css').matches('.my-blue-example { color: blue }');
+        });
+
+        test('keepAssets tolerates non-JS content that is interpreted as having a default export', async function () {
+          expectFile('dist/asset-examples/has-custom-asset-import.js').equalsCode(`
+            import _asset_0_ from './custom.xyz'
+            var value = _asset_0_;
+            function example() {
+              return value;
+            }
+            export { example }
+          `);
+          expectFile('dist/asset-examples/custom.xyz').matches(`Custom Content`);
         });
       });
 

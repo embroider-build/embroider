@@ -18,7 +18,7 @@ let routerApp = tsAppScenarios.map('router', project => {
 
         const EmberApp = require('ember-cli/lib/broccoli/ember-app');
         const { maybeEmbroider } = require('@embroider/test-setup');
-        
+
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {
             'ember-cli-babel': {
@@ -30,7 +30,7 @@ let routerApp = tsAppScenarios.map('router', project => {
               }
             }
           });
-        
+
           return maybeEmbroider(app, {
             staticAddonTestSupportTrees: true,
             staticAddonTrees: true,
@@ -219,7 +219,7 @@ let routerApp = tsAppScenarios.map('router', project => {
               );
             });
           });
-                  
+
           `,
       },
     },
@@ -234,7 +234,7 @@ routerApp.forEachScenario(scenario => {
     });
 
     test(`type checks`, async function (assert) {
-      let result = await app.execute('pnpm tsc');
+      let result = await app.execute('pnpm tsc -b');
       assert.equal(result.exitCode, 0, result.output);
     });
   });

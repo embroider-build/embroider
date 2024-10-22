@@ -1,6 +1,7 @@
 import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext } from 'rollup';
 import type { Plugin } from 'vite';
+
 import {
   hbsToJS,
   ResolverLoader,
@@ -9,14 +10,22 @@ import {
   templateOnlyComponentSource,
   syntheticJStoHBS,
 } from '@embroider/core';
+import { DepTracker } from './dep-tracker.js';
 
 const resolverLoader = new ResolverLoader(process.cwd());
 const hbsFilter = createFilter('**/*.hbs?([?]*)');
 
 export function hbs(): Plugin {
+  let depTracker: DepTracker | undefined;
+
   return {
     name: 'rollup-hbs-plugin',
     enforce: 'pre',
+
+    configureServer(s) {
+      depTracker = new DepTracker(s);
+    },
+
     async resolveId(source: string, importer: string | undefined, options) {
       if (options.custom?.depScan) {
         // during depscan we have a corresponding esbuild plugin that is
@@ -62,16 +71,31 @@ export function hbs(): Plugin {
         }
       }
 
-      let syntheticId = needsSyntheticComponentJS(source, resolution.id);
-      if (syntheticId && isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
-        return {
-          id: syntheticId,
-          meta: {
-            'rollup-hbs-plugin': {
-              type: 'template-only-component-js',
+      if (isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
+        let syntheticId = needsSyntheticComponentJS(source, resolution.id);
+        if (syntheticId) {
+          depTracker?.trackDeps(syntheticId, [resolution.id]);
+          return {
+            id: syntheticId,
+            meta: {
+              'rollup-hbs-plugin': {
+                type: 'template-only-component-js',
+              },
             },
-          },
-        };
+          };
+        } else {
+          let correspondingHBS = syntheticJStoHBS(resolution.id);
+          if (correspondingHBS) {
+            depTracker?.trackDeps(resolution.id, [correspondingHBS]);
+          }
+        }
+      }
+
+      // we should be able to clear any earlier meta by returning
+      // resolution.meta here, but vite breaks that rollup feature.
+      let meta = getMeta(this, resolution.id);
+      if (meta) {
+        meta.type = null;
       }
 
       return resolution;
@@ -95,7 +119,7 @@ export function hbs(): Plugin {
 }
 
 type Meta = {
-  type: 'template-only-component-js';
+  type: 'template-only-component-js' | null;
 };
 
 function getMeta(context: PluginContext, id: string): Meta | null {

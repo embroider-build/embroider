@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2024-10-31)
+
+@embroider/addon-shim 1.9.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-shim`
+  * [#2158](https://github.com/embroider-build/embroider/pull/2158) Add a new option for addon-shim to pass config to ember-auto-import ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/test-scenarios`, `ts-app-template`
+  * [#2159](https://github.com/embroider-build/embroider/pull/2159) pinning @types/qunit to fix ci ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2024-10-09)
 
 @embroider/compat 3.6.5 (patch)

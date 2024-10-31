@@ -4,7 +4,16 @@
       "oldVersion": "6.0.1"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "1.8.9"
+      "impact": "minor",
+      "oldVersion": "1.8.9",
+      "newVersion": "1.9.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-shim/package.json"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "3.1.1"
@@ -13,47 +22,16 @@
       "oldVersion": "1.0.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "3.6.4",
-      "newVersion": "3.6.5",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "3.6.5"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.18",
-      "newVersion": "3.4.19",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.4.19"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.16.8",
-      "newVersion": "1.16.9",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.9"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -62,16 +40,7 @@
       "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "impact": "patch",
-      "oldVersion": "2.8.0",
-      "newVersion": "2.8.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "2.8.1"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -83,17 +52,8 @@
       "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.0.7",
-      "newVersion": "4.0.8",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.8"
     }
   },
-  "description": "## Release (2024-10-09)\n\n@embroider/compat 3.6.5 (patch)\n@embroider/core 3.4.19 (patch)\n@embroider/macros 1.16.9 (patch)\n@embroider/shared-internals 2.8.1 (patch)\n@embroider/webpack 4.0.8 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/shared-internals`\n  * [#2151](https://github.com/embroider-build/embroider/pull/2151) Fix hbs plugin not resolving .hbs due to broken Regex ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 1\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2024-10-31)\n\n@embroider/addon-shim 1.9.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-shim`\n  * [#2158](https://github.com/embroider-build/embroider/pull/2158) Add a new option for addon-shim to pass config to ember-auto-import ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/test-scenarios`, `ts-app-template`\n  * [#2159](https://github.com/embroider-build/embroider/pull/2159) pinning @types/qunit to fix ci ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

@@ -2,6 +2,9 @@ import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'rollup';
 import { Preprocessor } from 'content-tag';
 
+//@ts-ignore
+import convert from 'convert-source-map';
+
 const PLUGIN_NAME = 'rollup-gjs-plugin';
 
 const processor = new Preprocessor();
@@ -20,12 +23,29 @@ export default function rollupGjsPlugin(
         if (!gjsFilter(id)) {
           return null;
         }
-        let code = processor.process(input, {
+        let codeWithInlineMap = processor.process(input, {
           filename: id,
           inline_source_map,
         });
+
+        let map = convert.fromSource(codeWithInlineMap).toJSON();
+        /**
+         * The true sourcemap may only be at the end of a file
+         * as its own line
+         */
+        let lines = codeWithInlineMap.split('\n');
+
+        // Array.prototype.at is not available (yet)
+        let reversed = lines.reverse();
+        if (reversed[0].startsWith('//# sourceMappingURL=')) {
+          lines.pop();
+        }
+
+        let code = lines.join('\n');
+
         return {
           code,
+          map,
         };
       },
     },

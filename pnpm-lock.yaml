@@ -61,11 +61,22 @@ importers:
         specifier: workspace:^
         version: link:../core
       '@rollup/pluginutils':
-        specifier: ^4.1.1
-        version: 4.2.1
+        specifier: ^5.1.0
+        version: 5.1.0(rollup@3.29.4)
       content-tag:
+<<<<<<< HEAD
         specifier: ^2.0.1
         version: 2.0.2
+||||||| parent of 2423369a (Fix sourcemaps for GJS)
+        specifier: ^2.0.1
+        version: 2.0.1
+=======
+        specifier: ^2.0.2
+        version: 2.0.2
+      convert-source-map:
+        specifier: ^2.0.0
+        version: 2.0.0
+>>>>>>> 2423369a (Fix sourcemaps for GJS)
       fs-extra:
         specifier: ^10.0.0
         version: 10.1.0
@@ -8061,6 +8072,7 @@ packages:
     dependencies:
       '@types/estree': 1.0.6
       estree-walker: 2.0.2
+<<<<<<< HEAD
       picomatch: 4.0.2
       rollup: 3.29.5
     dev: true
@@ -8068,6 +8080,14 @@ packages:
   /@rtsao/scc@1.1.0:
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
     dev: true
+||||||| parent of 2423369a (Fix sourcemaps for GJS)
+      picomatch: 2.3.1
+      rollup: 3.29.4
+    dev: true
+=======
+      picomatch: 2.3.1
+      rollup: 3.29.4
+>>>>>>> 2423369a (Fix sourcemaps for GJS)
 
   /@simple-dom/document@1.4.0:
     resolution: {integrity: sha512-/RUeVH4kuD3rzo5/91+h4Z1meLSLP66eXqpVAw/4aZmYozkeqUkMprq0znL4psX/adEed5cBgiNJcfMz/eKZLg==}
@@ -11997,6 +12017,10 @@ packages:
 
   /content-tag@2.0.2:
     resolution: {integrity: sha512-qHRyTp02dgzRK2tsCFxZ1H289bZOuSLNpupr6prvnSFq4SFPmNlBKbbE5PCMb+8+Z1a1z+yCVtXvQIGUCCa3lQ==}
+
+  /content-tag@2.0.2:
+    resolution: {integrity: sha512-qHRyTp02dgzRK2tsCFxZ1H289bZOuSLNpupr6prvnSFq4SFPmNlBKbbE5PCMb+8+Z1a1z+yCVtXvQIGUCCa3lQ==}
+    dev: false
 
   /content-type@1.0.5:
     resolution: {integrity: sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==}

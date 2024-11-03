@@ -28,7 +28,6 @@ export default function rollupGjsPlugin(
           inline_source_map,
         });
 
-        let map = convert.fromSource(codeWithInlineMap).toJSON();
         /**
          * The true sourcemap may only be at the end of a file
          * as its own line
@@ -36,9 +35,10 @@ export default function rollupGjsPlugin(
         let lines = codeWithInlineMap.split('\n');
 
         // Array.prototype.at is not available (yet)
-        let reversed = lines.reverse();
-        if (reversed[0].startsWith('//# sourceMappingURL=')) {
-          lines.pop();
+        let map = null;
+        if (lines[lines.length - 1].startsWith('//# sourceMappingURL=')) {
+          let mapComment = lines.pop();
+          map = convert.fromComment(mapComment).toJSON();
         }
 
         let code = lines.join('\n');

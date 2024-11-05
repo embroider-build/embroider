@@ -1,17 +1,71 @@
 import { appScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import globby from 'globby';
 import fs from 'fs/promises';
 import { pathExists } from 'fs-extra';
 import path from 'path';
-import CommandWatcher, { DEFAULT_TIMEOUT } from './helpers/command-watcher';
+import CommandWatcher from './helpers/command-watcher';
+import puppeteer, { type Browser, type Page } from 'puppeteer';
+import {
+  type ExpectAuditResults,
+  installAuditAssertions,
+  prepareResult,
+  visitWithRetries,
+} from '@embroider/test-support/audit-assertions';
+
+import { type HTTPAuditOptions } from '@embroider/compat/src/http-audit';
 
 const { module: Qmodule, test } = QUnit;
 
-let app = appScenarios.skip().map('watch-mode', () => {
+let app = appScenarios.map('watch-mode', app => {
+  app.linkDevDependency('testem', { baseDir: __dirname });
+  app.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
+  app.mergeFiles({
+    'testem-dev.js': `
+        'use strict';
+
+        module.exports = {
+          test_page: 'tests/index.html?hidepassed',
+          disable_watching: true,
+          launch_in_ci: ['Chrome'],
+          launch_in_dev: ['Chrome'],
+          browser_start_timeout: 120,
+          browser_args: {
+            Chrome: {
+              ci: [
+                // --no-sandbox is needed when running Chrome inside a container
+                process.env.CI ? '--no-sandbox' : null,
+                '--headless',
+                '--disable-dev-shm-usage',
+                '--disable-software-rasterizer',
+                '--mute-audio',
+                '--remote-debugging-port=0',
+                '--window-size=1440,900',
+              ].filter(Boolean),
+            },
+          },
+          middleware: [
+            require('@embroider/test-support/testem-proxy').testemProxy('http://localhost:4200')
+          ],
+        };
+      `,
+    'ember-cli-build.js': `'use strict';
+
+const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const { maybeEmbroider } = require('@embroider/test-setup');
+
+module.exports = function (defaults) {
+  let app = new EmberApp(defaults, {});
+
+  return maybeEmbroider(app, {
+    // we need this to simplify adding componnets and having them added to the entrypoint
+    staticComponents: false,
+  });
+};
+`,
+  });
   /**
-   * We will create files as a part of the watch-mode tests,
+   * We will create app files as a part of the watch-mode tests,
    * because creating files should cause appropriate watch/update behavior
    */
 });
@@ -44,105 +98,16 @@ class File {
   }
 }
 
-class AssertFile {
-  readonly file: File;
-
-  constructor(private assert: Assert, file: File) {
-    this.file = file;
-  }
-
-  async exists(): Promise<void> {
-    this.assert.true(await this.file.exists(), `${this.file.label} exists`);
-  }
-
-  async doesNotExist(): Promise<void> {
-    this.assert.false(await this.file.exists(), `${this.file.label} does not exists`);
-  }
-
-  async hasContent(expected: string): Promise<void> {
-    let actual = await this.file.read();
-
-    if (actual === null) {
-      this.assert.ok(false, `${this.file.label} does not exists`);
-    } else {
-      this.assert.equal(actual, expected, `content of ${this.file.label}`);
-    }
-  }
-
-  async doesNotHaveContent(expected: string | RegExp): Promise<void> {
-    let actual = await this.file.read();
-
-    if (actual === null) {
-      this.assert.ok(false, `${this.file.label} does not exists`);
-    } else {
-      this.assert.notEqual(actual, expected, `content of ${this.file.label}`);
-    }
-  }
-
-  async includesContent(expected: string): Promise<void> {
-    let actual = await this.file.read();
-
-    if (actual === null) {
-      this.assert.ok(false, `${this.file.label} does not exists`);
-    } else {
-      this.assert.true(actual.includes(expected), `content of ${this.file.label}`);
-    }
-  }
-
-  async doesNotIncludeContent(expected: string): Promise<void> {
-    let actual = await this.file.read();
-
-    if (actual === null) {
-      this.assert.ok(false, `${this.file.label} does not exists`);
-    } else {
-      this.assert.false(actual.includes(expected), `content of ${this.file.label}`);
-    }
-  }
-}
-
-function d(strings: TemplateStringsArray, ...values: unknown[]): string {
-  let buf = '';
-  for (let string of strings) {
-    if (values.length) {
-      buf += string + values.shift();
-    } else {
-      buf += string;
-    }
-  }
-  return deindent(buf);
-}
-
-function deindent(s: string): string {
-  if (s.startsWith('\n')) {
-    s = s.slice(1);
-  }
-
-  let indentSize = s.search(/\S/);
-
-  if (indentSize > 0) {
-    let indent = s.slice(0, indentSize);
-
-    s = s
-      .split('\n')
-      .map(line => {
-        if (line.startsWith(indent)) {
-          return line.slice(indentSize);
-        } else {
-          return line;
-        }
-      })
-      .join('\n');
-  }
-
-  s = s.trimEnd();
-
-  return s;
-}
-
 app.forEachScenario(scenario => {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
     let server: CommandWatcher;
+    let appURL: string;
+    let browser: Browser;
+    let appPage: Page;
+    let testsPage: Page;
+    let expectAudit: ExpectAuditResults;
+    let auditOptions: HTTPAuditOptions;
 
     function appFile(appPath: string): File {
       let fullPath = path.join(app.dir, ...appPath.split('/'));
@@ -153,112 +118,114 @@ app.forEachScenario(scenario => {
       await server.waitFor(...args);
     }
 
-    async function added(filePath: string): Promise<void> {
-      await waitFor(`file added ${path.join(...filePath.split('/'))}`);
+    async function added(): Promise<void> {
+      await waitFor(new RegExp(`page reload embroider_virtual:.*/app/-embroider-entrypoint.js`));
     }
 
     async function changed(filePath: string): Promise<void> {
-      await waitFor(`file changed ${path.join(...filePath.split('/'))}`);
+      await waitFor(new RegExp(`.*page reload ${path.join(...filePath.split('/'))}`));
     }
 
     async function deleted(filePath: string): Promise<void> {
-      await waitFor(`file deleted ${path.join(...filePath.split('/'))}`);
+      await waitFor(new RegExp(`.*page reload ${path.join(...filePath.split('/'))}`));
     }
 
-    async function checkScripts(distPattern: RegExp, needle: string) {
-      let root = app.dir;
-      let available = await globby('**/*', { cwd: path.join(root, 'dist') });
-
-      let matchingFiles = available.filter((item: string) => distPattern.test(item));
-      let matchingFileContents = await Promise.all(
-        matchingFiles.map(async (item: string) => {
-          return fs.readFile(path.join(app.dir, 'dist', item), 'utf8');
-        })
-      );
-      return matchingFileContents.some((item: string) => item.includes(needle));
-    }
-
-    hooks.beforeEach(async () => {
+    hooks.beforeEach(async assert => {
       app = await scenario.prepare();
-      server = CommandWatcher.launch('ember', ['serve', '--port', '0'], { cwd: app.dir });
-      await waitFor(/Serving on http:\/\/localhost:[0-9]+\//, DEFAULT_TIMEOUT * 2);
+      server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+      [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+      auditOptions = {
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      };
+
+      // it's annoying but we need to have an open browser to truly test file reload functionality
+      browser = await puppeteer.launch();
+      appPage = await browser.newPage();
+      await appPage.goto(appURL);
+
+      // we also need to go to the tests page to watch for additions to test files
+      testsPage = await browser.newPage();
+      await testsPage.goto(appURL + '/tests/');
+
+      let result = await visitWithRetries(auditOptions);
+
+      installAuditAssertions(assert);
+      expectAudit = prepareResult(assert, auditOptions, result);
     });
 
     hooks.afterEach(async () => {
-      await server.shutdown();
+      await Promise.all([server.shutdown(), browser.close()]);
     });
 
-    test(`ember serve`, async function (assert) {
+    async function rerun() {
+      let result = await visitWithRetries(auditOptions);
+      expectAudit = prepareResult(expectAudit.assert, auditOptions, result);
+    }
+
+    test(`adding a simple file`, async function (assert) {
+      expectAudit.module(/.*app\/-embroider-entrypoint.js/).doesNotIncludeContent('app/simple-file.js');
+
       const originalContent =
         'TWO IS A GREAT NUMBER< I LKE IT A LOT< IT IS THE POWER OF ALL  OF ELECTRONICS, MATH, ETC';
-      assert.false(await checkScripts(/js$/, originalContent), 'file has not been created yet');
+      // assert.false(await checkScripts(/js$/, originalContent), 'file has not been created yet');
 
       await appFile('app/simple-file.js').write(`export const two = "${originalContent}";`);
-      await added('simple-file.js');
-      await waitFor(/Build successful/);
+      await added();
 
-      assert.true(await checkScripts(/js$/, originalContent), 'the file now exists');
+      await rerun();
 
-      const updatedContent = 'THREE IS A GREAT NUMBER TWO';
-      assert.false(await checkScripts(/js$/, updatedContent), 'file has not been created yet');
-
-      await appFile('app/simple-file.js').write(`export const two = "${updatedContent}";`);
-      await changed('simple-file.js');
-      await waitFor(/Build successful/);
-
-      // TODO: find a better way to test this; this seems to linger around
-      // assert.false(await checkScripts(/js$/, originalContent), 'the original file does not exists');
-      assert.true(await checkScripts(/js$/, updatedContent), 'the updated file now exists');
-    });
-
-    Qmodule('[GH#1619] co-located components regressions', function (hooks) {
-      // These tests uses the internal `.rewritten-app` structure to confirm the failures.
-      // If that changes these tests should be updated to match the spirit of the original
-      // issue (https://github.com/embroider-build/embroider/issues/1619)
-      let assertRewrittenFile: (rewrittenPath: string) => AssertFile;
-
-      hooks.beforeEach(assert => {
-        assertRewrittenFile = (rewrittenPath: string) => {
-          let fullPath = path.join(app.dir, 'tmp', 'rewritten-app', ...rewrittenPath.split('/'));
-          let file = new File(rewrittenPath, fullPath);
-          return new AssertFile(assert, file);
-        };
+      expectAudit.module(/.*app\/-embroider-entrypoint.js/).withContents(contents => {
+        assert.ok(contents.includes('app/simple-file.js'), 'simple-file is in the entrypoint after we add the file');
+        return true;
       });
 
+      expectAudit.module('./app/simple-file.js').codeContains(`export const two = "${originalContent}";`);
+      const updatedContent = 'THREE IS A GREAT NUMBER TWO';
+
+      await appFile('app/simple-file.js').write(`export const two = "${updatedContent}";`);
+      await changed('app/simple-file.js');
+
+      await rerun();
+
+      expectAudit.module('./app/simple-file.js').codeContains(`export const two = "${updatedContent}";`);
+    });
+
+    Qmodule('[GH#1619] co-located components regressions', function () {
       test('Scenario 1: deleting a template-only component', async function () {
-        await assertRewrittenFile('assets/app-template.js').doesNotIncludeContent(
-          '"app-template/components/hello-world"'
-        );
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').doesNotExist();
+        expectAudit
+          .module(/.*app\/-embroider-entrypoint.js/)
+          .doesNotIncludeContent('"app-template/components/hello-world"');
 
         await appFile('app/components/hello-world.hbs').write('hello world!');
-        await added('components/hello-world.hbs');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('assets/app-template.js').includesContent('"app-template/components/hello-world"');
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
-          import templateOnlyComponent from '@ember/component/template-only';
-          export default templateOnlyComponent();
+        await added();
+        await rerun();
+
+        expectAudit.module(/.*app\/-embroider-entrypoint.js/).includesContent('"app-template/components/hello-world"');
+        expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
+        expectAudit.module('./app/components/hello-world.js').codeContains(`
+          export default setComponentTemplate(TEMPLATE, templateOnly());
         `);
 
         await appFile('app/components/hello-world.hbs').delete();
-        await deleted('components/hello-world.hbs');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('assets/app-template.js').doesNotIncludeContent(
-          '"app-template/components/hello-world"'
-        );
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').doesNotExist();
+        await deleted('app/components/hello-world.hbs');
+
+        await rerun();
+
+        expectAudit
+          .module(/.*app\/-embroider-entrypoint.js/)
+          .doesNotIncludeContent('"app-template/components/hello-world"');
       });
 
       test('Scenario 2: adding a template to a component', async function (assert) {
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').doesNotExist();
-        await assertRewrittenFile('tests/integration/hello-world-test.js').doesNotExist();
+        await rerun();
+        expectAudit
+          .module(/.*app\/-embroider-entrypoint.js/)
+          .doesNotIncludeContent('"app-template/components/hello-world"');
 
-        await appFile('tests/integration/hello-world-test.js').write(d`
+        await appFile('tests/integration/hello-world-test.js').write(`
           import { module, test } from 'qunit';
           import { setupRenderingTest } from 'ember-qunit';
           import { render } from '@ember/test-helpers';
@@ -273,121 +240,122 @@ app.forEachScenario(scenario => {
             });
           });
         `);
-        await added('integration/hello-world-test.js');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').doesNotExist();
-        await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
+        await changed('tests/integration/hello-world-test.js');
 
-        await appFile('app/components/hello-world.js').write(d`
+        await appFile('app/components/hello-world.js').write(`
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
-        await added('components/hello-world.js');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          import Component from '@glimmer/component';
+        await added();
+
+        await rerun();
+        expectAudit.module('./app/components/hello-world.js').codeContains(`
           export default class extends Component {}
         `);
-        await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
 
-        let test = await CommandWatcher.launch('ember', ['test', '--filter', 'hello-world'], { cwd: app.dir });
-        await test.waitFor(/^not ok .+ Integration | hello-world: it renders/, DEFAULT_TIMEOUT * 2);
-        await assert.notStrictEqual(await test.waitForExit(), 0);
+        let result = await app.execute('pnpm testem --file testem-dev.js ci');
+        assert.equal(result.exitCode, 1, result.output);
+        assert.ok(/^not ok .+ Integration | hello-world: it renders/.test(result.output), result.output);
 
         await appFile('app/components/hello-world.hbs').write('hello world!');
-        await added('components/hello-world.hbs');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
-        await assertRewrittenFile('tests/integration/hello-world-test.js').includesContent('<HelloWorld />');
+        await added();
 
-        test = await CommandWatcher.launch('ember', ['test', '--filter', 'hello-world'], { cwd: app.dir });
-        await test.waitFor(/^ok .+ Integration | hello-world: it renders/);
-        await assert.strictEqual(await test.waitForExit(), 0);
+        await rerun();
+
+        expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
+
+        // TODO this seems to be failling I assume because the js file isn't being updated
+        expectAudit.module('./app/components/hello-world.js').codeContains(`
+          export default setComponentTemplate(TEMPLATE, class extends Component {});
+        `);
+
+        result = await app.execute('pnpm testem --file testem-dev.js ci');
+        assert.equal(result.exitCode, 0, result.output);
+        assert.ok(/^ok .+ Integration | hello-world: it renders/.test(result.output), result.output);
       });
 
       test('Scenario 3: deleting a co-located template', async function () {
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').doesNotExist();
+        await rerun();
+        expectAudit
+          .module(/.*app\/-embroider-entrypoint.js/)
+          .doesNotIncludeContent('"app-template/components/hello-world"');
 
         await appFile('app/components/hello-world.hbs').write('hello world!');
-        await added('components/hello-world.hbs');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
-          import templateOnlyComponent from '@ember/component/template-only';
-          export default templateOnlyComponent();
+        await added();
+
+        await rerun();
+
+        expectAudit.module(/.*app\/-embroider-entrypoint.js/).includesContent('"app-template/components/hello-world"');
+
+        expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
+        expectAudit.module('./app/components/hello-world.js').codeContains(`
+          export default setComponentTemplate(TEMPLATE, templateOnly());
         `);
 
-        await appFile('app/components/hello-world.js').write(d`
+        await appFile('app/components/hello-world.js').write(`
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
-        await added('components/hello-world.js');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
+        await added();
+        await rerun();
+        expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
+        expectAudit
+          .module('./app/components/hello-world.js')
+          .codeContains(`import TEMPLATE from "/app/components/hello-world.hbs?import";`);
+        expectAudit
+          .module('./app/components/hello-world.js')
+          .codeContains(`export default setComponentTemplate(TEMPLATE, class extends Component {});`);
 
         await appFile('app/components/hello-world.hbs').delete();
-        await deleted('components/hello-world.hbs');
-        await waitFor(/Build successful/);
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          import Component from '@glimmer/component';
+        await deleted('app/components/hello-world.hbs');
+        await rerun();
+
+        expectAudit.module('./app/components/hello-world.js').codeContains(`
           export default class extends Component {}
         `);
       });
 
       test('Scenario 4: editing a co-located js file', async function () {
-        await assertRewrittenFile('components/hello-world.hbs').doesNotExist();
-        await assertRewrittenFile('components/hello-world.js').doesNotExist();
+        await rerun();
+        expectAudit
+          .module(/.*app\/-embroider-entrypoint.js/)
+          .doesNotIncludeContent('"app-template/components/hello-world"');
 
         await appFile('app/components/hello-world.hbs').write('hello world!');
-        await added('components/hello-world.hbs');
-        await waitFor(/Build successful/);
+        await added();
 
-        await appFile('app/components/hello-world.js').write(d`
-          import Component from '@glimmer/component';
-          export default class extends Component {}
-        `);
-        await added('components/hello-world.js');
-        await waitFor(/Build successful/);
-
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
+        await appFile('app/components/hello-world.js').write(`
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
 
-        await appFile('app/components/hello-world.js').write(d`
+        await added();
+        await rerun();
+
+        expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
+        expectAudit
+          .module('./app/components/hello-world.js')
+          .codeContains(`import TEMPLATE from "/app/components/hello-world.hbs?import";`);
+        expectAudit
+          .module('./app/components/hello-world.js')
+          .codeContains(`export default setComponentTemplate(TEMPLATE, class extends Component {});`);
+
+        await appFile('app/components/hello-world.js').write(`
           import Component from '@glimmer/component';
           export default class extends Component {
             // this shows that updates invalidate any caches and reflects properly
           }
         `);
-        await changed('components/hello-world.js');
-        await waitFor(/Build successful/);
 
-        await assertRewrittenFile('components/hello-world.hbs').hasContent('hello world!');
-        await assertRewrittenFile('components/hello-world.js').hasContent(d`
-          /* import __COLOCATED_TEMPLATE__ from './hello-world.hbs'; */
-          import Component from '@glimmer/component';
-          export default class extends Component {
-            // this shows that updates invalidate any caches and reflects properly
-          }
-        `);
+        await changed('./app/components/hello-world.js');
+        await rerun();
+
+        expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
+        expectAudit.module(
+          './app/components/hello-world.js'
+        ).codeContains(`export default setComponentTemplate(TEMPLATE, class extends Component {
+      // this shows that updates invalidate any caches and reflects properly
+    });`);
       });
     });
   });

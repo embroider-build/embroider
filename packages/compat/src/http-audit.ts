@@ -56,7 +56,12 @@ export async function httpAudit(
   let modules = await visitModules({
     base: options.appURL,
     entrypoints: options.startingFrom.map(s => new URL(s, options.appURL).href),
-    babelConfig: { ast: true },
+    babelConfig: {
+      ast: true,
+      generatorOpts: {
+        compact: false,
+      },
+    },
     frames: new CodeFrameStorage(),
     findings,
     resolveId,

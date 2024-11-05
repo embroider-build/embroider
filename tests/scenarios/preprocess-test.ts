@@ -39,7 +39,7 @@ appScenarios
       test(`css is transformed: build mode`, async function (assert) {
         let result = await app.execute(`pnpm build`);
         assert.strictEqual(result.exitCode, 0, result.output);
-        let text = readFileSync(join(app.dir, `dist/assets/app-template.css`), 'utf8');
+        let text = readFileSync(join(app.dir, `dist/@embroider/virtual/app.css`), 'utf8');
         assert.strictEqual(text, 'body { background: red; }');
       });
 
@@ -47,7 +47,7 @@ appScenarios
         const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
         try {
           const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-          let response = await fetch(`${url}/assets/app-template.css`);
+          let response = await fetch(`${url}/@embroider/virtual/app.css`);
           let text = await response.text();
           assert.strictEqual(text, 'body { background: red; }');
         } finally {

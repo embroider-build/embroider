@@ -72,7 +72,7 @@ appScenarios
               {{content-for "head"}}
 
               <link integrity="" rel="stylesheet" href="/@embroider/virtual/vendor.css">
-              <link integrity="" rel="stylesheet" href="/assets/app-template.css">
+              <link integrity="" rel="stylesheet" href="/@embroider/virtual/app.css">
 
               {{content-for "head-footer"}}
             </head>

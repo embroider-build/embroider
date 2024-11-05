@@ -4,6 +4,8 @@ import QUnit from 'qunit';
 import fetch from 'node-fetch';
 import CommandWatcher from './helpers/command-watcher';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
+import { mkdirSync, moveSync, readFileSync, writeFileSync } from 'fs-extra';
+import { resolve } from 'path';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -25,7 +27,7 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
       'use strict';
 
       module.exports = {
-        test_page: 'tests?hidepassed',
+        test_page: '/tests?hidepassed',
         disable_watching: true,
         launch_in_ci: ['Chrome'],
         launch_in_dev: ['Chrome'],
@@ -45,10 +47,63 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
           },
         },
         middleware: [
-          require('@embroider/test-support/testem-proxy').testemProxy('http://localhost:4200')
+          require('@embroider/test-support/testem-proxy').testemProxy('http://localhost:4200', '/')
         ],
       };
     `,
+
+    config: {
+      'environment.js': `
+          'use strict';
+
+          module.exports = function (environment) {
+            const ENV = {
+              modulePrefix: 'ts-app-template',
+              environment,
+              rootURL: '/',
+              locationType: 'history',
+              EmberENV: {
+                EXTEND_PROTOTYPES: false,
+                FEATURES: {
+                  // Here you can enable experimental features on an ember canary build
+                  // e.g. EMBER_NATIVE_DECORATOR_SUPPORT: true
+                },
+              },
+
+              APP: {
+                // Here you can pass flags/options to your application instance
+                // when it is created
+              },
+            };
+
+            if (environment === 'development') {
+              // ENV.APP.LOG_RESOLVER = true;
+              // ENV.APP.LOG_ACTIVE_GENERATION = true;
+              // ENV.APP.LOG_TRANSITIONS = true;
+              // ENV.APP.LOG_TRANSITIONS_INTERNAL = true;
+              // ENV.APP.LOG_VIEW_LOOKUPS = true;
+            }
+
+            if (environment === 'test') {
+              // Testem prefers this...
+              ENV.locationType = 'none';
+
+              // keep test console output quieter
+              ENV.APP.LOG_ACTIVE_GENERATION = false;
+              ENV.APP.LOG_VIEW_LOOKUPS = false;
+
+              ENV.APP.rootElement = '#ember-testing';
+              ENV.APP.autoboot = false;
+            }
+
+            if (environment === 'production') {
+              // here you can enable a production-specific feature
+            }
+
+            return ENV;
+          };
+        `,
+    },
 
     app: {
       components: {
@@ -334,6 +389,51 @@ function runViteInternalsTest(scenario: Scenario) {
         assert.equal(result.exitCode, 0, result.output);
         result = await app.execute('pnpm ember test --path dist');
         assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+
+    Qmodule('vite with custom base', function (hooks) {
+      const base = '/sub-dir/';
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      Qmodule('vite dev', function (hooks) {
+        hooks.before(async () => {
+          server = CommandWatcher.launch('vite', ['--clearScreen', 'false', '--base', base], { cwd: app.dir });
+          const [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+          let testem = readFileSync(resolve(app.dir, 'testem-dev.js')).toString();
+          let environment = readFileSync(resolve(app.dir, 'config', 'environment.js')).toString();
+          const url = appURL.replace('/sub-dir', '');
+          testem = testem
+            .replace(`test_page: '/tests?hidepassed',`, `test_page: '${base}tests?hidepassed',`)
+            .replace(`.testemProxy('http://localhost:4200', '/')`, `.testemProxy('${url}', '${base}')`);
+          environment = environment.replace(`rootURL: '/',`, `rootURL: '${base}',`);
+          writeFileSync(resolve(app.dir, 'testem-dev.js'), testem);
+          writeFileSync(resolve(app.dir, 'config', 'environment.js'), environment);
+        });
+
+        hooks.after(async () => {
+          await server?.shutdown();
+        });
+
+        test('run test suite against vite dev', async function (assert) {
+          let result = await app.execute('pnpm testem --file testem-dev.js ci');
+          assert.equal(result.exitCode, 0, result.output);
+        });
+      });
+
+      Qmodule('vite build', function (hooks) {
+        hooks.before(async () => {
+          await app.execute('pnpm vite build --mode test --base /sub-dir/');
+          mkdirSync(resolve(app.dir, './custom-base/sub-dir'), { recursive: true });
+          moveSync(resolve(app.dir, './dist'), resolve(app.dir, './custom-base/sub-dir'), { overwrite: true });
+        });
+
+        test('run test suite against vite dist with sub-dir', async function (assert) {
+          let result = await app.execute('ember test --path custom-base/sub-dir');
+          assert.equal(result.exitCode, 0, result.output);
+        });
       });
     });
   });

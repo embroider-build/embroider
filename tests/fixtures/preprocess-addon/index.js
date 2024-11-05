@@ -34,7 +34,7 @@ module.exports = {
             let relativePathWithPrefix = `/${relativePath}`;
 
             if (relativePathWithPrefix === `${inputPath}/app.css`) {
-              return join(outputPath, 'app-template.css');
+              return join(outputPath, '../@embroider/virtual/app.css');
             }
 
             return join(outputPath, relativePathWithPrefix.replace(inputPath, ''));

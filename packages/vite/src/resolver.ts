@@ -21,9 +21,15 @@ export function resolver(): Plugin {
   const virtualDeps: Map<string, string[]> = new Map();
   const notViteDeps = new Set<string>();
 
+  let mode = '';
+
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
+
+    configResolved(config) {
+      mode = config.mode;
+    },
 
     configureServer(s) {
       server = s;
@@ -94,12 +100,30 @@ export function resolver(): Plugin {
       });
       this.emitFile({
         type: 'asset',
-        fileName: '@embroider/virtual/test-support.js',
+        fileName: '@embroider/virtual/vendor.css',
         source: virtualContent(
-          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
+          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-vendor-styles.css'),
           resolverLoader.resolver
         ).src,
       });
+      if (mode !== 'production') {
+        this.emitFile({
+          type: 'asset',
+          fileName: '@embroider/virtual/test-support.js',
+          source: virtualContent(
+            resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
+            resolverLoader.resolver
+          ).src,
+        });
+        this.emitFile({
+          type: 'asset',
+          fileName: '@embroider/virtual/test-support.css',
+          source: virtualContent(
+            resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support-styles.css'),
+            resolverLoader.resolver
+          ).src,
+        });
+      }
     },
   };
 }

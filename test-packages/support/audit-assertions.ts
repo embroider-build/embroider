@@ -12,6 +12,48 @@ import { Memoize } from 'typescript-memoize';
 
 export { Import };
 
+export function visit(options: AuditBuildOptions | HTTPAuditOptions): Promise<AuditResult> {
+  if ('appURL' in options) {
+    return httpAudit(options);
+  } else {
+    return Audit.run(options);
+  }
+}
+
+export async function visitWithRetries(options: AuditBuildOptions | HTTPAuditOptions): Promise<AuditResult> {
+  for (let i = 0; i < 30; i++) {
+    try {
+      const result = await visit(options);
+      return result;
+    } catch (e) {
+      if (e.message.includes('oops status code 504 - Outdated Optimize Dep for')) {
+        continue;
+      }
+      if (e.message.includes('oops status code 404') && e.message.includes('.vite/deps')) {
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error('failed to rerun');
+}
+
+export function prepareResult(
+  assert: Assert,
+  options: AuditBuildOptions | HTTPAuditOptions,
+  result: AuditResult
+): ExpectAuditResults {
+  let pathRewriter: (p: string) => string;
+  if ('appURL' in options) {
+    pathRewriter = p => p;
+  } else {
+    pathRewriter = p => getRewrittenLocation(options.app, p);
+  }
+  return new ExpectAuditResults(result, assert, pathRewriter);
+}
+
+export type AuditResult = { modules: { [file: string]: Module }; findings: Finding[] };
+
 /*
   The audit tool in @embroider/compat can be used directly to tell you about
   potential problems in an app that is trying to adopt embroider. But we also
@@ -19,60 +61,22 @@ export { Import };
   Embroider's output.
 */
 export function setupAuditTest(hooks: NestedHooks, opts: () => AuditBuildOptions | HTTPAuditOptions) {
-  let result: { modules: { [file: string]: Module }; findings: Finding[] };
+  let result: AuditResult;
   let expectAudit: ExpectAuditResults;
 
-  async function visit() {
-    let o = opts();
-    if ('appURL' in o) {
-      result = await httpAudit(o);
-    } else {
-      result = await Audit.run(o);
-    }
-  }
-
-  async function visitWithRetries() {
-    for (let i = 0; i < 30; i++) {
-      try {
-        await visit();
-        return;
-      } catch (e) {
-        if (e.message.includes('oops status code 504 - Outdated Optimize Dep for')) {
-          continue;
-        }
-        if (e.message.includes('oops status code 404') && e.message.includes('.vite/deps')) {
-          continue;
-        }
-        throw e;
-      }
-    }
-    throw new Error('failed to rerun');
-  }
-
-  function prepareResult(assert: Assert) {
-    let o = opts();
-    let pathRewriter: (p: string) => string;
-    if ('appURL' in o) {
-      pathRewriter = p => p;
-    } else {
-      pathRewriter = p => getRewrittenLocation(o.app, p);
-    }
-    expectAudit = new ExpectAuditResults(result, assert, pathRewriter);
-  }
-
   hooks.before(async () => {
-    await visitWithRetries();
+    result = await visitWithRetries(opts());
   });
 
   hooks.beforeEach(assert => {
     installAuditAssertions(assert);
-    prepareResult(assert);
+    expectAudit = prepareResult(assert, opts(), result);
   });
 
   return {
     async rerun() {
-      await visitWithRetries();
-      prepareResult(expectAudit.assert);
+      await visitWithRetries(opts());
+      expectAudit = prepareResult(expectAudit.assert, opts(), result);
     },
     module(name: string | RegExp) {
       return expectAudit.module(name);
@@ -106,7 +110,7 @@ declare global {
 
 export class ExpectAuditResults {
   constructor(
-    readonly result: { modules: { [file: string]: Module }; findings: Finding[] },
+    readonly result: AuditResult,
     readonly assert: Assert,
     // input and output paths are relative to getAppDir()
     readonly toRewrittenPath: (path: string) => string

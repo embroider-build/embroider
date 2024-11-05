@@ -6,7 +6,14 @@ import { pathExists } from 'fs-extra';
 import path from 'path';
 import CommandWatcher from './helpers/command-watcher';
 import puppeteer, { type Browser, type Page } from 'puppeteer';
-import { setupAuditTest } from '@embroider/test-support/audit-assertions';
+import {
+  type ExpectAuditResults,
+  installAuditAssertions,
+  prepareResult,
+  visitWithRetries,
+} from '@embroider/test-support/audit-assertions';
+
+import { type HTTPAuditOptions } from '@embroider/compat/src/http-audit';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -97,6 +104,8 @@ app.forEachScenario(scenario => {
     let browser: Browser;
     let appPage: Page;
     let testsPage: Page;
+    let expectAudit: ExpectAuditResults;
+    let auditOptions: HTTPAuditOptions;
 
     function appFile(appPath: string): File {
       let fullPath = path.join(app.dir, ...appPath.split('/'));
@@ -119,10 +128,16 @@ app.forEachScenario(scenario => {
       await waitFor(new RegExp(`.*page reload ${path.join(...filePath.split('/'))}`));
     }
 
-    hooks.before(async () => {
+    hooks.beforeEach(async assert => {
       app = await scenario.prepare();
       server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
       [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+      auditOptions = {
+        appURL,
+        startingFrom: ['index.html'],
+        fetch: fetch as unknown as typeof globalThis.fetch,
+      };
 
       // it's annoying but we need to have an open browser to truly test file reload functionality
       browser = await puppeteer.launch();
@@ -132,17 +147,21 @@ app.forEachScenario(scenario => {
       // we also need to go to the tests page to watch for additions to test files
       testsPage = await browser.newPage();
       await testsPage.goto(appURL + '/tests/');
+
+      let result = await visitWithRetries(auditOptions);
+
+      installAuditAssertions(assert);
+      expectAudit = prepareResult(assert, auditOptions, result);
     });
 
-    let expectAudit = setupAuditTest(hooks, () => ({
-      appURL,
-      startingFrom: ['index.html'],
-      fetch: fetch as unknown as typeof globalThis.fetch,
-    }));
-
-    hooks.after(async () => {
+    hooks.afterEach(async () => {
       await Promise.all([server.shutdown(), browser.close()]);
     });
+
+    async function rerun() {
+      let result = await visitWithRetries(auditOptions);
+      expectAudit = prepareResult(expectAudit.assert, auditOptions, result);
+    }
 
     test(`adding a simple file`, async function (assert) {
       expectAudit.module(/.*app\/-embroider-entrypoint.js/).doesNotIncludeContent('app/simple-file.js');
@@ -154,7 +173,7 @@ app.forEachScenario(scenario => {
       await appFile('app/simple-file.js').write(`export const two = "${originalContent}";`);
       await added();
 
-      await expectAudit.rerun();
+      await rerun();
 
       expectAudit.module(/.*app\/-embroider-entrypoint.js/).withContents(contents => {
         assert.ok(contents.includes('app/simple-file.js'), 'simple-file is in the entrypoint after we add the file');
@@ -167,7 +186,7 @@ app.forEachScenario(scenario => {
       await appFile('app/simple-file.js').write(`export const two = "${updatedContent}";`);
       await changed('app/simple-file.js');
 
-      await expectAudit.rerun();
+      await rerun();
 
       expectAudit.module('./app/simple-file.js').codeContains(`export const two = "${updatedContent}";`);
     });
@@ -180,7 +199,7 @@ app.forEachScenario(scenario => {
 
         await appFile('app/components/hello-world.hbs').write('hello world!');
         await added();
-        await expectAudit.rerun();
+        await rerun();
 
         expectAudit.module(/.*app\/-embroider-entrypoint.js/).includesContent('"app-template/components/hello-world"');
         expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
@@ -191,7 +210,7 @@ app.forEachScenario(scenario => {
         await appFile('app/components/hello-world.hbs').delete();
         await deleted('app/components/hello-world.hbs');
 
-        await expectAudit.rerun();
+        await rerun();
 
         expectAudit
           .module(/.*app\/-embroider-entrypoint.js/)
@@ -199,7 +218,7 @@ app.forEachScenario(scenario => {
       });
 
       test('Scenario 2: adding a template to a component', async function (assert) {
-        await expectAudit.rerun();
+        await rerun();
         expectAudit
           .module(/.*app\/-embroider-entrypoint.js/)
           .doesNotIncludeContent('"app-template/components/hello-world"');
@@ -227,7 +246,7 @@ app.forEachScenario(scenario => {
         `);
         await added();
 
-        await expectAudit.rerun();
+        await rerun();
         expectAudit.module('./app/components/hello-world.js').codeContains(`
           export default class extends Component {}
         `);
@@ -239,13 +258,13 @@ app.forEachScenario(scenario => {
         await appFile('app/components/hello-world.hbs').write('hello world!');
         await added();
 
-        await expectAudit.rerun();
+        await rerun();
 
         expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
 
         // TODO this seems to be failling I assume because the js file isn't being updated
         expectAudit.module('./app/components/hello-world.js').codeContains(`
-          export default setComponentTemplate(TEMPLATE, templateOnly());
+          export default setComponentTemplate(TEMPLATE, class extends Component {});
         `);
 
         result = await app.execute('pnpm testem --file testem-dev.js ci');
@@ -254,7 +273,7 @@ app.forEachScenario(scenario => {
       });
 
       test('Scenario 3: deleting a co-located template', async function () {
-        await expectAudit.rerun();
+        await rerun();
         expectAudit
           .module(/.*app\/-embroider-entrypoint.js/)
           .doesNotIncludeContent('"app-template/components/hello-world"');
@@ -262,7 +281,7 @@ app.forEachScenario(scenario => {
         await appFile('app/components/hello-world.hbs').write('hello world!');
         await added();
 
-        await expectAudit.rerun();
+        await rerun();
 
         expectAudit.module(/.*app\/-embroider-entrypoint.js/).includesContent('"app-template/components/hello-world"');
 
@@ -276,7 +295,7 @@ app.forEachScenario(scenario => {
           export default class extends Component {}
         `);
         await added();
-        await expectAudit.rerun();
+        await rerun();
         expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
         expectAudit
           .module('./app/components/hello-world.js')
@@ -287,7 +306,7 @@ app.forEachScenario(scenario => {
 
         await appFile('app/components/hello-world.hbs').delete();
         await deleted('app/components/hello-world.hbs');
-        await expectAudit.rerun();
+        await rerun();
 
         expectAudit.module('./app/components/hello-world.js').codeContains(`
           export default class extends Component {}
@@ -295,7 +314,7 @@ app.forEachScenario(scenario => {
       });
 
       test('Scenario 4: editing a co-located js file', async function () {
-        await expectAudit.rerun();
+        await rerun();
         expectAudit
           .module(/.*app\/-embroider-entrypoint.js/)
           .doesNotIncludeContent('"app-template/components/hello-world"');
@@ -307,8 +326,9 @@ app.forEachScenario(scenario => {
           import Component from '@glimmer/component';
           export default class extends Component {}
         `);
+
         await added();
-        await expectAudit.rerun();
+        await rerun();
 
         expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
         expectAudit
@@ -324,8 +344,9 @@ app.forEachScenario(scenario => {
             // this shows that updates invalidate any caches and reflects properly
           }
         `);
-        await changed('app/components/hello-world.js');
-        await expectAudit.rerun();
+
+        await changed('./app/components/hello-world.js');
+        await rerun();
 
         expectAudit.module('./app/components/hello-world.hbs').includesContent('hello world!');
         expectAudit.module(

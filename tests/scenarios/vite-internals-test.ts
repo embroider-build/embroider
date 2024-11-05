@@ -4,6 +4,8 @@ import QUnit from 'qunit';
 import fetch from 'node-fetch';
 import CommandWatcher from './helpers/command-watcher';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
+import { mkdirSync, moveSync, readFileSync, writeFileSync } from 'fs-extra';
+import { resolve } from 'path';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -354,3 +356,147 @@ tsAppScenarios
     buildViteInternalsTest(false, app);
   })
   .forEachScenario(runViteInternalsTest);
+
+tsAppScenarios
+  .map('vite-with-base-internals', app => {
+    // These are for a custom testem setup that will let us do runtime tests
+    // inside `vite dev` rather than only against the output of `vite build`.
+    //
+    // Most apps should run their CI against `vite build`, as that's closer to
+    // production. And they can do development tests directly in brower against
+    // `vite dev` at `/tests/index.html`. We're doing `vite dev` in CI here
+    // because we're testing the development experience itself.
+    app.linkDevDependency('testem', { baseDir: __dirname });
+    app.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
+
+    app.linkDevDependency('ember-page-title', { baseDir: __dirname });
+    app.linkDevDependency('ember-welcome-page', { baseDir: __dirname });
+    const customBase = '/sub-dir/';
+    app.mergeFiles({
+      'testem-dev.js': `
+      'use strict';
+
+      module.exports = {
+        test_page: '${customBase}tests/index.html?hidepassed',
+        disable_watching: true,
+        launch_in_ci: ['Chrome'],
+        launch_in_dev: ['Chrome'],
+        browser_start_timeout: 120,
+        browser_args: {
+          Chrome: {
+            ci: [
+              // --no-sandbox is needed when running Chrome inside a container
+              process.env.CI ? '--no-sandbox' : null,
+              '--headless',
+              '--disable-dev-shm-usage',
+              '--disable-software-rasterizer',
+              '--mute-audio',
+              '--remote-debugging-port=0',
+              '--window-size=1440,900',
+            ].filter(Boolean),
+          },
+        },
+        middleware: [
+          require('@embroider/test-support/testem-proxy').testemProxy('http://localhost:4200', '${customBase}')
+        ],
+      };
+    `,
+
+      config: {
+        'environment.js': `
+          'use strict';
+
+          module.exports = function (environment) {
+            const ENV = {
+              modulePrefix: 'ts-app-template',
+              environment,
+              rootURL: '${customBase}',
+              locationType: 'history',
+              EmberENV: {
+                EXTEND_PROTOTYPES: false,
+                FEATURES: {
+                  // Here you can enable experimental features on an ember canary build
+                  // e.g. EMBER_NATIVE_DECORATOR_SUPPORT: true
+                },
+              },
+
+              APP: {
+                // Here you can pass flags/options to your application instance
+                // when it is created
+              },
+            };
+
+            if (environment === 'development') {
+              // ENV.APP.LOG_RESOLVER = true;
+              // ENV.APP.LOG_ACTIVE_GENERATION = true;
+              // ENV.APP.LOG_TRANSITIONS = true;
+              // ENV.APP.LOG_TRANSITIONS_INTERNAL = true;
+              // ENV.APP.LOG_VIEW_LOOKUPS = true;
+            }
+
+            if (environment === 'test') {
+              // Testem prefers this...
+              ENV.locationType = 'none';
+
+              // keep test console output quieter
+              ENV.APP.LOG_ACTIVE_GENERATION = false;
+              ENV.APP.LOG_VIEW_LOOKUPS = false;
+
+              ENV.APP.rootElement = '#ember-testing';
+              ENV.APP.autoboot = false;
+            }
+
+            if (environment === 'production') {
+              // here you can enable a production-specific feature
+            }
+
+            return ENV;
+          };
+        `,
+      },
+    });
+  })
+  .forEachScenario(runViteInternalsTestWithBase);
+
+function runViteInternalsTestWithBase(scenario: Scenario) {
+  Qmodule(scenario.name, function (hooks) {
+    let app: PreparedApp;
+    let server: CommandWatcher;
+
+    hooks.before(async () => {
+      app = await scenario.prepare();
+    });
+
+    Qmodule('vite dev', function (hooks) {
+      hooks.before(async () => {
+        server = CommandWatcher.launch('vite', ['--clearScreen', 'false', '--base', '/sub-dir/'], { cwd: app.dir });
+        const [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+        let testem = readFileSync(resolve(app.dir, 'testem-dev.js')).toString();
+        testem = testem.replace('http://localhost:4200', appURL.replace('/sub-dir', ''));
+        writeFileSync(resolve(app.dir, 'testem-dev.js'), testem);
+      });
+
+      hooks.after(async () => {
+        await server?.shutdown();
+      });
+
+      test('run test suite against vite dev', async function (assert) {
+        let result = await app.execute('pnpm testem --file testem-dev.js ci');
+        assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+
+    Qmodule('vite build', function (hooks) {
+      hooks.before(async () => {
+        await app.execute('pnpm vite build --mode test --base /sub-dir/');
+        mkdirSync(resolve(app.dir, './custom-base/sub-dir'), { recursive: true });
+        moveSync(resolve(app.dir, './dist'), resolve(app.dir, './custom-base/sub-dir'), { overwrite: true });
+      });
+
+      test('run test suite against vite dist with sub-dir', async function (assert) {
+        let result = await app.execute('ember test --path custom-base/sub-dir');
+        assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });
+}

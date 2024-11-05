@@ -18,6 +18,8 @@ import { type HTTPAuditOptions } from '@embroider/compat/src/http-audit';
 const { module: Qmodule, test } = QUnit;
 
 let app = appScenarios.map('watch-mode', app => {
+  app.linkDevDependency('testem', { baseDir: __dirname });
+  app.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
   app.mergeFiles({
     'testem-dev.js': `
         'use strict';

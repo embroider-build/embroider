@@ -4,16 +4,7 @@
       "oldVersion": "6.0.1"
     },
     "@embroider/addon-shim": {
-      "impact": "minor",
-      "oldVersion": "1.8.9",
-      "newVersion": "1.9.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-shim/package.json"
+      "oldVersion": "1.9.0"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "3.1.1"
@@ -22,7 +13,16 @@
       "oldVersion": "1.0.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.6.5"
+      "impact": "minor",
+      "oldVersion": "3.6.5",
+      "newVersion": "3.7.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
       "oldVersion": "3.4.19"
@@ -55,5 +55,5 @@
       "oldVersion": "4.0.8"
     }
   },
-  "description": "## Release (2024-10-31)\n\n@embroider/addon-shim 1.9.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-shim`\n  * [#2158](https://github.com/embroider-build/embroider/pull/2158) Add a new option for addon-shim to pass config to ember-auto-import ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/test-scenarios`, `ts-app-template`\n  * [#2159](https://github.com/embroider-build/embroider/pull/2159) pinning @types/qunit to fix ci ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2024-11-05)\n\n@embroider/compat 3.7.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`\n  * [#2164](https://github.com/embroider-build/embroider/pull/2164) Support v2 ember-source ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

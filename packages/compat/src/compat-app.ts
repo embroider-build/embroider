@@ -28,6 +28,7 @@ import { readFileSync } from 'fs';
 import semver from 'semver';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import { CompatAppBuilder } from './compat-app-builder';
+import writeFile from 'broccoli-file-creator';
 
 interface Group {
   outputFiles: OutputFileToInputFileMap;
@@ -346,6 +347,23 @@ export default class CompatApp {
         destDir: 'vendor',
       })
     );
+
+    let emberSource = this.legacyEmberAppInstance.project.addons.find(a => a.name === 'ember-source');
+    if (emberSource && (emberSource.pkg['ember-addon']?.['version'] ?? 1) >= 2) {
+      // there's stuff in the ecosystem that assumes these files will always be
+      // present in the vendor tree. But when ember-source is V2, it cannot put
+      // them there, so @embroider/compat will fill in defaults. The bundles are
+      // empty because we're just trying to keep the build from blowing up, the
+      // actual ember modules get loaded as modules instead.
+      //
+      // The template compiler is still here so that apps using a V2 ember can
+      // still app.import the traditional runtime template compiler.
+      trees.push(writeFile('vendor/ember/ember.js', () => ''));
+      trees.push(writeFile('vendor/ember/ember-testing.js', () => ''));
+      const templateCompilerSrc = readFileSync(join(emberSource.root, 'dist/ember-template-compiler.js'), 'utf8');
+      trees.push(writeFile('vendor/ember/ember-testing.js', () => templateCompilerSrc));
+    }
+
     if (this.vendorTree) {
       trees.push(
         buildFunnel(this.vendorTree, {

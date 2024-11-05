@@ -1036,7 +1036,7 @@ export class CompatAppBuilder {
 
     let resolver = new Resolver(resolverConfig);
     let resolution = resolver.nodeResolve(
-      'ember-source/vendor/ember/ember-template-compiler',
+      'ember-source/dist/ember-template-compiler',
       resolvePath(this.root, 'package.json')
     );
     if (resolution.type !== 'real') {

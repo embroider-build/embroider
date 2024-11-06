@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-11-05)
+
+@embroider/compat 3.7.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2164](https://github.com/embroider-build/embroider/pull/2164) Support v2 ember-source ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2024-10-31)
 
 @embroider/addon-shim 1.9.0 (minor)

@@ -7,9 +7,7 @@ const PLUGIN_NAME = 'rollup-gjs-plugin';
 const processor = new Preprocessor();
 // import { parse as pathParse } from 'path';
 
-export default function rollupGjsPlugin(
-  { inline_source_map } = { inline_source_map: true }
-): Plugin {
+export default function rollupGjsPlugin(): Plugin {
   return {
     name: PLUGIN_NAME,
 
@@ -20,12 +18,12 @@ export default function rollupGjsPlugin(
         if (!gjsFilter(id)) {
           return null;
         }
-        let code = processor.process(input, {
+        let { code, map } = processor.process(input, {
           filename: id,
-          inline_source_map,
         });
         return {
           code,
+          map,
         };
       },
     },

@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-11-11)
+
+@embroider/addon-dev 7.0.0 (major)
+
+#### :boom: Breaking Change
+* `@embroider/addon-dev`
+  * [#2166](https://github.com/embroider-build/embroider/pull/2166) Fix gjs/gts sourcemaps -- we accidentally unlocked really good DX ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2024-11-05)
 
 @embroider/compat 3.7.0 (minor)

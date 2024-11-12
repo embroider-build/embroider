@@ -1033,7 +1033,7 @@ export class Resolver {
       if (pkg.packageJSON.exports) {
         let found = resolveExports(pkg.packageJSON, request.specifier, {
           browser: true,
-          conditions: ['default', 'imports'],
+          conditions: ['default', 'imports', 'browser'],
         });
         if (found?.[0]) {
           return logTransition(

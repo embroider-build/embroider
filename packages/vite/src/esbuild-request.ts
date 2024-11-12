@@ -105,7 +105,10 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
         // and non-strict handlebars (which resolves
         // components/helpers/modifiers against the app's global pool).
         let pkg = this.packageCache.ownerOfFile(result.path);
-        if (pkg?.root === this.packageCache.appRoot) {
+        if (
+          pkg?.root === this.packageCache.appRoot &&
+          (result.namespace === 'file' || result.namespace.startsWith('embroider-'))
+        ) {
           let externalizedName = request.specifier;
           if (!packageName(externalizedName)) {
             // the request was a relative path. This won't remain valid once

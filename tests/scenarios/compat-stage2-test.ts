@@ -8,6 +8,7 @@ import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
 import { readJsonSync, writeJsonSync } from 'fs-extra';
+import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -276,7 +277,7 @@ stage2Scenarios
     });
   });
 
-  stage2Scenarios
+stage2Scenarios
   .map('gts-files-in-addons-are-pre-processed-with-template-compilation', app => {
     let depA = addAddon(app, 'dep-a');
     depA.linkDependency('ember-template-imports', { baseDir: __dirname });
@@ -355,7 +356,6 @@ stage2Scenarios
       });
     });
   });
-
 
 dummyAppScenarios
   .skip()

@@ -38,8 +38,6 @@
     "@embroider/test-setup": "workspace:*",
     "@embroider/vite": "workspace:*",
     "@glimmer/component": "^1.1.2",
-    "@glimmer/interfaces": "^0.84.2",
-    "@glimmer/reference": "^0.84.2",
     "@glimmer/tracking": "^1.1.2",
     "@glint/environment-ember-loose": "^1.1.0",
     "@glint/template": "^1.1.0",

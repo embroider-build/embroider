@@ -59,8 +59,8 @@ export class Addon {
     return hbs(options);
   }
 
-  gjs(options?: { inline_source_map: boolean }) {
-    return gjs(options);
+  gjs() {
+    return gjs();
   }
 
   // this does incremental updates to the dist files and also deletes files that are not part of the generated bundle

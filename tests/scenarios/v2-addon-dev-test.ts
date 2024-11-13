@@ -75,11 +75,16 @@ appScenarios
               exclude: ['**/-excluded/**/*'],
             }),
 
+            addon.dependencies(),
+
+            babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
+
             addon.hbs({
               excludeColocation: ['**/just-a-template.hbs'],
             }),
+
             addon.gjs(),
-            addon.dependencies(),
+
             addon.publicAssets('public'),
             addon.keepAssets(["**/*.css"]),
 
@@ -112,8 +117,6 @@ appScenarios
                 }
               }
             },
-
-            babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
 
             addon.clean(),
           ],
@@ -260,10 +263,11 @@ appScenarios
               exclude: ['**/-excluded/**/*'],
             }),
 
-            addon.hbs(),
-            addon.publicAssets('public', { namespace: '' }),
-
             babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
+
+            addon.hbs(),
+
+            addon.publicAssets('public', { namespace: '' }),
 
             addon.clean(),
           ],

@@ -221,6 +221,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       ],
       node: false,
       module: {
+        strictExportPresence: true,
         rules: [
           {
             test: /\.hbs$/,

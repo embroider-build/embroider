@@ -13,6 +13,8 @@ const { module: Qmodule, test } = QUnit;
 
 Scenarios.fromProject(() => new Project())
   .map('core-resolver-test', app => {
+    app.linkDevDependency('ember-source', { baseDir: __dirname });
+
     let appMeta: AppMeta = {
       type: 'app',
       version: 2,
@@ -205,6 +207,21 @@ Scenarios.fromProject(() => new Project())
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
             import template from "./hello-world.hbs";
+            import { deprecate } from "@ember/debug";
+            deprecate(
+              "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
+              false,
+              {
+                id: "component-template-resolving",
+                url: "https://deprecations.emberjs.com/id/component-template-resolving",
+                until: "6.0.0",
+                for: "ember-source",
+                since: {
+                  available: "5.10.0",
+                  enabled: "5.10.0",
+                },
+              }
+            );
             import component from "../../components/hello-world.js";
             export default setComponentTemplate(template, component);
           `);
@@ -229,6 +246,21 @@ Scenarios.fromProject(() => new Project())
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
             import template from "./hello-world.hbs";
+            import { deprecate } from "@ember/debug";
+            deprecate(
+              "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
+              false,
+              {
+                id: "component-template-resolving",
+                url: "https://deprecations.emberjs.com/id/component-template-resolving",
+                until: "6.0.0",
+                for: "ember-source",
+                since: {
+                  available: "5.10.0",
+                  enabled: "5.10.0",
+                },
+              }
+            );
             import templateOnlyComponent from "@ember/component/template-only";
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "hello-world"));
           `);
@@ -327,6 +359,21 @@ Scenarios.fromProject(() => new Project())
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
+            import { deprecate } from "@ember/debug";
+            deprecate(
+              "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
+              false,
+              {
+                id: "component-template-resolving",
+                url: "https://deprecations.emberjs.com/id/component-template-resolving",
+                until: "6.0.0",
+                for: "ember-source",
+                since: {
+                  available: "5.10.0",
+                  enabled: "5.10.0",
+                },
+              }
+            );
             import templateOnlyComponent from "@ember/component/template-only";
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
           `);
@@ -350,6 +397,21 @@ Scenarios.fromProject(() => new Project())
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
+            import { deprecate } from "@ember/debug";
+            deprecate(
+              "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
+              false,
+              {
+                id: "component-template-resolving",
+                url: "https://deprecations.emberjs.com/id/component-template-resolving",
+                until: "6.0.0",
+                for: "ember-source",
+                since: {
+                  available: "5.10.0",
+                  enabled: "5.10.0",
+                },
+              }
+            );
             import templateOnlyComponent from "@ember/component/template-only";
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
           `);
@@ -374,6 +436,21 @@ Scenarios.fromProject(() => new Project())
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
+            import { deprecate } from "@ember/debug";
+            deprecate(
+              "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
+              false,
+              {
+                id: "component-template-resolving",
+                url: "https://deprecations.emberjs.com/id/component-template-resolving",
+                until: "6.0.0",
+                for: "ember-source",
+                since: {
+                  available: "5.10.0",
+                  enabled: "5.10.0",
+                },
+              }
+            );
             import component from "./component.js";
             export default setComponentTemplate(template, component);
           `);
@@ -399,6 +476,21 @@ Scenarios.fromProject(() => new Project())
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
+            import { deprecate } from "@ember/debug";
+            deprecate(
+              "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
+              false,
+              {
+                id: "component-template-resolving",
+                url: "https://deprecations.emberjs.com/id/component-template-resolving",
+                until: "6.0.0",
+                for: "ember-source",
+                since: {
+                  available: "5.10.0",
+                  enabled: "5.10.0",
+                },
+              }
+            );
             import component from "./component.js";
             export default setComponentTemplate(template, component);
           `);

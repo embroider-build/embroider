@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "5.0.0",
+  "version": "7.0.0",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",
@@ -36,7 +36,7 @@
   "dependencies": {
     "@embroider/core": "workspace:^",
     "@rollup/pluginutils": "^5.1.0",
-    "content-tag": "^2.0.2",
+    "content-tag": "^3.0.0",
     "fs-extra": "^10.0.0",
     "minimatch": "^3.0.4",
     "rollup-plugin-copy-assets": "^2.0.3",

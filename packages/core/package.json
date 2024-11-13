@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "3.4.15",
+  "version": "3.4.19",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {
@@ -45,11 +45,12 @@
     "fs-tree-diff": "^2.0.1",
     "handlebars": "^4.7.7",
     "js-string-escape": "^1.0.1",
-    "jsdom": "^16.6.0",
+    "jsdom": "^25.0.0",
     "lodash": "^4.17.21",
     "resolve": "^1.20.0",
     "resolve-package-path": "^4.0.1",
     "resolve.exports": "^2.0.2",
+    "semver": "^7.3.5",
     "typescript-memoize": "^1.0.1",
     "walk-sync": "^3.0.0"
   },
@@ -67,6 +68,7 @@
     "@types/lodash": "^4.14.170",
     "@types/node": "^15.12.2",
     "@types/resolve": "^1.20.0",
+    "@types/semver": "^7.3.5",
     "@types/tmp": "^0.1.0",
     "fixturify": "^2.1.1",
     "tmp": "^0.1.0",

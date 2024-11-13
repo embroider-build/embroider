@@ -1,5 +1,151 @@
 # Embroider Changelog
 
+## Release (2024-11-11)
+
+@embroider/addon-dev 7.0.0 (major)
+
+#### :boom: Breaking Change
+* `@embroider/addon-dev`
+  * [#2166](https://github.com/embroider-build/embroider/pull/2166) Fix gjs/gts sourcemaps -- we accidentally unlocked really good DX ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2024-11-05)
+
+@embroider/compat 3.7.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2164](https://github.com/embroider-build/embroider/pull/2164) Support v2 ember-source ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2024-10-31)
+
+@embroider/addon-shim 1.9.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-shim`
+  * [#2158](https://github.com/embroider-build/embroider/pull/2158) Add a new option for addon-shim to pass config to ember-auto-import ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/test-scenarios`, `ts-app-template`
+  * [#2159](https://github.com/embroider-build/embroider/pull/2159) pinning @types/qunit to fix ci ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2024-10-09)
+
+@embroider/compat 3.6.5 (patch)
+@embroider/core 3.4.19 (patch)
+@embroider/macros 1.16.9 (patch)
+@embroider/shared-internals 2.8.1 (patch)
+@embroider/webpack 4.0.8 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`
+  * [#2151](https://github.com/embroider-build/embroider/pull/2151) Fix hbs plugin not resolving .hbs due to broken Regex ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2024-10-09)
+
+@embroider/broccoli-side-watch 1.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/broccoli-side-watch`
+  * [#2148](https://github.com/embroider-build/embroider/pull/2148) Fix broken default export when required from CJS ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2024-10-09)
+
+@embroider/addon-dev 6.0.1 (patch)
+@embroider/broccoli-side-watch 1.0.0 (major)
+@embroider/compat 3.6.4 (patch)
+@embroider/core 3.4.18 (patch)
+@embroider/macros 1.16.8 (patch)
+@embroider/shared-internals 2.8.0 (minor)
+@embroider/webpack 4.0.7 (patch)
+
+#### :boom: Breaking Change
+* `@embroider/broccoli-side-watch`
+  * [#2146](https://github.com/embroider-build/embroider/pull/2146) Fix broccoli-side-watch so release-plan will release as 1.0.0 ([@simonihmig](https://github.com/simonihmig))
+
+#### :rocket: Enhancement
+* `@embroider/broccoli-side-watch`, `@embroider/shared-internals`
+  * [#2141](https://github.com/embroider-build/embroider/pull/2141) Add better broccoli-side-watch package ([@simonihmig](https://github.com/simonihmig))
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#2136](https://github.com/embroider-build/embroider/pull/2136) Enforce correct plugin order in addon-dev  ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2024-10-08)
+
+@embroider/compat 3.6.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2133](https://github.com/embroider-build/embroider/pull/2133) fix typescript support for codemod and add option for renaming elements ([@void-mAlex](https://github.com/void-mAlex))
+  * [#2120](https://github.com/embroider-build/embroider/pull/2120) fix gts in v1 addons ([@patricklx](https://github.com/patricklx))
+
+#### :house: Internal
+* `@embroider/test-scenarios`
+  * [#2142](https://github.com/embroider-build/embroider/pull/2142) fixing test suite for ember >= 6 ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Patrick Pircher ([@patricklx](https://github.com/patricklx))
+
+## Release (2024-10-01)
+
+@embroider/addon-dev 6.0.0 (major)
+@embroider/compat 3.6.2 (patch)
+@embroider/core 3.4.17 (patch)
+@embroider/macros 1.16.7 (patch)
+@embroider/shared-internals 2.7.0 (minor)
+@embroider/vite 0.2.1 (patch)
+@embroider/webpack 4.0.6 (patch)
+
+#### :boom: Breaking Change
+* `@embroider/addon-dev`, `@embroider/test-scenarios`
+  * [#2082](https://github.com/embroider-build/embroider/pull/2082) Hide base path from public URL of rollup-public-assets ([@simonihmig](https://github.com/simonihmig))
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`, `@embroider/shared-internals`, `@embroider/test-scenarios`
+  * [#2121](https://github.com/embroider-build/embroider/pull/2121) backport #1855 addon-dev: incremental updates to output ([@patricklx](https://github.com/patricklx))
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/vite`, `@embroider/webpack`, `@embroider/test-scenarios`
+  * [#2127](https://github.com/embroider-build/embroider/pull/2127) Bump jsdom to fix punycode deprecation messages from tr46, psl, and whatwg-url ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/shared-internals`, `@embroider/test-scenarios`
+  * [#2122](https://github.com/embroider-build/embroider/pull/2122) speedup windows ci on stable ([@patricklx](https://github.com/patricklx))
+
+#### Committers: 3
+- Patrick Pircher ([@patricklx](https://github.com/patricklx))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2024-09-20)
+
+@embroider/core 3.4.16 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#2088](https://github.com/embroider-build/embroider/pull/2088) Implement ember's component-template-resolving deprecation ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2024-08-30)
 
 @embroider/compat 3.6.1 (patch)

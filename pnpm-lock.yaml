@@ -1821,6 +1821,9 @@ importers:
       broccoli-stew:
         specifier: ^3.0.0
         version: 3.0.0
+      content-tag:
+        specifier: ^3.0.0
+        version: 3.0.0
       ember-bootstrap:
         specifier: ^5.0.0
         version: 5.1.1(@babel/core@7.25.2)(ember-source@3.28.12)(webpack@5.94.0)

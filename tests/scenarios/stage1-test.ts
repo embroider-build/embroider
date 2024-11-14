@@ -50,6 +50,55 @@ appScenarios
     // our app will include an in-repo addon
     project.pkg['ember-addon'] = { paths: ['lib/in-repo-addon'] };
     merge(project.files, loadFromFixtureData('basic-in-repo-addon'));
+
+    let addonWithGTS = baseAddon();
+    addonWithGTS.pkg.name = 'addon-with-gts';
+    addonWithGTS.linkDependency('ember-template-imports', { baseDir: __dirname });
+    addonWithGTS.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+    addonWithGTS.mergeFiles({
+      'index.js': `
+        'use strict';
+        module.exports = {
+          name: require('./package').name,
+          options: {
+            'ember-cli-babel': { enableTypeScriptTransform: true },
+          },
+        };`,
+      addon: {
+        components: {
+          'other.gts': `
+          import Component from '@glimmer/component';
+
+          export default class extends Component {
+            abc: string;
+            <template>
+              other
+            </template>
+          };
+          `,
+          'gts-component.gts': `
+          import Component from '@glimmer/component';
+          import OtherComponent from './other';
+
+          export default class extends Component {
+            get abc(): string {
+              return 'abs';
+            }
+            <template>
+              this is gts
+              with <OtherComponent />
+            </template>
+          };
+          `,
+        },
+      },
+      app: {
+        components: {
+          'gts-component.js': 'export { default } from "addon-with-gts/components/gts-component"',
+        },
+      },
+    });
+    project.addDependency(addonWithGTS);
   })
   .forEachScenario(async scenario => {
     Qmodule(`${scenario.name}`, function (hooks) {
@@ -158,6 +207,26 @@ appScenarios
         expectFile('node_modules/my-addon/components/does-dynamic-import.js').matches(
           /return import\(['"]some-library['"]\)/
         );
+      });
+
+      test('gts in addons has valid imports', function () {
+        expectFile('node_modules/addon-with-gts/components/gts-component.js').equalsCode(`
+          import Component from '@glimmer/component';
+          import OtherComponent from './other';
+          import { precompileTemplate } from "@ember/template-compilation";
+          import { setComponentTemplate } from "@ember/component";
+          export default class _Class extends Component {
+            get abc() {
+              return 'abs';
+            }
+          }
+          setComponentTemplate(precompileTemplate("\\n              this is gts\\n              with <OtherComponent />\\n            ", {
+            strictMode: true,
+            scope: () => ({
+              OtherComponent
+            })
+          }), _Class);
+        `);
       });
     });
   });

@@ -32,3 +32,4 @@ export { locateEmbroiderWorkingDir } from './working-dir';
 
 export * from './dep-validation';
 export * from './colocation';
+export { getWatchedDirectories } from './watch-utils';

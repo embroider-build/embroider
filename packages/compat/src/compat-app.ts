@@ -410,7 +410,7 @@ export default class CompatApp {
       let addonMeta: AddonMeta = {
         type: 'addon',
         version: 2,
-        'implicit-scripts': this._implicitScripts.map(remapAsset),
+        'implicit-scripts': this._implicitScripts.map(remapAsset).filter(forbiddenVendorPath),
         'implicit-styles': this._implicitStyles.map(remapAsset),
         'implicit-test-scripts': this.legacyEmberAppInstance.legacyTestFilesToAppend.map(remapAsset),
         'implicit-test-styles': this.legacyEmberAppInstance.vendorTestStaticStyles.map(remapAsset),
@@ -671,4 +671,12 @@ export default class CompatApp {
 interface Preprocessors {
   preprocessJs(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
   preprocessCss(tree: BroccoliNode, a: string, b: string, options: object): BroccoliNode;
+}
+
+function forbiddenVendorPath(path: string) {
+  // ember-source does not go in vendor under embroider (we always use the
+  // separate ES modules)
+  //
+  // loader.js sets up AMD. We don't use AMD.
+  return !['./vendor/loader/loader.js', './vendor/ember/ember.js'].includes(path);
 }

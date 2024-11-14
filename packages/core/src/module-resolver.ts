@@ -13,13 +13,7 @@ import assertNever from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
 
-import {
-  virtualPairComponent,
-  fastbootSwitch,
-  decodeFastbootSwitch,
-  decodeImplicitModules,
-  virtualAMDRequireStub,
-} from './virtual-content';
+import { virtualPairComponent, fastbootSwitch, decodeFastbootSwitch, decodeImplicitModules } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
@@ -160,10 +154,6 @@ export class Resolver {
       // It might not get compiled away until *after* our plugin has run, which is
       // why we need to know about it.
       return logTransition('early exit', request);
-    }
-
-    if (request.specifier === 'require') {
-      return logTransition('import require from require', request, request.virtualize(virtualAMDRequireStub()));
     }
 
     request = this.handleFastbootSwitch(request);

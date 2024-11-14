@@ -65,10 +65,6 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
     return renderTestSupportStyles(filename, resolver);
   }
 
-  if (filename === amdRequireStub) {
-    return renderAMDRequireStub();
-  }
-
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
 }
 
@@ -339,22 +335,4 @@ function orderAddons(depA: Package, depB: Package): number {
   }
 
   return depAIdx - depBIdx;
-}
-
-const amdRequireStub = '/@embroider/amd-require-stub';
-
-export function virtualAMDRequireStub() {
-  return amdRequireStub;
-}
-
-function renderAMDRequireStub() {
-  return {
-    src: `
-      const m = window.requirejs;
-      export default m;
-      const has = m.has;
-      export { has }
-    `,
-    watches: [],
-  };
 }

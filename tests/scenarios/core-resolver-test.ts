@@ -208,7 +208,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "./hello-world.hbs";
             import { deprecate } from "@ember/debug";
-            deprecate(
+            true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
               false,
               {
@@ -247,7 +247,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "./hello-world.hbs";
             import { deprecate } from "@ember/debug";
-            deprecate(
+            true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
               false,
               {
@@ -360,7 +360,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
             import { deprecate } from "@ember/debug";
-            deprecate(
+            true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {
@@ -398,7 +398,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
             import { deprecate } from "@ember/debug";
-            deprecate(
+            true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {
@@ -437,7 +437,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
             import { deprecate } from "@ember/debug";
-            deprecate(
+            true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {
@@ -477,7 +477,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "./template.hbs";
             import { deprecate } from "@ember/debug";
-            deprecate(
+            true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {

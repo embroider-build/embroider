@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.22.20",
+    "@babel/plugin-transform-typescript": "^7.21.3",
     "@babel/eslint-parser": "^7.21.3",
     "@babel/plugin-proposal-decorators": "^7.21.0",
     "@ember/optional-features": "^2.0.0",
@@ -50,7 +51,7 @@
     "@rollup/plugin-babel": "^5.3.1",
     "@tsconfig/ember": "^1.0.0",
     "@types/htmlbars-inline-precompile": "^3.0.0",
-    "@types/qunit": "^2.19.6",
+    "@types/qunit": "2.19.10",
     "@types/rsvp": "^4.0.4",
     "broccoli-asset-rev": "^3.0.0",
     "concurrently": "^8.2.1",

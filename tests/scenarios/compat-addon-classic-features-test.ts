@@ -71,7 +71,7 @@ appScenarios
 
               {{content-for "head"}}
 
-              <link integrity="" rel="stylesheet" href="/@embroider/core/vendor.css">
+              <link integrity="" rel="stylesheet" href="/@embroider/virtual/vendor.css">
               <link integrity="" rel="stylesheet" href="/assets/app-template.css">
 
               {{content-for "head-footer"}}
@@ -80,7 +80,7 @@ appScenarios
               {{content-for "body"}}
               {{content-for "custom"}}
 
-              <script src="/@embroider/core/vendor.js"></script>
+              <script src="/@embroider/virtual/vendor.js"></script>
               <script type="module">
                 import Application from './app/app.js';
                 import environment from './app/config/environment';
@@ -151,8 +151,8 @@ appScenarios
         let result = await app.execute('pnpm build');
         assert.equal(result.exitCode, 0, result.output);
 
-        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/vendor.js`).isFile());
-        assert.true(lstatSync(`${app.dir}/dist/@embroider/core/test-support.js`).isFile());
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/virtual/vendor.js`).isFile());
+        assert.true(lstatSync(`${app.dir}/dist/@embroider/virtual/test-support.js`).isFile());
       });
 
       test('virtual scripts contents are served in dev mode', async function (assert) {
@@ -160,7 +160,7 @@ appScenarios
         try {
           const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
 
-          let response = await fetch(`${url}/@embroider/core/vendor.js`);
+          let response = await fetch(`${url}/@embroider/virtual/vendor.js`);
           assert.strictEqual(response.status, 200);
           // checking the response status 200 is not enough to assert vendor.js is served,
           // because when the URL is not recognized, the response contains the index.html
@@ -168,7 +168,7 @@ appScenarios
           let text = await response.text();
           assert.true(!text.includes('<!DOCTYPE html>'));
 
-          response = await fetch(`${url}/@embroider/core/test-support.js`);
+          response = await fetch(`${url}/@embroider/virtual/test-support.js`);
           assert.strictEqual(response.status, 200);
           // checking the response status 200 is not enough to assert test-support.js is served,
           // because when the URL is not recognized, the response contains the index.html
@@ -240,11 +240,11 @@ appScenarios
         try {
           const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
 
-          let response = await fetch(`${url}/@embroider/core/vendor.css?direct`);
+          let response = await fetch(`${url}/@embroider/virtual/vendor.css?direct`);
           let text = await response.text();
           assert.true(text.includes('.my-addon-p { color: blue; }'));
 
-          response = await fetch(`${url}/@embroider/core/test-support.css?direct`);
+          response = await fetch(`${url}/@embroider/virtual/test-support.css?direct`);
           text = await response.text();
           assert.true(text.includes('#qunit-tests'));
         } finally {

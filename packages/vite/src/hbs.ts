@@ -5,6 +5,7 @@ import {
   hbsToJS,
   ResolverLoader,
   needsSyntheticComponentJS,
+  isInComponents,
   templateOnlyComponentSource,
   syntheticJStoHBS,
 } from '@embroider/core';
@@ -32,6 +33,9 @@ export function hbs(): Plugin {
       });
 
       if (!resolution) {
+        // vite already has extension search fallback for extensionless imports.
+        // This is different, it covers an explicit .js import fallback to the
+        // corresponding hbs.
         let hbsSource = syntheticJStoHBS(source);
         if (hbsSource) {
           resolution = await this.resolve(hbsSource, importer, {
@@ -58,8 +62,8 @@ export function hbs(): Plugin {
         }
       }
 
-      let syntheticId = needsSyntheticComponentJS(source, resolution.id, resolverLoader.resolver.packageCache);
-      if (syntheticId) {
+      let syntheticId = needsSyntheticComponentJS(source, resolution.id);
+      if (syntheticId && isInComponents(resolution.id, resolverLoader.resolver.packageCache)) {
         return {
           id: syntheticId,
           meta: {
@@ -69,6 +73,8 @@ export function hbs(): Plugin {
           },
         };
       }
+
+      return resolution;
     },
 
     load(id: string) {

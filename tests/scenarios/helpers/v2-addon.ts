@@ -1,6 +1,5 @@
 import path from 'path';
 import type { PreparedApp } from 'scenario-tester';
-// @ts-expect-error
 import { loadConfigFile } from 'rollup/loadConfigFile';
 import rollup from 'rollup';
 import type { RollupOptions } from 'rollup';
@@ -32,7 +31,7 @@ export class DevWatcher {
     process.chdir(buildDirectory);
 
     let configPath = path.resolve(this.#addon.dir, 'rollup.config.mjs');
-    let configFile = await loadConfigFile(configPath);
+    let configFile = await loadConfigFile(configPath, undefined);
     configFile.warnings.flush();
 
     this.#watcher = rollup.watch(

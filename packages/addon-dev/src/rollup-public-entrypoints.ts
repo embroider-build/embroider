@@ -15,6 +15,7 @@ export default function publicEntrypoints(args: {
 }): Plugin {
   return {
     name: 'addon-modules',
+
     async buildStart() {
       let matches = walkSync(args.srcDir, {
         globs: [...args.include, '**/*.hbs', '**/*.ts', '**/*.gts', '**/*.gjs'],
@@ -23,7 +24,6 @@ export default function publicEntrypoints(args: {
 
       for (let name of matches) {
         this.addWatchFile(path.join(args.srcDir, name));
-
         // the matched file, but with the extension swapped with .js
         let normalizedName = normalizeFileExt(name);
 

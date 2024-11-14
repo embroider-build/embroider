@@ -1,7 +1,8 @@
 import type { Plugin } from 'vite';
 import type { EmittedFile } from 'rollup';
 import { JSDOM } from 'jsdom';
-import { readFileSync, readJSONSync, existsSync } from 'fs-extra';
+import fs from 'fs-extra';
+const { readFileSync, readJSONSync, existsSync } = fs;
 import { dirname, posix, resolve } from 'path';
 
 // This is a type-only import, so it gets compiled away. At runtime, we load
@@ -93,7 +94,7 @@ class ScriptOptimizer {
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.minify(inCode, terserOpts);
     let finalFilename = await this.getFingerprintedFilename(script, outCode!);
     let emit: EmittedFile[] = [];
     emit.push({

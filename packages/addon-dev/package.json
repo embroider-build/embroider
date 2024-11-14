@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "5.0.0",
+  "version": "7.0.0",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",
@@ -35,12 +35,11 @@
   },
   "dependencies": {
     "@embroider/core": "workspace:^",
-    "@rollup/pluginutils": "^4.1.1",
-    "content-tag": "^2.0.1",
+    "@rollup/pluginutils": "^5.1.0",
+    "content-tag": "^3.0.0",
     "fs-extra": "^10.0.0",
     "minimatch": "^3.0.4",
     "rollup-plugin-copy-assets": "^2.0.3",
-    "rollup-plugin-delete": "^2.0.0",
     "walk-sync": "^3.0.0",
     "yargs": "^17.0.1"
   },

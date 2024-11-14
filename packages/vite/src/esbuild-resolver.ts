@@ -1,9 +1,11 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
 import { transform } from '@babel/core';
-import { ResolverLoader, virtualContent, needsSyntheticComponentJS } from '@embroider/core';
-import { readFileSync } from 'fs-extra';
-import { EsBuildModuleRequest } from './esbuild-request';
-import assertNever from 'assert-never';
+import core from '@embroider/core';
+const { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } = core;
+import fs from 'fs-extra';
+const { readFileSync } = fs;
+import { EsBuildModuleRequest } from './esbuild-request.js';
+import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 import { extname } from 'path';
@@ -91,8 +93,8 @@ export function esBuildResolver(): EsBuildPlugin {
         });
 
         if (result.errors.length === 0 && !result.external) {
-          let syntheticPath = needsSyntheticComponentJS(path, result.path, resolverLoader.resolver.packageCache);
-          if (syntheticPath) {
+          let syntheticPath = needsSyntheticComponentJS(path, result.path);
+          if (syntheticPath && isInComponents(result.path, resolverLoader.resolver.packageCache)) {
             return { path: syntheticPath, namespace: 'embroider-template-only-component' };
           }
         }
@@ -151,14 +153,12 @@ export function esBuildResolver(): EsBuildPlugin {
   };
 }
 
-function detectPhase(build: PluginBuild): 'bundling' | 'scanning' {
+function detectPhase(build: PluginBuild): 'bundling' | 'other' {
   let plugins = (build.initialOptions.plugins ?? []).map(p => p.name);
   if (plugins.includes('vite:dep-pre-bundle')) {
     return 'bundling';
-  } else if (plugins.includes('vite:dep-scan')) {
-    return 'scanning';
   } else {
-    throw new Error(`cannot identify what phase vite is in. Saw plugins: ${plugins.join(', ')}`);
+    return 'other';
   }
 }
 

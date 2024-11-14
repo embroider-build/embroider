@@ -1,8 +1,15 @@
+import type { Plugin, PluginContext } from 'rollup';
 import { createFilter } from '@rollup/pluginutils';
-import type { Plugin, PluginContext, CustomPluginOptions } from 'rollup';
-import { readFileSync } from 'fs';
-import { correspondingTemplate, hbsToJS } from '@embroider/core';
 import minimatch from 'minimatch';
+import {
+  hbsToJS,
+  templateOnlyComponentSource,
+  needsSyntheticComponentJS,
+  syntheticJStoHBS,
+} from '@embroider/core';
+import { extname } from 'path';
+
+const hbsFilter = createFilter('**/*.hbs?([?]*)');
 
 export default function rollupHbsPlugin({
   excludeColocation,
@@ -12,48 +19,92 @@ export default function rollupHbsPlugin({
   return {
     name: 'rollup-hbs-plugin',
     async resolveId(source: string, importer: string | undefined, options) {
+      if (options.custom?.embroider?.isExtensionSearch) {
+        return null;
+      }
+
       let resolution = await this.resolve(source, importer, {
         skipSelf: true,
-        ...options,
       });
 
-      if (resolution) {
-        return resolution;
-      } else {
-        return maybeSynthesizeComponentJS(
-          this,
-          source,
-          importer,
-          options,
-          excludeColocation
+      if (!resolution && extname(source) === '') {
+        resolution = await this.resolve(source + '.hbs', importer, {
+          skipSelf: true,
+        });
+      }
+
+      if (!resolution) {
+        let hbsSource = syntheticJStoHBS(source);
+        if (hbsSource) {
+          resolution = await this.resolve(hbsSource, importer, {
+            skipSelf: true,
+            custom: {
+              embroider: {
+                isExtensionSearch: true,
+              },
+            },
+          });
+        }
+
+        if (!resolution) {
+          return null;
+        }
+      }
+
+      if (resolution && resolution.id.endsWith('.hbs')) {
+        let isExcluded = excludeColocation?.some((glob) =>
+          minimatch(resolution!.id, glob)
         );
+        if (isExcluded) {
+          return resolution;
+        }
+      }
+
+      let syntheticId = needsSyntheticComponentJS(source, resolution.id);
+      if (syntheticId) {
+        this.addWatchFile(source);
+        return {
+          id: syntheticId,
+          meta: {
+            'rollup-hbs-plugin': {
+              type: 'template-only-component-js',
+            },
+          },
+        };
       }
     },
 
     load(id: string) {
-      if (hbsFilter(id)) {
-        return getHbsToJSCode(id);
-      }
-      let meta = getMeta(this, id);
-      if (meta) {
-        if (meta?.type === 'template-js') {
-          const hbsFile = id.replace(/\.js$/, '.hbs');
-          return getHbsToJSCode(hbsFile);
-        }
+      if (getMeta(this, id)?.type === 'template-only-component-js') {
+        this.addWatchFile(id);
         return {
-          code: templateOnlyComponent,
+          code: templateOnlyComponentSource(),
         };
       }
+    },
+
+    transform: {
+      // Enforce running the hbs transform before any others like babel that expect valid JS
+      order: 'pre',
+      handler(code: string, id: string) {
+        let hbsFilename = id.replace(/\.\w{1,3}$/, '') + '.hbs';
+        if (hbsFilename !== id) {
+          this.addWatchFile(hbsFilename);
+          if (getMeta(this, id)?.type === 'template-only-component-js') {
+            this.addWatchFile(id);
+          }
+        }
+        if (!hbsFilter(id)) {
+          return null;
+        }
+        return hbsToJS(code);
+      },
     },
   };
 }
 
-const templateOnlyComponent =
-  `import templateOnly from '@ember/component/template-only';\n` +
-  `export default templateOnly();\n`;
-
 type Meta = {
-  type: 'template-only-component-js' | 'template-js';
+  type: 'template-only-component-js';
 };
 
 function getMeta(context: PluginContext, id: string): Meta | null {
@@ -64,44 +115,3 @@ function getMeta(context: PluginContext, id: string): Meta | null {
     return null;
   }
 }
-
-function getHbsToJSCode(file: string): { code: string } {
-  let input = readFileSync(file, 'utf8');
-  let code = hbsToJS(input);
-  return {
-    code,
-  };
-}
-
-async function maybeSynthesizeComponentJS(
-  context: PluginContext,
-  source: string,
-  importer: string | undefined,
-  options: { custom?: CustomPluginOptions; isEntry: boolean },
-  excludeColocation: string[] | undefined
-) {
-  let hbsFilename = correspondingTemplate(source);
-  let templateResolution = await context.resolve(hbsFilename, importer, {
-    skipSelf: true,
-    ...options,
-  });
-  if (!templateResolution) {
-    return null;
-  }
-  let type = excludeColocation?.some((glob) => minimatch(hbsFilename, glob))
-    ? 'template-js'
-    : 'template-only-component-js';
-  // we're trying to resolve a JS module but only the corresponding HBS
-  // file exists. Synthesize the JS. The meta states if the hbs corresponds
-  // to a template-only component or a simple template like a route template.
-  return {
-    id: templateResolution.id.replace(/\.hbs$/, '.js'),
-    meta: {
-      'rollup-hbs-plugin': {
-        type,
-      },
-    },
-  };
-}
-
-const hbsFilter = createFilter('**/*.hbs');

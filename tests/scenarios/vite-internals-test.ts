@@ -1,4 +1,4 @@
-import { appScenarios, baseAddon } from './scenarios';
+import { baseAddon, tsAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import fetch from 'node-fetch';
@@ -7,7 +7,7 @@ import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 const { module: Qmodule, test } = QUnit;
 
-appScenarios
+tsAppScenarios
   .only('release')
   .map('vite-internals', app => {
     // These are for a custom testem setup that will let us do runtime tests
@@ -54,10 +54,19 @@ appScenarios
 
       app: {
         components: {
-          'alpha.js': `
+          'fancy-gts.gts': `
             import Component from '@glimmer/component';
             export default class extends Component {
-              message = "alpha";
+              message: string = "fancy gts";
+              <template>
+                <div class="fancy-gts">{{this.message}}</div>
+              </template>
+            }
+          `,
+          'alpha.ts': `
+            import Component from '@glimmer/component';
+            export default class extends Component {
+              message: string = "alpha";
             }
           `,
           'alpha.hbs': `
@@ -76,6 +85,12 @@ appScenarios
           `,
           'epsilon.hbs': `<div class="epsilon">Epsilon</div>`,
           'fancy-button.hbs': `<h1>I'm fancy</h1>`,
+          'delta.js': `
+            import Component from '@glimmer/component';
+            export default class extends Component {
+              message = "delta";
+           }
+          `,
         },
         templates: {
           'application.hbs': `
@@ -84,6 +99,7 @@ appScenarios
           `,
           'index.hbs': `
             <FancyButton />
+            <FancyGts />
             <WelcomePage />
           `,
         },
@@ -103,12 +119,13 @@ appScenarios
           components: {
             'example-test.js': `
               import { module, test } from 'qunit';
-              import { setupRenderingTest } from 'app-template/tests/helpers';
+              import { setupRenderingTest } from 'ts-app-template/tests/helpers';
               import { render } from '@ember/test-helpers';
               import { hbs } from 'ember-cli-htmlbars';
-              import { appLibOne as libOneViaAddon, appLibTwo as libTwoViaAddon } from 'app-template/v1-example-addon';
-              import appLibOne from 'app-template/lib/app-lib-one';
-              import appLibTwo from 'app-template/lib/app-lib-two';
+              import { appLibOne as libOneViaAddon, appLibTwo as libTwoViaAddon } from 'ts-app-template/v1-example-addon';
+              import appLibOne from 'ts-app-template/lib/app-lib-one';
+              import appLibTwo from 'ts-app-template/lib/app-lib-two';
+
 
               module('Integration | Component | example', function (hooks) {
                 setupRenderingTest(hooks);
@@ -134,6 +151,11 @@ appScenarios
                   await render(hbs\`<Zeta />\`);
                   assert.dom('.zeta').hasText('Zeta');
                   assert.dom('.epsilon').hasText('Epsilon');
+                });
+
+                 test("paired component between app and addon", async function (assert) {
+                  await render(hbs\`<Delta />\`);
+                  assert.dom('.delta').hasText('delta');
                 });
 
                 test("addon depends on an app's module via relative import", async function (assert) {
@@ -176,9 +198,16 @@ appScenarios
       app: {
         'v1-example-addon.js': `
           import appLibOne from './lib/app-lib-one';
-          import appLibTwo from 'app-template/lib/app-lib-two';
+          import appLibTwo from 'ts-app-template/lib/app-lib-two';
           export { appLibOne, appLibTwo };
         `,
+        templates: {
+          components: {
+            'delta.hbs': `
+              <div class="delta">delta</div>
+            `,
+          },
+        },
         components: {
           'beta.js': `
             export { default } from 'v1-example-addon/components/beta';
@@ -222,7 +251,7 @@ appScenarios
             .module('./index.html')
             .resolves(/\/index.html.*/) // in-html app-boot script
             .toModule()
-            .resolves(/\/app\.js.*/)
+            .resolves(/\/app\.ts.*/)
             .toModule()
             .resolves(/.*\/-embroider-entrypoint.js/)
             .toModule()

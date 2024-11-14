@@ -31,7 +31,7 @@ appScenarios
             import utilsIndex from 'somebody-elses-package/utils/index';
             import utilsIndexJS from 'somebody-elses-package/utils/index.js';
             import singleFilePackage from 'single-file-package';
-            import compat from '@embroider/core/entrypoint';
+            import compat from '@embroider/virtual/compat-modules';
 
             module('Unit | basics', function () {
               test('whole package renaming works for top-level module', async function (assert) {

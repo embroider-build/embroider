@@ -87,7 +87,7 @@ export function renderEntrypoint(
   // will be inserted via a direct <link> tag.
   if (!appFiles.engine.isApp && appFiles.engine.package.isLazyEngine()) {
     styles.push({
-      path: '@embroider/core/vendor.css',
+      path: '@embroider/virtual/vendor.css',
     });
   }
 
@@ -97,7 +97,7 @@ export function renderEntrypoint(
     // deliberately ignoring the app (which is the first entry in the engines array)
     let [, ...childEngines] = resolver.options.engines;
     for (let childEngine of childEngines) {
-      let target = `@embroider/core/entrypoint/${childEngine.packageName}`;
+      let target = `@embroider/virtual/compat-modules/${childEngine.packageName}`;
 
       if (childEngine.isLazy) {
         lazyEngines.push({
@@ -148,7 +148,7 @@ export function renderEntrypoint(
 
   return {
     src: entryTemplate(params),
-    watches: [],
+    watches: [fromDir],
   };
 }
 

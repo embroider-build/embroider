@@ -34,11 +34,17 @@ appScenarios
       'import-from-npm.js': `
         export default async function() {
           let { message } = await import('third-party');
-          return message()
+
+          let { Processor } = await import('content-tag');
+
+          console.log(new Processor());
+
+          return message();
         }
         `,
     });
 
+    addon.linkDependency('content-tag', { baseDir: __dirname });
     addon.addDependency('third-party', {
       files: {
         'index.js': `

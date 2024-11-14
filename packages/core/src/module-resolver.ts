@@ -1036,6 +1036,8 @@ export class Resolver {
           /**
            * Ideally, these would be exported by vite, but the constant
            * that defines client conditions is not exposed to us
+           *
+           * See: https://vite.dev/config/shared-options.html#resolve-conditions
            */
           conditions: ['import', 'module', 'browser' /*, development | production */, 'default'],
         });

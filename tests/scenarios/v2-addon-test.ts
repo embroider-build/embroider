@@ -34,7 +34,6 @@ appScenarios
       'import-from-npm.js': `
         export default async function() {
           let { message } = await import('third-party');
-
           let { Processor } = await import('content-tag');
 
           console.log(new Processor());
@@ -55,6 +54,7 @@ appScenarios
       },
     });
 
+    project.linkDevDependency('vite-plugin-wasm', { baseDir: __dirname });
     project.addDevDependency(addon);
 
     // a v1 addon, which will have a v2 addon as a dep
@@ -153,7 +153,9 @@ appScenarios
           `,
         },
       },
-      // Default + different build.target
+      // Default
+      // + different build.target
+      // + wasm plugin
       'vite.config.mjs': `
           import { defineConfig } from "vite";
           import {
@@ -168,6 +170,7 @@ appScenarios
           } from "@embroider/vite";
           import { resolve } from "path";
           import { babel } from "@rollup/plugin-babel";
+          import wasm from "vite-plugin-wasm";
 
           export default defineConfig(({ mode }) => {
             return {
@@ -186,6 +189,7 @@ appScenarios
                 ],
               },
               plugins: [
+                wasm(),
                 hbs(),
                 templateTag(),
                 scripts(),
@@ -210,7 +214,7 @@ appScenarios
               },
               build: {
                 outDir: "dist",
-                target: ['chrome130'],
+                target: ['esnext'],
                 rollupOptions: {
                   input: {
                     main: "index.html",

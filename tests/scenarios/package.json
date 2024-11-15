@@ -63,7 +63,6 @@
     "broccoli-merge-trees": "^3.0.2",
     "broccoli-persistent-filter": "^3.1.2",
     "broccoli-stew": "^3.0.0",
-    "content-tag": "^3.0.0",
     "ember-bootstrap": "^5.0.0",
     "ember-cli": "~3.28.0",
     "ember-cli-4.12": "npm:ember-cli@~4.12.0",

@@ -7,6 +7,18 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('v2-addon-basics', project => {
+    let fakeContentTag = baseV2Addon();
+    fakeContentTag.pkg.name = 'fake-content-tag';
+    fakeContentTag.pkg.exports = {
+      browser: './browser.js',
+      default: './not-browser.js',
+    };
+    fakeContentTag.pkg.files = ['browser.js', 'not-browser.js'];
+    merge(fakeContentTag.files, {
+      'browser.js': `export const value = 'browser'`,
+      'not-browser.js': `export const value = 'not browser'`,
+    });
+
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
     (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
@@ -34,16 +46,16 @@ appScenarios
       'import-from-npm.js': `
         export default async function() {
           let { message } = await import('third-party');
-          let { Processor } = await import('content-tag');
+          let { value } = await import('fake-content-tag');
 
-          console.log(new Processor());
+          if (value !== 'browser') throw new Error('Incorrect conditions for fake-content-tag');
 
           return message();
         }
         `,
     });
 
-    addon.linkDependency('content-tag', { baseDir: __dirname });
+    addon.addDependency(fakeContentTag);
     addon.addDependency('third-party', {
       files: {
         'index.js': `
@@ -54,7 +66,6 @@ appScenarios
       },
     });
 
-    project.linkDevDependency('vite-plugin-wasm', { baseDir: __dirname });
     project.addDevDependency(addon);
 
     // a v1 addon, which will have a v2 addon as a dep
@@ -153,84 +164,6 @@ appScenarios
           `,
         },
       },
-      // Default
-      // + different build.target
-      // + wasm plugin
-      'vite.config.mjs': `
-          import { defineConfig } from "vite";
-          import {
-            resolver,
-            hbs,
-            scripts,
-            templateTag,
-            optimizeDeps,
-            compatPrebuild,
-            assets,
-            contentFor,
-          } from "@embroider/vite";
-          import { resolve } from "path";
-          import { babel } from "@rollup/plugin-babel";
-          import wasm from "vite-plugin-wasm";
-
-          export default defineConfig(({ mode }) => {
-            return {
-              cacheDir: resolve("node_modules", ".vite"),
-              resolve: {
-                extensions: [
-                  ".mjs",
-                  ".gjs",
-                  ".js",
-                  ".mts",
-                  ".gts",
-                  ".ts",
-                  ".hbs",
-                  ".hbs.js",
-                  ".json",
-                ],
-              },
-              plugins: [
-                wasm(),
-                hbs(),
-                templateTag(),
-                scripts(),
-                resolver(),
-                compatPrebuild(),
-                assets(),
-                contentFor(),
-
-                babel({
-                  babelHelpers: "runtime",
-
-                  // this needs .hbs because our hbs() plugin above converts them to
-                  // javascript but the javascript still also needs babel, but we don't want
-                  // to rename them because vite isn't great about knowing how to hot-reload
-                  // them if we resolve them to made-up names.
-                  extensions: [".gjs", ".js", ".hbs", ".ts", ".gts"],
-                }),
-              ],
-              optimizeDeps: optimizeDeps(),
-              server: {
-                port: 4200,
-              },
-              build: {
-                outDir: "dist",
-                target: ['esnext'],
-                rollupOptions: {
-                  input: {
-                    main: "index.html",
-                    ...(shouldBuildTests(mode)
-                      ? { tests: "tests/index.html" }
-                      : undefined),
-                  },
-                },
-              },
-            };
-          });
-
-          function shouldBuildTests(mode) {
-            return mode !== "production" || process.env.FORCE_BUILD_TESTS;
-          }
-          `,
     });
   })
   .forEachScenario(scenario => {

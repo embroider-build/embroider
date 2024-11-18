@@ -43,6 +43,14 @@ async function lts_5_8(project: Project) {
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
 }
 
+async function lts_5_12(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.12' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-5.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+}
+
 async function release(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
@@ -73,7 +81,7 @@ export function supportMatrix(scenarios: Scenarios) {
       .expand({
         lts_3_28,
         lts_4_4,
-        lts_5_8,
+        lts_5_12,
         release,
         canary,
       })
@@ -81,7 +89,6 @@ export function supportMatrix(scenarios: Scenarios) {
       // new vite based system is working as we like
       .skip('lts_3_28')
       .skip('lts_4_4')
-      .skip('lts_5_8')
   );
 }
 
@@ -95,6 +102,7 @@ export function fullSupportMatrix(scenarios: Scenarios) {
         lts_4_12,
         lts_5_4,
         lts_5_8,
+        lts_5_12,
         release,
         beta,
         canary,

@@ -13,7 +13,7 @@ const { module: Qmodule, test } = QUnit;
 
 Scenarios.fromProject(() => new Project())
   .map('core-resolver-test', app => {
-    app.linkDevDependency('ember-source', { baseDir: __dirname });
+    app.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.8' });
 
     let appMeta: AppMeta = {
       type: 'app',

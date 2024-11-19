@@ -646,7 +646,7 @@ export class Resolver {
     if (hbsModule) {
       if (!this.emberVersionSupportsSeparateTemplates) {
         throw new Error(
-          `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule}.`
+          `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule.filename}.`
         );
       }
       return logTransition(

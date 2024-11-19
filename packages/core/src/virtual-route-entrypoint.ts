@@ -107,26 +107,19 @@ export function renderRouteEntrypoint(
 }
 
 const routeEntryTemplate = compile(`
-let d = window.define;
+const output = {};
+export default output;
 
 {{#each amdModules as |amdModule index| ~}}
   import * as amdModule{{index}} from "{{js-string-escape amdModule.buildtime}}"
-  d("{{js-string-escape amdModule.runtime}}", function(){ return amdModule{{index}}; });
+  output["{{js-string-escape amdModule.runtime}}"] = amdModule{{index}};
 {{/each}}
 
 {{#if fastbootOnlyAmdModules}}
   if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-    let fastbootModules = {};
-
     {{#each fastbootOnlyAmdModules as |amdModule| ~}}
-      fastbootModules["{{js-string-escape amdModule.runtime}}"] = import("{{js-string-escape amdModule.buildtime}}");
+      output["{{js-string-escape amdModule.runtime}}"] = await import("{{js-string-escape amdModule.buildtime}}");
     {{/each}}
-
-    const resolvedValues = await Promise.all(Object.values(fastbootModules));
-
-    Object.keys(fastbootModules).forEach((k, i) => {
-      d(k, function(){ return resolvedValues[i];});
-    })
   }
 {{/if}}
 `) as (params: {

@@ -12,9 +12,9 @@
     "type": "addon",
     "version": 2,
     "app-js": {},
-    "main": "addon-main.cjs"
+    "main": "addon-main.js"
   },
   "exports": {
     "./*": "./*"
   }
-}
+

@@ -11,13 +11,18 @@ appScenarios
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
     addon.pkg.type = 'module';
-    addon.pkg.files = ['src'];
+    addon.pkg.files = ['src', 'addon-main.cjs'];
     addon.pkg.exports = {
       './*': './src/*.js',
       './addon-main.cjs': './addon-main.cjs',
     };
+    addon.pkg['ember-addon'].main = 'addon-main.cjs';
 
     merge(addon.files, {
+      'addon-main.cjs': `
+        const { addonV1Shim } = require('@embroider/addon-shim');
+        module.exports = addonV1Shim(__dirname);
+      `,
       src: {
         'side-effecting.js': `window.__secret_side_effect = 'hello';`,
         /**

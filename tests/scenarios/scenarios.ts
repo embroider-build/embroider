@@ -2,10 +2,11 @@ import { Scenarios, Project } from 'scenario-tester';
 import { dirname } from 'path';
 
 export async function lts_3_28(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.28' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
   project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: 'ember-test-helpers-2' });
+  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-6' });
 }
 
 async function lts_4_4(project: Project) {
@@ -42,12 +43,19 @@ async function lts_5_8(project: Project) {
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
 }
 
+async function lts_5_12(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.12' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-5.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+}
+
 async function release(project: Project) {
-  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.11' });
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
-  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
   project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
   project.linkDevDependency('@babel/core', { baseDir: __dirname });
 }
@@ -56,7 +64,6 @@ async function beta(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-beta' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
-  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
   project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
   project.linkDevDependency('@babel/core', { baseDir: __dirname });
 }
@@ -65,7 +72,6 @@ async function canary(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-canary' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
-  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-7' });
   project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
 }
 
@@ -75,7 +81,7 @@ export function supportMatrix(scenarios: Scenarios) {
       .expand({
         lts_3_28,
         lts_4_4,
-        lts_5_8,
+        lts_5_12,
         release,
         canary,
       })
@@ -83,7 +89,6 @@ export function supportMatrix(scenarios: Scenarios) {
       // new vite based system is working as we like
       .skip('lts_3_28')
       .skip('lts_4_4')
-      .skip('lts_5_8')
   );
 }
 
@@ -97,6 +102,7 @@ export function fullSupportMatrix(scenarios: Scenarios) {
         lts_4_12,
         lts_5_4,
         lts_5_8,
+        lts_5_12,
         release,
         beta,
         canary,

@@ -187,10 +187,28 @@ appScenarios
     let myAddon = baseAddon();
     myAddon.pkg.name = 'my-addon';
     merge(myAddon.files, {
+      'index.js': `
+        module.exports = {
+          name: require('./package').name,
+          included() {
+            this._super.included.apply(this, arguments);
+            this.import('vendor/my-addon/test-styles.css', {
+              type: 'test',
+            });
+          }
+        };
+      `,
       addon: {
         styles: {
           'addon.css': `
             .my-addon-p { color: blue; }
+          `,
+        },
+      },
+      vendor: {
+        'my-addon': {
+          'test-styles.css': `
+            #example-test-styles { background-color: red }
           `,
         },
       },
@@ -232,7 +250,7 @@ appScenarios
           })
         );
         assert.true(readResult.some(content => content.includes('.my-addon-p{color:#00f}')));
-        assert.true(readResult.some(content => content.includes('#qunit-tests')));
+        assert.true(readResult.some(content => content.includes('#example-test-styles')));
       });
 
       test('virtual styles are served in dev mode', async function (assert) {
@@ -246,7 +264,7 @@ appScenarios
 
           response = await fetch(`${url}/@embroider/virtual/test-support.css?direct`);
           text = await response.text();
-          assert.true(text.includes('#qunit-tests'));
+          assert.true(text.includes('#example-test-styles'));
         } finally {
           await server.shutdown();
         }

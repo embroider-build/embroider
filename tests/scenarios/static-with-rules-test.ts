@@ -7,6 +7,9 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
+  // last release that supports non-colocated templates (which is part of what
+  // this test is testing)
+  .only('lts_5_12')
   .map('static-with-rules', app => {
     renameApp(app, 'my-app');
 

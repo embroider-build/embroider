@@ -329,9 +329,7 @@ splitScenarios
               EmberENV: {
                 FEATURES: {
                 },
-                EXTEND_PROTOTYPES: {
-                  Date: false
-                }
+                EXTEND_PROTOTYPES: false,
               },
               APP: {}
             };
@@ -505,9 +503,7 @@ splitScenarios
               EmberENV: {
                 FEATURES: {
                 },
-                EXTEND_PROTOTYPES: {
-                  Date: false
-                }
+                EXTEND_PROTOTYPES: false,
               },
               APP: {}
             };

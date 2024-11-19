@@ -10,7 +10,7 @@ module.exports = {
       'babel-plugin-ember-template-compilation',
       {
         targetFormat: 'hbs',
-        compilerPath: 'ember-source/dist/ember-template-compiler',
+        compilerPath: 'ember-source/dist/ember-template-compiler.js',
         transforms: [
           someAstTransformPlugin,
           './path/to/another-template-transform-plugin',

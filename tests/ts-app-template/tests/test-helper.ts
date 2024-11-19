@@ -10,5 +10,5 @@ export function start() {
 
   setup(QUnit.assert);
 
-  qunitStart();
+  qunitStart({ loadTests: false });
 }

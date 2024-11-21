@@ -67,7 +67,6 @@ Scenarios.fromProject(() => new Project())
           emberVersion = '4.6.0'
         ) {
           let resolverOptions: CompatResolverOptions = {
-            amdCompatibility: 'cjs',
             renameModules: {},
             renamePackages: {},
             resolvableExtensions: ['.js', '.hbs'],
@@ -2111,14 +2110,24 @@ Scenarios.fromProject(() => new Project())
         );
 
         expectTranspiled('components/my-thing.hbs').equalsCode(`
-          window.define("my-app/components/alpha", function () {
-            return esc(_importSync0);
-          });
           import { precompileTemplate } from "@ember/template-compilation";
-          import esc from  "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
-          import * as _importSync0 from "@embroider/virtual/components/alpha";
-          export default precompileTemplate("{{component this.which}}", {
-            moduleName: "my-app/components/my-thing.hbs"
+          let registerComponents = class extends Helper {
+            compute(_positional, registrations) {
+              let owner = getOwner(this);
+              for (let [name, definition] of Object.entries(registrations)) {
+                owner.register(\`component:\${name}\`, definition);
+              }
+            }
+          };
+          import alpha_ from "@embroider/virtual/components/alpha";
+          import Helper from "@ember/component/helper";
+          import { getOwner } from "@ember/owner";
+          export default precompileTemplate("{{registerComponents alpha=alpha_}}{{component this.which}}", {
+            moduleName: "my-app/components/my-thing.hbs",
+            scope: () => ({
+              alpha_,
+              registerComponents
+            })
           });
         `);
       });
@@ -2141,16 +2150,29 @@ Scenarios.fromProject(() => new Project())
         );
 
         expectTranspiled('templates/index.hbs').equalsCode(`
-          window.define("my-app/components/alpha", function () {
-            return esc(_importSync0);
-          });
           import { precompileTemplate } from "@ember/template-compilation";
-          import esc from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
-          import * as _importSync0 from "@embroider/virtual/components/alpha";
-          export default precompileTemplate("{{component this.which}}", {
-            moduleName: "my-app/templates/index.hbs"
-          });
-        `);
+          let registerComponents = class extends Helper {
+            compute(_positional, registrations) {
+              let owner = getOwner(this);
+              for (let [name, definition] of Object.entries(registrations)) {
+                owner.register(\`component:\${name}\`, definition);
+              }
+            }
+          };
+          import alpha_ from "@embroider/virtual/components/alpha";
+          import Helper from "@ember/component/helper";
+          import { getOwner } from "@ember/owner";
+          export default precompileTemplate(
+            "{{registerComponents alpha=alpha_}}{{component this.which}}",
+            {
+              moduleName: "my-app/templates/index.hbs",
+              scope: () => ({
+                alpha_,
+                registerComponents,
+              }),
+            }
+          );
+       `);
       });
 
       test(`respects element block params scope boundary`, async function () {

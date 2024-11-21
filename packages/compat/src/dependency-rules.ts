@@ -168,6 +168,7 @@ export interface PreprocessedComponentRule {
   safeToIgnore: boolean;
   safeInteriorPaths: string[];
   disambiguate: Record<string, 'component' | 'helper' | 'data'>;
+  invokes: Required<ComponentRules>['invokes'];
 }
 
 // take a component rule from the authoring format to a format more optimized
@@ -205,6 +206,7 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
     yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
     yieldsArguments: componentRules.yieldsArguments || [],
     disambiguate: componentRules?.disambiguate ?? {},
+    invokes: componentRules?.invokes ?? {},
   };
 }
 

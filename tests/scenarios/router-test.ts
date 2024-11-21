@@ -117,110 +117,127 @@ function setupScenario(project: Project) {
     tests: {
       acceptance: {
         'lazy-routes-test.ts': `
+          import { module, test, only } from "qunit";
+          import { visit } from "@ember/test-helpers";
+          import { setupApplicationTest } from "ember-qunit";
+          import { getGlobalConfig, getOwnConfig } from "@embroider/macros";
+          import type Resolver from "ember-resolver";
 
-          import { module, test } from 'qunit';
-          import { visit } from '@ember/test-helpers';
-          import { setupApplicationTest } from 'ember-qunit';
-          import ENV from 'ts-app-template/config/environment';
-          import { getGlobalConfig, getOwnConfig } from '@embroider/macros';
+          declare global {
+            interface Assert {
+              containerHas(name: string, message?: string): void;
+              containerDoesNotHave(name: string, message?: string): void;
+            }
+          }
 
-          /* global requirejs */
-
-          module('Acceptance | lazy routes', function (hooks) {
+          module("Acceptance | lazy routes", function (hooks) {
             setupApplicationTest(hooks);
 
-            function hasController(routeName: string) {
-              return Boolean(
-                (requirejs as any).entries[\`\${ENV.modulePrefix}/controllers/\${routeName}\`]
-              );
-            }
+            hooks.beforeEach(function (assert) {
+              // these assertions cannot do owner.lookup(name) because that permanently
+              // caches its result in the Registry, which is shared between tests.
 
-            function hasRoute(routeName: string) {
-              return Boolean(
-                (requirejs as any).entries[\`\${ENV.modulePrefix}/routes/\${routeName}\`]
-              );
-            }
+              assert.containerHas = (name: \`\${string}:\${string}\`, message?: string) => {
+                let resolver = this.owner.lookup("resolver:current") as Resolver;
+                assert.ok(Boolean(resolver.resolve(name)), message);
+              };
 
-            function hasTemplate(routeName: string) {
-              return Boolean(
-                (requirejs as any).entries[\`\${ENV.modulePrefix}/templates/\${routeName}\`]
-              );
-            }
-
-            function hasComponent(name: string) {
-              return Boolean((requirejs as any).entries[\`\${ENV.modulePrefix}/components/\${name}\`]);
-            }
+              assert.containerDoesNotHave = (
+                name: \`\${string}:\${string}\`,
+                message?: string,
+              ) => {
+                let resolver = this.owner.lookup("resolver:current") as Resolver;
+                assert.notOk(Boolean(resolver.resolve(name)), message);
+              };
+            });
 
             if (getOwnConfig<{ expectClassic: boolean }>().expectClassic) {
-              test('lazy routes present', async function (assert) {
-                await visit('/');
-                assert.ok(hasController('split-me'), 'classic build has controller');
-                assert.ok(hasRoute('split-me'), 'classic build has route');
-                assert.ok(hasTemplate('split-me'), 'classic build has template');
-                assert.ok(
-                  hasController('split-me/child'),
-                  'classic build has child controller'
+              test("lazy routes present", async function (assert) {
+                await visit("/");
+                assert.containerHas(
+                  "controller:split-me",
+                  "classic build has controller",
                 );
-                assert.ok(hasRoute('split-me/child'), 'classic build has child route');
-                assert.ok(
-                  hasTemplate('split-me/child'),
-                  'classic build has child template'
+                assert.containerHas("route:split-me", "classic build has route");
+                assert.containerHas("template:split-me", "classic build has template");
+                assert.containerHas(
+                  "controller:split-me/child",
+                  "classic build has child controller",
                 );
-                assert.ok(
-                  hasComponent('used-in-child'),
-                  'classic build has all components'
+                assert.containerHas(
+                  "route:split-me/child",
+                  "classic build has child route",
+                );
+                assert.containerHas(
+                  "template:split-me/child",
+                  "classic build has child template",
+                );
+                assert.containerHas(
+                  "component:used-in-child",
+                  "classic build has all components",
                 );
               });
             } else {
-              test('lazy routes not yet present', async function (assert) {
-                await visit('/');
-                assert.notOk(hasController('split-me'), 'controller is lazy');
-                assert.notOk(hasRoute('split-me'), 'route is lazy');
-                assert.notOk(hasTemplate('split-me'), 'template is lazy');
-                assert.notOk(hasController('split-me/child'), 'child controller is lazy');
-                assert.notOk(hasRoute('split-me/child'), 'child route is lazy');
-                assert.notOk(hasTemplate('split-me/child'), 'child template is lazy');
-                assert.notOk(
-                  hasComponent('used-in-child'),
-                  'descendant components are lazy'
+              test("lazy routes not yet present", async function (assert) {
+                await visit("/");
+                assert.containerDoesNotHave("controller:split-me", "controller is lazy");
+                assert.containerDoesNotHave("route:split-me", "route is lazy");
+                assert.containerDoesNotHave("template:split-me", "template is lazy");
+                assert.containerDoesNotHave(
+                  "controller:split-me/child",
+                  "child controller is lazy",
+                );
+                assert.containerDoesNotHave(
+                  "route:split-me/child",
+                  "child route is lazy",
+                );
+                assert.containerDoesNotHave(
+                  "template:split-me/child",
+                  "child template is lazy",
                 );
               });
             }
 
             if (getOwnConfig<{ expectClassic: boolean }>().expectClassic) {
-              test('classic builds can not see @embroider/core config', async function (assert) {
-                let config = getGlobalConfig<{ '@embroider/core'?: { active: true} }>()['@embroider/core'];
+              test("classic builds can not see @embroider/core config", async function (assert) {
+                let config = getGlobalConfig<{ "@embroider/core"?: { active: true } }>()[
+                  "@embroider/core"
+                ];
                 assert.strictEqual(
                   config,
                   undefined,
-                  'expected no embroider core config'
+                  "expected no embroider core config",
                 );
               });
             } else {
-              test('can see @embroider/core config', async function (assert) {
-                let config = getGlobalConfig<{ '@embroider/core'?: { active: true} }>()['@embroider/core'];
-                assert.true(config!.active, 'expected to see active @embroider/core');
+              test("can see @embroider/core config", async function (assert) {
+                let config = getGlobalConfig<{ "@embroider/core"?: { active: true } }>()[
+                  "@embroider/core"
+                ];
+                assert.true(config!.active, "expected to see active @embroider/core");
               });
             }
 
-            test('can enter a lazy route', async function (assert) {
-              await visit('/split-me');
+            test("can enter a lazy route", async function (assert) {
+              await visit("/split-me");
               assert.ok(
-                document.querySelector('[data-test-split-me-index]'),
-                'split-me/index rendered'
+                document.querySelector("[data-test-split-me-index]"),
+                "split-me/index rendered",
               );
             });
 
-            test('can enter a child of a lazy route', async function (assert) {
-              await visit('/split-me/child');
+            test("can enter a child of a lazy route", async function (assert) {
+              debugger;
+
+              await visit("/split-me/child");
               assert.ok(
-                document.querySelector('[data-test-used-in-child]'),
-                'split-me/child rendered'
+                document.querySelector("[data-test-used-in-child]"),
+                "split-me/child rendered",
               );
             });
           });
 
-          `,
+        `,
       },
     },
   });

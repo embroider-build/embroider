@@ -33,7 +33,6 @@ appScenarios
           },
           addonModules: {
             'components/hello-world.js': {
-              dependsOnModules: ['../synthetic-import-1'],
               dependsOnComponents: ['{{second-choice}}'],
             },
           },
@@ -42,11 +41,6 @@ appScenarios
               invokes: {
                 'this.stuff': ['<FirstDynamicallyInvoked />'],
               },
-            },
-          },
-          appModules: {
-            'components/hello-world.js': {
-              dependsOnModules: ['my-addon/synthetic-import-2'],
             },
           },
           appTemplates: {
@@ -171,16 +165,6 @@ appScenarios
                 assert.dom('.hello-third').containsText('third');
               })
 
-              test('dependsOnModules rule in addon tree', async function(assert) {
-                await visit('/');
-                assert.ok(globalThis.syntheticImport1Loaded, 'checking synthetic import 1');
-              });
-
-              test('dependsOnModules rule in app tree', async function(assert) {
-                await visit('/');
-                assert.ok(globalThis.syntheticImport2Loaded, 'checking synthetic import 2');
-              });
-
               test('non-static-dir loaded', async function(assert) {
                 assert.ok(globalThis.anotherLibraryLoaded, 'checking anotherLibraryLoaded');
               });
@@ -258,14 +242,6 @@ appScenarios
             export default template("second dynamically invoked");
           `,
         },
-        'synthetic-import-1.js': `
-          globalThis.syntheticImport1Loaded = true;
-          export {}
-        `,
-        'synthetic-import-2.js': `
-          globalThis.syntheticImport2Loaded = true;
-          export {}
-        `,
         templates: {
           components: {
             'hello-world.hbs': `

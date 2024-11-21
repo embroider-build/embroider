@@ -7,8 +7,6 @@ import { start as qunitStart } from 'ember-qunit';
 
 export function start() {
   setApplication(Application.create(config.APP));
-
   setup(QUnit.assert);
-
-  qunitStart();
+  qunitStart({ loadTests: false });
 }

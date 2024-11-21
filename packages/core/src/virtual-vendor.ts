@@ -1,7 +1,6 @@
 import { type Package, locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { lstatSync, readFileSync, readJSONSync } from 'fs-extra';
-import { sortBy } from 'lodash';
 import { join } from 'path';
 import resolve from 'resolve';
 import type { Resolver } from './module-resolver';
@@ -21,12 +20,7 @@ export function renderVendor(filename: string, resolver: Resolver): VirtualConte
 
 function getVendor(owner: Package, resolver: Resolver, filename: string): string {
   let engineConfig = resolver.owningEngine(owner);
-  let addons = new Map(
-    engineConfig.activeAddons.map(addon => [
-      resolver.packageCache.get(addon.root) as V2AddonPackage,
-      addon.canResolveFromFile,
-    ])
-  );
+  let addons = engineConfig.activeAddons.map(addon => resolver.packageCache.get(addon.root) as V2AddonPackage);
 
   let path = join(locateEmbroiderWorkingDir(resolver.options.appRoot), 'ember-env.json');
   if (!lstatSync(path).isFile()) {
@@ -37,7 +31,7 @@ function getVendor(owner: Package, resolver: Resolver, filename: string): string
   return generateVendor(addons, emberENV);
 }
 
-function generateVendor(addons: Map<V2AddonPackage, string>, emberENV?: unknown): string {
+function generateVendor(addons: V2AddonPackage[], emberENV?: unknown): string {
   // Add addons implicit-scripts
   let vendor: string[] = impliedAddonVendors(addons).map((sourcePath: string): string => {
     let source = readFileSync(sourcePath);
@@ -47,24 +41,13 @@ function generateVendor(addons: Map<V2AddonPackage, string>, emberENV?: unknown)
   vendor.unshift(`var runningTests=false;`);
   // Add _ember_env_.js
   vendor.unshift(`window.EmberENV={ ...(window.EmberENV || {}), ...${JSON.stringify(emberENV, null, 2)} };`);
-  // Add _loader_.js
-  vendor.push(`loader.makeDefaultExport=false;`);
 
   return vendor.join('') as string;
 }
 
-function impliedAddonVendors(addons: Map<V2AddonPackage, string>): string[] {
+function impliedAddonVendors(addons: V2AddonPackage[]): string[] {
   let result: Array<string> = [];
-  for (let addon of sortBy(Array.from(addons.keys()), pkg => {
-    switch (pkg.name) {
-      case 'loader.js':
-        return 0;
-      case 'ember-source':
-        return 10;
-      default:
-        return 1000;
-    }
-  })) {
+  for (let addon of addons) {
     let implicitScripts = addon.meta['implicit-scripts'];
     if (implicitScripts) {
       let options = { basedir: addon.root };

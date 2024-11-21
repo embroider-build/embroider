@@ -479,8 +479,7 @@ class TemplateResolver implements ASTPlugin {
       };
     }
     if (component.type === 'path') {
-      let ownComponentRules = this.findRules(this.env.filename);
-      if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
+      if (this.ownRules?.safeInteriorPaths.includes(component.path)) {
         return null;
       }
       return {
@@ -761,9 +760,41 @@ class TemplateResolver implements ASTPlugin {
     return null;
   }
 
+  private ownRules: PreprocessedComponentRule | undefined;
+
+  private implementInvokesRule(node: ASTv1.Template, path: WalkerPath<ASTv1.Template>) {
+    if (!this.ownRules?.invokes) {
+      return;
+    }
+    let registrations: ASTv1.HashPair[] = [];
+    for (let snippets of Object.values(this.ownRules.invokes)) {
+      for (let snippet of snippets) {
+        let dasherizedName = snippetToDasherizedName(snippet);
+        if (!dasherizedName) {
+          throw new Error(`Package rule contains unparseable component snippet: ${snippet}`);
+        }
+        let resolution = this.targetComponentHelper({ type: 'literal', path: dasherizedName }, node.loc);
+        this.emit(path, resolution, (_target, id) => {
+          registrations.push(this.env.syntax.builders.pair(dasherizedName, id));
+        });
+      }
+    }
+    if (registrations.length > 0) {
+      node.body.unshift(
+        this.env.syntax.builders.mustache(
+          this.env.meta.jsutils.bindExpression(registrationHelper, path, { nameHint: 'registerComponents' }),
+          [],
+          this.env.syntax.builders.hash(registrations)
+        )
+      );
+    }
+  }
+
   visitor: ASTPlugin['visitor'] = {
     Template: {
-      enter: () => {
+      enter: (node, path) => {
+        this.ownRules = this.findRules(this.env.filename);
+        this.implementInvokesRule(node, path);
         if (this.env.locals) {
           this.scopeStack.pushMustacheBlock(this.env.locals);
         }
@@ -1198,4 +1229,19 @@ function parts(path: any) {
   if (!path) return;
 
   return 'original' in path ? path.original.split('.') : path.parts;
+}
+
+function registrationHelper(context: { import: (module: string, name: string, hint?: string) => string }) {
+  let Helper = context.import('@ember/component/helper', 'default', 'Helper');
+  let getOwner = context.import('@ember/owner', 'getOwner');
+  return `
+    (class extends ${Helper} {
+      compute(_positional, registrations) {
+        let owner = ${getOwner}(this);
+        for (let [name, definition] of Object.entries(registrations)) {
+          owner.register(\`component:\${name}\`, definition);
+        }
+      }
+    })
+  `;
 }

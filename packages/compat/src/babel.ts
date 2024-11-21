@@ -9,7 +9,6 @@ import {
 import { join } from 'path';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
-import type { Options as AdjustImportsOptions } from './babel-plugin-adjust-imports';
 import MacrosConfig from '@embroider/macros/src/macros-config';
 
 export interface CompatBabelState {
@@ -70,13 +69,6 @@ export function templateMacros() {
 export function babelMacros() {
   let config = loadCompatConfig();
   return config.babelMacros;
-}
-
-export function adjustImports() {
-  let pluginConfig: AdjustImportsOptions = {
-    appRoot: resolverLoader.resolver.options.appRoot,
-  };
-  return [require.resolve('./babel-plugin-adjust-imports'), pluginConfig];
 }
 
 export function oldDebugMacros(): PluginItem[] {
@@ -159,7 +151,7 @@ export function templateColocation(): PluginItem {
 }
 
 export function babelCompatSupport(): PluginItem[] {
-  return [...babelMacros(), adjustImports(), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons()];
+  return [...babelMacros(), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons()];
 }
 
 export function templateCompatSupport(): Transform[] {

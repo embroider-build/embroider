@@ -7,14 +7,12 @@ import { Project, Scenarios } from 'scenario-tester';
 import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import type { ExpectAuditResults } from '@embroider/test-support/audit-assertions';
 import { installAuditAssertions } from '@embroider/test-support/audit-assertions';
-import { baseAddon } from './scenarios';
+import { baseAddon, baseV2Addon } from './scenarios';
 
 const { module: Qmodule, test } = QUnit;
 
 Scenarios.fromProject(() => new Project())
   .map('core-resolver-test', app => {
-    app.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.8' });
-
     let appMeta: AppMeta = {
       type: 'app',
       version: 2,
@@ -53,6 +51,34 @@ Scenarios.fromProject(() => new Project())
     // named ember-auto-import that tells us that the app was allowed to import
     // deps from npm.
     app.addDependency('ember-auto-import', { version: '2.0.0' });
+
+    // We're not using a real copy of ember-source here because
+    //  - this unit test is not running a whole v1-to-v2 addon prebuild. So we
+    //    need a real v2 ember-source, which starts at ember-source 6.1.
+    //  - but we also want to test some features that only worked on
+    //    ember-source < 6, like non-colocated templates.
+    // The solution is to stub a tiny v2 addon with just the parts of
+    // ember-source's API that are relevant to the unit tests.
+    let emberStub = baseV2Addon();
+    emberStub.name = 'ember-source';
+    emberStub.mergeFiles({
+      '@ember': {
+        component: {
+          'index.js': 'export default class {}; export function setComponentTemplate() {}',
+          'template-only.js': `export default function() {}`,
+        },
+        debug: {
+          'index.js': 'export function deprecate() {}',
+        },
+        'template-compilation': {
+          'index.js': `export function precompileTemplate() {}`,
+        },
+      },
+      rsvp: {
+        'index.js': `export {}`,
+      },
+    });
+    app.addDevDependency(emberStub);
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -98,8 +124,13 @@ Scenarios.fromProject(() => new Project())
         };
         configure = async function (opts?: ConfigureOpts) {
           let resolverOptions: CompatResolverOptions = {
-            amdCompatibility: 'cjs',
-            renameModules: {},
+            renameModules: {
+              '@ember/component/index.js': 'ember-source/@ember/component/index.js',
+              '@ember/component/template-only.js': 'ember-source/@ember/component/template-only.js',
+              '@ember/debug/index.js': 'ember-source/@ember/debug/index.js',
+              '@ember/template-compilation/index.js': 'ember-source/@ember/template-compilation/index.js',
+              'rsvp/index.js': 'ember-source/rsvp/index.js',
+            },
             renamePackages: opts?.renamePackages ?? {},
             resolvableExtensions: ['.js', '.hbs'],
             appRoot: app.dir,
@@ -110,6 +141,11 @@ Scenarios.fromProject(() => new Project())
                 root: app.dir,
                 fastbootFiles: opts?.fastbootFiles ?? {},
                 activeAddons: [
+                  {
+                    name: 'ember-source',
+                    root: resolve(app.dir, 'node_modules', 'ember-source'),
+                    canResolveFromFile: resolve(app.dir, 'package.json'),
+                  },
                   {
                     name: 'my-addon',
                     root: resolve(app.dir, 'node_modules', 'my-addon'),
@@ -724,7 +760,7 @@ Scenarios.fromProject(() => new Project())
             'app.js': `import "rsvp"`,
           });
           await configure({});
-          expectAudit.module('./app.js').resolves('rsvp').to('/@embroider/ext-cjs/rsvp');
+          expectAudit.module('./app.js').resolves('rsvp').to('./node_modules/ember-source/rsvp/index.js');
         });
 
         test(`known ember-source-provided virtual packages are not externalized when explicitly included in deps`, async function () {

@@ -782,7 +782,7 @@ class TemplateResolver implements ASTPlugin {
     if (registrations.length > 0) {
       node.body.unshift(
         this.env.syntax.builders.mustache(
-          this.env.meta.jsutils.bindExpression(registrationHelper, path),
+          this.env.meta.jsutils.bindExpression(registrationHelper, path, { nameHint: 'registerComponents' }),
           [],
           this.env.syntax.builders.hash(registrations)
         )
@@ -1231,8 +1231,8 @@ function parts(path: any) {
   return 'original' in path ? path.original.split('.') : path.parts;
 }
 
-function registrationHelper(context: { import: (module: string, name: string) => string }) {
-  let Helper = context.import('@ember/component/helper', 'default');
+function registrationHelper(context: { import: (module: string, name: string, hint?: string) => string }) {
+  let Helper = context.import('@ember/component/helper', 'default', 'Helper');
   let getOwner = context.import('@ember/owner', 'getOwner');
   return `
     (class extends ${Helper} {

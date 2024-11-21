@@ -74,6 +74,7 @@
     "prettier": "^2.8.8",
     "qunit": "^2.19.4",
     "qunit-dom": "^2.0.0",
+    "simple-dom": "^1.4.0",
     "stylelint": "^15.7.0",
     "stylelint-config-standard": "^33.0.0",
     "stylelint-prettier": "^3.0.0",

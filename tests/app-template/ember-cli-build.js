@@ -7,5 +7,7 @@ module.exports = async function (defaults) {
   const { buildOnce } = await import('@embroider/vite');
   let app = new EmberApp(defaults, {});
 
-  return compatBuild(app, buildOnce);
+  return compatBuild(app, buildOnce, {
+    staticAppPaths: ['app-ssr.js'],
+  });
 };

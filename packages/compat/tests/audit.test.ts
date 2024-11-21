@@ -36,6 +36,7 @@ describe('audit', function () {
     });
     app.linkDevDependency('@embroider/compat', { target: resolve(__dirname, '..') });
     app.linkDevDependency('@embroider/core', { baseDir: __dirname });
+    app.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source' });
 
     const resolvableExtensions = ['.js', '.hbs'];
 
@@ -50,12 +51,23 @@ describe('audit', function () {
       },
       activePackageRules: [],
       renamePackages: {},
-      renameModules: {},
+      renameModules: {
+        '@ember/component/index.js': 'ember-source/@ember/component/index.js',
+        '@ember/component/template-only.js': 'ember-source/@ember/component/template-only.js',
+        '@ember/debug/index.js': 'ember-source/@ember/debug/index.js',
+        '@ember/template-factory/index.js': 'ember-source/@ember/template-factory/index.js',
+      },
       engines: [
         {
           packageName: 'audit-this-app',
           fastbootFiles: {},
-          activeAddons: [],
+          activeAddons: [
+            {
+              name: 'ember-source',
+              root: 'node_modules/ember-source',
+              canResolveFromFile: 'package.json',
+            },
+          ],
           root: app.baseDir,
           isLazy: false,
         },
@@ -140,7 +152,17 @@ describe('audit', function () {
       './index.html',
       './app.js',
       './hello.hbs',
-      '/@embroider/ext-cjs/@ember/template-factory',
+      './node_modules/ember-source/dist/packages/@ember/template-factory/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/opcode-compiler/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/util/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/vm/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/encoder/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/wire-format/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/manager/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/destroyable/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/reference/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/validator/index.js',
+      './node_modules/ember-source/dist/packages/@glimmer/global-context/index.js',
     ]);
   });
 

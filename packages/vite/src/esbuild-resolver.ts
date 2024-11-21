@@ -1,5 +1,5 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
-import { transform } from '@babel/core';
+import { transformAsync } from '@babel/core';
 import core from '@embroider/core';
 const { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } = core;
 import fs from 'fs-extra';
@@ -17,15 +17,15 @@ export function esBuildResolver(): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let preprocessor = new Preprocessor();
 
-  function transformAndAssert(src: string, filename: string): string {
-    const result = transform(src, { filename });
+  async function transformAndAssert(src: string, filename: string): Promise<string> {
+    const result = await transformAsync(src, { filename });
     if (!result || result.code == null) {
       throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
     }
     return result.code!;
   }
 
-  function onLoad({ path, namespace }: { path: string; namespace: string }): OnLoadResult {
+  async function onLoad({ path, namespace }: { path: string; namespace: string }): Promise<OnLoadResult> {
     let src: string;
     if (namespace === 'embroider-template-only-component') {
       src = templateOnlyComponent;
@@ -40,7 +40,7 @@ export function esBuildResolver(): EsBuildPlugin {
       src = preprocessor.process(src, { filename: path });
     }
     if (['.hbs', '.gjs', '.gts', '.js', '.ts'].some(ext => path.endsWith(ext))) {
-      src = transformAndAssert(src, path);
+      src = await transformAndAssert(src, path);
     }
     return { contents: src };
   }

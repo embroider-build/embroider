@@ -113,6 +113,16 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
       },
     },
     tests: {
+      unit: {
+        'babel-plugin-is-module-test.js': `
+          import { module, test } from "qunit";
+          module("Unit | babel-plugin-is-module", function () {
+            test("it ran", function (assert) {
+              assert.strictEqual("sample-transform-target", "sample-transform-result");
+            });
+          });
+        `,
+      },
       integration: {
         components: {
           'example-test.js': `
@@ -230,6 +240,30 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
     },
   });
   app.addDevDependency(v1ExampleAddon);
+
+  let babelPlugin = app.addDevDependency('babel-plugin-is-a-module', {
+    files: {
+      'index.mjs': `export default function({ types }) {
+        return {
+          visitor: {
+            StringLiteral(path) {
+              if (path.node.value === 'sample-transform-target') {
+                path.replaceWith(types.stringLiteral('sample-transform-result'));
+              }
+            },
+          },
+        };
+      }`,
+    },
+  });
+  babelPlugin.pkg.exports = {
+    '.': './index.mjs',
+  };
+  app.files['babel.config.cjs'] = editBabelConfig(app.files['babel.config.cjs'] as string);
+}
+
+function editBabelConfig(src: string): string {
+  return src.replace(/babelCompatSupport\(\),/, `babelCompatSupport\(\), 'babel-plugin-is-a-module',`);
 }
 
 function runViteInternalsTest(scenario: Scenario) {

@@ -47,8 +47,8 @@
     "@rollup/plugin-babel": "^5.3.1",
     "babel-plugin-ember-template-compilation": "^2.3.0",
     "concurrently": "^8.2.0",
-    "ember-auto-import": "^2.6.3",
     "decorator-transforms": "^2.0.0",
+    "ember-auto-import": "^2.6.3",
     "ember-cli": "~5.0.0",
     "ember-cli-app-version": "^6.0.0",
     "ember-cli-babel": "^7.26.11",
@@ -89,5 +89,8 @@
   "ember-addon": {
     "type": "app",
     "version": 2
+  },
+  "dependencies": {
+    "express": "^4.21.1"
   }
 }

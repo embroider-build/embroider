@@ -1,0 +1,39 @@
+diff --git a/addon/index.js b/addon/index.js
+index 7baf833ae41d643d3aa3de32d954ab0da6a19999..7ff4bc89d5d986ee4b64b3a1665ae6301441a50f 100644
+--- a/addon/index.js
++++ b/addon/index.js
+@@ -1,5 +1,5 @@
+-import { dasherize, classify, underscore } from './string';
+-import classFactory from './utils/class-factory';
++import { dasherize, classify, underscore } from './string/index.js';
++import classFactory from './utils/class-factory.js';
+ 
+ export class ModuleRegistry {
+   constructor(entries) {
+diff --git a/addon/string/index.js b/addon/string/index.js
+index 9773829941dd0c794216acece834e8e1b6a4aadb..9b8e279a323d8d8ba9f45f2ed209fc91b5b7863f 100644
+--- a/addon/string/index.js
++++ b/addon/string/index.js
+@@ -1,5 +1,5 @@
+ /* eslint-disable no-useless-escape */
+-import Cache from './cache';
++import Cache from './cache.js';
+ let STRINGS = {};
+ export function setStrings(strings) {
+   STRINGS = strings;
+diff --git a/index.js b/index.cjs
+similarity index 100%
+rename from index.js
+rename to index.cjs
+diff --git a/package.json b/package.json
+index da7944fa1b724ab4b2c2ccecba9a4cc3b2145ee8..eddd98a74227e43fbb828edbb9a4a5d6596db4fb 100644
+--- a/package.json
++++ b/package.json
+@@ -7,6 +7,7 @@
+   "bugs": {
+     "url": "https://github.com/ember-cli/ember-resolver/issues"
+   },
++  "type": "module",
+   "types": "index.d.ts",
+   "repository": {
+     "type": "git",

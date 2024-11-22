@@ -7,32 +7,38 @@ import { compatPrebuild } from './build.js';
 import { assets } from './assets.js';
 import { contentFor } from './content-for.js';
 import { babel } from '@rollup/plugin-babel';
-import { type ConfigEnv, type UserConfig } from 'vite';
+import { type ConfigEnv, type UserConfig, type Plugin } from 'vite';
 
 export const extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.json'];
 
-export default function ember() {
+export default function ember(): Plugin[] {
   return [
     {
       name: 'vite-plugin-ember',
       enforce: 'pre',
-      config(_config: UserConfig, env: ConfigEnv) {
+      config(config: UserConfig, env: ConfigEnv) {
         return {
           resolve: {
             extensions,
+            ...config.resolve,
           },
-          optimizeDeps: optimizeDeps(),
+          optimizeDeps: {
+            ...optimizeDeps(),
+            ...config.optimizeDeps,
+          },
           server: {
             port: 4200,
+            ...config.server,
           },
           build: {
             outDir: 'dist',
             rollupOptions: {
               input: {
                 main: 'index.html',
-                ...(shouldBuildTests(env.mode) ? { tests: 'tests/index.html' } : undefined),
+                ...(shouldBuildTests(env.mode) ? { tests: `tests/index.html` } : undefined),
               },
             },
+            ...config.build,
           },
         };
       },

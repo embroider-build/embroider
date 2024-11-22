@@ -7,3 +7,5 @@ export * from './src/optimize-deps.js';
 export * from './src/build.js';
 export * from './src/assets.js';
 export * from './src/content-for.js';
+
+export { default, extensions } from './src/plugin.js';

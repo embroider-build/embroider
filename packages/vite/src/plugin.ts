@@ -16,7 +16,7 @@ export default function ember() {
     {
       name: 'vite-plugin-ember',
       enforce: 'pre',
-      async config(_config: UserConfig, env: ConfigEnv) {
+      config(_config: UserConfig, env: ConfigEnv) {
         return {
           resolve: {
             extensions,

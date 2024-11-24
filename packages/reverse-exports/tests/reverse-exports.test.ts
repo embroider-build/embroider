@@ -51,6 +51,25 @@ describe('reverse exports', function () {
     expect(externalName(packageJson, './grod/very/deep/file.js')).toBe('my-addon/glob/very/deep/file');
   });
 
+  it('reverse OR example', function () {
+    const packageJson = {
+      name: 'my-addon',
+      exports: {
+        '.': {
+          types: './declarations/index.d.ts',
+          default: './dist/index.js',
+        },
+        './*': {
+          types: './declarations/*.d.ts',
+          default: './dist/*.js',
+        },
+        './addon-main.js': './addon-main.cjs',
+      },
+    };
+
+    expect(externalName(packageJson, './dist/helpers/or.js')).toBe('my-addon/helpers/or');
+  });
+
   it('alternative exports', function () {
     const packageJson = {
       name: 'my-addon',

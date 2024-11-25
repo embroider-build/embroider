@@ -396,7 +396,15 @@ export class CompatAppBuilder {
 
   private impliedAddonAssets(type: keyof ImplicitAssetPaths, { engine }: AppFiles): string[] {
     let result: Array<string> = [];
-    for (let addon of sortBy(Array.from(engine.addons), this.scriptPriority.bind(this))) {
+    let addons: Array<AddonPackage> = sortBy(Array.from(engine.addons), this.scriptPriority.bind(this));
+    if (type === 'implicit-styles') {
+      const synthesizedVendor = addons.find(pkg => pkg.name === '@embroider/synthesized-vendor');
+      if (synthesizedVendor) {
+        addons = sortBy(addons, pkg => pkg.name).filter(pkg => pkg !== synthesizedVendor);
+        addons.unshift(synthesizedVendor);
+      }
+    }
+    for (let addon of addons) {
       let implicitScripts = addon.meta[type];
       if (implicitScripts) {
         let styles = [];

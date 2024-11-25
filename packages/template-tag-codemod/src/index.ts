@@ -1,9 +1,8 @@
-import { ensurePrebuild, processRouteTemplates, processComponentTemplates } from './steps.js';
+import { ensurePrebuild, processRouteTemplate } from './steps.js';
 
 async function main() {
   await ensurePrebuild();
-  await processRouteTemplates();
-  await processComponentTemplates();
+  await processRouteTemplate('app/templates/login.hbs');
 }
 
 await main();

@@ -15,7 +15,7 @@
     "lint:prettier": "prettier . -c",
     "lint:prettier:fix": "prettier . -w",
     "lint:router-types": "cd packages/router && pnpm lint:types",
-    "prepare": "tsc -b && pnpm build-v2-addons",
+    "xprepare": "tsc -b && pnpm build-v2-addons",
     "build-v2-addons": "concurrently 'pnpm:build-v2-addons:*'",
     "build-v2-addons:router": "cd packages/router && pnpm build",
     "test": "cd tests/scenarios && pnpm test"

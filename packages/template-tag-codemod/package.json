@@ -1,0 +1,34 @@
+{
+  "name": "@embroider/template-tag-codemod",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "description": "Convert to HBS to GJS with <template></template>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/template-tag-codemod"
+  },
+  "license": "MIT",
+  "author": "Edward Faulkner <edward@eaf4.com>",
+  "main": "src/index.js",
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "scripts": {},
+  "dependencies": {
+    "console-ui": "^3.1.2",
+    "@embroider/compat": "workspace:^*",
+    "broccoli": "^3.5.2",
+    "ember-cli": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.3",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">= 20"
+  }
+}

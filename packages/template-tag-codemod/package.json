@@ -19,12 +19,15 @@
   ],
   "scripts": {},
   "dependencies": {
-    "console-ui": "^3.1.2",
     "@embroider/compat": "workspace:^*",
+    "@embroider/core": "workspace:^*",
     "broccoli": "^3.5.2",
-    "ember-cli": "^6.0.1"
+    "console-ui": "^3.1.2",
+    "ember-cli": "^6.0.1",
+    "glob": "^11.0.0"
   },
   "devDependencies": {
+    "@types/glob": "^8.1.0",
     "@types/node": "^22.9.3",
     "typescript": "^5.4.5"
   },

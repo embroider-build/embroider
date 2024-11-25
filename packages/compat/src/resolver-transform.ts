@@ -124,6 +124,10 @@ function builtInKeywords(emberVersion: string): Record<string, BuiltIn | undefin
   return builtInKeywords;
 }
 
+function supportsThisFallback(emberVersion: string): boolean {
+  return satisfies(emberVersion, '<= 4.0-alpha.0', { includePrerelease: true });
+}
+
 interface ComponentResolution {
   type: 'component';
   specifier: string;
@@ -184,6 +188,7 @@ class TemplateResolver implements ASTPlugin {
     private env: Env,
     private config: CompatResolverOptions,
     private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>,
+    private supportsThisFallback: boolean,
     private externalNameHint?: ExternalNameHint
   ) {
     this.moduleResolver = new Resolver(config);
@@ -549,17 +554,17 @@ class TemplateResolver implements ASTPlugin {
 
       2. Have a mustache statement like: `{{something}}`, where `something` is:
 
-        a. Not a variable in scope (for example, there's no preceeding line 
+        a. Not a variable in scope (for example, there's no preceeding line
            like `<Parent as |something|>`)
         b. Does not start with `@` because that must be an argument from outside this template.
-        c. Does not contain a dot, like `some.thing` (because that case is classically 
+        c. Does not contain a dot, like `some.thing` (because that case is classically
            never a global component resolution that we would need to handle)
-        d. Does not start with `this` (this rule is mostly redundant with the previous rule, 
+        d. Does not start with `this` (this rule is mostly redundant with the previous rule,
            but even a standalone `this` is never a component invocation).
-        e. Does not have any arguments. If there are argument like `{{something a=b}}`, 
-           there is still ambiguity between helper vs component, but there is no longer 
+        e. Does not have any arguments. If there are argument like `{{something a=b}}`,
+           there is still ambiguity between helper vs component, but there is no longer
            the possibility that this was just rendering some data.
-        f. Does not take a block, like `{{#something}}{{/something}}` (because that is 
+        f. Does not take a block, like `{{#something}}{{/something}}` (because that is
            always a component, no ambiguity.)
 
     We can't tell if this problematic case is really:
@@ -573,7 +578,7 @@ class TemplateResolver implements ASTPlugin {
 
       2. A component invocation, which you could have written `<Something />`
          instead. Angle-bracket invocation has been available and easy-to-adopt
-         for a very long time. 
+         for a very long time.
 
       3. Property-this-fallback for `{{this.something}}`. Property-this-fallback
          is eliminated at Ember 4.0, so people have been heavily pushed to get
@@ -626,7 +631,7 @@ class TemplateResolver implements ASTPlugin {
       }
     }
 
-    if (!hasArgs && !path.includes('/') && !path.includes('@')) {
+    if (!hasArgs && !path.includes('/') && !path.includes('@') && this.supportsThisFallback) {
       // this is the case that could also be property-this-fallback. We're going
       // to force people to disambiguate, because letting a potential component
       // or helper invocation lurk inside every bit of data you render is not
@@ -986,7 +991,13 @@ export default function makeResolverTransform({ appRoot, emberVersion, externalN
         visitor: {},
       };
     }
-    return new TemplateResolver(env, config, builtInKeywords(emberVersion), externalNameHint);
+    return new TemplateResolver(
+      env,
+      config,
+      builtInKeywords(emberVersion),
+      supportsThisFallback(emberVersion),
+      externalNameHint
+    );
   };
   (resolverTransform as any).parallelBabel = {
     requireFile: __filename,

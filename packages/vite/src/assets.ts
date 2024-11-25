@@ -7,7 +7,6 @@ import { join, posix } from 'path';
 import fs from 'fs-extra';
 const { existsSync, readFileSync, lstatSync } = fs;
 import send from 'send';
-import type { Readable } from 'stream';
 
 function findPublicAsset(relativePath: string, resolver: Resolver) {
   const packageCache = resolver.packageCache;
@@ -47,7 +46,7 @@ export function assets(): Plugin {
           if (req.originalUrl && req.originalUrl.length > 1) {
             const assetUrl = findPublicAsset(req.originalUrl.split('?')[0], resolverLoader.resolver);
             if (assetUrl) {
-              return send(req as Readable, assetUrl).pipe(res);
+              return send(req, assetUrl).pipe(res as unknown as NodeJS.WritableStream);
             }
           }
           return next();

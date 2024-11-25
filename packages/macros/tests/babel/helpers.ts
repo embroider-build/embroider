@@ -79,7 +79,7 @@ disabledTest.failing = disabledTest;
 
 export function allModes(fn: CreateModeTests): CreateTests {
   return function createTests(transform: Transform) {
-    for (let mode of ['build-time', 'run-time']) {
+    for (const mode of ['build-time', 'run-time']) {
       describe(mode, function () {
         function applyMode(macrosConfig: MacrosConfig) {
           if (mode === 'run-time') {

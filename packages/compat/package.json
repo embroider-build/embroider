@@ -83,7 +83,7 @@
     "@types/js-string-escape": "^1.0.0",
     "@types/jsdom": "^16.2.11",
     "@types/lodash": "^4.14.170",
-    "@types/node": "^15.12.2",
+    "@types/node": "^22.9.3",
     "@types/resolve": "^1.20.0",
     "@types/semver": "^7.3.6",
     "broccoli-node-api": "^1.7.0",

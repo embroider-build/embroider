@@ -20,7 +20,7 @@
   "dependencies": {},
   "devDependencies": {
     "@embroider/core": "workspace:^",
-    "@types/node": "^15.12.2",
+    "@types/node": "^22.9.3",
     "typescript": "^5.4.5",
     "webpack": "^5"
   },

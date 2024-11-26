@@ -218,6 +218,9 @@ importers:
       '@embroider/macros':
         specifier: workspace:*
         version: link:../macros
+      '@embroider/reverse-exports':
+        specifier: workspace:*
+        version: link:../reverse-exports
       '@types/babel__code-frame':
         specifier: ^7.0.2
         version: 7.0.6
@@ -9163,6 +9166,9 @@ packages:
 
   /ajv-formats@2.1.1:
     resolution: {integrity: sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==}
+    peerDependenciesMeta:
+      ajv:
+        optional: true
     dependencies:
       ajv: 8.17.1
 

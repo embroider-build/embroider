@@ -1,8 +1,9 @@
 import { ensurePrebuild, processRouteTemplate } from './steps.js';
+import { resolve } from 'path';
 
 async function main() {
   await ensurePrebuild();
-  await processRouteTemplate('app/templates/login.hbs');
+  await processRouteTemplate(resolve('app/templates/calculator.hbs'));
 }
 
 await main();

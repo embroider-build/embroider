@@ -817,6 +817,9 @@ importers:
       '@embroider/core':
         specifier: workspace:^*
         version: link:../core
+      '@embroider/reverse-exports':
+        specifier: workspace:^*
+        version: link:../reverse-exports
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5

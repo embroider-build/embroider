@@ -1392,7 +1392,7 @@ export class Resolver {
   // check whether the given file with the given owningPackage is an addon's
   // appTree, and if so return the notional location within the app (or owning
   // engine) that it "logically" lives at.
-  private reverseSearchAppTree(
+  reverseSearchAppTree(
     owningPackage: Package,
     fromFile: string
   ): { owningEngine: EngineConfig; inAppName: string } | undefined {

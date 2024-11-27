@@ -46,6 +46,7 @@ export interface PackageInfo {
   module?: string;
   exports?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
   devDependencies?: Record<string, string>;
   dependencies?: Record<string, string>;
   'ember-addon':

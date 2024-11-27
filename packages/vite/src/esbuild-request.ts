@@ -3,40 +3,44 @@ const { cleanUrl, packageName } = core;
 import type { ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
 import { dirname } from 'path';
 
-import type { PackageCache as _PackageCache, Resolution, ModuleRequest } from '@embroider/core';
+import type { PackageCache as _PackageCache, Resolution, ModuleRequest, RequestAdapter } from '@embroider/core';
 import { externalName } from '@embroider/reverse-exports';
 
 type PublicAPI<T> = { [K in keyof T]: T[K] };
 type PackageCache = PublicAPI<_PackageCache>;
 
-export class EsBuildModuleRequest implements ModuleRequest {
-  static from(
-    packageCache: PackageCache,
-    phase: 'bundling' | 'other',
-    context: PluginBuild,
-    kind: ImportKind,
-    source: string,
-    importer: string | undefined,
-    pluginData: Record<string, any> | undefined
-  ): EsBuildModuleRequest | undefined {
+export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolveResult, OnResolveResult>> {
+  static create({
+    packageCache,
+    phase,
+    build,
+    kind,
+    path,
+    importer,
+    pluginData,
+  }: {
+    packageCache: PackageCache;
+    phase: 'bundling' | 'other';
+    build: PluginBuild;
+    kind: ImportKind;
+    path: string;
+    importer: string | undefined;
+    pluginData: Record<string, any> | undefined;
+  }) {
     if (!(pluginData?.embroider?.enableCustomResolver ?? true)) {
       return;
     }
 
-    if (source && importer && source[0] !== '\0' && !source.startsWith('virtual-module:')) {
+    if (path && importer && path[0] !== '\0' && !path.startsWith('virtual-module:')) {
       let fromFile = cleanUrl(importer);
-      return new EsBuildModuleRequest(
-        packageCache,
-        phase,
-        context,
-        kind,
-        source,
-        fromFile,
-        pluginData?.embroider?.meta,
-        false,
-        false,
-        undefined
-      );
+      return {
+        initialState: {
+          specifier: path,
+          fromFile,
+          meta: pluginData?.embroider?.meta,
+        },
+        adapter: new EsBuildRequestAdapter(packageCache, phase, build, kind),
+      };
     }
   }
 
@@ -44,117 +48,22 @@ export class EsBuildModuleRequest implements ModuleRequest {
     private packageCache: PackageCache,
     private phase: 'bundling' | 'other',
     private context: PluginBuild,
-    private kind: ImportKind,
-    readonly specifier: string,
-    readonly fromFile: string,
-    readonly meta: Record<string, any> | undefined,
-    readonly isVirtual: boolean,
-    readonly isNotFound: boolean,
-    readonly resolvedTo: Resolution<OnResolveResult, OnResolveResult> | undefined
+    private kind: ImportKind
   ) {}
 
   get debugType() {
     return 'esbuild';
   }
 
-  alias(newSpecifier: string) {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      newSpecifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      false,
-      undefined
-    ) as this;
-  }
-  rehome(newFromFile: string) {
-    if (this.fromFile === newFromFile) {
-      return this;
-    } else {
-      return new EsBuildModuleRequest(
-        this.packageCache,
-        this.phase,
-        this.context,
-        this.kind,
-        this.specifier,
-        newFromFile,
-        this.meta,
-        this.isVirtual,
-        false,
-        undefined
-      ) as this;
-    }
-  }
-  virtualize(filename: string) {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      filename,
-      this.fromFile,
-      this.meta,
-      true,
-      false,
-      undefined
-    ) as this;
-  }
-  withMeta(meta: Record<string, any> | undefined): this {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      this.specifier,
-      this.fromFile,
-      meta,
-      this.isVirtual,
-      this.isNotFound,
-      this.resolvedTo
-    ) as this;
-  }
-  notFound(): this {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      this.specifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      true,
-      undefined
-    ) as this;
-  }
-
-  resolveTo(resolution: Resolution<OnResolveResult, OnResolveResult>): this {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      this.specifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      this.isNotFound,
-      resolution
-    ) as this;
-  }
-
-  async defaultResolve(): Promise<Resolution<OnResolveResult, OnResolveResult>> {
-    const request = this;
+  async resolve(
+    request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
+  ): Promise<Resolution<OnResolveResult, OnResolveResult>> {
     if (request.isVirtual) {
       return {
         type: 'found',
         filename: request.specifier,
         result: { path: request.specifier, namespace: 'embroider-virtual' },
-        isVirtual: this.isVirtual,
+        isVirtual: request.isVirtual,
       };
     }
     if (request.isNotFound) {
@@ -220,7 +129,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
           };
         }
       }
-      return { type: 'found', filename: result.path, result, isVirtual: this.isVirtual };
+      return { type: 'found', filename: result.path, result, isVirtual: request.isVirtual };
     }
   }
 }

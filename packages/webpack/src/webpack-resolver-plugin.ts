@@ -1,5 +1,5 @@
 import { dirname, resolve } from 'path';
-import type { ModuleRequest, Resolution } from '@embroider/core';
+import { ModuleRequest, type RequestAdapter, type Resolution } from '@embroider/core';
 import { Resolver as EmbroiderResolver, ResolverOptions as EmbroiderResolverOptions } from '@embroider/core';
 import type { Compiler, Module, ResolveData } from 'webpack';
 import assertNever from 'assert-never';
@@ -44,7 +44,12 @@ export class EmbroiderPlugin {
       nmf.hooks.resolve.tapAsync(
         { name: '@embroider/webpack', stage: 50 },
         (state: ExtendedResolveData, callback: CB) => {
-          let request = WebpackModuleRequest.from(defaultResolve, state, this.#babelLoaderPrefix, this.#appRoot);
+          let request = ModuleRequest.create(WebpackRequestAdapter.create, {
+            resolveFunction: defaultResolve,
+            state,
+            babelLoaderPrefix: this.#babelLoaderPrefix,
+            appRoot: this.#appRoot,
+          });
           if (!request) {
             defaultResolve(state, callback);
             return;
@@ -94,13 +99,18 @@ type ExtendedResolveData = ResolveData & {
 
 type WebpackResolution = Resolution<ResolveData['createData'], null | Error>;
 
-class WebpackModuleRequest implements ModuleRequest {
-  static from(
-    resolveFunction: DefaultResolve,
-    state: ExtendedResolveData,
-    babelLoaderPrefix: string,
-    appRoot: string
-  ): WebpackModuleRequest | undefined {
+class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
+  static create({
+    resolveFunction,
+    state,
+    babelLoaderPrefix,
+    appRoot,
+  }: {
+    resolveFunction: DefaultResolve;
+    state: ExtendedResolveData;
+    babelLoaderPrefix: string;
+    appRoot: string;
+  }) {
     let specifier = state.request;
     if (
       specifier.includes(virtualLoaderName) || // prevents recursion on requests we have already sent to our virtual loader
@@ -129,30 +139,20 @@ class WebpackModuleRequest implements ModuleRequest {
       return;
     }
 
-    return new WebpackModuleRequest(
-      resolveFunction,
-      babelLoaderPrefix,
-      appRoot,
-      specifier,
-      fromFile,
-      state.contextInfo._embroiderMeta,
-      false,
-      false,
-      undefined,
-      state
-    );
+    return {
+      initialState: {
+        specifier,
+        fromFile,
+        meta: state.contextInfo._embroiderMeta,
+      },
+      adapter: new WebpackRequestAdapter(resolveFunction, babelLoaderPrefix, appRoot, state),
+    };
   }
 
   private constructor(
     private resolveFunction: DefaultResolve,
     private babelLoaderPrefix: string,
     private appRoot: string,
-    readonly specifier: string,
-    readonly fromFile: string,
-    readonly meta: Record<string, any> | undefined,
-    readonly isVirtual: boolean,
-    readonly isNotFound: boolean,
-    readonly resolvedTo: WebpackResolution | undefined,
     private originalState: ExtendedResolveData
   ) {}
 
@@ -182,124 +182,37 @@ class WebpackModuleRequest implements ModuleRequest {
   // requests evolve through the module-resolver they aren't actually all
   // mutating the shared state. Only when a request is allowed to bubble back
   // out to webpack does that happen.
-  toWebpackResolveData(): ExtendedResolveData {
-    this.originalState.request = this.specifier;
-    this.originalState.context = dirname(this.fromFile);
-    this.originalState.contextInfo.issuer = this.fromFile;
-    this.originalState.contextInfo._embroiderMeta = this.meta;
-    if (this.resolvedTo) {
-      if (this.resolvedTo.type === 'found') {
-        this.originalState.createData = this.resolvedTo.result;
+  toWebpackResolveData(request: ModuleRequest<WebpackResolution>): ExtendedResolveData {
+    let specifier = request.specifier;
+    if (request.isVirtual) {
+      let params = new URLSearchParams();
+      params.set('f', specifier);
+      params.set('a', this.appRoot);
+      specifier = `${this.babelLoaderPrefix}${virtualLoaderName}?${params.toString()}!`;
+    }
+
+    this.originalState.request = specifier;
+    this.originalState.context = dirname(request.fromFile);
+    this.originalState.contextInfo.issuer = request.fromFile;
+    this.originalState.contextInfo._embroiderMeta = request.meta;
+    if (request.resolvedTo) {
+      if (request.resolvedTo.type === 'found') {
+        this.originalState.createData = request.resolvedTo.result;
       }
     }
     return this.originalState;
   }
 
-  alias(newSpecifier: string) {
-    if (newSpecifier === this.specifier) {
-      return this;
-    }
-    return new WebpackModuleRequest(
-      this.resolveFunction,
-      this.babelLoaderPrefix,
-      this.appRoot,
-      newSpecifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      false,
-      undefined,
-      this.originalState
-    ) as this;
-  }
-  rehome(newFromFile: string) {
-    if (this.fromFile === newFromFile) {
-      return this;
-    }
-    return new WebpackModuleRequest(
-      this.resolveFunction,
-      this.babelLoaderPrefix,
-      this.appRoot,
-      this.specifier,
-      newFromFile,
-      this.meta,
-      this.isVirtual,
-      false,
-      undefined,
-      this.originalState
-    ) as this;
-  }
-  virtualize(filename: string) {
-    let params = new URLSearchParams();
-    params.set('f', filename);
-    params.set('a', this.appRoot);
-    return new WebpackModuleRequest(
-      this.resolveFunction,
-      this.babelLoaderPrefix,
-      this.appRoot,
-      `${this.babelLoaderPrefix}${virtualLoaderName}?${params.toString()}!`,
-      this.fromFile,
-      this.meta,
-      true,
-      false,
-      undefined,
-      this.originalState
-    ) as this;
-  }
-  withMeta(meta: Record<string, any> | undefined): this {
-    return new WebpackModuleRequest(
-      this.resolveFunction,
-      this.babelLoaderPrefix,
-      this.appRoot,
-      this.specifier,
-      this.fromFile,
-      meta,
-      this.isVirtual,
-      this.isNotFound,
-      this.resolvedTo,
-      this.originalState
-    ) as this;
-  }
-  notFound(): this {
-    return new WebpackModuleRequest(
-      this.resolveFunction,
-      this.babelLoaderPrefix,
-      this.appRoot,
-      this.specifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      true,
-      undefined,
-      this.originalState
-    ) as this;
-  }
-
-  resolveTo(resolution: WebpackResolution): this {
-    return new WebpackModuleRequest(
-      this.resolveFunction,
-      this.babelLoaderPrefix,
-      this.appRoot,
-      this.specifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      this.isNotFound,
-      resolution,
-      this.originalState
-    ) as this;
-  }
-
-  async defaultResolve(): Promise<WebpackResolution> {
-    if (this.isNotFound) {
+  async resolve(request: ModuleRequest<WebpackResolution>): Promise<WebpackResolution> {
+    if (request.isNotFound) {
       // TODO: we can make sure this looks correct in webpack output when a
       // user encounters it
-      let err = new Error(`module not found ${this.specifier}`);
+      let err = new Error(`module not found ${request.specifier}`);
       (err as any).code = 'MODULE_NOT_FOUND';
       return { type: 'not_found', err };
     }
     return await new Promise(resolve =>
-      this.resolveFunction(this.toWebpackResolveData(), err => {
+      this.resolveFunction(this.toWebpackResolveData(request), err => {
         if (err) {
           // unfortunately webpack doesn't let us distinguish between Not Found
           // and other unexpected exceptions here.
@@ -308,7 +221,7 @@ class WebpackModuleRequest implements ModuleRequest {
           resolve({
             type: 'found',
             result: this.originalState.createData,
-            isVirtual: this.isVirtual,
+            isVirtual: request.isVirtual,
             filename: this.originalState.createData.resource!,
           });
         }

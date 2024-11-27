@@ -13,7 +13,7 @@ export { default as WaitForTrees, OutputPaths } from './wait-for-trees';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from './messages';
 export { Resolver } from './module-resolver';
-export type { ModuleRequest, Resolution } from './module-request';
+export { ModuleRequest, type Resolution, type RequestAdapter, type RequestAdapterCreate } from './module-request';
 export type { Options as ResolverOptions } from './module-resolver-options';
 export { ResolverLoader } from './resolver-loader';
 export { virtualContent } from './virtual-content';

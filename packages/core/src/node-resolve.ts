@@ -4,7 +4,8 @@ import { explicitRelative } from '@embroider/shared-internals';
 import assertNever from 'assert-never';
 
 // these would be circular, but they're type-only so it's fine
-import type { ModuleRequest, Resolution, Resolver } from './module-resolver';
+import type { ModuleRequest, Resolution } from './module-request';
+import type { Resolver } from './module-resolver';
 
 export class NodeModuleRequest implements ModuleRequest {
   constructor(

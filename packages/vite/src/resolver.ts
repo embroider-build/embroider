@@ -1,7 +1,7 @@
 import type { Plugin, ViteDevServer } from 'vite';
-import core, { type Resolver } from '@embroider/core';
+import core, { ModuleRequest, type Resolver } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
-import { RollupModuleRequest, virtualPrefix } from './request.js';
+import { RollupRequestAdapter, virtualPrefix } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
 import { resolve, join } from 'path';
@@ -48,7 +48,12 @@ export function resolver(): Plugin {
         return await observeDepScan(this, source, importer, options);
       }
 
-      let request = RollupModuleRequest.from(this, source, importer, options.custom);
+      let request = ModuleRequest.create(RollupRequestAdapter.create, {
+        context: this,
+        source,
+        importer,
+        custom: options.custom,
+      });
       if (!request) {
         // fallthrough to other rollup plugins
         return null;

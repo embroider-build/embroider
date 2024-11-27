@@ -1,10 +1,10 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
 import { transformAsync } from '@babel/core';
-import core from '@embroider/core';
+import core, { ModuleRequest } from '@embroider/core';
 const { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } = core;
 import fs from 'fs-extra';
 const { readFileSync } = fs;
-import { EsBuildModuleRequest } from './esbuild-request.js';
+import { EsBuildRequestAdapter } from './esbuild-request.js';
 import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
@@ -52,15 +52,15 @@ export function esBuildResolver(): EsBuildPlugin {
 
       // Embroider Resolver
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let request = EsBuildModuleRequest.from(
-          resolverLoader.resolver.packageCache,
+        let request = ModuleRequest.create(EsBuildRequestAdapter.create, {
+          packageCache: resolverLoader.resolver.packageCache,
           phase,
           build,
           kind,
           path,
           importer,
-          pluginData
-        );
+          pluginData,
+        });
         if (!request) {
           return null;
         }

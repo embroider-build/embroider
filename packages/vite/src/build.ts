@@ -13,15 +13,23 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
 
   if (command === 'build') {
     return new Promise((resolve, reject) => {
-      const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--environment', mode], { env });
+      const child = fork(
+        './node_modules/ember-cli/bin/ember',
+        ['build', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
+        { env }
+      );
       child.on('exit', code => (code === 0 ? resolve() : reject()));
     });
   }
   return new Promise((resolve, reject) => {
-    const child = fork('./node_modules/ember-cli/bin/ember', ['build', '--watch', '--environment', mode], {
-      silent: true,
-      env,
-    });
+    const child = fork(
+      './node_modules/ember-cli/bin/ember',
+      ['build', '--watch', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
+      {
+        silent: true,
+        env,
+      }
+    );
     child.on('exit', code => (code === 0 ? resolve() : reject(new Error('ember build --watch failed'))));
     child.on('spawn', () => {
       child.stderr?.on('data', data => {

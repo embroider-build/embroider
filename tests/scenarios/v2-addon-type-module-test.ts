@@ -33,7 +33,7 @@ appScenarios
          */
         'demo.js': `
           import { importSync } from '@embroider/macros';
-          importSync('v2-addon/side-effecting.js');
+          importSync('./side-effecting.js');
         `,
       },
     });

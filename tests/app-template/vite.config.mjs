@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     classicEmberSupport(),
     ember(),
-
+    // extra plugins here
     babel({
       babelHelpers: "runtime",
       extensions,

@@ -11,7 +11,7 @@ describe('importSync', function () {
       import { importSync } from '@embroider/macros';
       importSync('foo');
       `);
-      expect(code).toMatch(/import esc from "\.\.\/\.\.\/src\/addon\/es-compat2"/);
+      expect(code).toMatch(/import esc from "\.\.\/\.\.\/src\/addon\/es-compat2\.js"/);
       expect(code).toMatch(/esc\(require\(['"]foo['"]\)\)/);
       expect(code).not.toMatch(/window/);
     });

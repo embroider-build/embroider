@@ -15,6 +15,7 @@ appScenarios
     addon.pkg.exports = {
       './*': './src/*.js',
       './addon-main.cjs': './addon-main.cjs',
+      './side-effecting.js': './src/side-effecting.js'
     };
     addon.pkg['ember-addon'].main = 'addon-main.cjs';
 
@@ -32,7 +33,6 @@ appScenarios
          */
         'demo.js': `
           import { importSync } from '@embroider/macros';
-
           importSync('./side-effecting.js');
         `,
       },

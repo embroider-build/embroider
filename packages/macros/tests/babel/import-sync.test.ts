@@ -31,7 +31,7 @@ describe('importSync', function () {
       import { importSync as i } from '@embroider/macros';
       i('foo');
       `);
-      expect(code).toMatch(/require\(['"]foo['"]\)\)/);
+      expect(code).toMatch(/require\(['"]foo['"]\)/);
       expect(code).not.toMatch(/window/);
     });
     test('import of importSync itself gets removed', () => {

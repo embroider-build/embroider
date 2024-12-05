@@ -3,7 +3,37 @@ import { scripts } from './scripts.js';
 import { compatPrebuild } from './build.js';
 import { assets } from './assets.js';
 import { contentFor } from './content-for.js';
+import browserslistToEsbuild from 'browserslist-to-esbuild';
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { mergeConfig, type UserConfig } from 'vite';
 
 export function classicEmberSupport() {
-  return [hbs(), scripts(), compatPrebuild(), assets(), contentFor()];
+  return [
+    hbs(),
+    scripts(),
+    compatPrebuild(),
+    assets(),
+    contentFor(),
+    {
+      name: 'vite-plugin-ember-browser-targets',
+      async config(userConfig: UserConfig) {
+        const targetsPath = join(process.cwd(), 'config/targets.js');
+        if (existsSync(targetsPath)) {
+          const targets = await import(targetsPath);
+          if (targets.default.browsers) {
+            return mergeConfig(
+              {
+                build: {
+                  target: browserslistToEsbuild(targets.browsers),
+                },
+              },
+              userConfig
+            );
+          }
+        }
+        return userConfig;
+      },
+    },
+  ];
 }

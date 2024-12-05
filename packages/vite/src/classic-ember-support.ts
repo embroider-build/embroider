@@ -7,6 +7,7 @@ import browserslistToEsbuild from 'browserslist-to-esbuild';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { mergeConfig, type UserConfig } from 'vite';
+import { pathToFileURL } from 'url';
 
 export function classicEmberSupport() {
   return [
@@ -20,7 +21,7 @@ export function classicEmberSupport() {
       async config(userConfig: UserConfig) {
         const targetsPath = join(process.cwd(), 'config/targets.js');
         if (existsSync(targetsPath)) {
-          const targets = await import(targetsPath);
+          const targets = await import(pathToFileURL(targetsPath).toString());
           if (targets.default.browsers) {
             return mergeConfig(
               {

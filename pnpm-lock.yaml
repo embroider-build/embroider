@@ -1002,9 +1002,12 @@ importers:
       assert-never:
         specifier: ^1.2.1
         version: 1.3.0
+      browserslist:
+        specifier: ^4.14.0
+        version: 4.24.2
       browserslist-to-esbuild:
         specifier: ^2.1.1
-        version: 2.1.1
+        version: 2.1.1(browserslist@4.24.2)
       content-tag:
         specifier: ^2.0.2
         version: 2.0.3
@@ -11211,13 +11214,14 @@ packages:
   /browser-process-hrtime@1.0.0:
     resolution: {integrity: sha512-9o5UecI3GhkpM6DrXr69PblIuWxPKk9Y0jHBRhdocZ2y7YECBFCsHm79Pr3OyR2AvjhDkabFJaDJMYRazHgsow==}
 
-  /browserslist-to-esbuild@2.1.1:
+  /browserslist-to-esbuild@2.1.1(browserslist@4.24.2):
     resolution: {integrity: sha512-KN+mty6C3e9AN8Z5dI1xeN15ExcRNeISoC3g7V0Kax/MMF9MSoYA2G7lkTTcVUFntiEjkpI0HNgqJC1NjdyNUw==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
       browserslist: ^4.14.0
     dependencies:
+      browserslist: 4.24.2
       meow: 13.2.0
     dev: false
 

@@ -1,6 +1,6 @@
 import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
-import { explicitRelative, extensionsPattern } from '.';
+import { explicitRelative, extensionsPattern, syntheticJStoHBS, templateOnlyComponentSource } from '.';
 import { compile } from './js-handlebars';
 import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
 import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
@@ -63,6 +63,11 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
   let isTestSupportStyles = decodeTestSupportStyles(filename);
   if (isTestSupportStyles) {
     return renderTestSupportStyles(filename, resolver);
+  }
+
+  let isTemplateOnlyComponent = decodeTemplateOnlyComponent(filename);
+  if (isTemplateOnlyComponent) {
+    return renderTemplateOnlyComponent(isTemplateOnlyComponent);
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);
@@ -335,4 +340,25 @@ function orderAddons(depA: Package, depB: Package): number {
   }
 
   return depAIdx - depBIdx;
+}
+
+const tocMarker = '.embroider-toc.js';
+
+export function encodeTemplateOnlyComponent(filename: string): string {
+  return filename + tocMarker;
+}
+
+function decodeTemplateOnlyComponent(virtualFilename: string): { filename: string } | undefined {
+  if (virtualFilename.endsWith(tocMarker)) {
+    return { filename: virtualFilename.slice(0, -1 * tocMarker.length) };
+  }
+}
+
+function renderTemplateOnlyComponent({ filename }: { filename: string }): VirtualContentResult {
+  let watches = [filename];
+  let hbs = syntheticJStoHBS(filename);
+  if (hbs) {
+    watches.push(hbs);
+  }
+  return { src: templateOnlyComponentSource(), watches };
 }

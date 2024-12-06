@@ -1,7 +1,7 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
 import { transformAsync } from '@babel/core';
 import core, { ModuleRequest } from '@embroider/core';
-const { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } = core;
+const { ResolverLoader, virtualContent } = core;
 import fs from 'fs-extra';
 const { readFileSync } = fs;
 import { EsBuildRequestAdapter } from './esbuild-request.js';
@@ -9,9 +9,6 @@ import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 import { extname } from 'path';
-
-const templateOnlyComponent =
-  `import templateOnly from '@ember/component/template-only';\n` + `export default templateOnly();\n`;
 
 export function esBuildResolver(): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
@@ -27,9 +24,7 @@ export function esBuildResolver(): EsBuildPlugin {
 
   async function onLoad({ path, namespace }: { path: string; namespace: string }): Promise<OnLoadResult> {
     let src: string;
-    if (namespace === 'embroider-template-only-component') {
-      src = templateOnlyComponent;
-    } else if (namespace === 'embroider-virtual') {
+    if (namespace === 'embroider-virtual') {
       src = virtualContent(path, resolverLoader.resolver).src;
     } else {
       src = readFileSync(path, 'utf8');
@@ -76,38 +71,11 @@ export function esBuildResolver(): EsBuildPlugin {
         }
       });
 
-      // template-only-component synthesis
-      build.onResolve({ filter: /./ }, async ({ path, importer, namespace, resolveDir, pluginData, kind }) => {
-        if (pluginData?.embroiderHBSResolving) {
-          // reentrance
-          return null;
-        }
-
-        let result = await build.resolve(path, {
-          namespace,
-          resolveDir,
-          importer,
-          kind,
-          // avoid reentrance
-          pluginData: { ...pluginData, embroiderHBSResolving: true },
-        });
-
-        if (result.errors.length === 0 && !result.external) {
-          let syntheticPath = needsSyntheticComponentJS(path, result.path);
-          if (syntheticPath && isInComponents(result.path, resolverLoader.resolver.packageCache)) {
-            return { path: syntheticPath, namespace: 'embroider-template-only-component' };
-          }
-        }
-
-        return result;
-      });
-
       if (phase === 'bundling') {
         // during bundling phase, we need to provide our own extension
         // searching. We do it here in its own resolve plugin so that it's
-        // sitting beneath both embroider resolver and template-only-component
-        // synthesizer, since both expect the ambient system to have extension
-        // search.
+        // sitting beneath the embroider resolver since its expects the ambient
+        // system to have extension search.
         build.onResolve({ filter: /./ }, async ({ path, importer, namespace, resolveDir, pluginData, kind }) => {
           if (pluginData?.embroiderExtensionResolving) {
             // reentrance
@@ -139,8 +107,7 @@ export function esBuildResolver(): EsBuildPlugin {
         });
       }
 
-      // we need to handle everything from one of our three special namespaces:
-      build.onLoad({ namespace: 'embroider-template-only-component', filter: /./ }, onLoad);
+      // we need to handle everything from one of our special namespaces:
       build.onLoad({ namespace: 'embroider-virtual', filter: /./ }, onLoad);
       build.onLoad({ namespace: 'embroider-template-tag', filter: /./ }, onLoad);
 

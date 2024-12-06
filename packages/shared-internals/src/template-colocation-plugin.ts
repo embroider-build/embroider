@@ -67,6 +67,8 @@ export default function main(babel: typeof Babel) {
           state.adder = new ImportUtil(t, path);
           let filename = cleanUrl((path.hub as any).file.opts.filename);
 
+          filename = filename.replace(/.*embroider_virtual:/, '').replace(/\.embroider-toc\.js$/, '');
+
           if (state.opts.packageGuard) {
             let owningPackage = PackageCache.shared('embroider', state.opts.appRoot).ownerOfFile(filename);
             if (!owningPackage || !owningPackage.needsLooseResolving()) {

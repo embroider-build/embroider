@@ -111,3 +111,9 @@ export default class PackageCache {
 }
 
 const shared: Map<string, PackageCache> = new Map();
+
+// without this, using a class as an interface forces you to have the same
+// private and protected methods too (since people trying to extend from you
+// could see all of those)
+type PublicAPI<T> = { [K in keyof T]: T[K] };
+export type PackageCachePublicAPI = PublicAPI<PackageCache>;

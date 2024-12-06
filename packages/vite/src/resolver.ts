@@ -61,7 +61,7 @@ export function resolver(): Plugin {
       let resolution = await resolverLoader.resolver.resolve(request);
       switch (resolution.type) {
         case 'found':
-          if (resolution.isVirtual) {
+          if (resolution.virtual) {
             return resolution.result;
           } else {
             return await maybeCaptureNewOptimizedDep(this, resolverLoader.resolver, resolution.result, notViteDeps);

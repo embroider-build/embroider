@@ -3,17 +3,20 @@ import { AppFiles } from './app-files';
 import type { Resolver } from './module-resolver';
 import { resolve } from 'path';
 import { compile } from './js-handlebars';
-import { extensionsPattern } from '@embroider/shared-internals';
+import { extensionsPattern, type Package } from '@embroider/shared-internals';
 import { partition } from 'lodash';
 import { getAppFiles, getFastbootFiles, importPaths, splitRoute, staticAppPathsPattern } from './virtual-entrypoint';
+import { exports as resolveExports } from 'resolve.exports';
 
 const entrypointPattern = /(?<filename>.*)[\\/]-embroider-route-entrypoint.js:route=(?<route>.*)/;
 
-export function encodeRouteEntrypoint(packagePath: string, matched: string | undefined, routeName: string): string {
-  return resolve(
-    packagePath,
-    matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`
-  );
+export function encodeRouteEntrypoint(pkg: Package, routeName: string): string {
+  let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
+    browser: true,
+    conditions: ['default', 'imports'],
+  });
+  let target = matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`;
+  return resolve(pkg.root, target);
 }
 
 export function decodeRouteEntrypoint(filename: string): { fromDir: string; route: string } | undefined {

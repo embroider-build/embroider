@@ -1,4 +1,4 @@
-import PackageCache from './package-cache';
+import PackageCache, { type PackageCachePublicAPI } from './package-cache';
 import type { V2AddonPackage, V2AppPackage, V2Package } from './package';
 import Package from './package';
 import { existsSync, readJSONSync, realpathSync } from 'fs-extra';
@@ -25,12 +25,9 @@ export interface RewrittenPackageIndex {
   extraResolutions: Record<string, string[]>;
 }
 
-// without this, using a class as an interface forces you to have the same
-// private and protected methods too (since people trying to extend from you
-// could see all of those)
 type PublicAPI<T> = { [K in keyof T]: T[K] };
 
-export class RewrittenPackageCache implements PublicAPI<PackageCache> {
+export class RewrittenPackageCache implements PackageCachePublicAPI {
   constructor(private plainCache: PackageCache) {}
 
   get appRoot(): string {

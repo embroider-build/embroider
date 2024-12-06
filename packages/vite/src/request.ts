@@ -1,5 +1,6 @@
-import type { ModuleRequest, RequestAdapter, RequestAdapterCreate, Resolution } from '@embroider/core';
+import type { ModuleRequest, RequestAdapter, RequestAdapterCreate, Resolution, VirtualResponse } from '@embroider/core';
 import core from '@embroider/core';
+
 const { cleanUrl, getUrlQueryParams } = core;
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
@@ -67,9 +68,9 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
 
   virtualResponse(
     request: ModuleRequest<Resolution<ResolveIdResult>>,
-    virtualFileName: string
+    virtual: VirtualResponse
   ): Resolution<ResolveIdResult> {
-    let specifier = virtualPrefix + virtualFileName;
+    let specifier = virtualPrefix + virtual.specifier;
     return {
       type: 'found',
       filename: specifier,
@@ -77,7 +78,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
         id: this.specifierWithQueryParams(specifier),
         resolvedBy: this.fromFileWithQueryParams(request.fromFile),
       },
-      isVirtual: true,
+      virtual,
     };
   }
 
@@ -103,7 +104,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     );
     if (result) {
       let { pathname } = new URL(result.id, 'http://example.com');
-      return { type: 'found', filename: pathname, result, isVirtual: false };
+      return { type: 'found', filename: pathname, result, virtual: false };
     } else {
       return { type: 'not_found', err: undefined };
     }

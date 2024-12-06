@@ -22,6 +22,7 @@ import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-ro
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import type { ModuleRequest, Resolution } from './module-request';
+import { virtualEntrypoint } from './virtual-entrypoint';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -253,7 +254,11 @@ export class Resolver {
             if (switchFile === request.fromFile) {
               return logTransition('internal lookup from fastbootSwitch', request);
             } else {
-              return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
+              return logTransition(
+                'shadowed app fastboot',
+                request,
+                request.virtualize({ type: 'fastboot-switch', specifier: switchFile })
+              );
             }
           } else {
             return logTransition(
@@ -348,13 +353,13 @@ export class Resolver {
       return logTransition(
         `dep's implicit modules`,
         request,
-        request.virtualize(resolve(dep.root, `-embroider-${im.type}.js`))
+        request.virtualize({ type: im.type, specifier: resolve(dep.root, `-embroider-${im.type}.js`) })
       );
     } else {
       return logTransition(
         `own implicit modules`,
         request,
-        request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
+        request.virtualize({ type: im.type, specifier: resolve(pkg.root, `-embroider-${im.type}.js`) })
       );
     }
   }
@@ -364,48 +369,12 @@ export class Resolver {
       return request;
     }
 
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/compat-modules',
-      '/@embroider/virtual/compat-modules',
-      './@embroider/virtual/compat-modules',
-    ];
-
-    if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
+    let virtualResponse = virtualEntrypoint(request, this.packageCache);
+    if (virtualResponse) {
+      return logTransition('entrypoint', request, request.virtualize(virtualResponse));
+    } else {
       return request;
     }
-
-    const result = /\.?\/?@embroider\/virtual\/compat-modules(?:\/(?<packageName>.*))?/.exec(request.specifier);
-
-    if (!result) {
-      // TODO make a better error
-      throw new Error('entrypoint does not match pattern' + request.specifier);
-    }
-
-    const { packageName } = result.groups!;
-
-    const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
-
-    if (!requestingPkg?.isV2Ember()) {
-      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
-    }
-
-    let pkg;
-
-    if (packageName) {
-      pkg = this.packageCache.resolve(packageName, requestingPkg);
-    } else {
-      pkg = requestingPkg;
-    }
-    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
-    return logTransition(
-      'entrypoint',
-      request,
-      request.virtualize(resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'))
-    );
   }
 
   private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
@@ -425,15 +394,10 @@ export class Resolver {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
     }
 
-    let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
-
     return logTransition(
       'route entrypoint',
       request,
-      request.virtualize(encodeRouteEntrypoint(pkg.root, matched?.[0], routeName))
+      request.virtualize({ type: 'route-entrypoint', specifier: encodeRouteEntrypoint(pkg, routeName) })
     );
   }
 
@@ -456,7 +420,11 @@ export class Resolver {
       );
     }
 
-    return logTransition('test-support', request, request.virtualize(resolve(pkg.root, '-embroider-test-support.js')));
+    return logTransition(
+      'test-support',
+      request,
+      request.virtualize({ type: 'test-support-js', specifier: resolve(pkg.root, '-embroider-test-support.js') })
+    );
   }
 
   private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
@@ -481,7 +449,10 @@ export class Resolver {
     return logTransition(
       'test-support-styles',
       request,
-      request.virtualize(resolve(pkg.root, '-embroider-test-support-styles.css'))
+      request.virtualize({
+        type: 'test-support-css',
+        specifier: resolve(pkg.root, '-embroider-test-support-styles.css'),
+      })
     );
   }
 
@@ -536,7 +507,7 @@ export class Resolver {
     return logTransition(
       'vendor-styles',
       request,
-      request.virtualize(resolve(pkg.root, '-embroider-vendor-styles.css'))
+      request.virtualize({ type: 'vendor-css', specifier: resolve(pkg.root, '-embroider-vendor-styles.css') })
     );
   }
 
@@ -607,7 +578,10 @@ export class Resolver {
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize(virtualPairComponent(hbsModule.filename, jsModule?.filename))
+        request.virtualize({
+          type: 'component-pair',
+          specifier: virtualPairComponent(hbsModule.filename, jsModule?.filename),
+        })
       );
     } else if (jsModule) {
       return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));
@@ -1022,7 +996,11 @@ export class Resolver {
       );
     }
 
-    return logTransition('vendor', request, request.virtualize(resolve(pkg.root, '-embroider-vendor.js')));
+    return logTransition(
+      'vendor',
+      request,
+      request.virtualize({ type: 'vendor-js', specifier: resolve(pkg.root, '-embroider-vendor.js') })
+    );
   }
 
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
@@ -1349,7 +1327,10 @@ export class Resolver {
           );
         }
         let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), { configFile: false });
-        return request.virtualize(fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names));
+        return request.virtualize({
+          type: 'fastboot-switch',
+          specifier: fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names),
+        });
     }
   }
 

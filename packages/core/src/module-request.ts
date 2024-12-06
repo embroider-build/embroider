@@ -22,6 +22,12 @@ export type RequestAdapterCreate<Init, Res extends Resolution> = (
 export interface RequestAdapter<Res extends Resolution> {
   readonly debugType: string;
   resolve(request: ModuleRequest<Res>): Promise<Res>;
+
+  // the function-returning variants of both of these are only because webpack
+  // plugins are a pain in the butt. Integrators are encouraged to use the plain
+  // Response-returning variants in all sane build environments.
+  notFoundResponse(request: ModuleRequest<Res>): Res | (() => Promise<Res>);
+  virtualResponse(request: ModuleRequest<Res>, virtualFileName: string): Res | (() => Promise<Res>);
 }
 
 export interface InitialRequestState {
@@ -44,23 +50,14 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
   #adapter: RequestAdapter<Res>;
   #specifier: string;
   #fromFile: string;
-  #isVirtual: boolean;
   #meta: Record<string, unknown> | undefined;
-  #isNotFound: boolean;
-  #resolvedTo: Res | undefined;
+  #resolvedTo: Res | (() => Promise<Res>) | undefined;
 
-  private constructor(
-    adapter: RequestAdapter<Res>,
-    initialize: InitialRequestState,
-    propagate?: { isVirtual: boolean; isNotFound: boolean; resolvedTo: Res | undefined }
-  ) {
+  private constructor(adapter: RequestAdapter<Res>, initialize: InitialRequestState) {
     this.#adapter = adapter;
     this.#specifier = initialize.specifier;
     this.#fromFile = initialize.fromFile;
     this.#meta = initialize.meta;
-    this.#isVirtual = propagate?.isVirtual ?? false;
-    this.#isNotFound = propagate?.isNotFound ?? false;
-    this.#resolvedTo = propagate?.resolvedTo;
   }
 
   get specifier(): string {
@@ -71,10 +68,6 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
     return this.#fromFile;
   }
 
-  get isVirtual(): boolean {
-    return this.#isVirtual;
-  }
-
   get debugType(): string {
     return this.#adapter.debugType;
   }
@@ -83,11 +76,7 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
     return this.#meta;
   }
 
-  get isNotFound(): boolean {
-    return this.#isNotFound;
-  }
-
-  get resolvedTo(): Res | undefined {
+  get resolvedTo(): Res | (() => Promise<Res>) | undefined {
     return this.#resolvedTo;
   }
 
@@ -95,10 +84,8 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
     if (this.#specifier === newSpecifier) {
       return this;
     }
-    let result = this.#clone();
+    let result = this.clone();
     result.#specifier = newSpecifier;
-    result.#isNotFound = false;
-    result.#resolvedTo = undefined;
     return result;
   }
 
@@ -106,36 +93,28 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
     if (this.#fromFile === newFromFile) {
       return this;
     }
-    let result = this.#clone();
+    let result = this.clone();
     result.#fromFile = newFromFile;
-    result.#isNotFound = false;
-    result.#resolvedTo = undefined;
     return result;
   }
 
   virtualize(virtualFileName: string): this {
-    let result = this.#clone();
-    result.#specifier = virtualFileName;
-    result.#isVirtual = true;
-    result.#isNotFound = false;
-    result.#resolvedTo = undefined;
-    return result;
+    return this.resolveTo(this.#adapter.virtualResponse(this, virtualFileName));
   }
 
   withMeta(meta: Record<string, any> | undefined): this {
-    let result = this.#clone();
+    let result = this.clone();
     result.#meta = meta;
+    result.#resolvedTo = this.#resolvedTo;
     return result;
   }
 
   notFound(): this {
-    let result = this.#clone();
-    result.#isNotFound = true;
-    return result;
+    return this.resolveTo(this.#adapter.notFoundResponse(this));
   }
 
-  resolveTo(res: Res): this {
-    let result = this.#clone();
+  resolveTo(res: Res | (() => Promise<Res>)): this {
+    let result = this.clone();
     result.#resolvedTo = res;
     return result;
   }
@@ -144,7 +123,7 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
     return this.#adapter.resolve(this);
   }
 
-  #clone(): this {
-    return new ModuleRequest(this.#adapter, this, this) as this;
+  clone(): this {
+    return new ModuleRequest(this.#adapter, this) as this;
   }
 }

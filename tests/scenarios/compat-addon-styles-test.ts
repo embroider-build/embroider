@@ -145,7 +145,7 @@ function setAddonNameAndCSS(addon: Project, letter: string) {
 }
 
 appScenarios
-  .map('compat-addon-styles', project => {
+  .map('compat-addon-styles css ordering', project => {
     const addonA: Project = baseAddon();
     setAddonNameAndCSS(addonA, 'a');
 

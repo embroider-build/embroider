@@ -4,13 +4,15 @@ import core from '@embroider/core';
 const { cleanUrl, getUrlQueryParams } = core;
 import type { PluginContext, ResolveIdResult } from 'rollup';
 
-export const virtualPrefix = 'embroider_virtual:';
-
 interface Init {
   context: PluginContext;
   source: string;
   importer: string | undefined;
   custom: Record<string, any> | undefined;
+}
+
+export interface ResponseMeta {
+  virtual: VirtualResponse;
 }
 
 export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveIdResult>> {
@@ -24,16 +26,9 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
       return;
     }
     if (source && importer && source[0] !== '\0') {
-      let nonVirtual: string;
-      if (importer.startsWith(virtualPrefix)) {
-        nonVirtual = importer.slice(virtualPrefix.length);
-      } else {
-        nonVirtual = importer;
-      }
-
       // strip query params off the importer
-      let fromFile = cleanUrl(nonVirtual);
-      let importerQueryParams = getUrlQueryParams(nonVirtual);
+      let fromFile = cleanUrl(importer);
+      let importerQueryParams = getUrlQueryParams(importer);
 
       // strip query params off the source but keep track of them
       // we use regexp-based methods over a URL object because the
@@ -70,13 +65,15 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     request: ModuleRequest<Resolution<ResolveIdResult>>,
     virtual: VirtualResponse
   ): Resolution<ResolveIdResult> {
-    let specifier = virtualPrefix + virtual.specifier;
     return {
       type: 'found',
-      filename: specifier,
+      filename: virtual.specifier,
       result: {
-        id: this.specifierWithQueryParams(specifier),
+        id: this.specifierWithQueryParams(virtual.specifier),
         resolvedBy: this.fromFileWithQueryParams(request.fromFile),
+        meta: {
+          'embroider-resolver': { virtual } satisfies ResponseMeta,
+        },
       },
       virtual,
     };

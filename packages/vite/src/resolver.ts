@@ -1,7 +1,7 @@
 import type { Plugin, ViteDevServer } from 'vite';
 import core, { ModuleRequest, type Resolver } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
-import { RollupRequestAdapter, virtualPrefix } from './request.js';
+import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
 import { resolve, join } from 'path';
@@ -20,6 +20,44 @@ export function resolver(): Plugin {
   let server: ViteDevServer;
   const virtualDeps: Map<string, string[]> = new Map();
   const notViteDeps = new Set<string>();
+  const responseMetas: Map<string, ResponseMeta> = new Map();
+
+  async function resolveId(
+    context: PluginContext,
+    source: string,
+    importer: string | undefined,
+    options: { custom?: Record<string, unknown> }
+  ) {
+    if (options.custom?.depScan) {
+      return await observeDepScan(context, source, importer, options);
+    }
+
+    let request = ModuleRequest.create(RollupRequestAdapter.create, {
+      context,
+      source,
+      importer,
+      custom: options.custom,
+    });
+    if (!request) {
+      // fallthrough to other rollup plugins
+      return null;
+    }
+    let resolution = await resolverLoader.resolver.resolve(request);
+    switch (resolution.type) {
+      case 'found':
+        if (resolution.virtual) {
+          return resolution.result;
+        } else {
+          return await maybeCaptureNewOptimizedDep(context, resolverLoader.resolver, resolution.result, notViteDeps);
+        }
+      case 'ignored':
+        return resolution.result;
+      case 'not_found':
+        return null;
+      default:
+        throw assertNever(resolution);
+    }
+  }
 
   return {
     name: 'embroider-resolver',
@@ -44,40 +82,20 @@ export function resolver(): Plugin {
     },
 
     async resolveId(source, importer, options) {
-      if (options.custom?.depScan) {
-        return await observeDepScan(this, source, importer, options);
+      let resolution = await resolveId(this, source, importer, options);
+      if (typeof resolution === 'string') {
+        return resolution;
       }
-
-      let request = ModuleRequest.create(RollupRequestAdapter.create, {
-        context: this,
-        source,
-        importer,
-        custom: options.custom,
-      });
-      if (!request) {
-        // fallthrough to other rollup plugins
-        return null;
+      if (resolution && resolution.meta?.['embroider-resolver']) {
+        responseMetas.set(resolution.id, resolution.meta['embroider-resolver'] as ResponseMeta);
       }
-      let resolution = await resolverLoader.resolver.resolve(request);
-      switch (resolution.type) {
-        case 'found':
-          if (resolution.virtual) {
-            return resolution.result;
-          } else {
-            return await maybeCaptureNewOptimizedDep(this, resolverLoader.resolver, resolution.result, notViteDeps);
-          }
-        case 'ignored':
-          return resolution.result;
-        case 'not_found':
-          return null;
-        default:
-          throw assertNever(resolution);
-      }
+      return resolution;
     },
+
     load(id) {
-      if (id.startsWith(virtualPrefix)) {
-        let { pathname } = new URL(id, 'http://example.com');
-        let { src, watches } = virtualContent(pathname.slice(virtualPrefix.length + 1), resolverLoader.resolver);
+      let meta = responseMetas.get(id);
+      if (meta?.virtual) {
+        let { src, watches } = virtualContent(cleanUrl(id), resolverLoader.resolver);
         virtualDeps.set(id, watches);
         server?.watcher.add(watches);
         return src;

@@ -534,11 +534,7 @@ export class Resolver {
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await this.resolve(
-        request.alias(candidateSpecifier).rehome(target.from).withMeta({
-          runtimeFallback: false,
-        })
-      );
+      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
       if (resolution.type === 'found') {
         hbsModule = resolution;
@@ -550,11 +546,7 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await this.resolve(
-        request.alias(candidateSpecifier).rehome(target.from).withMeta({
-          runtimeFallback: false,
-        })
-      );
+      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
       if (resolution.type === 'ignored') {
         return logTransition(`resolving to ignored component`, request, request.resolveTo(resolution));
@@ -599,11 +591,7 @@ export class Resolver {
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = await this.resolve(
-      request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile).withMeta({
-        runtimeFallback: false,
-      })
-    );
+    let helperMatch = await this.resolve(request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile));
 
     // for the case of 'ignored' that means that esbuild found this helper in an external
     // package so it should be considered found in this case and we should not look for a
@@ -1317,9 +1305,7 @@ export class Resolver {
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
         let foundAppJS = await this.resolve(
-          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile).withMeta({
-            runtimeFallback: false,
-          })
+          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile)
         );
         if (foundAppJS.type !== 'found') {
           throw new Error(

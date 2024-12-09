@@ -1,4 +1,4 @@
-import type { Plugin, ViteDevServer } from 'vite';
+import { type Plugin, type ViteDevServer, normalizePath } from 'vite';
 import core, { ModuleRequest, type Resolver } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
@@ -87,7 +87,7 @@ export function resolver(): Plugin {
         return resolution;
       }
       if (resolution && resolution.meta?.['embroider-resolver']) {
-        responseMetas.set(resolution.id, resolution.meta['embroider-resolver'] as ResponseMeta);
+        responseMetas.set(normalizePath(resolution.id), resolution.meta['embroider-resolver'] as ResponseMeta);
       }
       return resolution;
     },

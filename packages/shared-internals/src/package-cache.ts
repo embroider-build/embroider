@@ -68,11 +68,6 @@ export default class PackageCache {
 
   ownerOfFile(filename: string): Package | undefined {
     let candidate = filename;
-    const virtualPrefix = 'embroider_virtual:';
-
-    if (candidate.includes(virtualPrefix)) {
-      candidate = candidate.replace(/^.*embroider_virtual:/, '');
-    }
 
     // first we look through our cached packages for any that are rooted right
     // at or above the file.

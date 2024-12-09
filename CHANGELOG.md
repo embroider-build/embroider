@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## Release (2024-12-09)
+
+@embroider/compat 3.7.1 (patch)
+@embroider/core 3.4.20 (patch)
+@embroider/macros 1.16.10 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2201](https://github.com/embroider-build/embroider/pull/2201) Fix type error on stable ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2024-11-11)
 
 @embroider/addon-dev 7.0.0 (major)

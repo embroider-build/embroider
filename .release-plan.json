@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "major",
-      "oldVersion": "6.0.1",
-      "newVersion": "7.0.0",
-      "constraints": [
-        {
-          "impact": "major",
-          "reason": "Appears in changelog section :boom: Breaking Change"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "7.0.0"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.9.0"
@@ -22,16 +13,43 @@
       "oldVersion": "1.0.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.7.0"
+      "impact": "patch",
+      "oldVersion": "3.7.0",
+      "newVersion": "3.7.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.19"
+      "impact": "patch",
+      "oldVersion": "3.4.19",
+      "newVersion": "3.4.20",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.9"
+      "impact": "patch",
+      "oldVersion": "1.16.9",
+      "newVersion": "1.16.10",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -55,5 +73,5 @@
       "oldVersion": "4.0.8"
     }
   },
-  "description": "## Release (2024-11-11)\n\n@embroider/addon-dev 7.0.0 (major)\n\n#### :boom: Breaking Change\n* `@embroider/addon-dev`\n  * [#2166](https://github.com/embroider-build/embroider/pull/2166) Fix gjs/gts sourcemaps -- we accidentally unlocked really good DX ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2024-12-09)\n\n@embroider/compat 3.7.1 (patch)\n@embroider/core 3.4.20 (patch)\n@embroider/macros 1.16.10 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2201](https://github.com/embroider-build/embroider/pull/2201) Fix type error on stable ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 1\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
 }

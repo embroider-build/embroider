@@ -182,11 +182,14 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
   // requests evolve through the module-resolver they aren't actually all
   // mutating the shared state. Only when a request is allowed to bubble back
   // out to webpack does that happen.
-  toWebpackResolveData(request: ModuleRequest<WebpackResolution>): ExtendedResolveData {
+  toWebpackResolveData(
+    request: ModuleRequest<WebpackResolution>,
+    virtualFileName: string | undefined
+  ): ExtendedResolveData {
     let specifier = request.specifier;
-    if (request.isVirtual) {
+    if (virtualFileName) {
       let params = new URLSearchParams();
-      params.set('f', specifier);
+      params.set('f', virtualFileName);
       params.set('a', this.appRoot);
       specifier = `${this.babelLoaderPrefix}${virtualLoaderName}?${params.toString()}!`;
     }
@@ -195,7 +198,7 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
     this.originalState.context = dirname(request.fromFile);
     this.originalState.contextInfo.issuer = request.fromFile;
     this.originalState.contextInfo._embroiderMeta = request.meta;
-    if (request.resolvedTo) {
+    if (request.resolvedTo && typeof request.resolvedTo !== 'function') {
       if (request.resolvedTo.type === 'found') {
         this.originalState.createData = request.resolvedTo.result;
       }
@@ -203,16 +206,31 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
     return this.originalState;
   }
 
+  notFoundResponse(request: ModuleRequest<WebpackResolution>): WebpackResolution {
+    let err = new Error(`module not found ${request.specifier}`);
+    (err as any).code = 'MODULE_NOT_FOUND';
+    return { type: 'not_found', err };
+  }
+
+  virtualResponse(
+    request: ModuleRequest<WebpackResolution>,
+    virtualFileName: string
+  ): () => Promise<WebpackResolution> {
+    return () => {
+      return this._resolve(request, virtualFileName);
+    };
+  }
+
   async resolve(request: ModuleRequest<WebpackResolution>): Promise<WebpackResolution> {
-    if (request.isNotFound) {
-      // TODO: we can make sure this looks correct in webpack output when a
-      // user encounters it
-      let err = new Error(`module not found ${request.specifier}`);
-      (err as any).code = 'MODULE_NOT_FOUND';
-      return { type: 'not_found', err };
-    }
+    return this._resolve(request, undefined);
+  }
+
+  async _resolve(
+    request: ModuleRequest<WebpackResolution>,
+    virtualFileName: string | undefined
+  ): Promise<WebpackResolution> {
     return await new Promise(resolve =>
-      this.resolveFunction(this.toWebpackResolveData(request), err => {
+      this.resolveFunction(this.toWebpackResolveData(request, virtualFileName), err => {
         if (err) {
           // unfortunately webpack doesn't let us distinguish between Not Found
           // and other unexpected exceptions here.
@@ -221,7 +239,7 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
           resolve({
             type: 'found',
             result: this.originalState.createData,
-            isVirtual: request.isVirtual,
+            isVirtual: Boolean(virtualFileName),
             filename: this.originalState.createData.resource!,
           });
         }

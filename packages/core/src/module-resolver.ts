@@ -37,9 +37,7 @@ makeDebug.formatters.p = (s: string) => {
 };
 
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
-  if (after.isVirtual) {
-    debug(`[%s:virtualized] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
-  } else if (after.resolvedTo) {
+  if (after.resolvedTo) {
     debug(`[%s:resolvedTo] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else if (before.specifier !== after.specifier) {
     if (before.fromFile !== after.fromFile) {
@@ -64,16 +62,10 @@ function logTransition<R extends ModuleRequest>(reason: string, before: R, after
       before.fromFile,
       after.fromFile
     );
-  } else if (after.isNotFound) {
-    debug(`[%s:not-found] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else {
     debug(`[%s:unchanged] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   }
   return after;
-}
-
-function isTerminal(request: ModuleRequest): boolean {
-  return request.isVirtual || request.isNotFound || Boolean(request.resolvedTo);
 }
 
 type MergeEntry =
@@ -152,11 +144,18 @@ export class Resolver {
     request: ModuleRequest<ResolveResolution>
   ): Promise<ResolveResolution> {
     request = await this.beforeResolve(request);
-    if (request.resolvedTo) {
-      return request.resolvedTo;
-    }
 
-    let resolution = await request.defaultResolve();
+    let resolution: ResolveResolution;
+
+    if (request.resolvedTo) {
+      if (typeof request.resolvedTo === 'function') {
+        resolution = await request.resolvedTo();
+      } else {
+        resolution = request.resolvedTo;
+      }
+    } else {
+      resolution = await request.defaultResolve();
+    }
 
     switch (resolution.type) {
       case 'found':
@@ -167,6 +166,9 @@ export class Resolver {
       default:
         throw assertNever(resolution);
     }
+
+    request = request.clone();
+
     let nextRequest = await this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
@@ -174,20 +176,17 @@ export class Resolver {
     }
 
     if (nextRequest.resolvedTo) {
-      return nextRequest.resolvedTo;
+      if (typeof nextRequest.resolvedTo === 'function') {
+        return await nextRequest.resolvedTo();
+      } else {
+        return nextRequest.resolvedTo;
+      }
     }
 
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
       throw new Error(
         'Bug Discovered! New request is not === original request but has the same fromFile and specifier. This will likely create a loop.'
       );
-    }
-
-    if (nextRequest.isVirtual || nextRequest.isNotFound) {
-      // virtual and NotFound requests are terminal, there is no more
-      // beforeResolve or fallbackResolve around them. The defaultResolve is
-      // expected to know how to implement them.
-      return nextRequest.defaultResolve();
     }
 
     return this.resolve(nextRequest);
@@ -224,7 +223,7 @@ export class Resolver {
   }
 
   private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -271,7 +270,7 @@ export class Resolver {
   }
 
   private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let match = decodeFastbootSwitch(request.fromFile);
@@ -330,7 +329,7 @@ export class Resolver {
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let im = decodeImplicitModules(request.specifier);
@@ -361,7 +360,7 @@ export class Resolver {
   }
 
   private handleEntrypoint<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
 
@@ -410,7 +409,7 @@ export class Resolver {
   }
 
   private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
 
@@ -487,7 +486,7 @@ export class Resolver {
   }
 
   private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let match = compatPattern.exec(request.specifier);
@@ -852,7 +851,7 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -915,7 +914,7 @@ export class Resolver {
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let packageName = getPackageName(request.specifier);
@@ -1044,7 +1043,7 @@ export class Resolver {
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let { specifier, fromFile } = request;
@@ -1149,10 +1148,8 @@ export class Resolver {
   }
 
   private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
-    if (request.isVirtual) {
-      throw new Error(
-        'Build tool bug detected! Fallback resolve should never see a virtual request. It is expected that the defaultResolve for your bundler has already resolved this request'
-      );
+    if (request.resolvedTo) {
+      throw new Error('Build tool bug detected! Fallback resolve should never see an already-resolved request.');
     }
 
     if (request.specifier === '@embroider/macros') {

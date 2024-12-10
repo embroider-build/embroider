@@ -7,3 +7,5 @@ export * from './src/optimize-deps.js';
 export * from './src/build.js';
 export * from './src/assets.js';
 export * from './src/content-for.js';
+export * from './src/classic-ember-support.js';
+export * from './src/ember.js';

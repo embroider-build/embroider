@@ -372,10 +372,8 @@ appScenarios
     });
 
     project.files['vite.config.mjs'] = (project.files['vite.config.mjs'] as string).replace(
-      'contentFor(),',
-      `
-      contentFor(),
-      {
+      '// extra plugins here',
+      `{
         name: "xyz-handler",
         transform(code, id) {
           if (id.endsWith('.xyz')) {

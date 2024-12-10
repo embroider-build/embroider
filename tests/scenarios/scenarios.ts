@@ -80,12 +80,17 @@ async function canary(project: Project) {
 }
 
 export function supportMatrix(scenarios: Scenarios) {
-  return scenarios.expand({
-    lts_3_28,
-    lts_4_4,
-    lts_5_12,
-    release,
-  });
+  return (
+    scenarios
+      .expand({
+        lts_3_28,
+        lts_4_4,
+        lts_5_12,
+        release,
+      })
+      // exceeding GitHub actions limit of 256
+      .skip('lts_4_4')
+  );
 }
 
 export function fullSupportMatrix(scenarios: Scenarios) {

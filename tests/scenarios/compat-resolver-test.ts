@@ -69,7 +69,6 @@ Scenarios.fromProject(() => new Project())
           emberVersion = '4.6.0' //based on app-template package.json
         ) {
           let etcOptions: EtcOptions = {
-            compilerPath: require.resolve('ember-source-latest/dist/ember-template-compiler'),
             targetFormat: 'hbs',
             transforms: [
               ...(extraOpts?.astPlugins ?? []),

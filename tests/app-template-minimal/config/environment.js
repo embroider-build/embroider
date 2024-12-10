@@ -2,7 +2,7 @@
 
 module.exports = function (environment) {
   const ENV = {
-    modulePrefix: 'app-template',
+    modulePrefix: 'app-template-minimal',
     environment,
     rootURL: '/',
     locationType: 'history',

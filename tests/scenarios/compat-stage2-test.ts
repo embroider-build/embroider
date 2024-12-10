@@ -334,6 +334,9 @@ stage2Scenarios
   });
 
 stage2Scenarios
+  // last release that supports non-colocated templates (which is part of what
+  // this test is testing)
+  .only('lts_5_12')
   .map('static-with-rules', app => {
     app.addDependency('some-library', '1.0.0');
     app.linkDependency('@embroider/sample-transforms', { baseDir: __dirname });

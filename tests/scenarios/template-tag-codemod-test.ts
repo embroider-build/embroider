@@ -6,7 +6,7 @@ import { join } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('release')
+  .only('lts_5_12')
   .map('template-tag-codemod', project => {
     project.mergeFiles({
       app: {

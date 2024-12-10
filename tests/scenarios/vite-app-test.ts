@@ -307,7 +307,7 @@ appScenarios
         assert.ok(distFiles.includes('assets'), 'should have created assets folder');
         assert.ok(distFiles.includes('robots.txt'), 'should have copied app assets');
 
-        const assetFiles = readdirSync(join(app.dir, 'dist', 'assets'));
+        const assetFiles = readdirSync(join(app.dir, 'dist', '@embroider', 'virtual'));
         assert.ok(assetFiles.length > 1, 'should have created asset files');
       });
     });

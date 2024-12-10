@@ -10,6 +10,27 @@ import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-
 import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
 import { decodeRouteEntrypoint, renderRouteEntrypoint } from './virtual-route-entrypoint';
 
+export type VirtualResponse = { specifier: string } & (
+  | {
+      type: 'fastboot-switch';
+    }
+  | {
+      type: 'implicit-modules';
+    }
+  | {
+      type: 'implicit-test-modules';
+    }
+  | {
+      type: 'entrypoint';
+    }
+  | { type: 'route-entrypoint' }
+  | { type: 'test-support-js' }
+  | { type: 'test-support-css' }
+  | { type: 'vendor-js' }
+  | { type: 'vendor-css' }
+  | { type: 'component-pair' }
+);
+
 export interface VirtualContentResult {
   src: string;
   watches: string[];

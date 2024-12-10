@@ -226,43 +226,40 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint(/import\("\/@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
+        inEntrypoint(/import\("\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has split controllers in route entrypoint', function () {
         inEntrypoint(
           ['app/controllers/people', 'app/controllers/people/show'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split route templates in route entrypoint', function () {
         inEntrypoint(
           ['app/templates/people', 'app/templates/people/index', 'app/templates/people/show'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split routes in route entrypoint', function () {
         inEntrypoint(
           ['app/routes/people', 'app/routes/people/show'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has no components in route entrypoint', function () {
-        notInEntrypoint(
-          ['all-people', 'welcome', 'unused'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
-        );
+        notInEntrypoint(['all-people', 'welcome', 'unused'], /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('capitalize', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
+        notInEntrypoint('capitalize', /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('auto-focus', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
+        notInEntrypoint('auto-focus', /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no issues', function () {
@@ -400,43 +397,40 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint(/import\("\/@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people\?import"\)/);
+        inEntrypoint(/import\("\/app\/-embroider-route-entrypoint.js:route=people\?import"\)/);
       });
 
       test('has split controllers in route entrypoint', function () {
         inEntrypoint(
           ['pods/people/controller', 'pods/people/show/controller'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split route templates in route entrypoint', function () {
         inEntrypoint(
           ['pods/people/template', 'pods/people/index/template', 'pods/people/show/template'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split routes in route entrypoint', function () {
         inEntrypoint(
           ['pods/people/route', 'pods/people/show/route'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has no components in route entrypoint', function () {
-        notInEntrypoint(
-          ['all-people', 'welcome', 'unused'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
-        );
+        notInEntrypoint(['all-people', 'welcome', 'unused'], /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('capitalize', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
+        notInEntrypoint('capitalize', /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no modifiers in route entrypoint', function () {
-        notInEntrypoint('auto-focus', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
+        notInEntrypoint('auto-focus', /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no issues', function () {
@@ -574,43 +568,40 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint(/import\("\/@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people\?import"\)/);
+        inEntrypoint(/import\("\/app\/-embroider-route-entrypoint.js:route=people\?import"\)/);
       });
 
       test('has split controllers in route entrypoint', function () {
         inEntrypoint(
           ['routes/people/controller', 'routes/people/show/controller'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split route templates in route entrypoint', function () {
         inEntrypoint(
           ['routes/people/template', 'routes/people/index/template', 'routes/people/show/template'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has split routes in route entrypoint', function () {
         inEntrypoint(
           ['routes/people/route', 'routes/people/show/route'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
+          /\/app\/-embroider-route-entrypoint.js:route=people/
         );
       });
 
       test('has no components in route entrypoint', function () {
-        notInEntrypoint(
-          ['all-people', 'welcome', 'unused'],
-          /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/
-        );
+        notInEntrypoint(['all-people', 'welcome', 'unused'], /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no helpers in route entrypoint', function () {
-        notInEntrypoint('capitalize', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
+        notInEntrypoint('capitalize', /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no modifiers in route entrypoint', function () {
-        notInEntrypoint('auto-focus', /@id\/embroider_virtual:.*-embroider-route-entrypoint.js:route=people/);
+        notInEntrypoint('auto-focus', /\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has no issues', function () {

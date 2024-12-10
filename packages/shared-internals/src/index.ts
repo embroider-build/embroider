@@ -9,7 +9,7 @@ export {
 } from './paths';
 export { getOrCreate } from './get-or-create';
 export { default as Package, V2AddonPackage as AddonPackage, V2AppPackage as AppPackage, V2Package } from './package';
-export { default as PackageCache } from './package-cache';
+export { default as PackageCache, type PackageCachePublicAPI } from './package-cache';
 export type { RewrittenPackageIndex } from './rewritten-package-cache';
 export { RewrittenPackageCache } from './rewritten-package-cache';
 export { default as packageName } from './package-name';

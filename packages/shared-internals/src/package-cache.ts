@@ -68,11 +68,6 @@ export default class PackageCache {
 
   ownerOfFile(filename: string): Package | undefined {
     let candidate = filename;
-    const virtualPrefix = 'embroider_virtual:';
-
-    if (candidate.includes(virtualPrefix)) {
-      candidate = candidate.replace(/^.*embroider_virtual:/, '');
-    }
 
     // first we look through our cached packages for any that are rooted right
     // at or above the file.
@@ -111,3 +106,9 @@ export default class PackageCache {
 }
 
 const shared: Map<string, PackageCache> = new Map();
+
+// without this, using a class as an interface forces you to have the same
+// private and protected methods too (since people trying to extend from you
+// could see all of those)
+type PublicAPI<T> = { [K in keyof T]: T[K] };
+export type PackageCachePublicAPI = PublicAPI<PackageCache>;

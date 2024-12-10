@@ -65,26 +65,29 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     return `${fromFile}${this.importerQueryParams}`;
   }
 
+  virtualResponse(
+    request: ModuleRequest<Resolution<ResolveIdResult>>,
+    virtualFileName: string
+  ): Resolution<ResolveIdResult> {
+    let specifier = virtualPrefix + virtualFileName;
+    return {
+      type: 'found',
+      filename: specifier,
+      result: {
+        id: this.specifierWithQueryParams(specifier),
+        resolvedBy: this.fromFileWithQueryParams(request.fromFile),
+      },
+      isVirtual: true,
+    };
+  }
+
+  notFoundResponse(_request: ModuleRequest<Resolution<ResolveIdResult>>): Resolution<ResolveIdResult> {
+    let err = new Error(`module not found ${this.specifierWithQueryParams}`);
+    (err as any).code = 'MODULE_NOT_FOUND';
+    return { type: 'not_found', err };
+  }
+
   async resolve(request: ModuleRequest<Resolution<ResolveIdResult>>): Promise<Resolution<ResolveIdResult>> {
-    if (request.isVirtual) {
-      let specifier = virtualPrefix + request.specifier;
-      return {
-        type: 'found',
-        filename: specifier,
-        result: {
-          id: this.specifierWithQueryParams(specifier),
-          resolvedBy: this.fromFileWithQueryParams(request.fromFile),
-        },
-        isVirtual: request.isVirtual,
-      };
-    }
-    if (request.isNotFound) {
-      // TODO: we can make sure this looks correct in rollup & vite output when a
-      // user encounters it
-      let err = new Error(`module not found ${this.specifierWithQueryParams}`);
-      (err as any).code = 'MODULE_NOT_FOUND';
-      return { type: 'not_found', err };
-    }
     let result = await this.context.resolve(
       this.specifierWithQueryParams(request.specifier),
       this.fromFileWithQueryParams(request.fromFile),
@@ -100,7 +103,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     );
     if (result) {
       let { pathname } = new URL(result.id, 'http://example.com');
-      return { type: 'found', filename: pathname, result, isVirtual: request.isVirtual };
+      return { type: 'found', filename: pathname, result, isVirtual: false };
     } else {
       return { type: 'not_found', err: undefined };
     }

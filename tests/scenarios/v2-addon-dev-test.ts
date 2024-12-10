@@ -35,7 +35,7 @@ appScenarios
             "@babel/plugin-transform-class-static-block",
             ["babel-plugin-ember-template-compilation", {
               targetFormat: 'hbs',
-              compilerPath: 'ember-source/dist/ember-template-compiler',
+              compilerPath: 'ember-source/dist/ember-template-compiler.js',
               transforms: [
                 './lib/custom-transform.js',
               ],
@@ -187,7 +187,7 @@ appScenarios
             "@babel/plugin-transform-class-static-block",
             ["babel-plugin-ember-template-compilation", {
               targetFormat: 'hbs',
-              compilerPath: 'ember-source/dist/ember-template-compiler',
+              compilerPath: 'ember-source/dist/ember-template-compiler.js',
             }],
             ["@babel/plugin-proposal-decorators", { "legacy": true }],
             [ "@babel/plugin-transform-class-properties" ]

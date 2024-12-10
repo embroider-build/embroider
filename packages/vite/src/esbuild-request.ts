@@ -55,27 +55,32 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
     return 'esbuild';
   }
 
+  notFoundResponse(
+    request: core.ModuleRequest<core.Resolution<OnResolveResult, OnResolveResult>>
+  ): core.Resolution<OnResolveResult, OnResolveResult> {
+    return {
+      type: 'not_found',
+      err: {
+        errors: [{ text: `module not found ${request.specifier}` }],
+      },
+    };
+  }
+
+  virtualResponse(
+    _request: core.ModuleRequest<core.Resolution<OnResolveResult, OnResolveResult>>,
+    virtualFileName: string
+  ): core.Resolution<OnResolveResult, OnResolveResult> {
+    return {
+      type: 'found',
+      filename: virtualFileName,
+      result: { path: virtualFileName, namespace: 'embroider-virtual' },
+      isVirtual: true,
+    };
+  }
+
   async resolve(
     request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
   ): Promise<Resolution<OnResolveResult, OnResolveResult>> {
-    if (request.isVirtual) {
-      return {
-        type: 'found',
-        filename: request.specifier,
-        result: { path: request.specifier, namespace: 'embroider-virtual' },
-        isVirtual: request.isVirtual,
-      };
-    }
-    if (request.isNotFound) {
-      // todo: make sure this looks correct to users
-      return {
-        type: 'not_found',
-        err: {
-          errors: [{ text: `module not found ${request.specifier}` }],
-        },
-      };
-    }
-
     requestStatus(request.specifier);
 
     let result = await this.context.resolve(request.specifier, {
@@ -132,7 +137,7 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
           };
         }
       }
-      return { type: 'found', filename: result.path, result, isVirtual: request.isVirtual };
+      return { type: 'found', filename: result.path, result, isVirtual: false };
     }
   }
 }

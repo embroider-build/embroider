@@ -28,28 +28,32 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
     return 'node';
   }
 
-  async resolve(request: ModuleRequest<Resolution<NodeResolution, Error>>): Promise<Resolution<NodeResolution, Error>> {
-    if (request.isVirtual) {
-      return {
-        type: 'found',
-        filename: request.specifier,
-        isVirtual: true,
-        result: {
-          type: 'virtual' as 'virtual',
-          content: virtualContent(request.specifier, this.resolver).src,
-          filename: request.specifier,
-        },
-      };
-    }
-    if (request.isNotFound) {
-      let err = new Error(`module not found ${request.specifier}`);
-      (err as any).code = 'MODULE_NOT_FOUND';
-      return {
-        type: 'not_found',
-        err,
-      };
-    }
+  notFoundResponse(request: ModuleRequest<Resolution<NodeResolution, Error>>): Resolution<NodeResolution, Error> {
+    let err = new Error(`module not found ${request.specifier}`);
+    (err as any).code = 'MODULE_NOT_FOUND';
+    return {
+      type: 'not_found',
+      err,
+    };
+  }
 
+  virtualResponse(
+    _request: ModuleRequest<Resolution<NodeResolution, Error>>,
+    virtualFileName: string
+  ): Resolution<NodeResolution, Error> {
+    return {
+      type: 'found',
+      filename: virtualFileName,
+      isVirtual: true,
+      result: {
+        type: 'virtual' as 'virtual',
+        content: virtualContent(virtualFileName, this.resolver).src,
+        filename: virtualFileName,
+      },
+    };
+  }
+
+  async resolve(request: ModuleRequest<Resolution<NodeResolution, Error>>): Promise<Resolution<NodeResolution, Error>> {
     // require.resolve does not like when we resolve from virtual paths.
     // That is, a request like "../thing.js" from
     // "/a/real/path/VIRTUAL_SUBDIR/virtual.js" has an unambiguous target of

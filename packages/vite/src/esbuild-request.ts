@@ -112,6 +112,10 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
         let pkg = this.packageCache.ownerOfFile(result.path);
         if (
           pkg?.root === this.packageCache.appRoot &&
+          // vite provides node built-in polyfills under a custom namespace and we dont 
+          // want to interrupt that. We'd prefer they get bundled in the dep optimizer normally,
+          // rather than getting deferred to the app build (which also works, but means they didn't
+          // get pre-optimized).
           (result.namespace === 'file' || result.namespace.startsWith('embroider-'))
         ) {
           let externalizedName = request.specifier;

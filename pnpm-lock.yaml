@@ -1727,6 +1727,9 @@ importers:
       ember-cli-4.8:
         specifier: npm:ember-cli@~4.8.0
         version: /ember-cli@4.8.1
+      ember-cli-5.12:
+        specifier: npm:ember-cli@~5.12.0
+        version: /ember-cli@5.12.0
       ember-cli-5.4:
         specifier: npm:ember-cli@~5.4.0
         version: /ember-cli@5.4.2
@@ -1790,6 +1793,9 @@ importers:
       ember-source-4.8:
         specifier: npm:ember-source@~4.8.0
         version: /ember-source@4.8.6(@babel/core@7.26.0)
+      ember-source-5.12:
+        specifier: npm:ember-source@~5.12.0
+        version: /ember-source@5.12.0
       ember-source-5.4:
         specifier: npm:ember-source@~5.4.0
         version: /ember-source@5.4.1(@babel/core@7.26.0)

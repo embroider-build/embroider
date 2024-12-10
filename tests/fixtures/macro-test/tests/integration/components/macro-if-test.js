@@ -88,7 +88,7 @@ module('Integration | Macro | macroCondition', function (hooks) {
       assert.ok(true, 'it ran');
     };
     await render(
-      hbs`<div data-test-target {{action this.doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`
+      hbs`<div data-test-target {{on "click" this.doThing}} {{macroMaybeAttrs false data-optional data-flavor="vanilla" }} ></div>`
     );
     let target = this.element.querySelector('[data-test-target]');
     await click(target);

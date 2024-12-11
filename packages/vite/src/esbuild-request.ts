@@ -56,8 +56,8 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   }
 
   notFoundResponse(
-    request: core.ModuleRequest<core.Resolution<OnResolveResult, OnResolveResult>>
-  ): core.Resolution<OnResolveResult, OnResolveResult> {
+    request: core.ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
+  ): Resolution<OnResolveResult, OnResolveResult> {
     return {
       type: 'not_found',
       err: {
@@ -67,9 +67,9 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   }
 
   virtualResponse(
-    _request: core.ModuleRequest<core.Resolution<OnResolveResult, OnResolveResult>>,
+    _request: core.ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>,
     virtualFileName: string
-  ): core.Resolution<OnResolveResult, OnResolveResult> {
+  ): Resolution<OnResolveResult, OnResolveResult> {
     return {
       type: 'found',
       filename: virtualFileName,
@@ -97,10 +97,8 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
 
     let status = readStatus(request.specifier);
 
-    if (result.errors.length > 0 || status === 'not_found') {
+    if (result.errors.length > 0 || status.type === 'not_found') {
       return { type: 'not_found', err: result };
-    } else if (result.external) {
-      return { type: 'ignored', result };
     } else {
       if (this.phase === 'bundling') {
         // we need to ensure that we don't traverse back into the app while
@@ -133,7 +131,9 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
             externalizedName = externalName(pkg.packageJSON, externalizedName) || externalizedName;
           }
           return {
-            type: 'ignored',
+            type: 'found',
+            filename: externalizedName,
+            isVirtual: false,
             result: {
               path: externalizedName,
               external: true,
@@ -141,7 +141,13 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
           };
         }
       }
-      return { type: 'found', filename: result.path, result, isVirtual: false };
+
+      return {
+        type: 'found',
+        filename: status.type === 'found' ? status.filename : result.path,
+        result,
+        isVirtual: false,
+      };
     }
   }
 }
@@ -156,9 +162,7 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   plugin.
  */
 function sharedGlobalState() {
-  let channel = (globalThis as any).__embroider_vite_resolver_channel__ as
-    | undefined
-    | Map<string, 'pending' | 'found' | 'not_found'>;
+  let channel = (globalThis as any).__embroider_vite_resolver_channel__ as undefined | Map<string, InternalStatus>;
   if (!channel) {
     channel = new Map();
     (globalThis as any).__embroider_vite_resolver_channel__ = channel;
@@ -167,19 +171,21 @@ function sharedGlobalState() {
 }
 
 function requestStatus(id: string): void {
-  sharedGlobalState().set(id, 'pending');
+  sharedGlobalState().set(id, { type: 'pending' });
 }
 
-export function writeStatus(id: string, status: 'found' | 'not_found'): void {
+export function writeStatus(id: string, status: InternalStatus): void {
   let channel = sharedGlobalState();
-  if (channel.get(id) === 'pending') {
+  if (channel.get(id)?.type === 'pending') {
     channel.set(id, status);
   }
 }
 
-function readStatus(id: string): 'pending' | 'not_found' | 'found' {
+function readStatus(id: string): InternalStatus {
   let channel = sharedGlobalState();
-  let result = channel.get(id) ?? 'pending';
+  let result = channel.get(id) ?? { type: 'pending' };
   channel.delete(id);
   return result;
 }
+
+type InternalStatus = { type: 'pending' } | { type: 'not_found' } | { type: 'found'; filename: string };

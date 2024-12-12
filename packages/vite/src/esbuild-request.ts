@@ -59,8 +59,8 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   }
 
   notFoundResponse(
-    request: core.ModuleRequest<core.Resolution<OnResolveResult, OnResolveResult>>
-  ): core.Resolution<OnResolveResult, OnResolveResult> {
+    request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
+  ): Resolution<OnResolveResult, OnResolveResult> {
     return {
       type: 'not_found',
       err: {
@@ -70,9 +70,9 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   }
 
   virtualResponse(
-    _request: core.ModuleRequest<core.Resolution<OnResolveResult, OnResolveResult>>,
+    _request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>,
     virtual: VirtualResponse
-  ): core.Resolution<OnResolveResult, OnResolveResult> {
+  ): Resolution<OnResolveResult, OnResolveResult> {
     return {
       type: 'found',
       filename: virtual.specifier,
@@ -100,10 +100,8 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
 
     let status = readStatus(request.specifier);
 
-    if (result.errors.length > 0 || status === 'not_found') {
+    if (result.errors.length > 0 || status.type === 'not_found') {
       return { type: 'not_found', err: result };
-    } else if (result.external) {
-      return { type: 'ignored', result };
     } else {
       if (this.phase === 'bundling') {
         // we need to ensure that we don't traverse back into the app while
@@ -113,7 +111,14 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
         // and non-strict handlebars (which resolves
         // components/helpers/modifiers against the app's global pool).
         let pkg = this.packageCache.ownerOfFile(result.path);
-        if (pkg?.root === this.packageCache.appRoot) {
+        if (
+          pkg?.root === this.packageCache.appRoot &&
+          // vite provides node built-in polyfills under a custom namespace and we dont
+          // want to interrupt that. We'd prefer they get bundled in the dep optimizer normally,
+          // rather than getting deferred to the app build (which also works, but means they didn't
+          // get pre-optimized).
+          (result.namespace === 'file' || result.namespace.startsWith('embroider-'))
+        ) {
           let externalizedName = request.specifier;
           if (!packageName(externalizedName)) {
             // the request was a relative path. This won't remain valid once
@@ -129,7 +134,9 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
             externalizedName = externalName(pkg.packageJSON, externalizedName) || externalizedName;
           }
           return {
-            type: 'ignored',
+            type: 'found',
+            filename: externalizedName,
+            virtual: false,
             result: {
               path: externalizedName,
               external: true,
@@ -137,7 +144,23 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
           };
         }
       }
-      return { type: 'found', filename: result.path, result, virtual: false };
+
+      let filename: string;
+      if (status.type === 'found' && result.external) {
+        // when we know that the file was really found, but vite has
+        // externalized it, report the true filename that was found, not the
+        // externalized request path.
+        filename = status.filename;
+      } else {
+        filename = result.path;
+      }
+
+      return {
+        type: 'found',
+        filename,
+        result,
+        virtual: false,
+      };
     }
   }
 }
@@ -152,9 +175,7 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   plugin.
  */
 function sharedGlobalState() {
-  let channel = (globalThis as any).__embroider_vite_resolver_channel__ as
-    | undefined
-    | Map<string, 'pending' | 'found' | 'not_found'>;
+  let channel = (globalThis as any).__embroider_vite_resolver_channel__ as undefined | Map<string, InternalStatus>;
   if (!channel) {
     channel = new Map();
     (globalThis as any).__embroider_vite_resolver_channel__ = channel;
@@ -163,19 +184,21 @@ function sharedGlobalState() {
 }
 
 function requestStatus(id: string): void {
-  sharedGlobalState().set(id, 'pending');
+  sharedGlobalState().set(id, { type: 'pending' });
 }
 
-export function writeStatus(id: string, status: 'found' | 'not_found'): void {
+export function writeStatus(id: string, status: InternalStatus): void {
   let channel = sharedGlobalState();
-  if (channel.get(id) === 'pending') {
+  if (channel.get(id)?.type === 'pending') {
     channel.set(id, status);
   }
 }
 
-function readStatus(id: string): 'pending' | 'not_found' | 'found' {
+function readStatus(id: string): InternalStatus {
   let channel = sharedGlobalState();
-  let result = channel.get(id) ?? 'pending';
+  let result = channel.get(id) ?? { type: 'pending' };
   channel.delete(id);
   return result;
 }
+
+type InternalStatus = { type: 'pending' } | { type: 'not_found' } | { type: 'found'; filename: string };

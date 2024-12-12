@@ -5,14 +5,6 @@ import type { VirtualResponse } from './virtual-content';
 export type Resolution<T = unknown, E = unknown> =
   | { type: 'found'; filename: string; virtual: VirtualResponse | false; result: T }
 
-  // used for requests that are special and don't represent real files that
-  // embroider can possibly do anything custom with.
-  //
-  // the motivating use case for introducing this is Vite's depscan which marks
-  // almost everything as "external" as a way to tell esbuild to stop traversing
-  // once it has been seen the first time.
-  | { type: 'ignored'; result: T }
-
   // the important thing about this Resolution is that embroider should do its
   // fallback behaviors here.
   | { type: 'not_found'; err: E };

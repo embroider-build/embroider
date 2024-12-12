@@ -160,7 +160,6 @@ export class Resolver {
 
     switch (resolution.type) {
       case 'found':
-      case 'ignored':
         return resolution;
       case 'not_found':
         break;
@@ -557,10 +556,6 @@ export class Resolver {
 
       let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
-      if (resolution.type === 'ignored') {
-        return logTransition(`resolving to ignored component`, request, request.resolveTo(resolution));
-      }
-
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
@@ -602,10 +597,7 @@ export class Resolver {
     let helperCandidate = this.resolveHelper(path, inEngine, request);
     let helperMatch = await this.resolve(request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile));
 
-    // for the case of 'ignored' that means that esbuild found this helper in an external
-    // package so it should be considered found in this case and we should not look for a
-    // component with this name
-    if (helperMatch.type === 'found' || helperMatch.type === 'ignored') {
+    if (helperMatch.type === 'found') {
       return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
     }
 

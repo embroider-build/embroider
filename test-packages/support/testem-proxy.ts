@@ -26,7 +26,7 @@ export function testemProxy(targetURL: string) {
       if (url === '/testem.js' || url.startsWith('/testem/')) {
         return next();
       }
-      let m = /^(\/\d+)\/tests\/index.html/.exec(url);
+      let m = /^(\/\d+)\/tests($|.)+/.exec(url);
       if (m) {
         url = url.slice(m[1].length);
       }

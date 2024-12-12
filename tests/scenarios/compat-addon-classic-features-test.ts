@@ -1,5 +1,5 @@
 import { throwOnWarnings } from '@embroider/core';
-import { lstatSync, readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { merge } from 'lodash';
 import QUnit from 'qunit';
@@ -148,11 +148,19 @@ appScenarios
       });
 
       test('virtual scripts are emitted in the build', async function (assert) {
-        let result = await app.execute('pnpm build');
+        let result = await app.execute('pnpm build --mode=production');
         assert.equal(result.exitCode, 0, result.output);
 
-        assert.true(lstatSync(`${app.dir}/dist/@embroider/virtual/vendor.js`).isFile());
-        assert.true(lstatSync(`${app.dir}/dist/@embroider/virtual/test-support.js`).isFile());
+        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/vendor.js`), 'vendor.js');
+        assert.false(existsSync(`${app.dir}/dist/@embroider/virtual/test-support.js`), 'test-support.js');
+
+        result = await app.execute('pnpm build --mode=development');
+        assert.equal(result.exitCode, 0, result.output);
+
+        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/vendor.js`), 'vendor.js');
+        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/test-support.js`), 'test-support.js');
+        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/vendor.css`), 'vendor.css');
+        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/test-support.css`), 'test-support.css');
       });
 
       test('virtual scripts contents are served in dev mode', async function (assert) {

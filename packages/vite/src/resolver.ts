@@ -50,8 +50,6 @@ export function resolver(): Plugin {
         } else {
           return await maybeCaptureNewOptimizedDep(context, resolverLoader.resolver, resolution.result, notViteDeps);
         }
-      case 'ignored':
-        return resolution.result;
       case 'not_found':
         return null;
       default:
@@ -59,9 +57,15 @@ export function resolver(): Plugin {
     }
   }
 
+  let mode = '';
+
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
+
+    configResolved(config) {
+      mode = config.mode;
+    },
 
     configureServer(s) {
       server = s;
@@ -79,6 +83,20 @@ export function resolver(): Plugin {
           }
         }
       });
+      return () => {
+        server.middlewares.use((req, _res, next) => {
+          const base = server.config.base || '/';
+          const originalUrl = req.originalUrl!.slice(base.length - 1);
+          if (originalUrl && originalUrl.length > 1) {
+            if (originalUrl?.match(/^\/tests($|\?)/)) {
+              req.originalUrl = `${base}tests/index.html`;
+              (req as any).url = `${base}tests/index.html`;
+              return next();
+            }
+          }
+          return next();
+        });
+      };
     },
 
     async resolveId(source, importer, options) {
@@ -112,12 +130,30 @@ export function resolver(): Plugin {
       });
       this.emitFile({
         type: 'asset',
-        fileName: '@embroider/virtual/test-support.js',
+        fileName: '@embroider/virtual/vendor.css',
         source: virtualContent(
-          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
+          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-vendor-styles.css'),
           resolverLoader.resolver
         ).src,
       });
+      if (mode !== 'production') {
+        this.emitFile({
+          type: 'asset',
+          fileName: '@embroider/virtual/test-support.js',
+          source: virtualContent(
+            resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
+            resolverLoader.resolver
+          ).src,
+        });
+        this.emitFile({
+          type: 'asset',
+          fileName: '@embroider/virtual/test-support.css',
+          source: virtualContent(
+            resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support-styles.css'),
+            resolverLoader.resolver
+          ).src,
+        });
+      }
     },
   };
 }
@@ -139,7 +175,7 @@ async function observeDepScan(context: PluginContext, source: string, importer: 
     ...options,
     skipSelf: true,
   });
-  writeStatus(source, result ? 'found' : 'not_found');
+  writeStatus(source, result ? { type: 'found', filename: result.id } : { type: 'not_found' });
   return result;
 }
 

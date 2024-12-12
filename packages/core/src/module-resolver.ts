@@ -535,15 +535,6 @@ export class Resolver {
 
       let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
-      // we're seeing ignored here during depscan, which causes us to not
-      // produce a pair component, which means we will produce it later inside
-      // the vite-deps folder and blow up.
-      //
-      // I think we can adjust the layering of our observeDepScan hack so that
-      // it gives correct answers out of vite's defaultResolve, not esbuild's
-      // default resolve. The esbuild one is too high level to help our internal
-      // searching for components.
-
       if (resolution.type === 'found') {
         hbsModule = resolution;
         break;

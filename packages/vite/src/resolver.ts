@@ -86,8 +86,6 @@ export function resolver(): Plugin {
           } else {
             return await maybeCaptureNewOptimizedDep(this, resolverLoader.resolver, resolution.result, notViteDeps);
           }
-        case 'ignored':
-          return resolution.result;
         case 'not_found':
           return null;
         default:
@@ -159,7 +157,7 @@ async function observeDepScan(context: PluginContext, source: string, importer: 
     ...options,
     skipSelf: true,
   });
-  writeStatus(source, result ? 'found' : 'not_found');
+  writeStatus(source, result ? { type: 'found', filename: result.id } : { type: 'not_found' });
   return result;
 }
 

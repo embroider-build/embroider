@@ -142,9 +142,19 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
         }
       }
 
+      let filename: string;
+      if (status.type === 'found' && result.external) {
+        // when we know that the file was really found, but vite has
+        // externalized it, report the true filename that was found, not the
+        // externalized request path.
+        filename = status.filename;
+      } else {
+        filename = result.path;
+      }
+
       return {
         type: 'found',
-        filename: status.type === 'found' ? status.filename : result.path,
+        filename,
         result,
         isVirtual: false,
       };

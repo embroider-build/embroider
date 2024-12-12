@@ -111,7 +111,7 @@ export function resolver(): Plugin {
     },
 
     load(id) {
-      let meta = responseMetas.get(id);
+      let meta = responseMetas.get(normalizePath(id));
       if (meta?.virtual) {
         let { src, watches } = virtualContent(cleanUrl(id), resolverLoader.resolver);
         virtualDeps.set(id, watches);

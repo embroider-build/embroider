@@ -1,6 +1,6 @@
 import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
-import { explicitRelative, extensionsPattern } from '.';
+import { extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
 import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
@@ -90,8 +90,8 @@ export function virtualContent(filename: string, resolver: Resolver): VirtualCon
 }
 
 interface PairedComponentShimParams {
-  relativeHBSModule: string;
-  relativeJSModule: string | null;
+  hbsModule: string;
+  jsModule: string | null;
   debugName: string;
 }
 
@@ -104,7 +104,7 @@ function pairedComponentShim(params: PairedComponentShimParams): VirtualContentR
 
 const pairedComponentShimTemplate = compile(`
 import { setComponentTemplate } from "@ember/component";
-import template from "{{{js-string-escape relativeHBSModule}}}";
+import template from "{{{js-string-escape hbsModule}}}";
 import { deprecate } from "@ember/debug";
 
 
@@ -121,8 +121,8 @@ deprecate("Components with separately resolved templates are deprecated. Migrate
   }
 );
 
-{{#if relativeJSModule}}
-import component from "{{{js-string-escape relativeJSModule}}}";
+{{#if jsModule}}
+import component from "{{{js-string-escape jsModule}}}";
 export default setComponentTemplate(template, component);
 {{else}}
 import templateOnlyComponent from "@ember/component/template-only";
@@ -130,20 +130,18 @@ export default setComponentTemplate(template, templateOnlyComponent(undefined, "
 {{/if}}
 `) as (params: PairedComponentShimParams) => string;
 
-const pairComponentMarker = '-embroider-pair-component';
-const pairComponentPattern = /^(?<hbsModule>.*)__vpc__(?<jsModule>[^\/]*)-embroider-pair-component$/;
+const pairComponentMarker = '/embroider-pair-component/';
+const pairComponentPattern = /\/embroider-pair-component\/(?<hbsModule>[^\/]*)\/__vpc__\/(?<jsModule>[^\/]*)$/;
 
-export function virtualPairComponent(hbsModule: string, jsModule: string | undefined): string {
-  let relativeJSModule = '';
-  if (jsModule) {
-    relativeJSModule = explicitRelative(dirname(hbsModule), jsModule);
-  }
-  return `${hbsModule}__vpc__${encodeURIComponent(relativeJSModule)}${pairComponentMarker}`;
+export function virtualPairComponent(appRoot: string, hbsModule: string, jsModule: string | undefined): string {
+  return `${appRoot}/embroider-pair-component${encodeURIComponent(hbsModule)}/__vpc__${encodeURIComponent(
+    jsModule ?? ''
+  )}`;
 }
 
 function decodeVirtualPairComponent(
   filename: string
-): { relativeHBSModule: string; relativeJSModule: string | null; debugName: string } | null {
+): { hbsModule: string; jsModule: string | null; debugName: string } | null {
   // Performance: avoid paying regex exec cost unless needed
   if (!filename.includes(pairComponentMarker)) {
     return null;
@@ -153,12 +151,10 @@ function decodeVirtualPairComponent(
     return null;
   }
   let { hbsModule, jsModule } = match.groups! as { hbsModule: string; jsModule: string };
-  // target our real hbs module from our virtual module
-  let relativeHBSModule = explicitRelative(dirname(filename), hbsModule);
   return {
-    relativeHBSModule,
-    relativeJSModule: decodeURIComponent(jsModule) || null,
-    debugName: basename(relativeHBSModule).replace(/\.(js|hbs)$/, ''),
+    hbsModule: decodeURIComponent(hbsModule),
+    jsModule: jsModule ? decodeURIComponent(jsModule) : null,
+    debugName: basename(hbsModule).replace(/\.(js|hbs)$/, ''),
   };
 }
 

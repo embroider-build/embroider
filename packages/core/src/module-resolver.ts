@@ -567,7 +567,7 @@ export class Resolver {
         request,
         request.virtualize({
           type: 'component-pair',
-          specifier: virtualPairComponent(hbsModule.filename, jsModule?.filename),
+          specifier: virtualPairComponent(this.options.appRoot, hbsModule.filename, jsModule?.filename),
         })
       );
     } else if (jsModule) {

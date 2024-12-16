@@ -134,7 +134,7 @@ const pairComponentMarker = '/embroider-pair-component/';
 const pairComponentPattern = /\/embroider-pair-component\/(?<hbsModule>[^\/]*)\/__vpc__\/(?<jsModule>[^\/]*)$/;
 
 export function virtualPairComponent(appRoot: string, hbsModule: string, jsModule: string | undefined): string {
-  return `${appRoot}/embroider-pair-component${encodeURIComponent(hbsModule)}/__vpc__${encodeURIComponent(
+  return `${appRoot}/embroider-pair-component/${encodeURIComponent(hbsModule)}/__vpc__/${encodeURIComponent(
     jsModule ?? ''
   )}`;
 }
@@ -154,7 +154,7 @@ function decodeVirtualPairComponent(
   return {
     hbsModule: decodeURIComponent(hbsModule),
     jsModule: jsModule ? decodeURIComponent(jsModule) : null,
-    debugName: basename(hbsModule).replace(/\.(js|hbs)$/, ''),
+    debugName: basename(decodeURIComponent(hbsModule)).replace(/\.(js|hbs)$/, ''),
   };
 }
 

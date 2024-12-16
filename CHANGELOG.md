@@ -1,5 +1,25 @@
 # Embroider Changelog
 
+## Release (2024-12-16)
+
+@embroider/addon-dev 7.1.0 (minor)
+@embroider/compat 3.7.1 (patch)
+@embroider/core 3.4.20 (patch)
+@embroider/macros 1.16.10 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`
+  * [#2200](https://github.com/embroider-build/embroider/pull/2200) Add rollup declarations plugin ([@simonihmig](https://github.com/simonihmig))
+
+#### :house: Internal
+* `@embroider/sample-transforms`, `@embroider/test-fixtures`, `@embroider/test-scenarios`
+  * [#2204](https://github.com/embroider-build/embroider/pull/2204) Fix stable ([@simonihmig](https://github.com/simonihmig))
+* `@embroider/macros`
+  * [#2201](https://github.com/embroider-build/embroider/pull/2201) Fix type error on stable ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2024-11-11)
 
 @embroider/addon-dev 7.0.0 (major)

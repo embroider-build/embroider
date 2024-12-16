@@ -245,7 +245,7 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "${templateFile}";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
@@ -261,7 +261,7 @@ Scenarios.fromProject(() => new Project())
                 },
               }
             );
-            import component from "${componentFile}";
+            import component from "${esc(componentFile)}";
             export default setComponentTemplate(template, component);
           `);
 
@@ -285,7 +285,7 @@ Scenarios.fromProject(() => new Project())
           let templateFile = normalizePath(`${app.dir}/templates/components/hello-world.hbs`);
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "${templateFile}";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
@@ -400,7 +400,7 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "${templateFile}";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -440,7 +440,7 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "${templateFile}";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -482,7 +482,7 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "${templateFile}";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -498,7 +498,7 @@ Scenarios.fromProject(() => new Project())
                 },
               }
             );
-            import component from "${componentFile}";
+            import component from "${esc(componentFile)}";
             export default setComponentTemplate(template, component);
           `);
 
@@ -525,7 +525,7 @@ Scenarios.fromProject(() => new Project())
 
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "${templateFile}";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -541,7 +541,7 @@ Scenarios.fromProject(() => new Project())
                 },
               }
             );
-            import component from "${componentFile}";
+            import component from "${esc(componentFile)}";
             export default setComponentTemplate(template, component);
           `);
           pairModule.resolves(templateFile).to('./pods/components/hello-world/template.hbs');
@@ -1003,8 +1003,12 @@ Scenarios.fromProject(() => new Project())
 
 function normalizePath(s: string): string {
   if (process.platform === 'win32') {
-    return s.replace('/', '\\');
+    return s.replace(/\//g, '\\');
   } else {
     return s;
   }
+}
+
+function esc(s: string): string {
+  return s.replace(/\\/g, '\\\\');
 }

@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "3.4.19",
+  "version": "4.0.0",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {
@@ -13,7 +13,9 @@
   "main": "src/index.js",
   "typesVersions": {
     "*": {
-      "virtual": ["types/virtual"]
+      "virtual": [
+        "types/virtual"
+      ]
     }
   },
   "files": [

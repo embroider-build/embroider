@@ -4,7 +4,7 @@ const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = c
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
-import { resolve, join } from 'path';
+import { join, resolve } from 'path';
 import { writeStatus } from './esbuild-request.js';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
@@ -55,6 +55,30 @@ export function resolver(): Plugin {
       default:
         throw assertNever(resolution);
     }
+  }
+
+  async function ensureResolve(context: PluginContext, specifier: string): Promise<string> {
+    let result = await resolveId(
+      context,
+      specifier,
+      resolve(resolverLoader.resolver.options.appRoot, 'package.json'),
+      {}
+    );
+    if (!result) {
+      throw new Error(`bug: expected to resolve ${specifier}`);
+    }
+    if (typeof result === 'string') {
+      return result;
+    }
+    return result.id;
+  }
+
+  async function emitVirtualFile(context: PluginContext, fileName: string): Promise<void> {
+    context.emitFile({
+      type: 'asset',
+      fileName,
+      source: virtualContent(await ensureResolve(context, fileName), resolverLoader.resolver).src,
+    });
   }
 
   let mode = '';
@@ -119,40 +143,13 @@ export function resolver(): Plugin {
         return src;
       }
     },
-    buildEnd() {
-      this.emitFile({
-        type: 'asset',
-        fileName: '@embroider/virtual/vendor.js',
-        source: virtualContent(
-          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-vendor.js'),
-          resolverLoader.resolver
-        ).src,
-      });
-      this.emitFile({
-        type: 'asset',
-        fileName: '@embroider/virtual/vendor.css',
-        source: virtualContent(
-          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-vendor-styles.css'),
-          resolverLoader.resolver
-        ).src,
-      });
+    async buildEnd() {
+      emitVirtualFile(this, '@embroider/virtual/vendor.js');
+      emitVirtualFile(this, '@embroider/virtual/vendor.css');
+
       if (mode !== 'production') {
-        this.emitFile({
-          type: 'asset',
-          fileName: '@embroider/virtual/test-support.js',
-          source: virtualContent(
-            resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
-            resolverLoader.resolver
-          ).src,
-        });
-        this.emitFile({
-          type: 'asset',
-          fileName: '@embroider/virtual/test-support.css',
-          source: virtualContent(
-            resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support-styles.css'),
-            resolverLoader.resolver
-          ).src,
-        });
+        emitVirtualFile(this, '@embroider/virtual/test-support.js');
+        emitVirtualFile(this, '@embroider/virtual/test-support.css');
       }
     },
   };

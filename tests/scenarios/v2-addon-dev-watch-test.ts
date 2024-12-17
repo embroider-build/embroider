@@ -184,7 +184,8 @@ Scenarios.fromProject(() => baseV2Addon())
             );
 
             await fs.rm(srcPathOther);
-            await watcher?.nextBuild();
+            // we expect 2 builds because appReexports plugin modifies package.json triggering a new build
+            await watcher?.nextBuild(2);
             assert.strictEqual(
               existsSync(distAppReExportPathOther),
               false,
@@ -194,7 +195,8 @@ Scenarios.fromProject(() => baseV2Addon())
 
           test('create a component in src should create it in dist', async function (assert) {
             await fs.writeFile(srcPathOther, origContent);
-            await watcher?.nextBuild();
+            // we expect 2 builds because appReexports plugin modifies package.json triggering a new build
+            await watcher?.nextBuild(2);
             assert.strictEqual(
               existsSync(distAppReExportPathOther),
               true,
@@ -206,16 +208,9 @@ Scenarios.fromProject(() => baseV2Addon())
             await becomesModified({
               filePath: distPathDemoComp,
               assert,
-              // Update a component
               fn: async () => {
                 let someContent = await fs.readFile(demoHbs);
-
-                // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
-                // to guess for how long it'll take for the file system to update our file.
-                //
-                // the `stat` is measured in `ms`, so it's still pretty fast
                 await fs.writeFile(demoHbs, someContent + `\n`);
-                await aBit(10);
                 await watcher?.nextBuild();
               },
             });
@@ -225,36 +220,23 @@ Scenarios.fromProject(() => baseV2Addon())
             await becomesModified({
               filePath: distPathDemoComp,
               assert,
-              // Update a component
               fn: async () => {
-                // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
-                // to guess for how long it'll take for the file system to update our file.
-                //
-                // the `stat` is measured in `ms`, so it's still pretty fast
-                await aBit(10);
                 await fs.rm(demoHbs);
                 await watcher?.nextBuild();
               },
             });
           });
 
-          test('updating hbs content should not update unrelated files', async function (assert) {
+          test('creating hbs content should not update unrelated files', async function (assert) {
             await fs.writeFile(demoHbs, demoContent);
             await watcher?.nextBuild();
 
             await isNotModified({
               filePath: distPath,
               assert,
-              // Update a component
               fn: async () => {
                 let someContent = await fs.readFile(demoHbs);
-
-                // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
-                // to guess for how long it'll take for the file system to update our file.
-                //
-                // the `stat` is measured in `ms`, so it's still pretty fast
                 await fs.writeFile(demoHbs, someContent + `\n\n`);
-                await aBit(10);
                 await watcher?.nextBuild();
               },
             });
@@ -265,16 +247,9 @@ Scenarios.fromProject(() => baseV2Addon())
             await isNotModified({
               filePath: distPath,
               assert,
-              // Update a component
               fn: async () => {
                 let someContent = await fs.readFile(demoHbs);
-
-                // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
-                // to guess for how long it'll take for the file system to update our file.
-                //
-                // the `stat` is measured in `ms`, so it's still pretty fast
                 await fs.writeFile(demoHbs, someContent + `\n`);
-                await aBit(10);
                 await watcher?.nextBuild();
               },
             });
@@ -284,24 +259,15 @@ Scenarios.fromProject(() => baseV2Addon())
             await becomesModified({
               filePath: distPathOther,
               assert,
-              // Update a component
               fn: async () => {
-                await aBit(100);
                 let someContent = await fs.readFile(srcPathOther);
-
-                // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
-                // to guess for how long it'll take for the file system to update our file.
-                //
-                // the `stat` is measured in `ms`, so it's still pretty fast
                 await fs.writeFile(srcPathOther, someContent + `test\n`);
-                await aBit(10);
                 await watcher?.nextBuild();
               },
             });
           });
 
           test('deleting demo.js should make demo a template only component', async function (assert) {
-            await aBit(100);
             await fs.rm(demoJs);
             await watcher?.nextBuild();
             let distPathDemoCompContent = await fs.readFile(distPathDemoComp);
@@ -309,7 +275,6 @@ Scenarios.fromProject(() => baseV2Addon())
           });
 
           test('creating demo.js should make demo a template colocated component', async function (assert) {
-            await aBit(100);
             void fs.writeFile(demoJs, demoJsContent);
             await watcher?.nextBuild();
             let distPathDemoCompContent = await fs.readFile(distPathDemoComp);
@@ -332,11 +297,6 @@ Scenarios.fromProject(() => baseV2Addon())
             fn: async () => {
               let someContent = await fs.readFile(someFile);
 
-              // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
-              // to guess for how long it'll take for the file system to update our file.
-              //
-              // the `stat` is measured in `ms`, so it's still pretty fast
-              await aBit(10);
               await fs.writeFile(someFile, someContent + `\n`);
               await watcher?.nextBuild();
             },
@@ -354,16 +314,11 @@ Scenarios.fromProject(() => baseV2Addon())
             assert,
             // Remove a component
             fn: async () => {
-              // generally it's bad to introduce time dependencies to a test, but we need to wait long enough
-              // to guess for how long it'll take for the file system to update our file.
-              //
-              // the `stat` is measured in `ms`, so it's still pretty fast
-              await aBit(10);
-              await Promise.all([
-                fs.rm(path.join(addon.dir, 'src/components/demo.js')),
-                fs.rm(path.join(addon.dir, 'src/components/demo.hbs')),
-              ]);
+              await fs.rm(path.join(addon.dir, 'src/components/demo.js'));
               await watcher?.nextBuild();
+              await fs.rm(path.join(addon.dir, 'src/components/demo.hbs'));
+              // we expect 2 builds because appReexports plugin modifies package.json triggering a new build
+              await watcher?.nextBuild(2);
             },
           });
         });
@@ -386,7 +341,3 @@ Scenarios.fromProject(() => baseV2Addon())
       });
     });
   });
-
-function aBit(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}

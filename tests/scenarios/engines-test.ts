@@ -81,9 +81,7 @@ let engineScenarios = appScenarios.map('engines', project => {
 });
 
 engineScenarios
-  .skip('lts_3_28-engines') // this skip should be removed before https://github.com/embroider-build/embroider/pull/1435 is merged
-  .skip('lts_4_4-engines') // this skip should be removed before https://github.com/embroider-build/embroider/pull/1435 is merged
-  .skip('release-engines') // this skip should be removed before https://github.com/embroider-build/embroider/pull/1435 is merged
+  .skip()
   .map('without-fastboot', () => {})
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -137,9 +135,7 @@ engineScenarios
   });
 
 engineScenarios
-  .skip('lts_3_28-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
-  .skip('lts_4_4-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
-  .skip('release-engines') // fails due to https://github.com/emberjs/ember.js/pull/20461
+  .skip()
   .map('with-fastboot', app => {
     app.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     app.linkDependency('fastboot', { baseDir: __dirname });

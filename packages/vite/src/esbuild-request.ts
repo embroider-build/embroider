@@ -3,11 +3,14 @@ const { cleanUrl, packageName } = core;
 import type { ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
 import { dirname } from 'path';
 
-import type { PackageCache as _PackageCache, Resolution, ModuleRequest, RequestAdapter } from '@embroider/core';
+import type {
+  PackageCachePublicAPI as PackageCache,
+  Resolution,
+  ModuleRequest,
+  RequestAdapter,
+  VirtualResponse,
+} from '@embroider/core';
 import { externalName } from '@embroider/reverse-exports';
-
-type PublicAPI<T> = { [K in keyof T]: T[K] };
-type PackageCache = PublicAPI<_PackageCache>;
 
 export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolveResult, OnResolveResult>> {
   static create({
@@ -56,7 +59,7 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   }
 
   notFoundResponse(
-    request: core.ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
+    request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
   ): Resolution<OnResolveResult, OnResolveResult> {
     return {
       type: 'not_found',
@@ -67,14 +70,14 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
   }
 
   virtualResponse(
-    _request: core.ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>,
-    virtualFileName: string
+    _request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>,
+    virtual: VirtualResponse
   ): Resolution<OnResolveResult, OnResolveResult> {
     return {
       type: 'found',
-      filename: virtualFileName,
-      result: { path: virtualFileName, namespace: 'embroider-virtual' },
-      isVirtual: true,
+      filename: virtual.specifier,
+      result: { path: virtual.specifier, namespace: 'embroider-virtual' },
+      virtual,
     };
   }
 
@@ -133,7 +136,7 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
           return {
             type: 'found',
             filename: externalizedName,
-            isVirtual: false,
+            virtual: false,
             result: {
               path: externalizedName,
               external: true,
@@ -156,7 +159,7 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
         type: 'found',
         filename,
         result,
-        isVirtual: false,
+        virtual: false,
       };
     }
   }

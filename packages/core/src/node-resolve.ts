@@ -1,4 +1,4 @@
-import { virtualContent } from './virtual-content';
+import { virtualContent, type VirtualResponse } from './virtual-content';
 import { dirname, resolve, isAbsolute } from 'path';
 import { explicitRelative } from '@embroider/shared-internals';
 import assertNever from 'assert-never';
@@ -39,16 +39,16 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
 
   virtualResponse(
     _request: ModuleRequest<Resolution<NodeResolution, Error>>,
-    virtualFileName: string
+    virtual: VirtualResponse
   ): Resolution<NodeResolution, Error> {
     return {
       type: 'found',
-      filename: virtualFileName,
-      isVirtual: true,
+      filename: virtual.specifier,
+      virtual,
       result: {
-        type: 'virtual' as 'virtual',
-        content: virtualContent(virtualFileName, this.resolver).src,
-        filename: virtualFileName,
+        type: 'virtual' as const,
+        content: virtualContent(virtual.specifier, this.resolver).src,
+        filename: virtual.specifier,
       },
     };
   }
@@ -92,7 +92,7 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
 
         continue;
       }
-      return { type: 'found', filename, result: { type: 'real' as 'real', filename }, isVirtual: false };
+      return { type: 'found', filename, result: { type: 'real' as 'real', filename }, virtual: false };
     }
 
     return { type: 'not_found', err: initialError };

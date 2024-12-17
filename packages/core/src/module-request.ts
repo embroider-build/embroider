@@ -1,7 +1,9 @@
+import type { VirtualResponse } from './virtual-content';
+
 // This is generic because different build systems have different ways of
 // representing a found module, and we just pass those values through.
 export type Resolution<T = unknown, E = unknown> =
-  | { type: 'found'; filename: string; isVirtual: boolean; result: T }
+  | { type: 'found'; filename: string; virtual: VirtualResponse | false; result: T }
 
   // the important thing about this Resolution is that embroider should do its
   // fallback behaviors here.
@@ -19,7 +21,7 @@ export interface RequestAdapter<Res extends Resolution> {
   // plugins are a pain in the butt. Integrators are encouraged to use the plain
   // Response-returning variants in all sane build environments.
   notFoundResponse(request: ModuleRequest<Res>): Res | (() => Promise<Res>);
-  virtualResponse(request: ModuleRequest<Res>, virtualFileName: string): Res | (() => Promise<Res>);
+  virtualResponse(request: ModuleRequest<Res>, response: VirtualResponse): Res | (() => Promise<Res>);
 }
 
 export interface InitialRequestState {
@@ -90,8 +92,8 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
     return result;
   }
 
-  virtualize(virtualFileName: string): this {
-    return this.resolveTo(this.#adapter.virtualResponse(this, virtualFileName));
+  virtualize(virtualResponse: VirtualResponse): this {
+    return this.resolveTo(this.#adapter.virtualResponse(this, virtualResponse));
   }
 
   withMeta(meta: Record<string, any> | undefined): this {

@@ -1,5 +1,5 @@
 import { dirname, resolve } from 'path';
-import { ModuleRequest, type RequestAdapter, type Resolution } from '@embroider/core';
+import { ModuleRequest, type VirtualResponse, type RequestAdapter, type Resolution } from '@embroider/core';
 import { Resolver as EmbroiderResolver, ResolverOptions as EmbroiderResolverOptions } from '@embroider/core';
 import type { Compiler, Module, ResolveData } from 'webpack';
 import assertNever from 'assert-never';
@@ -213,36 +213,39 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
 
   virtualResponse(
     request: ModuleRequest<WebpackResolution>,
-    virtualFileName: string
+    virtual: VirtualResponse
   ): () => Promise<WebpackResolution> {
     return () => {
-      return this._resolve(request, virtualFileName);
+      return this._resolve(request, virtual);
     };
   }
 
   async resolve(request: ModuleRequest<WebpackResolution>): Promise<WebpackResolution> {
-    return this._resolve(request, undefined);
+    return this._resolve(request, false);
   }
 
   async _resolve(
     request: ModuleRequest<WebpackResolution>,
-    virtualFileName: string | undefined
+    virtualResponse: VirtualResponse | false
   ): Promise<WebpackResolution> {
     return await new Promise(resolve =>
-      this.resolveFunction(this.toWebpackResolveData(request, virtualFileName), err => {
-        if (err) {
-          // unfortunately webpack doesn't let us distinguish between Not Found
-          // and other unexpected exceptions here.
-          resolve({ type: 'not_found', err });
-        } else {
-          resolve({
-            type: 'found',
-            result: this.originalState.createData,
-            isVirtual: Boolean(virtualFileName),
-            filename: this.originalState.createData.resource!,
-          });
+      this.resolveFunction(
+        this.toWebpackResolveData(request, virtualResponse ? virtualResponse.specifier : request.specifier),
+        err => {
+          if (err) {
+            // unfortunately webpack doesn't let us distinguish between Not Found
+            // and other unexpected exceptions here.
+            resolve({ type: 'not_found', err });
+          } else {
+            resolve({
+              type: 'found',
+              result: this.originalState.createData,
+              virtual: virtualResponse,
+              filename: this.originalState.createData.resource!,
+            });
+          }
         }
-      })
+      )
     );
   }
 }

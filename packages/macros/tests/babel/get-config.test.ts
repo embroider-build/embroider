@@ -146,6 +146,15 @@ describe(`getConfig`, function () {
           expect(code).toMatch(/doSomething\(undefined\)/);
         });
 
+        buildTimeTest(`does not collapse nullish coalescing for non embroider macros, nullish case`, () => {
+          let code = transform(`
+            const aKnownValue = {};
+            aKnownValue.foo = true;
+            result = aKnownValue?.foo;
+          `);
+          expect(code).toMatch(`result = aKnownValue?.foo`);
+        });
+
         runTimeTest(`runtime getConfig is still present in runtime mode when using optional chaining`, () => {
           let code = transform(`
             import { getConfig } from '@embroider/macros';

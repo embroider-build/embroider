@@ -135,7 +135,7 @@ export default function main(context: typeof Babel): unknown {
             let r = t.identifier('require');
             state.generatedRequires.add(r);
             path.replaceWith(
-              t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
+              t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2.js'), 'default', 'esc'), [
                 t.callExpression(r, path.node.arguments),
               ])
             );

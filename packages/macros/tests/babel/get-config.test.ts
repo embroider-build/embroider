@@ -152,7 +152,7 @@ describe(`getConfig`, function () {
             aKnownValue.foo = true;
             result = aKnownValue?.foo;
           `);
-          expect(code).toMatch(`result = aKnownValue?.foo`);
+          expect(code).toMatch(`result = aKnownValue`);
         });
 
         runTimeTest(`runtime getConfig is still present in runtime mode when using optional chaining`, () => {

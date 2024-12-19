@@ -3,15 +3,22 @@ import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { readFileSync } from 'fs';
 import { sortBy } from 'lodash';
 import resolve from 'resolve';
+import { resolve as pathResolve } from 'path';
 import type { Engine } from './app-files';
 import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
 
-export function decodeTestSupportStyles(filename: string): boolean {
-  return filename.endsWith('-embroider-test-support-styles.css');
+export interface TestSupportStylesResponse {
+  type: 'test-support-css';
+  specifier: string;
 }
 
-export function renderTestSupportStyles(filename: string, resolver: Resolver): VirtualContentResult {
+export function testSupportStyles(pkg: Package): TestSupportStylesResponse {
+  return { type: 'test-support-css', specifier: pathResolve(pkg.root, '-embroider-test-support-styles.css') };
+}
+
+export function renderTestSupportStyles(response: TestSupportStylesResponse, resolver: Resolver): VirtualContentResult {
+  const filename = response.specifier;
   const owner = resolver.packageCache.ownerOfFile(filename);
   if (!owner) {
     throw new Error(`Failed to find a valid owner for ${filename}`);

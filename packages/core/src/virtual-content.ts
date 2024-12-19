@@ -2,8 +2,8 @@ import { dirname, basename, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { extensionsPattern } from '.';
 import { compile } from './js-handlebars';
-import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
-import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
+import { renderImplicitTestScripts } from './virtual-test-support';
+import { renderTestSupportStyles } from './virtual-test-support-styles';
 import { renderVendor, type VirtualVendorResponse } from './virtual-vendor';
 import { renderVendorStyles, type VirtualVendorStylesResponse } from './virtual-vendor-styles';
 
@@ -46,6 +46,10 @@ export function virtualContent(response: VirtualResponse, resolver: Resolver): V
       return renderVendor(response, resolver);
     case 'vendor-css':
       return renderVendorStyles(response, resolver);
+    case 'test-support-css':
+      return renderTestSupportStyles(response, resolver);
+    case 'test-support-js':
+      return renderImplicitTestScripts(response, resolver);
   }
 
   let filename = response.specifier;
@@ -68,16 +72,6 @@ export function virtualContent(response: VirtualResponse, resolver: Resolver): V
   let im = decodeImplicitModules(filename);
   if (im) {
     return renderImplicitModules(im, resolver);
-  }
-
-  let isImplicitTestScripts = decodeImplicitTestScripts(filename);
-  if (isImplicitTestScripts) {
-    return renderImplicitTestScripts(filename, resolver);
-  }
-
-  let isTestSupportStyles = decodeTestSupportStyles(filename);
-  if (isTestSupportStyles) {
-    return renderTestSupportStyles(filename, resolver);
   }
 
   throw new Error(`not an @embroider/core virtual file: ${filename}`);

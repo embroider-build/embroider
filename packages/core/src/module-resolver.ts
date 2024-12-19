@@ -25,6 +25,8 @@ import type { ModuleRequest, Resolution } from './module-request';
 import { virtualEntrypoint } from './virtual-entrypoint';
 import { virtualVendor } from './virtual-vendor';
 import { virtualVendorStyles } from './virtual-vendor-styles';
+import { testSupportStyles } from './virtual-test-support-styles';
+import { testSupport } from './virtual-test-support';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -414,11 +416,7 @@ export class Resolver {
       );
     }
 
-    return logTransition(
-      'test-support',
-      request,
-      request.virtualize({ type: 'test-support-js', specifier: resolve(pkg.root, '-embroider-test-support.js') })
-    );
+    return logTransition('test-support', request, request.virtualize(testSupport(pkg)));
   }
 
   private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
@@ -433,14 +431,7 @@ export class Resolver {
       );
     }
 
-    return logTransition(
-      'test-support-styles',
-      request,
-      request.virtualize({
-        type: 'test-support-css',
-        specifier: resolve(pkg.root, '-embroider-test-support-styles.css'),
-      })
-    );
+    return logTransition('test-support-styles', request, request.virtualize(testSupportStyles(pkg)));
   }
 
   private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {

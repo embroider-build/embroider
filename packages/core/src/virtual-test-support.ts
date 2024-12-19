@@ -2,15 +2,22 @@ import type { Package } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { readFileSync } from 'fs';
 import resolve from 'resolve';
+import { resolve as pathResolve } from 'path';
 import type { Engine } from './app-files';
 import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
 
-export function decodeImplicitTestScripts(filename: string): boolean {
-  return filename.endsWith('-embroider-test-support.js');
+export interface TestSupportResponse {
+  type: 'test-support-js';
+  specifier: string;
 }
 
-export function renderImplicitTestScripts(filename: string, resolver: Resolver): VirtualContentResult {
+export function testSupport(pkg: Package): TestSupportResponse {
+  return { type: 'test-support-js', specifier: pathResolve(pkg.root, '-embroider-test-support.js') };
+}
+
+export function renderImplicitTestScripts(response: TestSupportResponse, resolver: Resolver): VirtualContentResult {
+  const filename = response.specifier;
   const owner = resolver.packageCache.ownerOfFile(filename);
   if (!owner) {
     throw new Error(`Failed to find a valid owner for ${filename}`);

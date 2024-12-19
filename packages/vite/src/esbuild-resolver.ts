@@ -1,6 +1,6 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
 import { transformAsync } from '@babel/core';
-import core, { ModuleRequest } from '@embroider/core';
+import core, { ModuleRequest, type VirtualResponse } from '@embroider/core';
 const { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } = core;
 import fs from 'fs-extra';
 const { readFileSync } = fs;
@@ -25,12 +25,22 @@ export function esBuildResolver(): EsBuildPlugin {
     return result.code!;
   }
 
-  async function onLoad({ path, namespace }: { path: string; namespace: string }): Promise<OnLoadResult> {
+  async function onLoad({
+    path,
+    namespace,
+    pluginData,
+  }: {
+    path: string;
+    namespace: string;
+    pluginData?: { virtual: VirtualResponse };
+  }): Promise<OnLoadResult> {
     let src: string;
     if (namespace === 'embroider-template-only-component') {
       src = templateOnlyComponent;
     } else if (namespace === 'embroider-virtual') {
-      src = virtualContent(path, resolverLoader.resolver).src;
+      // castin because response in our namespace are supposed to always have
+      // this pluginData.
+      src = virtualContent(pluginData!.virtual, resolverLoader.resolver).src;
     } else {
       src = readFileSync(path, 'utf8');
     }

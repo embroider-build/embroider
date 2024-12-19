@@ -3,7 +3,7 @@ import { compile } from './js-handlebars';
 import type { Resolver } from './module-resolver';
 import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
-import { join, resolve } from 'path';
+import { join, resolve, dirname } from 'path';
 import { extensionsPattern, type PackageCachePublicAPI, type Package } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
@@ -14,20 +14,21 @@ import { type ModuleRequest } from './module-request';
 import { exports as resolveExports } from 'resolve.exports';
 import { type VirtualResponse } from './virtual-content';
 
-const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
+export interface EntrypointResponse {
+  type: 'entrypoint';
+  fromDir: string;
+}
 
 export function virtualEntrypoint(
   request: ModuleRequest,
   packageCache: PackageCachePublicAPI
 ): VirtualResponse | undefined {
-  //TODO move the extra forwardslash handling out into the vite plugin
-  const candidates = [
-    '@embroider/virtual/compat-modules',
-    '/@embroider/virtual/compat-modules',
-    './@embroider/virtual/compat-modules',
-  ];
+  const compatModulesSpecifier = '@embroider/virtual/compat-modules';
 
-  if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
+  let isCompatModules =
+    request.specifier === compatModulesSpecifier || request.specifier.startsWith(compatModulesSpecifier + '/');
+
+  if (!isCompatModules) {
     return undefined;
   }
 
@@ -55,23 +56,12 @@ export function virtualEntrypoint(
     browser: true,
     conditions: ['default', 'imports'],
   });
+  let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
   return {
     type: 'entrypoint',
     specifier: resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'),
+    fromDir: dirname(specifier),
   };
-}
-
-export function decodeEntrypoint(filename: string): { fromDir: string } | undefined {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes('-embroider-entrypoint')) {
-    return;
-  }
-  let m = entrypointPattern.exec(filename);
-  if (m) {
-    return {
-      fromDir: m.groups!.filename,
-    };
-  }
 }
 
 export function staticAppPathsPattern(staticAppPaths: string[] | undefined): RegExp | undefined {
@@ -84,7 +74,6 @@ export function renderEntrypoint(
   resolver: Resolver,
   { fromDir }: { fromDir: string }
 ): { src: string; watches: string[] } {
-  // this is new
   const owner = resolver.packageCache.ownerOfFile(fromDir);
 
   let eagerModules: string[] = [];

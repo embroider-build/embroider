@@ -7,7 +7,7 @@ import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test
 import { decodeVirtualVendor, renderVendor } from './virtual-vendor';
 import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
 
-import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
+import { type EntrypointResponse, renderEntrypoint } from './virtual-entrypoint';
 import { decodeRouteEntrypoint, renderRouteEntrypoint } from './virtual-route-entrypoint';
 
 export type VirtualResponse = { specifier: string } & (
@@ -20,9 +20,7 @@ export type VirtualResponse = { specifier: string } & (
   | {
       type: 'implicit-test-modules';
     }
-  | {
-      type: 'entrypoint';
-    }
+  | EntrypointResponse
   | { type: 'route-entrypoint' }
   | { type: 'test-support-js' }
   | { type: 'test-support-css' }
@@ -41,11 +39,12 @@ export interface VirtualContentResult {
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
 export function virtualContent(response: VirtualResponse, resolver: Resolver): VirtualContentResult {
-  let filename = response.specifier;
-  let entrypoint = decodeEntrypoint(filename);
-  if (entrypoint) {
-    return renderEntrypoint(resolver, entrypoint);
+  switch (response.type) {
+    case 'entrypoint':
+      return renderEntrypoint(resolver, response);
   }
+
+  let filename = response.specifier;
 
   let routeEntrypoint = decodeRouteEntrypoint(filename);
   if (routeEntrypoint) {

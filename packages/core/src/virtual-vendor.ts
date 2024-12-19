@@ -1,21 +1,26 @@
 import { type Package, locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { lstatSync, readFileSync, readJSONSync } from 'fs-extra';
-import { join } from 'path';
+import { join, resolve as pathResolve } from 'path';
 import resolve from 'resolve';
 import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
 
-export function decodeVirtualVendor(filename: string): boolean {
-  return filename.endsWith('-embroider-vendor.js');
+export interface VirtualVendorResponse {
+  type: 'vendor-js';
+  specifier: string;
 }
 
-export function renderVendor(filename: string, resolver: Resolver): VirtualContentResult {
-  const owner = resolver.packageCache.ownerOfFile(filename);
+export function virtualVendor(pkg: Package): VirtualVendorResponse {
+  return { type: 'vendor-js', specifier: pathResolve(pkg.root, '-embroider-vendor.js') };
+}
+
+export function renderVendor(response: VirtualVendorResponse, resolver: Resolver): VirtualContentResult {
+  const owner = resolver.packageCache.ownerOfFile(response.specifier);
   if (!owner) {
-    throw new Error(`Failed to find a valid owner for ${filename}`);
+    throw new Error(`Failed to find a valid owner for ${response.specifier}`);
   }
-  return { src: getVendor(owner, resolver, filename), watches: [] };
+  return { src: getVendor(owner, resolver, response.specifier), watches: [] };
 }
 
 function getVendor(owner: Package, resolver: Resolver, filename: string): string {

@@ -4,8 +4,8 @@ import { extensionsPattern } from '.';
 import { compile } from './js-handlebars';
 import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
 import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
-import { decodeVirtualVendor, renderVendor } from './virtual-vendor';
-import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
+import { renderVendor, type VirtualVendorResponse } from './virtual-vendor';
+import { renderVendorStyles, type VirtualVendorStylesResponse } from './virtual-vendor-styles';
 
 import { type EntrypointResponse, renderEntrypoint } from './virtual-entrypoint';
 import { decodeRouteEntrypoint, renderRouteEntrypoint } from './virtual-route-entrypoint';
@@ -24,8 +24,8 @@ export type VirtualResponse = { specifier: string } & (
   | { type: 'route-entrypoint' }
   | { type: 'test-support-js' }
   | { type: 'test-support-css' }
-  | { type: 'vendor-js' }
-  | { type: 'vendor-css' }
+  | VirtualVendorResponse
+  | VirtualVendorStylesResponse
   | { type: 'component-pair' }
 );
 
@@ -42,6 +42,10 @@ export function virtualContent(response: VirtualResponse, resolver: Resolver): V
   switch (response.type) {
     case 'entrypoint':
       return renderEntrypoint(resolver, response);
+    case 'vendor-js':
+      return renderVendor(response, resolver);
+    case 'vendor-css':
+      return renderVendorStyles(response, resolver);
   }
 
   let filename = response.specifier;
@@ -66,19 +70,9 @@ export function virtualContent(response: VirtualResponse, resolver: Resolver): V
     return renderImplicitModules(im, resolver);
   }
 
-  let isVendor = decodeVirtualVendor(filename);
-  if (isVendor) {
-    return renderVendor(filename, resolver);
-  }
-
   let isImplicitTestScripts = decodeImplicitTestScripts(filename);
   if (isImplicitTestScripts) {
     return renderImplicitTestScripts(filename, resolver);
-  }
-
-  let isVendorStyles = decodeVirtualVendorStyles(filename);
-  if (isVendorStyles) {
-    return renderVendorStyles(filename, resolver);
   }
 
   let isTestSupportStyles = decodeTestSupportStyles(filename);

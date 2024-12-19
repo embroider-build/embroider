@@ -23,6 +23,8 @@ import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import type { ModuleRequest, Resolution } from './module-request';
 import { virtualEntrypoint } from './virtual-entrypoint';
+import { virtualVendor } from './virtual-vendor';
+import { virtualVendorStyles } from './virtual-vendor-styles';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -482,11 +484,7 @@ export class Resolver {
       );
     }
 
-    return logTransition(
-      'vendor-styles',
-      request,
-      request.virtualize({ type: 'vendor-css', specifier: resolve(pkg.root, '-embroider-vendor-styles.css') })
-    );
+    return logTransition('vendor-styles', request, request.virtualize(virtualVendorStyles(pkg)));
   }
 
   private resolveHelper<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
@@ -948,11 +946,7 @@ export class Resolver {
       );
     }
 
-    return logTransition(
-      'vendor',
-      request,
-      request.virtualize({ type: 'vendor-js', specifier: resolve(pkg.root, '-embroider-vendor.js') })
-    );
+    return logTransition('vendor', request, request.virtualize(virtualVendor(pkg)));
   }
 
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {

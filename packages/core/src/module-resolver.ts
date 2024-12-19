@@ -401,14 +401,7 @@ export class Resolver {
   }
 
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/test-support.js',
-      '/@embroider/virtual/test-support.js',
-      './@embroider/virtual/test-support.js',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/test-support.js') {
       return request;
     }
 
@@ -427,14 +420,7 @@ export class Resolver {
   }
 
   private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/test-support.css',
-      '/@embroider/virtual/test-support.css',
-      './@embroider/virtual/test-support.css',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/test-support.css') {
       return request;
     }
 
@@ -485,14 +471,7 @@ export class Resolver {
   }
 
   private handleVendorStyles<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/vendor.css',
-      '/@embroider/virtual/vendor.css',
-      './@embroider/virtual/vendor.css',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/vendor.css') {
       return request;
     }
 
@@ -958,14 +937,7 @@ export class Resolver {
   }
 
   private handleVendor<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/vendor.js',
-      '/@embroider/virtual/vendor.js',
-      './@embroider/virtual/vendor.js',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/vendor.js') {
       return request;
     }
 

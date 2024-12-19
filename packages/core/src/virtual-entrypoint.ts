@@ -23,14 +23,12 @@ export function virtualEntrypoint(
   request: ModuleRequest,
   packageCache: PackageCachePublicAPI
 ): VirtualResponse | undefined {
-  //TODO move the extra forwardslash handling out into the vite plugin
-  const candidates = [
-    '@embroider/virtual/compat-modules',
-    '/@embroider/virtual/compat-modules',
-    './@embroider/virtual/compat-modules',
-  ];
+  const compatModulesSpecifier = '@embroider/virtual/compat-modules';
 
-  if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
+  let isCompatModules =
+    request.specifier === compatModulesSpecifier || request.specifier.startsWith(compatModulesSpecifier + '/');
+
+  if (!isCompatModules) {
     return undefined;
   }
 

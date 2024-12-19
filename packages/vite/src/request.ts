@@ -30,6 +30,12 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
       let fromFile = cleanUrl(importer);
       let importerQueryParams = getUrlQueryParams(importer);
 
+      if (source.startsWith('/@embroider/virtual/')) {
+        // when our virtual paths are used in HTML they come into here with a /
+        // prefix. We still want them to resolve like packages.
+        source = source.slice(1);
+      }
+
       // strip query params off the source but keep track of them
       // we use regexp-based methods over a URL object because the
       // source can be a relative path.

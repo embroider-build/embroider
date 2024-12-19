@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-12-19)
+
+@embroider/addon-dev 7.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2217](https://github.com/embroider-build/embroider/pull/2217) Fix declarations plugin to cover import() ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2024-12-16)
 
 @embroider/addon-dev 7.1.0 (minor)

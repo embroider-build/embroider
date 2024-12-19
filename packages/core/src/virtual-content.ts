@@ -40,7 +40,8 @@ export interface VirtualContentResult {
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
-export function virtualContent(filename: string, resolver: Resolver): VirtualContentResult {
+export function virtualContent(response: VirtualResponse, resolver: Resolver): VirtualContentResult {
+  let filename = response.specifier;
   let entrypoint = decodeEntrypoint(filename);
   if (entrypoint) {
     return renderEntrypoint(resolver, entrypoint);

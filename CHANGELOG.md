@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2024-12-20)
+
+@embroider/webpack 4.0.9 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/webpack`
+  * [#2220](https://github.com/embroider-build/embroider/pull/2220) Set MiniCssExtractPlugin ignoreOrder to true for default config ([@lfloyd117](https://github.com/lfloyd117))
+
+#### Committers: 1
+- Liam Floyd ([@lfloyd117](https://github.com/lfloyd117))
+
 ## Release (2024-12-19)
 
 @embroider/addon-dev 7.1.1 (patch)

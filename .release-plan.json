@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "7.1.0",
-      "newVersion": "7.1.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "7.1.1"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.9.0"
@@ -52,8 +43,17 @@
       "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "oldVersion": "4.0.8"
+      "impact": "patch",
+      "oldVersion": "4.0.8",
+      "newVersion": "4.0.9",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2024-12-19)\n\n@embroider/addon-dev 7.1.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2217](https://github.com/embroider-build/embroider/pull/2217) Fix declarations plugin to cover import() ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 1\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2024-12-20)\n\n@embroider/webpack 4.0.9 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/webpack`\n  * [#2220](https://github.com/embroider-build/embroider/pull/2220) Set MiniCssExtractPlugin ignoreOrder to true for default config ([@lfloyd117](https://github.com/lfloyd117))\n\n#### Committers: 1\n- Liam Floyd ([@lfloyd117](https://github.com/lfloyd117))\n"
 }

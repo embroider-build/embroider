@@ -1,7 +1,6 @@
 import type { Package } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { readFileSync } from 'fs';
-import { resolve as pathResolve } from 'path';
 import { sortBy } from 'lodash';
 import resolve from 'resolve';
 import type { Resolver } from './module-resolver';
@@ -11,10 +10,6 @@ import type { Engine } from './app-files';
 export interface VirtualVendorStylesResponse {
   type: 'vendor-css';
   specifier: string;
-}
-
-export function virtualVendorStyles(pkg: Package): VirtualVendorStylesResponse {
-  return { type: 'vendor-css', specifier: pathResolve(pkg.root, '-embroider-vendor-styles.css') };
 }
 
 export function decodeVirtualVendorStyles(filename: string): boolean {

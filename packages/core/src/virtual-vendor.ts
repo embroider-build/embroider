@@ -1,7 +1,7 @@
 import { type Package, locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { lstatSync, readFileSync, readJSONSync } from 'fs-extra';
-import { join, resolve as pathResolve } from 'path';
+import { join } from 'path';
 import resolve from 'resolve';
 import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
@@ -9,10 +9,6 @@ import type { VirtualContentResult } from './virtual-content';
 export interface VirtualVendorResponse {
   type: 'vendor-js';
   specifier: string;
-}
-
-export function virtualVendor(pkg: Package): VirtualVendorResponse {
-  return { type: 'vendor-js', specifier: pathResolve(pkg.root, '-embroider-vendor.js') };
 }
 
 export function renderVendor(response: VirtualVendorResponse, resolver: Resolver): VirtualContentResult {

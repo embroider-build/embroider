@@ -5,7 +5,7 @@ import {
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve, posix, basename } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -13,7 +13,7 @@ import assertNever from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
 
-import { virtualPairComponent, fastbootSwitch, decodeFastbootSwitch } from './virtual-content';
+import { fastbootSwitch, decodeFastbootSwitch } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
@@ -21,11 +21,6 @@ import { nodeResolve } from './node-resolve';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import type { ModuleRequest, Resolution } from './module-request';
-import { virtualEntrypoint } from './virtual-entrypoint';
-import { virtualVendor } from './virtual-vendor';
-import { virtualVendorStyles } from './virtual-vendor-styles';
-import { testSupportStyles } from './virtual-test-support-styles';
-import { testSupport } from './virtual-test-support';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -379,12 +374,43 @@ export class Resolver {
       return request;
     }
 
-    let virtualResponse = virtualEntrypoint(request, this.packageCache);
-    if (virtualResponse) {
-      return logTransition('entrypoint', request, request.virtualize(virtualResponse));
-    } else {
+    const compatModulesSpecifier = '@embroider/virtual/compat-modules';
+
+    let isCompatModules =
+      request.specifier === compatModulesSpecifier || request.specifier.startsWith(compatModulesSpecifier + '/');
+
+    if (!isCompatModules) {
       return request;
     }
+
+    const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!requestingPkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    let pkg: Package;
+    if (request.specifier === compatModulesSpecifier) {
+      pkg = requestingPkg;
+    } else {
+      let packageName = request.specifier.slice(compatModulesSpecifier.length + 1);
+      pkg = this.packageCache.resolve(packageName, requestingPkg);
+    }
+
+    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+    let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
+    return logTransition(
+      'entrypoint',
+      request,
+      request.virtualize({
+        type: 'entrypoint',
+        specifier,
+        fromDir: dirname(specifier),
+      })
+    );
   }
 
   private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
@@ -428,7 +454,11 @@ export class Resolver {
       );
     }
 
-    return logTransition('test-support', request, request.virtualize(testSupport(pkg)));
+    return logTransition(
+      'test-support',
+      request,
+      request.virtualize({ type: 'test-support-js', specifier: resolve(pkg.root, '-embroider-test-support.js') })
+    );
   }
 
   private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
@@ -443,7 +473,14 @@ export class Resolver {
       );
     }
 
-    return logTransition('test-support-styles', request, request.virtualize(testSupportStyles(pkg)));
+    return logTransition(
+      'test-support-styles',
+      request,
+      request.virtualize({
+        type: 'test-support-css',
+        specifier: resolve(pkg.root, '-embroider-test-support-styles.css'),
+      })
+    );
   }
 
   private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {
@@ -487,7 +524,11 @@ export class Resolver {
       );
     }
 
-    return logTransition('vendor-styles', request, request.virtualize(virtualVendorStyles(pkg)));
+    return logTransition(
+      'vendor-styles',
+      request,
+      request.virtualize({ type: 'vendor-css', specifier: resolve(pkg.root, '-embroider-vendor-styles.css') })
+    );
   }
 
   private resolveHelper<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
@@ -542,10 +583,19 @@ export class Resolver {
           `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule.filename}.`
         );
       }
+
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize(virtualPairComponent(this.options.appRoot, hbsModule.filename, jsModule?.filename))
+        request.virtualize({
+          type: 'component-pair',
+          hbsModule: hbsModule.filename,
+          jsModule: jsModule?.filename ?? null,
+          debugName: basename(hbsModule.filename).replace(/\.(js|hbs)$/, ''),
+          specifier: `${this.options.appRoot}/embroider-pair-component/${encodeURIComponent(
+            hbsModule.filename
+          )}/__vpc__/${encodeURIComponent(jsModule?.filename ?? '')}`,
+        })
       );
     } else if (jsModule) {
       return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));
@@ -946,7 +996,11 @@ export class Resolver {
       );
     }
 
-    return logTransition('vendor', request, request.virtualize(virtualVendor(pkg)));
+    return logTransition(
+      'vendor',
+      request,
+      request.virtualize({ type: 'vendor-js', specifier: resolve(pkg.root, '-embroider-vendor.js') })
+    );
   }
 
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {

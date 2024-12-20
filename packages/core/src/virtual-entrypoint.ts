@@ -3,64 +3,17 @@ import { compile } from './js-handlebars';
 import type { Resolver } from './module-resolver';
 import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
-import { join, resolve, dirname } from 'path';
-import { extensionsPattern, type PackageCachePublicAPI, type Package } from '@embroider/shared-internals';
+import { join } from 'path';
+import { extensionsPattern } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
-import { type ModuleRequest } from './module-request';
-import { exports as resolveExports } from 'resolve.exports';
-import { type VirtualResponse } from './virtual-content';
 
 export interface EntrypointResponse {
   type: 'entrypoint';
   fromDir: string;
-}
-
-export function virtualEntrypoint(
-  request: ModuleRequest,
-  packageCache: PackageCachePublicAPI
-): VirtualResponse | undefined {
-  const compatModulesSpecifier = '@embroider/virtual/compat-modules';
-
-  let isCompatModules =
-    request.specifier === compatModulesSpecifier || request.specifier.startsWith(compatModulesSpecifier + '/');
-
-  if (!isCompatModules) {
-    return undefined;
-  }
-
-  const result = /\.?\/?@embroider\/virtual\/compat-modules(?:\/(?<packageName>.*))?/.exec(request.specifier);
-
-  if (!result) {
-    throw new Error('bug: entrypoint does not match pattern' + request.specifier);
-  }
-
-  const { packageName } = result.groups!;
-
-  const requestingPkg = packageCache.ownerOfFile(request.fromFile);
-
-  if (!requestingPkg?.isV2Ember()) {
-    throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
-  }
-  let pkg: Package;
-
-  if (packageName) {
-    pkg = packageCache.resolve(packageName, requestingPkg);
-  } else {
-    pkg = requestingPkg;
-  }
-  let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
-    browser: true,
-    conditions: ['default', 'imports'],
-  });
-  let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
-  return {
-    type: 'entrypoint',
-    specifier: resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'),
-    fromDir: dirname(specifier),
-  };
+  specifier: string;
 }
 
 export function staticAppPathsPattern(staticAppPaths: string[] | undefined): RegExp | undefined {

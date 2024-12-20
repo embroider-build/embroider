@@ -1,4 +1,4 @@
-import { dirname, basename, resolve, posix, sep, join } from 'path';
+import { dirname, resolve, posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { extensionsPattern } from '.';
 import { compile } from './js-handlebars';
@@ -111,22 +111,6 @@ export interface VirtualPairResponse {
   hbsModule: string;
   jsModule: string | null;
   debugName: string;
-}
-
-export function virtualPairComponent(
-  appRoot: string,
-  hbsModule: string,
-  jsModule: string | undefined
-): VirtualPairResponse {
-  return {
-    type: 'component-pair',
-    hbsModule,
-    jsModule: jsModule ?? null,
-    debugName: basename(hbsModule).replace(/\.(js|hbs)$/, ''),
-    specifier: `${appRoot}/embroider-pair-component/${encodeURIComponent(hbsModule)}/__vpc__/${encodeURIComponent(
-      jsModule ?? ''
-    )}`,
-  };
 }
 
 const fastbootSwitchSuffix = '/embroider_fastboot_switch';

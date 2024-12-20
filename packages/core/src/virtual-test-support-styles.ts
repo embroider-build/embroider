@@ -3,7 +3,6 @@ import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { readFileSync } from 'fs';
 import { sortBy } from 'lodash';
 import resolve from 'resolve';
-import { resolve as pathResolve } from 'path';
 import type { Engine } from './app-files';
 import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
@@ -11,10 +10,6 @@ import type { VirtualContentResult } from './virtual-content';
 export interface TestSupportStylesResponse {
   type: 'test-support-css';
   specifier: string;
-}
-
-export function testSupportStyles(pkg: Package): TestSupportStylesResponse {
-  return { type: 'test-support-css', specifier: pathResolve(pkg.root, '-embroider-test-support-styles.css') };
 }
 
 export function renderTestSupportStyles(response: TestSupportStylesResponse, resolver: Resolver): VirtualContentResult {

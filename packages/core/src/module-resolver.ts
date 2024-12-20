@@ -13,12 +13,11 @@ import assertNever from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
 
-import { virtualPairComponent, fastbootSwitch, decodeFastbootSwitch, decodeImplicitModules } from './virtual-content';
+import { virtualPairComponent, fastbootSwitch, decodeFastbootSwitch } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import { nodeResolve } from './node-resolve';
-import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import type { ModuleRequest, Resolution } from './module-request';
@@ -340,31 +339,39 @@ export class Resolver {
     if (request.resolvedTo) {
       return request;
     }
-    let im = decodeImplicitModules(request.specifier);
-    if (!im) {
-      return request;
-    }
 
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (!pkg?.isV2Ember()) {
-      throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
+    for (let variant of ['', 'test-'] as const) {
+      let suffix = `-embroider-implicit-${variant}modules.js`;
+      if (!request.specifier.endsWith(suffix)) {
+        continue;
+      }
+      let filename = request.specifier.slice(0, -1 * suffix.length);
+      if (!filename.endsWith('/') && filename.endsWith('\\')) {
+        continue;
+      }
+      filename = filename.slice(0, -1);
+      let pkg = this.packageCache.ownerOfFile(request.fromFile);
+      if (!pkg?.isV2Ember()) {
+        throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
+      }
+      let type = `implicit-${variant}modules` as const;
+      let packageName = getPackageName(filename);
+      if (packageName) {
+        let dep = this.packageCache.resolve(packageName, pkg);
+        return logTransition(
+          `dep's implicit modules`,
+          request,
+          request.virtualize({ type, specifier: resolve(dep.root, `-embroider-${type}.js`), fromFile: dep.root })
+        );
+      } else {
+        return logTransition(
+          `own implicit modules`,
+          request,
+          request.virtualize({ type, specifier: resolve(pkg.root, `-embroider-${type}.js`), fromFile: pkg.root })
+        );
+      }
     }
-
-    let packageName = getPackageName(im.fromFile);
-    if (packageName) {
-      let dep = this.packageCache.resolve(packageName, pkg);
-      return logTransition(
-        `dep's implicit modules`,
-        request,
-        request.virtualize({ type: im.type, specifier: resolve(dep.root, `-embroider-${im.type}.js`) })
-      );
-    } else {
-      return logTransition(
-        `own implicit modules`,
-        request,
-        request.virtualize({ type: im.type, specifier: resolve(pkg.root, `-embroider-${im.type}.js`) })
-      );
-    }
+    return request;
   }
 
   private handleEntrypoint<R extends ModuleRequest>(request: R): R {
@@ -384,23 +391,28 @@ export class Resolver {
     if (request.resolvedTo) {
       return request;
     }
-
-    let routeName = decodePublicRouteEntrypoint(request.specifier);
-
-    if (!routeName) {
+    const publicPrefix = '@embroider/core/route/';
+    if (!request.specifier.startsWith(publicPrefix)) {
       return request;
     }
-
+    let routeName = request.specifier.slice(publicPrefix.length);
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg?.isV2Ember()) {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
     }
 
+    let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+    let target = matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`;
+    let specifier = resolve(pkg.root, target);
+
     return logTransition(
       'route entrypoint',
       request,
-      request.virtualize({ type: 'route-entrypoint', specifier: encodeRouteEntrypoint(pkg, routeName) })
+      request.virtualize({ type: 'route-entrypoint', specifier, route: routeName, fromDir: dirname(specifier) })
     );
   }
 
@@ -533,10 +545,7 @@ export class Resolver {
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize({
-          type: 'component-pair',
-          specifier: virtualPairComponent(this.options.appRoot, hbsModule.filename, jsModule?.filename),
-        })
+        request.virtualize(virtualPairComponent(this.options.appRoot, hbsModule.filename, jsModule?.filename))
       );
     } else if (jsModule) {
       return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));

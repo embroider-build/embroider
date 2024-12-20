@@ -7,7 +7,6 @@ import { join, resolve, dirname } from 'path';
 import { extensionsPattern, type PackageCachePublicAPI, type Package } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
-import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
 import { type ModuleRequest } from './module-request';
@@ -156,10 +155,10 @@ export function renderEntrypoint(
       (_: string, filename: string) => {
         requiredAppFiles.push([filename]);
       },
-      (routeNames: string[], _files: string[]) => {
+      (routeNames: string[]) => {
         lazyRoutes.push({
           names: routeNames,
-          path: encodePublicRouteEntrypoint(routeNames, _files),
+          path: `@embroider/core/route/${encodeURIComponent(routeNames[0])}`,
         });
       }
     );

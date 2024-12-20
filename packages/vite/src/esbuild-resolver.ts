@@ -1,10 +1,10 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
 import { transformAsync } from '@babel/core';
-import core from '@embroider/core';
+import core, { ModuleRequest, type VirtualResponse } from '@embroider/core';
 const { ResolverLoader, virtualContent, needsSyntheticComponentJS, isInComponents } = core;
 import fs from 'fs-extra';
 const { readFileSync } = fs;
-import { EsBuildModuleRequest } from './esbuild-request.js';
+import { EsBuildRequestAdapter } from './esbuild-request.js';
 import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
@@ -25,12 +25,22 @@ export function esBuildResolver(): EsBuildPlugin {
     return result.code!;
   }
 
-  async function onLoad({ path, namespace }: { path: string; namespace: string }): Promise<OnLoadResult> {
+  async function onLoad({
+    path,
+    namespace,
+    pluginData,
+  }: {
+    path: string;
+    namespace: string;
+    pluginData?: { virtual: VirtualResponse };
+  }): Promise<OnLoadResult> {
     let src: string;
     if (namespace === 'embroider-template-only-component') {
       src = templateOnlyComponent;
     } else if (namespace === 'embroider-virtual') {
-      src = virtualContent(path, resolverLoader.resolver).src;
+      // castin because response in our namespace are supposed to always have
+      // this pluginData.
+      src = virtualContent(pluginData!.virtual, resolverLoader.resolver).src;
     } else {
       src = readFileSync(path, 'utf8');
     }
@@ -52,22 +62,21 @@ export function esBuildResolver(): EsBuildPlugin {
 
       // Embroider Resolver
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
-        let request = EsBuildModuleRequest.from(
-          resolverLoader.resolver.packageCache,
+        let request = ModuleRequest.create(EsBuildRequestAdapter.create, {
+          packageCache: resolverLoader.resolver.packageCache,
           phase,
           build,
           kind,
           path,
           importer,
-          pluginData
-        );
+          pluginData,
+        });
         if (!request) {
           return null;
         }
         let resolution = await resolverLoader.resolver.resolve(request);
         switch (resolution.type) {
           case 'found':
-          case 'ignored':
             return resolution.result;
           case 'not_found':
             return resolution.err;

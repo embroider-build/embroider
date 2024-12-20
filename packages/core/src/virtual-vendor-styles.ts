@@ -7,11 +7,17 @@ import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
 import type { Engine } from './app-files';
 
+export interface VirtualVendorStylesResponse {
+  type: 'vendor-css';
+  specifier: string;
+}
+
 export function decodeVirtualVendorStyles(filename: string): boolean {
   return filename.endsWith('-embroider-vendor-styles.css');
 }
 
-export function renderVendorStyles(filename: string, resolver: Resolver): VirtualContentResult {
+export function renderVendorStyles(response: VirtualVendorStylesResponse, resolver: Resolver): VirtualContentResult {
+  const filename = response.specifier;
   const owner = resolver.packageCache.ownerOfFile(filename);
   if (!owner) {
     throw new Error(`Failed to find a valid owner for ${filename}`);

@@ -7,11 +7,13 @@ import type { Engine } from './app-files';
 import type { Resolver } from './module-resolver';
 import type { VirtualContentResult } from './virtual-content';
 
-export function decodeTestSupportStyles(filename: string): boolean {
-  return filename.endsWith('-embroider-test-support-styles.css');
+export interface TestSupportStylesResponse {
+  type: 'test-support-css';
+  specifier: string;
 }
 
-export function renderTestSupportStyles(filename: string, resolver: Resolver): VirtualContentResult {
+export function renderTestSupportStyles(response: TestSupportStylesResponse, resolver: Resolver): VirtualContentResult {
+  const filename = response.specifier;
   const owner = resolver.packageCache.ownerOfFile(filename);
   if (!owner) {
     throw new Error(`Failed to find a valid owner for ${filename}`);

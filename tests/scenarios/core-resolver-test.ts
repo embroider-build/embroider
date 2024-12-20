@@ -240,9 +240,12 @@ Scenarios.fromProject(() => new Project())
             .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
+          let templateFile = normalizePath(`${app.dir}/templates/components/hello-world.hbs`);
+          let componentFile = normalizePath(`${app.dir}/components/hello-world.js`);
+
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "./hello-world.hbs";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
@@ -258,12 +261,12 @@ Scenarios.fromProject(() => new Project())
                 },
               }
             );
-            import component from "../../components/hello-world.js";
+            import component from "${esc(componentFile)}";
             export default setComponentTemplate(template, component);
           `);
 
-          pairModule.resolves('./hello-world.hbs').to('./templates/components/hello-world.hbs');
-          pairModule.resolves('../../components/hello-world.js').to('./components/hello-world.js');
+          pairModule.resolves(templateFile).to('./templates/components/hello-world.hbs');
+          pairModule.resolves(componentFile).to('./components/hello-world.js');
         });
 
         test('hbs-only component', async function () {
@@ -279,9 +282,10 @@ Scenarios.fromProject(() => new Project())
             .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
+          let templateFile = normalizePath(`${app.dir}/templates/components/hello-world.hbs`);
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "./hello-world.hbs";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
@@ -301,7 +305,7 @@ Scenarios.fromProject(() => new Project())
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "hello-world"));
           `);
 
-          pairModule.resolves('./hello-world.hbs').to('./templates/components/hello-world.hbs');
+          pairModule.resolves(templateFile).to('./templates/components/hello-world.hbs');
         });
 
         test('explicitly namedspaced component', async function () {
@@ -392,9 +396,11 @@ Scenarios.fromProject(() => new Project())
             .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
+          let templateFile = normalizePath(`${app.dir}/components/hello-world/template.hbs`);
+
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "./template.hbs";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -414,7 +420,7 @@ Scenarios.fromProject(() => new Project())
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
           `);
 
-          pairModule.resolves('./template.hbs').to('./components/hello-world/template.hbs');
+          pairModule.resolves(templateFile).to('./components/hello-world/template.hbs');
         });
 
         test('podded hbs-only component with non-blank podModulePrefix', async function () {
@@ -430,9 +436,11 @@ Scenarios.fromProject(() => new Project())
             .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
+          let templateFile = normalizePath(`${app.dir}/pods/components/hello-world/template.hbs`);
+
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "./template.hbs";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -452,7 +460,7 @@ Scenarios.fromProject(() => new Project())
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
           `);
 
-          pairModule.resolves('./template.hbs').to('./pods/components/hello-world/template.hbs');
+          pairModule.resolves(templateFile).to('./pods/components/hello-world/template.hbs');
         });
 
         test('podded js-and-hbs component with blank podModulePrefix', async function () {
@@ -469,9 +477,12 @@ Scenarios.fromProject(() => new Project())
             .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
+          let templateFile = normalizePath(`${app.dir}/components/hello-world/template.hbs`);
+          let componentFile = normalizePath(`${app.dir}/components/hello-world/component.js`);
+
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "./template.hbs";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -487,12 +498,12 @@ Scenarios.fromProject(() => new Project())
                 },
               }
             );
-            import component from "./component.js";
+            import component from "${esc(componentFile)}";
             export default setComponentTemplate(template, component);
           `);
 
-          pairModule.resolves('./template.hbs').to('./components/hello-world/template.hbs');
-          pairModule.resolves('./component.js').to('./components/hello-world/component.js');
+          pairModule.resolves(templateFile).to('./components/hello-world/template.hbs');
+          pairModule.resolves(componentFile).to('./components/hello-world/component.js');
         });
 
         test('podded js-and-hbs component with non-blank podModulePrefix', async function () {
@@ -509,9 +520,12 @@ Scenarios.fromProject(() => new Project())
             .resolves('@embroider/virtual/components/hello-world')
             .toModule();
 
+          let templateFile = normalizePath(`${app.dir}/pods/components/hello-world/template.hbs`);
+          let componentFile = normalizePath(`${app.dir}/pods/components/hello-world/component.js`);
+
           pairModule.codeEquals(`
             import { setComponentTemplate } from "@ember/component";
-            import template from "./template.hbs";
+            import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
             true && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
@@ -527,12 +541,11 @@ Scenarios.fromProject(() => new Project())
                 },
               }
             );
-            import component from "./component.js";
+            import component from "${esc(componentFile)}";
             export default setComponentTemplate(template, component);
           `);
-
-          pairModule.resolves('./template.hbs').to('./pods/components/hello-world/template.hbs');
-          pairModule.resolves('./component.js').to('./pods/components/hello-world/component.js');
+          pairModule.resolves(templateFile).to('./pods/components/hello-world/template.hbs');
+          pairModule.resolves(componentFile).to('./pods/components/hello-world/component.js');
         });
 
         test('plain helper', async function () {
@@ -987,3 +1000,15 @@ Scenarios.fromProject(() => new Project())
       });
     });
   });
+
+function normalizePath(s: string): string {
+  if (process.platform === 'win32') {
+    return s.replace(/\//g, '\\');
+  } else {
+    return s;
+  }
+}
+
+function esc(s: string): string {
+  return s.replace(/\\/g, '\\\\');
+}

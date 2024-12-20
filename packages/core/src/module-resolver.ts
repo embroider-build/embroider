@@ -5,22 +5,20 @@ import {
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve, posix, basename } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
-
-import { virtualPairComponent, fastbootSwitch, decodeFastbootSwitch, decodeImplicitModules } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import { nodeResolve } from './node-resolve';
-import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
+import type { ModuleRequest, Resolution } from './module-request';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -36,9 +34,7 @@ makeDebug.formatters.p = (s: string) => {
 };
 
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
-  if (after.isVirtual) {
-    debug(`[%s:virtualized] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
-  } else if (after.resolvedTo) {
+  if (after.resolvedTo) {
     debug(`[%s:resolvedTo] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else if (before.specifier !== after.specifier) {
     if (before.fromFile !== after.fromFile) {
@@ -63,16 +59,10 @@ function logTransition<R extends ModuleRequest>(reason: string, before: R, after
       before.fromFile,
       after.fromFile
     );
-  } else if (after.isNotFound) {
-    debug(`[%s:not-found] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   } else {
     debug(`[%s:unchanged] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
   }
   return after;
-}
-
-function isTerminal(request: ModuleRequest): boolean {
-  return request.isVirtual || request.isNotFound || Boolean(request.resolvedTo);
 }
 
 type MergeEntry =
@@ -109,40 +99,6 @@ type MergeEntry =
 type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName */ string, MergeEntry>>;
 
 const compatPattern = /@embroider\/virtual\/(?<type>[^\/]+)\/(?<rest>.*)/;
-
-export interface ModuleRequest<Res extends Resolution = Resolution> {
-  readonly specifier: string;
-  readonly fromFile: string;
-  readonly isVirtual: boolean;
-  readonly meta: Record<string, unknown> | undefined;
-  readonly debugType: string;
-  readonly isNotFound: boolean;
-  readonly resolvedTo: Res | undefined;
-  alias(newSpecifier: string): this;
-  rehome(newFromFile: string): this;
-  virtualize(virtualFilename: string): this;
-  withMeta(meta: Record<string, any> | undefined): this;
-  notFound(): this;
-  defaultResolve(): Promise<Res>;
-  resolveTo(resolution: Res): this;
-}
-
-// This is generic because different build systems have different ways of
-// representing a found module, and we just pass those values through.
-export type Resolution<T = unknown, E = unknown> =
-  | { type: 'found'; filename: string; isVirtual: boolean; result: T }
-
-  // used for requests that are special and don't represent real files that
-  // embroider can possibly do anything custom with.
-  //
-  // the motivating use case for introducing this is Vite's depscan which marks
-  // almost everything as "external" as a way to tell esbuild to stop traversing
-  // once it has been seen the first time.
-  | { type: 'ignored'; result: T }
-
-  // the important thing about this Resolution is that embroider should do its
-  // fallback behaviors here.
-  | { type: 'not_found'; err: E };
 
 export class Resolver {
   constructor(readonly options: Options) {}
@@ -185,21 +141,30 @@ export class Resolver {
     request: ModuleRequest<ResolveResolution>
   ): Promise<ResolveResolution> {
     request = await this.beforeResolve(request);
-    if (request.resolvedTo) {
-      return request.resolvedTo;
-    }
 
-    let resolution = await request.defaultResolve();
+    let resolution: ResolveResolution;
+
+    if (request.resolvedTo) {
+      if (typeof request.resolvedTo === 'function') {
+        resolution = await request.resolvedTo();
+      } else {
+        resolution = request.resolvedTo;
+      }
+    } else {
+      resolution = await request.defaultResolve();
+    }
 
     switch (resolution.type) {
       case 'found':
-      case 'ignored':
         return resolution;
       case 'not_found':
         break;
       default:
         throw assertNever(resolution);
     }
+
+    request = request.clone();
+
     let nextRequest = await this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
@@ -207,20 +172,17 @@ export class Resolver {
     }
 
     if (nextRequest.resolvedTo) {
-      return nextRequest.resolvedTo;
+      if (typeof nextRequest.resolvedTo === 'function') {
+        return await nextRequest.resolvedTo();
+      } else {
+        return nextRequest.resolvedTo;
+      }
     }
 
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
       throw new Error(
         'Bug Discovered! New request is not === original request but has the same fromFile and specifier. This will likely create a loop.'
       );
-    }
-
-    if (nextRequest.isVirtual || nextRequest.isNotFound) {
-      // virtual and NotFound requests are terminal, there is no more
-      // beforeResolve or fallbackResolve around them. The defaultResolve is
-      // expected to know how to implement them.
-      return nextRequest.defaultResolve();
     }
 
     return this.resolve(nextRequest);
@@ -257,7 +219,7 @@ export class Resolver {
   }
 
   private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -284,7 +246,7 @@ export class Resolver {
               configFile: false,
             });
             let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
-            if (switchFile === request.fromFile) {
+            if (switchFile.specifier === request.fromFile) {
               return logTransition('internal lookup from fastbootSwitch', request);
             } else {
               return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
@@ -304,7 +266,7 @@ export class Resolver {
   }
 
   private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let match = decodeFastbootSwitch(request.fromFile);
@@ -363,60 +325,57 @@ export class Resolver {
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
-      return request;
-    }
-    let im = decodeImplicitModules(request.specifier);
-    if (!im) {
+    if (request.resolvedTo) {
       return request;
     }
 
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (!pkg?.isV2Ember()) {
-      throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
+    for (let variant of ['', 'test-'] as const) {
+      let suffix = `-embroider-implicit-${variant}modules.js`;
+      if (!request.specifier.endsWith(suffix)) {
+        continue;
+      }
+      let filename = request.specifier.slice(0, -1 * suffix.length);
+      if (!filename.endsWith('/') && filename.endsWith('\\')) {
+        continue;
+      }
+      filename = filename.slice(0, -1);
+      let pkg = this.packageCache.ownerOfFile(request.fromFile);
+      if (!pkg?.isV2Ember()) {
+        throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
+      }
+      let type = `implicit-${variant}modules` as const;
+      let packageName = getPackageName(filename);
+      if (packageName) {
+        let dep = this.packageCache.resolve(packageName, pkg);
+        return logTransition(
+          `dep's implicit modules`,
+          request,
+          request.virtualize({ type, specifier: resolve(dep.root, `-embroider-${type}.js`), fromFile: dep.root })
+        );
+      } else {
+        return logTransition(
+          `own implicit modules`,
+          request,
+          request.virtualize({ type, specifier: resolve(pkg.root, `-embroider-${type}.js`), fromFile: pkg.root })
+        );
+      }
     }
-
-    let packageName = getPackageName(im.fromFile);
-    if (packageName) {
-      let dep = this.packageCache.resolve(packageName, pkg);
-      return logTransition(
-        `dep's implicit modules`,
-        request,
-        request.virtualize(resolve(dep.root, `-embroider-${im.type}.js`))
-      );
-    } else {
-      return logTransition(
-        `own implicit modules`,
-        request,
-        request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
-      );
-    }
+    return request;
   }
 
   private handleEntrypoint<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
 
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/compat-modules',
-      '/@embroider/virtual/compat-modules',
-      './@embroider/virtual/compat-modules',
-    ];
+    const compatModulesSpecifier = '@embroider/virtual/compat-modules';
 
-    if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
+    let isCompatModules =
+      request.specifier === compatModulesSpecifier || request.specifier.startsWith(compatModulesSpecifier + '/');
+
+    if (!isCompatModules) {
       return request;
     }
-
-    const result = /\.?\/?@embroider\/virtual\/compat-modules(?:\/(?<packageName>.*))?/.exec(request.specifier);
-
-    if (!result) {
-      // TODO make a better error
-      throw new Error('entrypoint does not match pattern' + request.specifier);
-    }
-
-    const { packageName } = result.groups!;
 
     const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
 
@@ -424,35 +383,39 @@ export class Resolver {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
     }
 
-    let pkg;
-
-    if (packageName) {
-      pkg = this.packageCache.resolve(packageName, requestingPkg);
-    } else {
+    let pkg: Package;
+    if (request.specifier === compatModulesSpecifier) {
       pkg = requestingPkg;
+    } else {
+      let packageName = request.specifier.slice(compatModulesSpecifier.length + 1);
+      pkg = this.packageCache.resolve(packageName, requestingPkg);
     }
+
     let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
       browser: true,
       conditions: ['default', 'imports'],
     });
+    let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
     return logTransition(
       'entrypoint',
       request,
-      request.virtualize(resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'))
+      request.virtualize({
+        type: 'entrypoint',
+        specifier,
+        fromDir: dirname(specifier),
+      })
     );
   }
 
   private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
-
-    let routeName = decodePublicRouteEntrypoint(request.specifier);
-
-    if (!routeName) {
+    const publicPrefix = '@embroider/core/route/';
+    if (!request.specifier.startsWith(publicPrefix)) {
       return request;
     }
-
+    let routeName = request.specifier.slice(publicPrefix.length);
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg?.isV2Ember()) {
@@ -463,23 +426,18 @@ export class Resolver {
       browser: true,
       conditions: ['default', 'imports'],
     });
+    let target = matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`;
+    let specifier = resolve(pkg.root, target);
 
     return logTransition(
       'route entrypoint',
       request,
-      request.virtualize(encodeRouteEntrypoint(pkg.root, matched?.[0], routeName))
+      request.virtualize({ type: 'route-entrypoint', specifier, route: routeName, fromDir: dirname(specifier) })
     );
   }
 
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/test-support.js',
-      '/@embroider/virtual/test-support.js',
-      './@embroider/virtual/test-support.js',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/test-support.js') {
       return request;
     }
 
@@ -490,18 +448,15 @@ export class Resolver {
       );
     }
 
-    return logTransition('test-support', request, request.virtualize(resolve(pkg.root, '-embroider-test-support.js')));
+    return logTransition(
+      'test-support',
+      request,
+      request.virtualize({ type: 'test-support-js', specifier: resolve(pkg.root, '-embroider-test-support.js') })
+    );
   }
 
   private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/test-support.css',
-      '/@embroider/virtual/test-support.css',
-      './@embroider/virtual/test-support.css',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/test-support.css') {
       return request;
     }
 
@@ -515,12 +470,15 @@ export class Resolver {
     return logTransition(
       'test-support-styles',
       request,
-      request.virtualize(resolve(pkg.root, '-embroider-test-support-styles.css'))
+      request.virtualize({
+        type: 'test-support-css',
+        specifier: resolve(pkg.root, '-embroider-test-support-styles.css'),
+      })
     );
   }
 
   private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let match = compatPattern.exec(request.specifier);
@@ -549,14 +507,7 @@ export class Resolver {
   }
 
   private handleVendorStyles<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/vendor.css',
-      '/@embroider/virtual/vendor.css',
-      './@embroider/virtual/vendor.css',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/vendor.css') {
       return request;
     }
 
@@ -570,7 +521,7 @@ export class Resolver {
     return logTransition(
       'vendor-styles',
       request,
-      request.virtualize(resolve(pkg.root, '-embroider-vendor-styles.css'))
+      request.virtualize({ type: 'vendor-css', specifier: resolve(pkg.root, '-embroider-vendor-styles.css') })
     );
   }
 
@@ -597,11 +548,7 @@ export class Resolver {
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await this.resolve(
-        request.alias(candidateSpecifier).rehome(target.from).withMeta({
-          runtimeFallback: false,
-        })
-      );
+      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
       if (resolution.type === 'found') {
         hbsModule = resolution;
@@ -613,15 +560,7 @@ export class Resolver {
     for (let candidate of this.componentJSCandidates(target.packageName)) {
       let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
 
-      let resolution = await this.resolve(
-        request.alias(candidateSpecifier).rehome(target.from).withMeta({
-          runtimeFallback: false,
-        })
-      );
-
-      if (resolution.type === 'ignored') {
-        return logTransition(`resolving to ignored component`, request, request.resolveTo(resolution));
-      }
+      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
 
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
@@ -638,10 +577,19 @@ export class Resolver {
           `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule.filename}.`
         );
       }
+
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize(virtualPairComponent(hbsModule.filename, jsModule?.filename))
+        request.virtualize({
+          type: 'component-pair',
+          hbsModule: hbsModule.filename,
+          jsModule: jsModule?.filename ?? null,
+          debugName: basename(hbsModule.filename).replace(/\.(js|hbs)$/, ''),
+          specifier: `${this.options.appRoot}/embroider-pair-component/${encodeURIComponent(
+            hbsModule.filename
+          )}/__vpc__/${encodeURIComponent(jsModule?.filename ?? '')}`,
+        })
       );
     } else if (jsModule) {
       return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));
@@ -659,16 +607,9 @@ export class Resolver {
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = await this.resolve(
-      request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile).withMeta({
-        runtimeFallback: false,
-      })
-    );
+    let helperMatch = await this.resolve(request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile));
 
-    // for the case of 'ignored' that means that esbuild found this helper in an external
-    // package so it should be considered found in this case and we should not look for a
-    // component with this name
-    if (helperMatch.type === 'found' || helperMatch.type === 'ignored') {
+    if (helperMatch.type === 'found') {
       return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
     }
 
@@ -885,7 +826,7 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -948,7 +889,7 @@ export class Resolver {
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let packageName = getPackageName(request.specifier);
@@ -1038,14 +979,7 @@ export class Resolver {
   }
 
   private handleVendor<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/vendor.js',
-      '/@embroider/virtual/vendor.js',
-      './@embroider/virtual/vendor.js',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/vendor.js') {
       return request;
     }
 
@@ -1056,7 +990,11 @@ export class Resolver {
       );
     }
 
-    return logTransition('vendor', request, request.virtualize(resolve(pkg.root, '-embroider-vendor.js')));
+    return logTransition(
+      'vendor',
+      request,
+      request.virtualize({ type: 'vendor-js', specifier: resolve(pkg.root, '-embroider-vendor.js') })
+    );
   }
 
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
@@ -1077,7 +1015,7 @@ export class Resolver {
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
-    if (isTerminal(request)) {
+    if (request.resolvedTo) {
       return request;
     }
     let { specifier, fromFile } = request;
@@ -1182,10 +1120,8 @@ export class Resolver {
   }
 
   private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
-    if (request.isVirtual) {
-      throw new Error(
-        'Build tool bug detected! Fallback resolve should never see a virtual request. It is expected that the defaultResolve for your bundler has already resolved this request'
-      );
+    if (request.resolvedTo) {
+      throw new Error('Build tool bug detected! Fallback resolve should never see an already-resolved request.');
     }
 
     if (request.specifier === '@embroider/macros') {
@@ -1375,9 +1311,7 @@ export class Resolver {
         return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
       case 'both':
         let foundAppJS = await this.resolve(
-          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile).withMeta({
-            runtimeFallback: false,
-          })
+          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile)
         );
         if (foundAppJS.type !== 'found') {
           throw new Error(
@@ -1480,5 +1414,30 @@ function engineRelativeName(pkg: Package, filename: string): string | undefined 
   let outsideName = externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
   if (outsideName) {
     return '.' + outsideName.slice(pkg.name.length);
+  }
+}
+
+const fastbootSwitchSuffix = '/embroider_fastboot_switch';
+
+function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>) {
+  let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;
+  let virtualSpecifier: string;
+  if (names.size > 0) {
+    virtualSpecifier = `${filename}?names=${[...names].join(',')}`;
+  } else {
+    virtualSpecifier = filename;
+  }
+  return {
+    type: 'fastboot-switch' as const,
+    specifier: virtualSpecifier,
+    names,
+    hasDefaultExport: 'x',
+  };
+}
+
+function decodeFastbootSwitch(filename: string) {
+  let index = filename.indexOf(fastbootSwitchSuffix);
+  if (index >= 0) {
+    return { filename: filename.slice(0, index) };
   }
 }

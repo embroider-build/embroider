@@ -7,23 +7,13 @@ import { join } from 'path';
 import { extensionsPattern } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
-import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
 
-const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
-
-export function decodeEntrypoint(filename: string): { fromDir: string } | undefined {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes('-embroider-entrypoint')) {
-    return;
-  }
-  let m = entrypointPattern.exec(filename);
-  if (m) {
-    return {
-      fromDir: m.groups!.filename,
-    };
-  }
+export interface EntrypointResponse {
+  type: 'entrypoint';
+  fromDir: string;
+  specifier: string;
 }
 
 export function staticAppPathsPattern(staticAppPaths: string[] | undefined): RegExp | undefined {
@@ -36,7 +26,6 @@ export function renderEntrypoint(
   resolver: Resolver,
   { fromDir }: { fromDir: string }
 ): { src: string; watches: string[] } {
-  // this is new
   const owner = resolver.packageCache.ownerOfFile(fromDir);
 
   let eagerModules: string[] = [];
@@ -119,10 +108,10 @@ export function renderEntrypoint(
       (_: string, filename: string) => {
         requiredAppFiles.push([filename]);
       },
-      (routeNames: string[], _files: string[]) => {
+      (routeNames: string[]) => {
         lazyRoutes.push({
           names: routeNames,
-          path: encodePublicRouteEntrypoint(routeNames, _files),
+          path: `@embroider/core/route/${encodeURIComponent(routeNames[0])}`,
         });
       }
     );

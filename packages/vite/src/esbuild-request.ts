@@ -3,40 +3,47 @@ const { cleanUrl, packageName } = core;
 import type { ImportKind, OnResolveResult, PluginBuild } from 'esbuild';
 import { dirname } from 'path';
 
-import type { PackageCache as _PackageCache, Resolution, ModuleRequest } from '@embroider/core';
+import type {
+  PackageCachePublicAPI as PackageCache,
+  Resolution,
+  ModuleRequest,
+  RequestAdapter,
+  VirtualResponse,
+} from '@embroider/core';
 import { externalName } from '@embroider/reverse-exports';
 
-type PublicAPI<T> = { [K in keyof T]: T[K] };
-type PackageCache = PublicAPI<_PackageCache>;
-
-export class EsBuildModuleRequest implements ModuleRequest {
-  static from(
-    packageCache: PackageCache,
-    phase: 'bundling' | 'other',
-    context: PluginBuild,
-    kind: ImportKind,
-    source: string,
-    importer: string | undefined,
-    pluginData: Record<string, any> | undefined
-  ): EsBuildModuleRequest | undefined {
+export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolveResult, OnResolveResult>> {
+  static create({
+    packageCache,
+    phase,
+    build,
+    kind,
+    path,
+    importer,
+    pluginData,
+  }: {
+    packageCache: PackageCache;
+    phase: 'bundling' | 'other';
+    build: PluginBuild;
+    kind: ImportKind;
+    path: string;
+    importer: string | undefined;
+    pluginData: Record<string, any> | undefined;
+  }) {
     if (!(pluginData?.embroider?.enableCustomResolver ?? true)) {
       return;
     }
 
-    if (source && importer && source[0] !== '\0' && !source.startsWith('virtual-module:')) {
+    if (path && importer && path[0] !== '\0' && !path.startsWith('virtual-module:')) {
       let fromFile = cleanUrl(importer);
-      return new EsBuildModuleRequest(
-        packageCache,
-        phase,
-        context,
-        kind,
-        source,
-        fromFile,
-        pluginData?.embroider?.meta,
-        false,
-        false,
-        undefined
-      );
+      return {
+        initialState: {
+          specifier: path,
+          fromFile,
+          meta: pluginData?.embroider?.meta,
+        },
+        adapter: new EsBuildRequestAdapter(packageCache, phase, build, kind),
+      };
     }
   }
 
@@ -44,129 +51,39 @@ export class EsBuildModuleRequest implements ModuleRequest {
     private packageCache: PackageCache,
     private phase: 'bundling' | 'other',
     private context: PluginBuild,
-    private kind: ImportKind,
-    readonly specifier: string,
-    readonly fromFile: string,
-    readonly meta: Record<string, any> | undefined,
-    readonly isVirtual: boolean,
-    readonly isNotFound: boolean,
-    readonly resolvedTo: Resolution<OnResolveResult, OnResolveResult> | undefined
+    private kind: ImportKind
   ) {}
 
   get debugType() {
     return 'esbuild';
   }
 
-  alias(newSpecifier: string) {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      newSpecifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      false,
-      undefined
-    ) as this;
-  }
-  rehome(newFromFile: string) {
-    if (this.fromFile === newFromFile) {
-      return this;
-    } else {
-      return new EsBuildModuleRequest(
-        this.packageCache,
-        this.phase,
-        this.context,
-        this.kind,
-        this.specifier,
-        newFromFile,
-        this.meta,
-        this.isVirtual,
-        false,
-        undefined
-      ) as this;
-    }
-  }
-  virtualize(filename: string) {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      filename,
-      this.fromFile,
-      this.meta,
-      true,
-      false,
-      undefined
-    ) as this;
-  }
-  withMeta(meta: Record<string, any> | undefined): this {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      this.specifier,
-      this.fromFile,
-      meta,
-      this.isVirtual,
-      this.isNotFound,
-      this.resolvedTo
-    ) as this;
-  }
-  notFound(): this {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      this.specifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      true,
-      undefined
-    ) as this;
+  notFoundResponse(
+    request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
+  ): Resolution<OnResolveResult, OnResolveResult> {
+    return {
+      type: 'not_found',
+      err: {
+        errors: [{ text: `module not found ${request.specifier}` }],
+      },
+    };
   }
 
-  resolveTo(resolution: Resolution<OnResolveResult, OnResolveResult>): this {
-    return new EsBuildModuleRequest(
-      this.packageCache,
-      this.phase,
-      this.context,
-      this.kind,
-      this.specifier,
-      this.fromFile,
-      this.meta,
-      this.isVirtual,
-      this.isNotFound,
-      resolution
-    ) as this;
+  virtualResponse(
+    _request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>,
+    virtual: VirtualResponse
+  ): Resolution<OnResolveResult, OnResolveResult> {
+    return {
+      type: 'found',
+      filename: virtual.specifier,
+      result: { path: virtual.specifier, namespace: 'embroider-virtual', pluginData: { virtual } },
+      virtual,
+    };
   }
 
-  async defaultResolve(): Promise<Resolution<OnResolveResult, OnResolveResult>> {
-    const request = this;
-    if (request.isVirtual) {
-      return {
-        type: 'found',
-        filename: request.specifier,
-        result: { path: request.specifier, namespace: 'embroider-virtual' },
-        isVirtual: this.isVirtual,
-      };
-    }
-    if (request.isNotFound) {
-      // todo: make sure this looks correct to users
-      return {
-        type: 'not_found',
-        err: {
-          errors: [{ text: `module not found ${request.specifier}` }],
-        },
-      };
-    }
-
+  async resolve(
+    request: ModuleRequest<Resolution<OnResolveResult, OnResolveResult>>
+  ): Promise<Resolution<OnResolveResult, OnResolveResult>> {
     requestStatus(request.specifier);
 
     let result = await this.context.resolve(request.specifier, {
@@ -183,10 +100,8 @@ export class EsBuildModuleRequest implements ModuleRequest {
 
     let status = readStatus(request.specifier);
 
-    if (result.errors.length > 0 || status === 'not_found') {
+    if (result.errors.length > 0 || status.type === 'not_found') {
       return { type: 'not_found', err: result };
-    } else if (result.external) {
-      return { type: 'ignored', result };
     } else {
       if (this.phase === 'bundling') {
         // we need to ensure that we don't traverse back into the app while
@@ -196,7 +111,14 @@ export class EsBuildModuleRequest implements ModuleRequest {
         // and non-strict handlebars (which resolves
         // components/helpers/modifiers against the app's global pool).
         let pkg = this.packageCache.ownerOfFile(result.path);
-        if (pkg?.root === this.packageCache.appRoot) {
+        if (
+          pkg?.root === this.packageCache.appRoot &&
+          // vite provides node built-in polyfills under a custom namespace and we dont
+          // want to interrupt that. We'd prefer they get bundled in the dep optimizer normally,
+          // rather than getting deferred to the app build (which also works, but means they didn't
+          // get pre-optimized).
+          (result.namespace === 'file' || result.namespace.startsWith('embroider-'))
+        ) {
           let externalizedName = request.specifier;
           if (!packageName(externalizedName)) {
             // the request was a relative path. This won't remain valid once
@@ -212,7 +134,9 @@ export class EsBuildModuleRequest implements ModuleRequest {
             externalizedName = externalName(pkg.packageJSON, externalizedName) || externalizedName;
           }
           return {
-            type: 'ignored',
+            type: 'found',
+            filename: externalizedName,
+            virtual: false,
             result: {
               path: externalizedName,
               external: true,
@@ -220,7 +144,23 @@ export class EsBuildModuleRequest implements ModuleRequest {
           };
         }
       }
-      return { type: 'found', filename: result.path, result, isVirtual: this.isVirtual };
+
+      let filename: string;
+      if (status.type === 'found' && result.external) {
+        // when we know that the file was really found, but vite has
+        // externalized it, report the true filename that was found, not the
+        // externalized request path.
+        filename = status.filename;
+      } else {
+        filename = result.path;
+      }
+
+      return {
+        type: 'found',
+        filename,
+        result,
+        virtual: false,
+      };
     }
   }
 }
@@ -235,9 +175,7 @@ export class EsBuildModuleRequest implements ModuleRequest {
   plugin.
  */
 function sharedGlobalState() {
-  let channel = (globalThis as any).__embroider_vite_resolver_channel__ as
-    | undefined
-    | Map<string, 'pending' | 'found' | 'not_found'>;
+  let channel = (globalThis as any).__embroider_vite_resolver_channel__ as undefined | Map<string, InternalStatus>;
   if (!channel) {
     channel = new Map();
     (globalThis as any).__embroider_vite_resolver_channel__ = channel;
@@ -246,19 +184,21 @@ function sharedGlobalState() {
 }
 
 function requestStatus(id: string): void {
-  sharedGlobalState().set(id, 'pending');
+  sharedGlobalState().set(id, { type: 'pending' });
 }
 
-export function writeStatus(id: string, status: 'found' | 'not_found'): void {
+export function writeStatus(id: string, status: InternalStatus): void {
   let channel = sharedGlobalState();
-  if (channel.get(id) === 'pending') {
+  if (channel.get(id)?.type === 'pending') {
     channel.set(id, status);
   }
 }
 
-function readStatus(id: string): 'pending' | 'not_found' | 'found' {
+function readStatus(id: string): InternalStatus {
   let channel = sharedGlobalState();
-  let result = channel.get(id) ?? 'pending';
+  let result = channel.get(id) ?? { type: 'pending' };
   channel.delete(id);
   return result;
 }
+
+type InternalStatus = { type: 'pending' } | { type: 'not_found' } | { type: 'found'; filename: string };

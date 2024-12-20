@@ -1,10 +1,10 @@
-import type { Plugin, ViteDevServer } from 'vite';
-import core, { type Resolver } from '@embroider/core';
+import { type Plugin, type ViteDevServer, normalizePath } from 'vite';
+import core, { ModuleRequest, type Resolver } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
-import { RollupModuleRequest, virtualPrefix } from './request.js';
+import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
-import { resolve, join } from 'path';
+import { join, resolve } from 'path';
 import { writeStatus } from './esbuild-request.js';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
@@ -20,10 +20,80 @@ export function resolver(): Plugin {
   let server: ViteDevServer;
   const virtualDeps: Map<string, string[]> = new Map();
   const notViteDeps = new Set<string>();
+  const responseMetas: Map<string, ResponseMeta> = new Map();
+
+  async function resolveId(
+    context: PluginContext,
+    source: string,
+    importer: string | undefined,
+    options: { custom?: Record<string, unknown> }
+  ) {
+    if (options.custom?.depScan) {
+      return await observeDepScan(context, source, importer, options);
+    }
+
+    let request = ModuleRequest.create(RollupRequestAdapter.create, {
+      context,
+      source,
+      importer,
+      custom: options.custom,
+    });
+    if (!request) {
+      // fallthrough to other rollup plugins
+      return null;
+    }
+    let resolution = await resolverLoader.resolver.resolve(request);
+    switch (resolution.type) {
+      case 'found':
+        if (resolution.virtual) {
+          return resolution.result;
+        } else {
+          return await maybeCaptureNewOptimizedDep(context, resolverLoader.resolver, resolution.result, notViteDeps);
+        }
+      case 'not_found':
+        return null;
+      default:
+        throw assertNever(resolution);
+    }
+  }
+
+  async function ensureVirtualResolve(context: PluginContext, specifier: string): Promise<ResponseMeta> {
+    let result = await resolveId(
+      context,
+      specifier,
+      resolve(resolverLoader.resolver.options.appRoot, 'package.json'),
+      {}
+    );
+    if (!result) {
+      throw new Error(`bug: expected to resolve ${specifier}`);
+    }
+    if (typeof result === 'string') {
+      throw new Error(`bug: expected to get a PartialResolvedId`);
+    }
+    let meta = result.meta?.['embroider-resolver'] as ResponseMeta | undefined;
+    if (!meta) {
+      throw new Error(`bug: no response meta for ${specifier}`);
+    }
+    return meta;
+  }
+
+  async function emitVirtualFile(context: PluginContext, fileName: string): Promise<void> {
+    context.emitFile({
+      type: 'asset',
+      fileName,
+      source: virtualContent((await ensureVirtualResolve(context, fileName)).virtual, resolverLoader.resolver).src,
+    });
+  }
+
+  let mode = '';
 
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
+
+    configResolved(config) {
+      mode = config.mode;
+    },
 
     configureServer(s) {
       server = s;
@@ -41,60 +111,50 @@ export function resolver(): Plugin {
           }
         }
       });
+      return () => {
+        server.middlewares.use((req, _res, next) => {
+          const base = server.config.base || '/';
+          const originalUrl = req.originalUrl!.slice(base.length - 1);
+          if (originalUrl && originalUrl.length > 1) {
+            if (originalUrl?.match(/^\/tests($|\?)/)) {
+              req.originalUrl = `${base}tests/index.html`;
+              (req as any).url = `${base}tests/index.html`;
+              return next();
+            }
+          }
+          return next();
+        });
+      };
     },
 
     async resolveId(source, importer, options) {
-      if (options.custom?.depScan) {
-        return await observeDepScan(this, source, importer, options);
+      let resolution = await resolveId(this, source, importer, options);
+      if (typeof resolution === 'string') {
+        return resolution;
       }
-
-      let request = RollupModuleRequest.from(this, source, importer, options.custom);
-      if (!request) {
-        // fallthrough to other rollup plugins
-        return null;
+      if (resolution && resolution.meta?.['embroider-resolver']) {
+        responseMetas.set(normalizePath(resolution.id), resolution.meta['embroider-resolver'] as ResponseMeta);
       }
-      let resolution = await resolverLoader.resolver.resolve(request);
-      switch (resolution.type) {
-        case 'found':
-          if (resolution.isVirtual) {
-            return resolution.result;
-          } else {
-            return await maybeCaptureNewOptimizedDep(this, resolverLoader.resolver, resolution.result, notViteDeps);
-          }
-        case 'ignored':
-          return resolution.result;
-        case 'not_found':
-          return null;
-        default:
-          throw assertNever(resolution);
-      }
+      return resolution;
     },
+
     load(id) {
-      if (id.startsWith(virtualPrefix)) {
-        let { pathname } = new URL(id, 'http://example.com');
-        let { src, watches } = virtualContent(pathname.slice(virtualPrefix.length + 1), resolverLoader.resolver);
+      let meta = responseMetas.get(normalizePath(id));
+      if (meta?.virtual) {
+        let { src, watches } = virtualContent(meta.virtual, resolverLoader.resolver);
         virtualDeps.set(id, watches);
         server?.watcher.add(watches);
         return src;
       }
     },
-    buildEnd() {
-      this.emitFile({
-        type: 'asset',
-        fileName: '@embroider/virtual/vendor.js',
-        source: virtualContent(
-          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-vendor.js'),
-          resolverLoader.resolver
-        ).src,
-      });
-      this.emitFile({
-        type: 'asset',
-        fileName: '@embroider/virtual/test-support.js',
-        source: virtualContent(
-          resolve(resolverLoader.resolver.options.engines[0].root, '-embroider-test-support.js'),
-          resolverLoader.resolver
-        ).src,
-      });
+    async buildEnd() {
+      emitVirtualFile(this, '@embroider/virtual/vendor.js');
+      emitVirtualFile(this, '@embroider/virtual/vendor.css');
+
+      if (mode !== 'production') {
+        emitVirtualFile(this, '@embroider/virtual/test-support.js');
+        emitVirtualFile(this, '@embroider/virtual/test-support.css');
+      }
     },
   };
 }
@@ -116,7 +176,7 @@ async function observeDepScan(context: PluginContext, source: string, importer: 
     ...options,
     skipSelf: true,
   });
-  writeStatus(source, result ? 'found' : 'not_found');
+  writeStatus(source, result ? { type: 'found', filename: result.id } : { type: 'not_found' });
   return result;
 }
 

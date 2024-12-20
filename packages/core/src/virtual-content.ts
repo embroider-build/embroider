@@ -1,6 +1,6 @@
 import { posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
-import { extensionsPattern } from '.';
+import { extensionsPattern, syntheticJStoHBS, templateOnlyComponentSource } from '.';
 import { compile } from './js-handlebars';
 import { renderImplicitTestScripts, type TestSupportResponse } from './virtual-test-support';
 import { renderTestSupportStyles, type TestSupportStylesResponse } from './virtual-test-support-styles';
@@ -21,6 +21,7 @@ export type VirtualResponse = { specifier: string } & (
   | VirtualVendorResponse
   | VirtualVendorStylesResponse
   | VirtualPairResponse
+  | TemplateOnlyComponentResponse
 );
 
 export interface VirtualContentResult {
@@ -53,6 +54,8 @@ export function virtualContent(response: VirtualResponse, resolver: Resolver): V
       return renderRouteEntrypoint(response, resolver);
     case 'fastboot-switch':
       return renderFastbootSwitchTemplate(response);
+    case 'template-only-component-js':
+      return renderTemplateOnlyComponent(response);
     default:
       throw assertNever(response);
   }
@@ -255,4 +258,18 @@ function orderAddons(depA: Package, depB: Package): number {
   }
 
   return depAIdx - depBIdx;
+}
+
+export interface TemplateOnlyComponentResponse {
+  type: 'template-only-component-js';
+  specifier: string;
+}
+
+function renderTemplateOnlyComponent({ specifier }: TemplateOnlyComponentResponse): VirtualContentResult {
+  let watches = [specifier];
+  let hbs = syntheticJStoHBS(specifier);
+  if (hbs) {
+    watches.push(hbs);
+  }
+  return { src: templateOnlyComponentSource(), watches };
 }

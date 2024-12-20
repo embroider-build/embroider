@@ -5,24 +5,20 @@ import {
   packageName as getPackageName,
   packageName,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix } from 'path';
+import { dirname, resolve, posix, basename } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
-
-import { virtualPairComponent, fastbootSwitch, decodeFastbootSwitch, decodeImplicitModules } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import { nodeResolve } from './node-resolve';
-import { decodePublicRouteEntrypoint, encodeRouteEntrypoint } from './virtual-route-entrypoint';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import type { ModuleRequest, Resolution } from './module-request';
-import { virtualEntrypoint } from './virtual-entrypoint';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -250,14 +246,10 @@ export class Resolver {
               configFile: false,
             });
             let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
-            if (switchFile === request.fromFile) {
+            if (switchFile.specifier === request.fromFile) {
               return logTransition('internal lookup from fastbootSwitch', request);
             } else {
-              return logTransition(
-                'shadowed app fastboot',
-                request,
-                request.virtualize({ type: 'fastboot-switch', specifier: switchFile })
-              );
+              return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
             }
           } else {
             return logTransition(
@@ -336,31 +328,39 @@ export class Resolver {
     if (request.resolvedTo) {
       return request;
     }
-    let im = decodeImplicitModules(request.specifier);
-    if (!im) {
-      return request;
-    }
 
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (!pkg?.isV2Ember()) {
-      throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
+    for (let variant of ['', 'test-'] as const) {
+      let suffix = `-embroider-implicit-${variant}modules.js`;
+      if (!request.specifier.endsWith(suffix)) {
+        continue;
+      }
+      let filename = request.specifier.slice(0, -1 * suffix.length);
+      if (!filename.endsWith('/') && filename.endsWith('\\')) {
+        continue;
+      }
+      filename = filename.slice(0, -1);
+      let pkg = this.packageCache.ownerOfFile(request.fromFile);
+      if (!pkg?.isV2Ember()) {
+        throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
+      }
+      let type = `implicit-${variant}modules` as const;
+      let packageName = getPackageName(filename);
+      if (packageName) {
+        let dep = this.packageCache.resolve(packageName, pkg);
+        return logTransition(
+          `dep's implicit modules`,
+          request,
+          request.virtualize({ type, specifier: resolve(dep.root, `-embroider-${type}.js`), fromFile: dep.root })
+        );
+      } else {
+        return logTransition(
+          `own implicit modules`,
+          request,
+          request.virtualize({ type, specifier: resolve(pkg.root, `-embroider-${type}.js`), fromFile: pkg.root })
+        );
+      }
     }
-
-    let packageName = getPackageName(im.fromFile);
-    if (packageName) {
-      let dep = this.packageCache.resolve(packageName, pkg);
-      return logTransition(
-        `dep's implicit modules`,
-        request,
-        request.virtualize({ type: im.type, specifier: resolve(dep.root, `-embroider-${im.type}.js`) })
-      );
-    } else {
-      return logTransition(
-        `own implicit modules`,
-        request,
-        request.virtualize({ type: im.type, specifier: resolve(pkg.root, `-embroider-${im.type}.js`) })
-      );
-    }
+    return request;
   }
 
   private handleEntrypoint<R extends ModuleRequest>(request: R): R {
@@ -368,47 +368,76 @@ export class Resolver {
       return request;
     }
 
-    let virtualResponse = virtualEntrypoint(request, this.packageCache);
-    if (virtualResponse) {
-      return logTransition('entrypoint', request, request.virtualize(virtualResponse));
-    } else {
+    const compatModulesSpecifier = '@embroider/virtual/compat-modules';
+
+    let isCompatModules =
+      request.specifier === compatModulesSpecifier || request.specifier.startsWith(compatModulesSpecifier + '/');
+
+    if (!isCompatModules) {
       return request;
     }
+
+    const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
+
+    if (!requestingPkg?.isV2Ember()) {
+      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+    }
+
+    let pkg: Package;
+    if (request.specifier === compatModulesSpecifier) {
+      pkg = requestingPkg;
+    } else {
+      let packageName = request.specifier.slice(compatModulesSpecifier.length + 1);
+      pkg = this.packageCache.resolve(packageName, requestingPkg);
+    }
+
+    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+    let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
+    return logTransition(
+      'entrypoint',
+      request,
+      request.virtualize({
+        type: 'entrypoint',
+        specifier,
+        fromDir: dirname(specifier),
+      })
+    );
   }
 
   private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
     if (request.resolvedTo) {
       return request;
     }
-
-    let routeName = decodePublicRouteEntrypoint(request.specifier);
-
-    if (!routeName) {
+    const publicPrefix = '@embroider/core/route/';
+    if (!request.specifier.startsWith(publicPrefix)) {
       return request;
     }
-
+    let routeName = request.specifier.slice(publicPrefix.length);
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg?.isV2Ember()) {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
     }
 
+    let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
+      browser: true,
+      conditions: ['default', 'imports'],
+    });
+    let target = matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`;
+    let specifier = resolve(pkg.root, target);
+
     return logTransition(
       'route entrypoint',
       request,
-      request.virtualize({ type: 'route-entrypoint', specifier: encodeRouteEntrypoint(pkg, routeName) })
+      request.virtualize({ type: 'route-entrypoint', specifier, route: routeName, fromDir: dirname(specifier) })
     );
   }
 
   private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/test-support.js',
-      '/@embroider/virtual/test-support.js',
-      './@embroider/virtual/test-support.js',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/test-support.js') {
       return request;
     }
 
@@ -427,14 +456,7 @@ export class Resolver {
   }
 
   private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/test-support.css',
-      '/@embroider/virtual/test-support.css',
-      './@embroider/virtual/test-support.css',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/test-support.css') {
       return request;
     }
 
@@ -485,14 +507,7 @@ export class Resolver {
   }
 
   private handleVendorStyles<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/vendor.css',
-      '/@embroider/virtual/vendor.css',
-      './@embroider/virtual/vendor.css',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/vendor.css') {
       return request;
     }
 
@@ -562,12 +577,18 @@ export class Resolver {
           `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule.filename}.`
         );
       }
+
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
         request.virtualize({
           type: 'component-pair',
-          specifier: virtualPairComponent(this.options.appRoot, hbsModule.filename, jsModule?.filename),
+          hbsModule: hbsModule.filename,
+          jsModule: jsModule?.filename ?? null,
+          debugName: basename(hbsModule.filename).replace(/\.(js|hbs)$/, ''),
+          specifier: `${this.options.appRoot}/embroider-pair-component/${encodeURIComponent(
+            hbsModule.filename
+          )}/__vpc__/${encodeURIComponent(jsModule?.filename ?? '')}`,
         })
       );
     } else if (jsModule) {
@@ -958,14 +979,7 @@ export class Resolver {
   }
 
   private handleVendor<R extends ModuleRequest>(request: R): R {
-    //TODO move the extra forwardslash handling out into the vite plugin
-    const candidates = [
-      '@embroider/virtual/vendor.js',
-      '/@embroider/virtual/vendor.js',
-      './@embroider/virtual/vendor.js',
-    ];
-
-    if (!candidates.includes(request.specifier)) {
+    if (request.specifier !== '@embroider/virtual/vendor.js') {
       return request;
     }
 
@@ -1305,10 +1319,7 @@ export class Resolver {
           );
         }
         let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), { configFile: false });
-        return request.virtualize({
-          type: 'fastboot-switch',
-          specifier: fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names),
-        });
+        return request.virtualize(fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names));
     }
   }
 
@@ -1403,5 +1414,30 @@ function engineRelativeName(pkg: Package, filename: string): string | undefined 
   let outsideName = externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
   if (outsideName) {
     return '.' + outsideName.slice(pkg.name.length);
+  }
+}
+
+const fastbootSwitchSuffix = '/embroider_fastboot_switch';
+
+function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>) {
+  let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;
+  let virtualSpecifier: string;
+  if (names.size > 0) {
+    virtualSpecifier = `${filename}?names=${[...names].join(',')}`;
+  } else {
+    virtualSpecifier = filename;
+  }
+  return {
+    type: 'fastboot-switch' as const,
+    specifier: virtualSpecifier,
+    names,
+    hasDefaultExport: 'x',
+  };
+}
+
+function decodeFastbootSwitch(filename: string) {
+  let index = filename.indexOf(fastbootSwitchSuffix);
+  if (index >= 0) {
+    return { filename: filename.slice(0, index) };
   }
 }

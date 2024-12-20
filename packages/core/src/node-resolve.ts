@@ -47,7 +47,7 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
       virtual,
       result: {
         type: 'virtual' as const,
-        content: virtualContent(virtual.specifier, this.resolver).src,
+        content: virtualContent(virtual, this.resolver).src,
         filename: virtual.specifier,
       },
     };

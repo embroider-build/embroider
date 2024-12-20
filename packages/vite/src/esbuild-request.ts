@@ -76,7 +76,7 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
     return {
       type: 'found',
       filename: virtual.specifier,
-      result: { path: virtual.specifier, namespace: 'embroider-virtual' },
+      result: { path: virtual.specifier, namespace: 'embroider-virtual', pluginData: { virtual } },
       virtual,
     };
   }

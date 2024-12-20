@@ -1,4 +1,4 @@
-import { ResolverLoader, virtualContent } from '@embroider/core';
+import { ResolverLoader, virtualContent, type VirtualResponse } from '@embroider/core';
 import type { LoaderContext } from 'webpack';
 
 let resolverLoader: ResolverLoader | undefined;
@@ -20,7 +20,9 @@ export default function virtualLoader(this: LoaderContext<unknown>): string | un
     }
     let { resolver } = setup(appRoot);
     this.resourcePath = filename;
-    return virtualContent(filename, resolver).src;
+    // @ts-expect-error unimplemented
+    let virtual: VirtualResponse = fixmeImplementVirtualResponse();
+    return virtualContent(virtual, resolver).src;
   }
   throw new Error(`@embroider/webpack/src/virtual-loader received unexpected request: ${this.query}`);
 }

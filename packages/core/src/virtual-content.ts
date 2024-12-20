@@ -1,34 +1,26 @@
-import { dirname, basename, resolve, posix, sep, join } from 'path';
+import { posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { extensionsPattern } from '.';
 import { compile } from './js-handlebars';
-import { decodeImplicitTestScripts, renderImplicitTestScripts } from './virtual-test-support';
-import { decodeTestSupportStyles, renderTestSupportStyles } from './virtual-test-support-styles';
-import { decodeVirtualVendor, renderVendor } from './virtual-vendor';
-import { decodeVirtualVendorStyles, renderVendorStyles } from './virtual-vendor-styles';
+import { renderImplicitTestScripts, type TestSupportResponse } from './virtual-test-support';
+import { renderTestSupportStyles, type TestSupportStylesResponse } from './virtual-test-support-styles';
+import { renderVendor, type VirtualVendorResponse } from './virtual-vendor';
+import { renderVendorStyles, type VirtualVendorStylesResponse } from './virtual-vendor-styles';
 
-import { decodeEntrypoint, renderEntrypoint } from './virtual-entrypoint';
-import { decodeRouteEntrypoint, renderRouteEntrypoint } from './virtual-route-entrypoint';
+import { type EntrypointResponse, renderEntrypoint } from './virtual-entrypoint';
+import { renderRouteEntrypoint, type RouteEntrypointResponse } from './virtual-route-entrypoint';
+import assertNever from 'assert-never';
 
 export type VirtualResponse = { specifier: string } & (
-  | {
-      type: 'fastboot-switch';
-    }
-  | {
-      type: 'implicit-modules';
-    }
-  | {
-      type: 'implicit-test-modules';
-    }
-  | {
-      type: 'entrypoint';
-    }
-  | { type: 'route-entrypoint' }
-  | { type: 'test-support-js' }
-  | { type: 'test-support-css' }
-  | { type: 'vendor-js' }
-  | { type: 'vendor-css' }
-  | { type: 'component-pair' }
+  | FastbootSwitchResponse
+  | ImplicitModulesResponse
+  | EntrypointResponse
+  | RouteEntrypointResponse
+  | TestSupportResponse
+  | TestSupportStylesResponse
+  | VirtualVendorResponse
+  | VirtualVendorStylesResponse
+  | VirtualPairResponse
 );
 
 export interface VirtualContentResult {
@@ -40,53 +32,30 @@ export interface VirtualContentResult {
 // this produces the corresponding contents. It's a static, stateless function
 // because we recognize that that process that did resolution might not be the
 // same one that loads the content.
-export function virtualContent(filename: string, resolver: Resolver): VirtualContentResult {
-  let entrypoint = decodeEntrypoint(filename);
-  if (entrypoint) {
-    return renderEntrypoint(resolver, entrypoint);
+export function virtualContent(response: VirtualResponse, resolver: Resolver): VirtualContentResult {
+  switch (response.type) {
+    case 'entrypoint':
+      return renderEntrypoint(resolver, response);
+    case 'vendor-js':
+      return renderVendor(response, resolver);
+    case 'vendor-css':
+      return renderVendorStyles(response, resolver);
+    case 'test-support-css':
+      return renderTestSupportStyles(response, resolver);
+    case 'test-support-js':
+      return renderImplicitTestScripts(response, resolver);
+    case 'component-pair':
+      return pairedComponentShim(response);
+    case 'implicit-modules':
+    case 'implicit-test-modules':
+      return renderImplicitModules(response, resolver);
+    case 'route-entrypoint':
+      return renderRouteEntrypoint(response, resolver);
+    case 'fastboot-switch':
+      return renderFastbootSwitchTemplate(response);
+    default:
+      throw assertNever(response);
   }
-
-  let routeEntrypoint = decodeRouteEntrypoint(filename);
-  if (routeEntrypoint) {
-    return renderRouteEntrypoint(resolver, routeEntrypoint);
-  }
-
-  let match = decodeVirtualPairComponent(filename);
-  if (match) {
-    return pairedComponentShim(match);
-  }
-
-  let fb = decodeFastbootSwitch(filename);
-  if (fb) {
-    return renderFastbootSwitchTemplate(fb);
-  }
-
-  let im = decodeImplicitModules(filename);
-  if (im) {
-    return renderImplicitModules(im, resolver);
-  }
-
-  let isVendor = decodeVirtualVendor(filename);
-  if (isVendor) {
-    return renderVendor(filename, resolver);
-  }
-
-  let isImplicitTestScripts = decodeImplicitTestScripts(filename);
-  if (isImplicitTestScripts) {
-    return renderImplicitTestScripts(filename, resolver);
-  }
-
-  let isVendorStyles = decodeVirtualVendorStyles(filename);
-  if (isVendorStyles) {
-    return renderVendorStyles(filename, resolver);
-  }
-
-  let isTestSupportStyles = decodeTestSupportStyles(filename);
-  if (isTestSupportStyles) {
-    return renderTestSupportStyles(filename, resolver);
-  }
-
-  throw new Error(`not an @embroider/core virtual file: ${filename}`);
 }
 
 interface PairedComponentShimParams {
@@ -130,69 +99,25 @@ export default setComponentTemplate(template, templateOnlyComponent(undefined, "
 {{/if}}
 `) as (params: PairedComponentShimParams) => string;
 
-const pairComponentMarker = '/embroider-pair-component/';
-const pairComponentPattern = /\/embroider-pair-component\/(?<hbsModule>[^\/]*)\/__vpc__\/(?<jsModule>[^\/]*)$/;
-
-export function virtualPairComponent(appRoot: string, hbsModule: string, jsModule: string | undefined): string {
-  return `${appRoot}/embroider-pair-component/${encodeURIComponent(hbsModule)}/__vpc__/${encodeURIComponent(
-    jsModule ?? ''
-  )}`;
+export interface VirtualPairResponse {
+  type: 'component-pair';
+  specifier: string;
+  hbsModule: string;
+  jsModule: string | null;
+  debugName: string;
 }
 
-function decodeVirtualPairComponent(
-  filename: string
-): { hbsModule: string; jsModule: string | null; debugName: string } | null {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes(pairComponentMarker)) {
-    return null;
-  }
-  let match = pairComponentPattern.exec(filename);
-  if (!match) {
-    return null;
-  }
-  let { hbsModule, jsModule } = match.groups! as { hbsModule: string; jsModule: string };
+interface FastbootSwitchResponse {
+  type: 'fastboot-switch';
+  names: Set<string>;
+}
+
+function renderFastbootSwitchTemplate(params: FastbootSwitchResponse): VirtualContentResult {
   return {
-    hbsModule: decodeURIComponent(hbsModule),
-    jsModule: jsModule ? decodeURIComponent(jsModule) : null,
-    debugName: basename(decodeURIComponent(hbsModule)).replace(/\.(js|hbs)$/, ''),
-  };
-}
-
-const fastbootSwitchSuffix = '/embroider_fastboot_switch';
-const fastbootSwitchPattern = /(?<original>.+)\/embroider_fastboot_switch(?:\?names=(?<names>.+))?$/;
-export function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>): string {
-  let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;
-  if (names.size > 0) {
-    return `${filename}?names=${[...names].join(',')}`;
-  } else {
-    return filename;
-  }
-}
-
-export function decodeFastbootSwitch(filename: string) {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes(fastbootSwitchSuffix)) {
-    return;
-  }
-  let match = fastbootSwitchPattern.exec(filename);
-  if (match) {
-    let names = match.groups?.names?.split(',') ?? [];
-    return {
-      names: names.filter(name => name !== 'default'),
-      hasDefaultExport: names.includes('default'),
-      filename: match.groups!.original,
-    };
-  }
-}
-
-interface FastbootSwitchParams {
-  names: string[];
-  hasDefaultExport: boolean;
-}
-
-function renderFastbootSwitchTemplate(params: FastbootSwitchParams): VirtualContentResult {
-  return {
-    src: fastbootSwitchTemplate(params),
+    src: fastbootSwitchTemplate({
+      names: [...params.names].filter(name => name !== 'default'),
+      hasDefaultExport: params.names.has('default'),
+    }),
     watches: [],
   };
 }
@@ -211,36 +136,14 @@ export default mod.default;
 {{#each names as |name|}}
 export const {{name}} = mod.{{name}};
 {{/each}}
-`) as (params: FastbootSwitchParams) => string;
+`) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
 
-const implicitModulesPattern = /(?<filename>.*)[\\/]-embroider-implicit-(?<test>test-)?modules\.js$/;
-
-export function decodeImplicitModules(
-  filename: string
-): { type: 'implicit-modules' | 'implicit-test-modules'; fromFile: string } | undefined {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes('-embroider-implicit-')) {
-    return;
-  }
-  let m = implicitModulesPattern.exec(filename);
-  if (m) {
-    return {
-      type: m.groups!.test ? 'implicit-test-modules' : 'implicit-modules',
-      fromFile: m.groups!.filename,
-    };
-  }
+export interface ImplicitModulesResponse {
+  type: 'implicit-modules' | 'implicit-test-modules';
+  fromFile: string;
 }
 
-function renderImplicitModules(
-  {
-    type,
-    fromFile,
-  }: {
-    type: 'implicit-modules' | 'implicit-test-modules';
-    fromFile: string;
-  },
-  resolver: Resolver
-): VirtualContentResult {
+function renderImplicitModules({ type, fromFile }: ImplicitModulesResponse, resolver: Resolver): VirtualContentResult {
   let resolvableExtensionsPattern = extensionsPattern(resolver.options.resolvableExtensions);
 
   const pkg = resolver.packageCache.ownerOfFile(fromFile);

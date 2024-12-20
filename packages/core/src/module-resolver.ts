@@ -12,8 +12,6 @@ import makeDebug from 'debug';
 import assertNever from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
-
-import { fastbootSwitch, decodeFastbootSwitch } from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
@@ -248,14 +246,10 @@ export class Resolver {
               configFile: false,
             });
             let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
-            if (switchFile === request.fromFile) {
+            if (switchFile.specifier === request.fromFile) {
               return logTransition('internal lookup from fastbootSwitch', request);
             } else {
-              return logTransition(
-                'shadowed app fastboot',
-                request,
-                request.virtualize({ type: 'fastboot-switch', specifier: switchFile })
-              );
+              return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
             }
           } else {
             return logTransition(
@@ -1325,10 +1319,7 @@ export class Resolver {
           );
         }
         let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), { configFile: false });
-        return request.virtualize({
-          type: 'fastboot-switch',
-          specifier: fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names),
-        });
+        return request.virtualize(fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names));
     }
   }
 
@@ -1423,5 +1414,30 @@ function engineRelativeName(pkg: Package, filename: string): string | undefined 
   let outsideName = externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
   if (outsideName) {
     return '.' + outsideName.slice(pkg.name.length);
+  }
+}
+
+const fastbootSwitchSuffix = '/embroider_fastboot_switch';
+
+function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>) {
+  let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;
+  let virtualSpecifier: string;
+  if (names.size > 0) {
+    virtualSpecifier = `${filename}?names=${[...names].join(',')}`;
+  } else {
+    virtualSpecifier = filename;
+  }
+  return {
+    type: 'fastboot-switch' as const,
+    specifier: virtualSpecifier,
+    names,
+    hasDefaultExport: 'x',
+  };
+}
+
+function decodeFastbootSwitch(filename: string) {
+  let index = filename.indexOf(fastbootSwitchSuffix);
+  if (index >= 0) {
+    return { filename: filename.slice(0, index) };
   }
 }

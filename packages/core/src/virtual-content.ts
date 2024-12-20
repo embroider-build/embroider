@@ -1,24 +1,23 @@
-import { dirname, resolve, posix, sep, join } from 'path';
+import { posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { extensionsPattern } from '.';
 import { compile } from './js-handlebars';
-import { renderImplicitTestScripts } from './virtual-test-support';
-import { renderTestSupportStyles } from './virtual-test-support-styles';
+import { renderImplicitTestScripts, type TestSupportResponse } from './virtual-test-support';
+import { renderTestSupportStyles, type TestSupportStylesResponse } from './virtual-test-support-styles';
 import { renderVendor, type VirtualVendorResponse } from './virtual-vendor';
 import { renderVendorStyles, type VirtualVendorStylesResponse } from './virtual-vendor-styles';
 
 import { type EntrypointResponse, renderEntrypoint } from './virtual-entrypoint';
 import { renderRouteEntrypoint, type RouteEntrypointResponse } from './virtual-route-entrypoint';
+import assertNever from 'assert-never';
 
 export type VirtualResponse = { specifier: string } & (
-  | {
-      type: 'fastboot-switch';
-    }
+  | FastbootSwitchResponse
   | ImplicitModulesResponse
   | EntrypointResponse
   | RouteEntrypointResponse
-  | { type: 'test-support-js' }
-  | { type: 'test-support-css' }
+  | TestSupportResponse
+  | TestSupportStylesResponse
   | VirtualVendorResponse
   | VirtualVendorStylesResponse
   | VirtualPairResponse
@@ -52,16 +51,11 @@ export function virtualContent(response: VirtualResponse, resolver: Resolver): V
       return renderImplicitModules(response, resolver);
     case 'route-entrypoint':
       return renderRouteEntrypoint(response, resolver);
+    case 'fastboot-switch':
+      return renderFastbootSwitchTemplate(response);
+    default:
+      throw assertNever(response);
   }
-
-  let filename = response.specifier;
-
-  let fb = decodeFastbootSwitch(filename);
-  if (fb) {
-    return renderFastbootSwitchTemplate(fb);
-  }
-
-  throw new Error(`not an @embroider/core virtual file: ${filename}`);
 }
 
 interface PairedComponentShimParams {
@@ -113,41 +107,17 @@ export interface VirtualPairResponse {
   debugName: string;
 }
 
-const fastbootSwitchSuffix = '/embroider_fastboot_switch';
-const fastbootSwitchPattern = /(?<original>.+)\/embroider_fastboot_switch(?:\?names=(?<names>.+))?$/;
-export function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>): string {
-  let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;
-  if (names.size > 0) {
-    return `${filename}?names=${[...names].join(',')}`;
-  } else {
-    return filename;
-  }
+interface FastbootSwitchResponse {
+  type: 'fastboot-switch';
+  names: Set<string>;
 }
 
-export function decodeFastbootSwitch(filename: string) {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes(fastbootSwitchSuffix)) {
-    return;
-  }
-  let match = fastbootSwitchPattern.exec(filename);
-  if (match) {
-    let names = match.groups?.names?.split(',') ?? [];
-    return {
-      names: names.filter(name => name !== 'default'),
-      hasDefaultExport: names.includes('default'),
-      filename: match.groups!.original,
-    };
-  }
-}
-
-interface FastbootSwitchParams {
-  names: string[];
-  hasDefaultExport: boolean;
-}
-
-function renderFastbootSwitchTemplate(params: FastbootSwitchParams): VirtualContentResult {
+function renderFastbootSwitchTemplate(params: FastbootSwitchResponse): VirtualContentResult {
   return {
-    src: fastbootSwitchTemplate(params),
+    src: fastbootSwitchTemplate({
+      names: [...params.names].filter(name => name !== 'default'),
+      hasDefaultExport: params.names.has('default'),
+    }),
     watches: [],
   };
 }
@@ -166,7 +136,7 @@ export default mod.default;
 {{#each names as |name|}}
 export const {{name}} = mod.{{name}};
 {{/each}}
-`) as (params: FastbootSwitchParams) => string;
+`) as (params: { names: string[]; hasDefaultExport: boolean }) => string;
 
 export interface ImplicitModulesResponse {
   type: 'implicit-modules' | 'implicit-test-modules';

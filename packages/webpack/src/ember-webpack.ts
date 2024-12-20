@@ -610,6 +610,8 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             // but in fastboot, we need to disable that in favor of doing our
             // own insertion of `<link>` tags in the HTML
             runtime: variant.runtime === 'browser',
+            // It's not reasonable to make assumptions about order when doing CSS via modules
+            ignoreOrder: true,
           }),
         ],
       };

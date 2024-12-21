@@ -205,9 +205,32 @@ export default function main(context: typeof Babel): unknown {
     // our getConfig and getOwnConfig macros are supposed to be able to absorb
     // optional chaining. To make that work we need to see the optional chaining
     // before preset-env compiles them away.
+
+    function fromGetConfig(path: NodePath<t.MemberExpression | t.OptionalMemberExpression> | null) {
+      while (path) {
+        const obj = path.get('object');
+        if (obj.isCallExpression()) {
+          const callee = obj.get('callee');
+          if (
+            callee.referencesImport('@embroider/macros', 'getOwnConfig') ||
+            callee.referencesImport('@embroider/macros', 'getGlobalConfig') ||
+            callee.referencesImport('@embroider/macros', 'getConfig')
+          ) {
+            return true;
+          }
+        }
+        if (obj.isMemberExpression() || obj.isOptionalMemberExpression()) {
+          path = obj;
+        } else {
+          return false;
+        }
+      }
+      return false;
+    }
+
     (visitor as any).OptionalMemberExpression = {
       enter(path: NodePath<t.OptionalMemberExpression>, state: State) {
-        if (state.opts.mode === 'compile-time') {
+        if (state.opts.mode === 'compile-time' && fromGetConfig(path as any)) {
           let result = new Evaluator({ state }).evaluate(path);
           if (result.confident) {
             path.replaceWith(buildLiterals(result.value, context));

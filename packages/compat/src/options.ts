@@ -95,22 +95,6 @@ export default interface Options extends CoreOptions {
   // it on in production. But it can be helpful when testing how much of your
   // app is able to work with staticComponents enabled.
   allowUnsafeDynamicComponents?: boolean;
-
-  /**
-   * When true, we statically resolve all components, modifiers, and helpers (collectively
-   * knows as Invokables) at build time. This causes any unused Invokables to be left out
-   * of the build if they are unused i.e. "tree shaking".
-   *
-   * Defaults to false which gives you greater compatibility with classic Ember apps at the
-   * cost of bigger builds.
-   *
-   * This setting takes over from `staticHelpers`, `staticModifiers`, and `staticComponents`
-   * because the Developer Experience was less than ideal if any of these settings did not
-   * agree i.e. they all needed to be true or they all needed to be false.
-   *
-   * Enabling this is a prerequisite for route splitting.
-   */
-  staticInvokables?: boolean;
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
@@ -122,10 +106,14 @@ const defaults = Object.assign(coreWithDefaults(), {
   workspaceDir: null,
   packageRules: [],
   allowUnsafeDynamicComponents: false,
-  staticInvokables: false,
 });
 
-export function optionsWithDefaults(options?: Options): Required<Options> {
+export type CompatOptionsType = Required<
+  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
+> &
+  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+
+export function optionsWithDefaults(options?: Options): CompatOptionsType {
   return Object.assign({}, defaults, options);
 }
 
@@ -138,7 +126,6 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
   optimized: Object.freeze({
     staticAddonTrees: true,
     staticAddonTestSupportTrees: true,
-    staticInvokables: true,
     staticEmberSource: true,
     allowUnsafeDynamicComponents: false,
   }),

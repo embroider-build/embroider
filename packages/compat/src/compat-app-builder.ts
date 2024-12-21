@@ -60,6 +60,7 @@ import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
+import type { CompatOptionsType } from './options';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -75,7 +76,7 @@ export class CompatAppBuilder {
     private root: string,
     private origAppPackage: Package,
     private appPackageWithMovedDeps: Package,
-    private options: Required<Options>,
+    private options: CompatOptionsType,
     private compatApp: CompatApp,
     private configTree: V1Config,
     private synthVendor: Package,

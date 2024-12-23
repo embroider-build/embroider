@@ -42,9 +42,7 @@ export default function templateTagCodemod(
       compatBuild(emberApp, undefined, {
         staticAddonTrees: true,
         staticAddonTestSupportTrees: true,
-        staticComponents: true,
-        staticHelpers: true,
-        staticModifiers: true,
+        staticInvokables: true,
         staticEmberSource: true,
         amdCompatibility: {
           es: [],

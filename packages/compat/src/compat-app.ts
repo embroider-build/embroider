@@ -2,6 +2,7 @@ import type { Node as BroccoliNode } from 'broccoli-node-api';
 import type { Stage, Package } from '@embroider/core';
 import { PackageCache, WaitForTrees, RewrittenPackageCache, locateEmbroiderWorkingDir } from '@embroider/core';
 import type Options from './options';
+import type { CompatOptionsType } from './options';
 import { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
@@ -41,7 +42,7 @@ interface Group {
 export default class CompatApp {
   private annotation = '@embroider/compat/app';
   private active: CompatAppBuilder | undefined;
-  readonly options: Required<Options>;
+  readonly options: CompatOptionsType;
 
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
   private _implicitScripts: string[] = [];

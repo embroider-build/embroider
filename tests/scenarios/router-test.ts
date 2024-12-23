@@ -34,9 +34,7 @@ let routerApp = tsAppScenarios.map('router', project => {
           return maybeEmbroider(app, {
             staticAddonTestSupportTrees: true,
             staticAddonTrees: true,
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
             splitAtRoutes: ['split-me'],
             skipBabel: [
               {

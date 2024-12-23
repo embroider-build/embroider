@@ -108,7 +108,12 @@ const defaults = Object.assign(coreWithDefaults(), {
   allowUnsafeDynamicComponents: false,
 });
 
-export function optionsWithDefaults(options?: Options): Required<Options> {
+export type CompatOptionsType = Required<
+  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
+> &
+  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+
+export function optionsWithDefaults(options?: Options): CompatOptionsType {
   return Object.assign({}, defaults, options);
 }
 
@@ -121,10 +126,8 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
   optimized: Object.freeze({
     staticAddonTrees: true,
     staticAddonTestSupportTrees: true,
-    staticHelpers: true,
-    staticModifiers: true,
-    staticComponents: true,
     staticEmberSource: true,
     allowUnsafeDynamicComponents: false,
+    staticInvokables: true,
   }),
 });

@@ -128,5 +128,6 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
     staticAddonTestSupportTrees: true,
     staticEmberSource: true,
     allowUnsafeDynamicComponents: false,
+    staticInvokables: true,
   }),
 });

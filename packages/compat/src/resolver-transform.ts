@@ -323,14 +323,23 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private get staticComponentsEnabled(): boolean {
+    if (!this.config?.options) {
+      return true;
+    }
     return this.config.options.staticComponents || Boolean(this.auditHandler);
   }
 
   private get staticHelpersEnabled(): boolean {
+    if (!this.config?.options) {
+      return true;
+    }
     return this.config.options.staticHelpers || Boolean(this.auditHandler);
   }
 
   private get staticModifiersEnabled(): boolean {
+    if (!this.config?.options) {
+      return true;
+    }
     return this.config.options.staticModifiers || Boolean(this.auditHandler);
   }
 
@@ -349,7 +358,7 @@ class TemplateResolver implements ASTPlugin {
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
     // force.
-    for (let rule of this.config.activePackageRules) {
+    for (let rule of this.config?.activePackageRules ?? []) {
       if (rule.components) {
         for (let [snippet, rules] of Object.entries(rule.components)) {
           let processedRules = preprocessComponentRule(rules);

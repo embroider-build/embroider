@@ -1,5 +1,5 @@
 import { existsSync } from 'fs-extra';
-import { cleanUrl } from './paths';
+import { cleanUrl, explicitRelative } from './paths';
 import type PackageCache from './package-cache';
 import { sep } from 'path';
 import { resolve as resolveExports } from 'resolve.exports';
@@ -49,7 +49,7 @@ export function isInComponents(url: string, packageCache: Pick<PackageCache, 'ow
     conditions: ['default', 'imports'],
   });
   let componentsDir = tryResolve?.[0] ?? './components';
-  return ('.' + id.slice(pkg?.root.length).split(sep).join('/')).startsWith(componentsDir);
+  return explicitRelative(pkg.root, id).split(sep).join('/').startsWith(componentsDir);
 }
 
 export function templateOnlyComponentSource() {

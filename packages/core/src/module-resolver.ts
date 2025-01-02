@@ -3,7 +3,10 @@ import {
   emberVirtualPeerDeps,
   extensionsPattern,
   packageName as getPackageName,
+  isInComponents,
+  needsSyntheticComponentJS,
   packageName,
+  syntheticJStoHBS,
 } from '@embroider/shared-internals';
 import { dirname, resolve, posix, basename } from 'path';
 import type { Package, V2Package } from '@embroider/shared-internals';
@@ -18,7 +21,7 @@ import { readFileSync } from 'fs';
 import { nodeResolve } from './node-resolve';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
-import type { ModuleRequest, Resolution } from './module-request';
+import { extractResolution, type ModuleRequest, type Resolution } from './module-request';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -145,14 +148,12 @@ export class Resolver {
     let resolution: ResolveResolution;
 
     if (request.resolvedTo) {
-      if (typeof request.resolvedTo === 'function') {
-        resolution = await request.resolvedTo();
-      } else {
-        resolution = request.resolvedTo;
-      }
+      resolution = await extractResolution(request.resolvedTo);
     } else {
       resolution = await request.defaultResolve();
     }
+
+    resolution = await this.afterResolve(request, resolution);
 
     switch (resolution.type) {
       case 'found':
@@ -172,11 +173,7 @@ export class Resolver {
     }
 
     if (nextRequest.resolvedTo) {
-      if (typeof nextRequest.resolvedTo === 'function') {
-        return await nextRequest.resolvedTo();
-      } else {
-        return nextRequest.resolvedTo;
-      }
+      return await extractResolution(nextRequest.resolvedTo);
     }
 
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
@@ -204,6 +201,45 @@ export class Resolver {
 
   get packageCache() {
     return RewrittenPackageCache.shared('embroider', this.options.appRoot);
+  }
+
+  private async afterResolve<Res extends Resolution>(request: ModuleRequest<Res>, resolution: Res): Promise<Res> {
+    resolution = await this.handleSyntheticComponents(request, resolution);
+    return resolution;
+  }
+
+  private async handleSyntheticComponents<Res extends Resolution>(
+    request: ModuleRequest<Res>,
+    resolution: Res
+  ): Promise<Res> {
+    // Key assumption: the system's defaultResolve performs extension search for
+    // extensionless requests, with JS at a higher priority than HBS.
+
+    // When the request had an explicit ".js" extension, the system default
+    // extension search doesn't help us locate an HBS, so we need to check for
+    // it ourselves here.
+    if (resolution.type === 'not_found') {
+      let hbsSpecifier = syntheticJStoHBS(request.specifier);
+      if (hbsSpecifier) {
+        resolution = await this.resolve(request.alias(hbsSpecifier));
+      }
+    }
+
+    // At this point, we might have resolved an HBS file (either because the
+    // request was extensionless and the default search found it, or because of
+    // our own code above) when the request was for a JS file.
+    if (resolution.type === 'found') {
+      let syntheticId = needsSyntheticComponentJS(request.specifier, resolution.filename);
+      if (syntheticId && isInComponents(resolution.filename, this.packageCache)) {
+        let newRequest = logTransition(
+          `synthetic component JS`,
+          request,
+          request.virtualize({ type: 'template-only-component-js', specifier: syntheticId })
+        );
+        return await extractResolution(newRequest.resolvedTo!);
+      }
+    }
+    return resolution;
   }
 
   private logicalPackage(owningPackage: V2Package, file: string): V2Package {

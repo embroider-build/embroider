@@ -23,7 +23,14 @@ export async function ensurePrebuild() {
 export async function ensureAppSetup() {
   let pkg = resolver.packageCache.get(process.cwd());
   if (!pkg.packageJSON.exports) {
-    throw new Error(`must use package.json exports for self-resolvability`);
+    throw new Error(`must use package.json exports for self-resolvability. Plase add this to package.json:
+
+ "exports": {
+    "./tests/*": "./tests/*",
+    "./*": "./app/*"
+  },
+
+`);
   }
 }
 

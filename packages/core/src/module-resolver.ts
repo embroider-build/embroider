@@ -18,7 +18,7 @@ import { exports as resolveExports } from 'resolve.exports';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
-import { nodeResolve } from './node-resolve';
+import { nodeResolve, type NodeResolveOpts } from './node-resolve';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import { extractResolution, type ModuleRequest, type Resolution } from './module-request';
@@ -190,13 +190,14 @@ export class Resolver {
   // defaultResolve already configured to be "do the normal node thing".
   async nodeResolve(
     specifier: string,
-    fromFile: string
+    fromFile: string,
+    opts?: NodeResolveOpts
   ): Promise<
     | { type: 'virtual'; filename: string; content: string }
     | { type: 'real'; filename: string }
     | { type: 'not_found'; err: Error }
   > {
-    return nodeResolve(this, specifier, fromFile);
+    return nodeResolve(this, specifier, fromFile, opts);
   }
 
   get packageCache() {

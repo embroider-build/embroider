@@ -147,7 +147,6 @@ class RewriteManifest extends Plugin {
     // treated as ember code it needs to have v2 addon metadata
     json.keywords = [...(json.keywords ?? []), 'ember-addon'];
     let meta: AddonMeta = {
-      type: 'addon',
       version: 2,
       'auto-upgraded': true,
     };

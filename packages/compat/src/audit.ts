@@ -1,6 +1,6 @@
 import { readFileSync, readJSONSync } from 'fs-extra';
 import { join, resolve as resolvePath, dirname } from 'path';
-import type { AppMeta, ResolverOptions } from '@embroider/core';
+import type { ResolverOptions } from '@embroider/core';
 import { explicitRelative, hbsToJS, locateEmbroiderWorkingDir, Resolver, RewrittenPackageCache } from '@embroider/core';
 import { Memoize } from 'typescript-memoize';
 import chalk from 'chalk';
@@ -125,21 +125,12 @@ export class Audit {
     return audit.run();
   }
 
-  constructor(private originAppRoot: string, private options: AuditOptions = {}) {}
-
-  @Memoize()
-  private get pkg() {
-    return readJSONSync(join(this.movedAppRoot, 'package.json'));
-  }
+  constructor(private originAppRoot: string, private options: AuditOptions) {}
 
   @Memoize()
   private get movedAppRoot() {
     let cache = RewrittenPackageCache.shared('embroider', this.originAppRoot);
     return cache.maybeMoved(cache.get(this.originAppRoot)).root;
-  }
-
-  private get meta() {
-    return this.pkg['ember-addon'] as AppMeta;
   }
 
   @Memoize()
@@ -166,18 +157,13 @@ export class Audit {
 
   private resolver = new Resolver(this.resolverParams);
 
-  private debug(message: string, ...args: any[]) {
-    if (this.options.debug) {
-      console.log(message, ...args);
-    }
-  }
-
   async run(): Promise<AuditResults> {
     (globalThis as any).embroider_audit = this.handleResolverError.bind(this);
 
     try {
-      this.debug(`meta`, this.meta);
-      let entrypoints = this.meta.assets.filter(a => a.endsWith('html')).map(a => resolvePath(this.movedAppRoot, a));
+      let entrypoints = this.options.entrypoints
+        .filter(a => a.endsWith('html'))
+        .map(a => resolvePath(this.movedAppRoot, a));
 
       let modules = await visitModules({
         base: this.originAppRoot,
@@ -204,11 +190,11 @@ export class Audit {
       return undefined;
     }
 
-    if (fromFile.endsWith('.html') && specifier.startsWith(this.meta['root-url'])) {
+    if (fromFile.endsWith('.html') && specifier.startsWith(this.options.rootURL)) {
       // root-relative URLs in HTML are actually relative to the appDir
       specifier = explicitRelative(
         dirname(fromFile),
-        resolvePath(this.movedAppRoot, specifier.replace(this.meta['root-url'], ''))
+        resolvePath(this.movedAppRoot, specifier.replace(this.options.rootURL, ''))
       );
     }
 

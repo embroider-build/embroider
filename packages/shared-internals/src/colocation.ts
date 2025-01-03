@@ -40,7 +40,7 @@ export function isInComponents(url: string, packageCache: Pick<PackageCache, 'ow
   const id = cleanUrl(url);
 
   const pkg = packageCache.ownerOfFile(id);
-  if (!pkg?.isV2App()) {
+  if (!pkg?.isApp()) {
     return false;
   }
 

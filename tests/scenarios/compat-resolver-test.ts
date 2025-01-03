@@ -1,4 +1,3 @@
-import type { AppMeta } from '@embroider/shared-internals';
 import { Transpiler } from '@embroider/test-support';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
@@ -14,17 +13,8 @@ const { module: Qmodule, test } = QUnit;
 
 Scenarios.fromProject(() => new Project())
   .map('compat-resolver-test', app => {
-    let appMeta: AppMeta = {
-      type: 'app',
-      version: 2,
-      'auto-upgraded': true,
-      assets: ['index.html'],
-      'root-url': '/',
-    };
     app.pkg = {
       name: 'my-app',
-      keywords: ['ember-addon'],
-      'ember-addon': appMeta as any,
     };
     app.mergeFiles({
       'index.html': '<script src="./templates/application.hbs" type="module"></script>',

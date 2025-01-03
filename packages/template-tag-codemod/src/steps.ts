@@ -22,9 +22,6 @@ export async function ensurePrebuild() {
 
 export async function ensureAppSetup() {
   let pkg = resolver.packageCache.get(process.cwd());
-  if (!pkg.isV2Ember()) {
-    throw new Error(`must add v2 app metadata`);
-  }
   if (!pkg.packageJSON.exports) {
     throw new Error(`must use package.json exports for self-resolvability`);
   }

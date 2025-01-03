@@ -17,9 +17,9 @@ export interface Options {
   nativeRouteTemplates?: boolean;
   routeTemplates?: string[];
 
-  // when a .js or .ts file already exists, we necessarily convert those to .gjs
-  // or .gts respectively. But when only an .hbs file exists, we have a choice
-  // of default.
+  // when a .js or .ts file already exists, we necessarily convert to .gjs or
+  // .gts respectively. But when only an .hbs file exists, we have a choice of
+  // default.
   defaultOutput?: 'gjs' | 'gts';
 }
 

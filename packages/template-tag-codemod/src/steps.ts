@@ -90,8 +90,7 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
 const resolver = new ResolverLoader(process.cwd()).resolver;
 const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; content: string }>();
 
-export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults) {
-  let src = readFileSync(filename, 'utf8');
+async function inspectContents(src: string, filename: string, isRouteTemplate: boolean, opts: OptionsWithDefaults) {
   let strictSource = (await transformAsync(hbsToJS(src), {
     filename,
     plugins: [
@@ -110,7 +109,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
                 },
               } satisfies ResolverTransformOptions,
             ],
-            routeTemplateTransform(),
+            ...(isRouteTemplate ? [routeTemplateTransform()] : []),
           ],
         } satisfies EtcOptions,
       ],
@@ -126,6 +125,11 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
     throw new Error(`failed to extract metadata while processing ${filename}`);
   }
   let { templateSource, scope } = await resolveImports(filename, meta.result, opts);
+  return { templateSource, scope };
+}
+
+export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults) {
+  let { templateSource, scope } = await inspectContents(readFileSync(filename, 'utf8'), filename, true, opts);
 
   let outSource: string[] = [];
 

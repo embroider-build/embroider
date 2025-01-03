@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
 import { explicitRelative, hbsToJS, ResolverLoader } from '@embroider/core';
 import { parseAsync, transformAsync, type types } from '@babel/core';
@@ -126,6 +126,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
   }
 
   writeFileSync(filename.replace(/.hbs$/, '.' + opts.defaultOutput), outSource.join('\n'));
+  unlinkSync(filename);
   console.log(`route template: ${filename} `);
 }
 

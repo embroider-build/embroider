@@ -7,6 +7,8 @@ import { createRequire } from 'module';
 import extractMeta, { type ExtractMetaOpts, type MetaResult } from './extract-meta.js';
 import { externalName } from '@embroider/reverse-exports';
 import { dirname } from 'path';
+import type { ResolverTransformOptions } from '@embroider/compat';
+
 const require = createRequire(import.meta.url);
 
 export interface Options {
@@ -90,7 +92,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
                 externalNameHint(name: string) {
                   return name;
                 },
-              },
+              } satisfies ResolverTransformOptions,
             ],
           ],
         } satisfies EtcOptions,

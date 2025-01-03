@@ -13,15 +13,29 @@ import { routeTemplateTransform } from './route-template-transform.js';
 const require = createRequire(import.meta.url);
 
 export interface Options {
+  // when true, imports for other files in the same project will use relative
+  // paths with file extensions. This is the most compatible with modern Node
+  // ESM convensions, but it's not supported by Ember's classic build.
   relativeLocalPaths?: boolean;
+
+  // file extensions that can represent components
   extensions?: string[];
+
+  // when true, assume we can use https://github.com/emberjs/rfcs/pull/1046.
+  // Otherwise, assume we're using the ember-route-template addon.
   nativeRouteTemplates?: boolean;
+
+  // list of globs of the route templates we should convert
   routeTemplates?: string[];
 
   // when a .js or .ts file already exists, we necessarily convert to .gjs or
   // .gts respectively. But when only an .hbs file exists, we have a choice of
   // default.
   defaultOutput?: 'gjs' | 'gts';
+
+  // snippet of typescript to use for the type signature of route templates.
+  // Defaults to `{ Args: { model: unknown, controller: unknown } }`
+  routeTemplateSignature?: string;
 }
 
 export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
@@ -32,6 +46,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       nativeRouteTemplates: true,
       routeTemplates: ['app/templates/*.hbs'],
       defaultOutput: 'gjs',
+      routeTemplateSignature: `{ Args: { model: unknown, controller: unknown } }`,
     },
     options
   );
@@ -110,20 +125,35 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
   if (!meta.result) {
     throw new Error(`failed to extract metadata while processing ${filename}`);
   }
-  let result = await resolveImports(filename, meta.result, opts);
-
-  if (!opts.nativeRouteTemplates) {
-    result.scope.set('RouteTemplate', { local: 'RouteTemplate', imported: 'default', module: 'ember-route-template' });
-  }
+  let { templateSource, scope } = await resolveImports(filename, meta.result, opts);
 
   let outSource: string[] = [];
-  outSource.push(renderScopeImports(result));
 
   if (opts.nativeRouteTemplates) {
-    outSource.push(`<template>${result.templateSource}</template>`);
+    if (opts.defaultOutput === 'gts') {
+      outSource.unshift(`import type { TemplateOnlyComponent } from '@ember/component/template-only';`);
+      outSource.push(
+        `export default <template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.routeTemplateSignature}>`
+      );
+    } else {
+      outSource.push(`<template>${templateSource}</template>`);
+    }
   } else {
-    outSource.push(`export default RouteTemplate(<template>${result.templateSource}</template>)`);
+    scope.set('RouteTemplate', {
+      local: 'RouteTemplate',
+      imported: 'default',
+      module: 'ember-route-template',
+    });
+    if (opts.defaultOutput === 'gts') {
+      outSource.push(
+        `export default RouteTemplate<${opts.routeTemplateSignature}>(<template>${templateSource}</template>)`
+      );
+    } else {
+      outSource.push(`export default RouteTemplate(<template>${templateSource}</template>)`);
+    }
   }
+
+  outSource.unshift(renderScopeImports(scope));
 
   writeFileSync(filename.replace(/.hbs$/, '.' + opts.defaultOutput), outSource.join('\n'));
   unlinkSync(filename);
@@ -255,9 +285,9 @@ async function resolveImports(filename: string, result: MetaResult, opts: Option
   };
 }
 
-function renderScopeImports(result: MetaResult) {
+function renderScopeImports(scope: MetaResult['scope']) {
   let modules = new Map<string, Map<string, string>>();
-  for (let entry of result.scope.values()) {
+  for (let entry of scope.values()) {
     let module = modules.get(entry.module);
     if (!module) {
       module = new Map();

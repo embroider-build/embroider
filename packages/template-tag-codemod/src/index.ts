@@ -8,6 +8,7 @@ async function main() {
       relativeLocalPaths: false,
       nativeRouteTemplates: false,
       defaultOutput: 'gts',
+      // routeTemplates: ['app/templates/add-facility.hbs'],
     })
   );
 }

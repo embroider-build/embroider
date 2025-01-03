@@ -8,6 +8,7 @@ import extractMeta, { type ExtractMetaOpts, type MetaResult } from './extract-me
 import { externalName } from '@embroider/reverse-exports';
 import { dirname } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
+import { routeTemplateTransform } from './route-template-transform.js';
 
 const require = createRequire(import.meta.url);
 
@@ -94,6 +95,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
                 },
               } satisfies ResolverTransformOptions,
             ],
+            routeTemplateTransform(),
           ],
         } satisfies EtcOptions,
       ],

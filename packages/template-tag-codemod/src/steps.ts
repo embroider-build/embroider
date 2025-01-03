@@ -9,6 +9,33 @@ import { externalName } from '@embroider/reverse-exports';
 import { dirname } from 'path';
 const require = createRequire(import.meta.url);
 
+export interface Options {
+  relativeLocalPaths?: boolean;
+  extensions?: string[];
+  nativeRouteTemplates?: boolean;
+  routeTemplates?: string[];
+
+  // when a .js or .ts file already exists, we necessarily convert those to .gjs
+  // or .gts respectively. But when only an .hbs file exists, we have a choice
+  // of default.
+  defaultOutput?: 'gjs' | 'gts';
+}
+
+export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
+  return Object.assign(
+    {
+      relativeLocalPaths: true,
+      extensions: ['.gts', '.gjs', '.ts', '.js', '.hbs.js', '.hbs'],
+      nativeRouteTemplates: true,
+      routeTemplates: ['app/templates/*.hbs'],
+      defaultOutput: 'gjs',
+    },
+    options
+  );
+}
+
+type OptionsWithDefaults = Required<Options>;
+
 export async function ensurePrebuild() {
   if (!existsSync('node_modules/.embroider')) {
     console.log(`Running addon prebuild...`);
@@ -34,16 +61,18 @@ export async function ensureAppSetup() {
   }
 }
 
-export async function processRouteTemplates() {
-  for (let filename of globSync('app/templates/*.hbs')) {
-    await processRouteTemplate(filename);
+export async function processRouteTemplates(opts: OptionsWithDefaults) {
+  for (let pattern of opts.routeTemplates) {
+    for (let filename of globSync(pattern)) {
+      await processRouteTemplate(filename, opts);
+    }
   }
 }
 
 const resolver = new ResolverLoader(process.cwd()).resolver;
 const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; content: string }>();
 
-export async function processRouteTemplate(filename: string) {
+export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults) {
   let src = readFileSync(filename, 'utf8');
   let strictSource = (await transformAsync(hbsToJS(src), {
     filename,
@@ -77,11 +106,22 @@ export async function processRouteTemplate(filename: string) {
   if (!meta.result) {
     throw new Error(`failed to extract metadata while processing ${filename}`);
   }
-  let result = await resolveImports(filename, meta.result);
+  let result = await resolveImports(filename, meta.result, opts);
+
+  if (!opts.nativeRouteTemplates) {
+    result.scope.set('RouteTemplate', { local: 'RouteTemplate', imported: 'default', module: 'ember-route-template' });
+  }
+
   let outSource: string[] = [];
   outSource.push(renderScopeImports(result));
-  outSource.push(`<template>${result.templateSource}</template>`);
-  writeFileSync(filename.replace(/.hbs$/, '.gjs'), outSource.join('\n'));
+
+  if (opts.nativeRouteTemplates) {
+    outSource.push(`<template>${result.templateSource}</template>`);
+  } else {
+    outSource.push(`export default RouteTemplate(<template>${result.templateSource}</template>)`);
+  }
+
+  writeFileSync(filename.replace(/.hbs$/, '.' + opts.defaultOutput), outSource.join('\n'));
   console.log(`route template: ${filename} `);
 }
 
@@ -122,7 +162,20 @@ function isDefaultReexport(statement: types.Statement): statement is types.Expor
   return false;
 }
 
-async function chooseImport(fromFile: string, targetFile: string, importedName: string): Promise<string> {
+function withoutExtension(name: string, extensions: string[]): string {
+  let matched = extensions.find(ext => name.endsWith(ext));
+  if (matched) {
+    return name.slice(0, -1 * matched.length);
+  }
+  return name;
+}
+
+async function chooseImport(
+  fromFile: string,
+  targetFile: string,
+  importedName: string,
+  opts: OptionsWithDefaults
+): Promise<string> {
   let pkg = resolver.packageCache.ownerOfFile(targetFile);
   if (!pkg) {
     throw new Error(`Unexpected unowned file ${targetFile}`);
@@ -133,8 +186,15 @@ async function chooseImport(fromFile: string, targetFile: string, importedName: 
     throw new Error(`Unexpected unowned file ${fromFile}`);
   }
   if (importingPkg === pkg) {
-    // local import
-    return explicitRelative(dirname(fromFile), targetFile);
+    if (opts.relativeLocalPaths) {
+      return explicitRelative(dirname(fromFile), targetFile);
+    } else {
+      let external = externalName(pkg.packageJSON, explicitRelative(pkg.root, targetFile));
+      if (!external) {
+        throw new Error(`Found no publicly accessible name for ${targetFile} in package ${pkg.name}`);
+      }
+      return withoutExtension(external, opts.extensions);
+    }
   }
 
   // Look into javascript files that came from addons to attempt to skip over
@@ -163,19 +223,19 @@ async function chooseImport(fromFile: string, targetFile: string, importedName: 
   return external;
 }
 
-async function resolveImports(filename: string, result: MetaResult): Promise<MetaResult> {
+async function resolveImports(filename: string, result: MetaResult, opts: OptionsWithDefaults): Promise<MetaResult> {
   let resolvedScope: MetaResult['scope'] = new Map();
 
   for (let [templateName, { local, imported, module }] of result.scope) {
     let resolution = await resolver.nodeResolve(module, filename, {
-      extensions: ['.gts', '.gjs', '.ts', '.hbs.js', '.hbs'],
+      extensions: opts.extensions,
     });
     let resolvedModule: string;
     if (resolution.type === 'not_found') {
       throw new Error(`Unable to resolve ${module} from ${filename}`);
     } else {
       resolutions.set(resolution.filename, resolution);
-      resolvedModule = await chooseImport(filename, resolution.filename, imported);
+      resolvedModule = await chooseImport(filename, resolution.filename, imported, opts);
     }
     resolvedScope.set(templateName, {
       local,

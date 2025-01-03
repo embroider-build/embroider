@@ -1,6 +1,5 @@
 import { emberTemplateCompiler } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
-import type { AppMeta } from '@embroider/core';
 import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
@@ -22,7 +21,10 @@ describe('audit', function () {
     let origCwd = process.cwd();
     try {
       process.chdir(app.baseDir);
-      let audit = new Audit(app.baseDir);
+      let audit = new Audit(app.baseDir, {
+        entrypoints: ['index.html'],
+        rootURL: '/',
+      });
       return await audit.run();
     } finally {
       process.chdir(origCwd);
@@ -124,16 +126,7 @@ describe('audit', function () {
         },
       },
     });
-    let appMeta: AppMeta = {
-      type: 'app',
-      version: 2,
-      assets: ['index.html'],
-      'root-url': '/',
-      'auto-upgraded': true,
-    };
     merge(app.pkg, {
-      'ember-addon': appMeta,
-      keywords: ['ember-addon'],
       exports: {
         './*': './*',
         './tests/*': './tests/*',

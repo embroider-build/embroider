@@ -9,8 +9,8 @@
   getting script vs module context correct).
 */
 
-import type { AppMeta, BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
-import { HTMLEntrypoint, getAppMeta, getPackagerCacheDir, getOrCreate } from '@embroider/core';
+import type { BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
+import { HTMLEntrypoint, getPackagerCacheDir, getOrCreate } from '@embroider/core';
 import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
 import type { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
 import webpack from 'webpack';
@@ -45,7 +45,7 @@ type MinifyOptions = NonNullable<Parameters<Awaited<ReturnType<typeof loadTerser
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
-  rootURL: AppMeta['root-url'];
+  rootURL: string;
   publicAssetURL: string;
   resolverConfig: ResolverOptions;
   packageName: string;
@@ -160,6 +160,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   }
 
   private examineApp(): AppInfo {
+    // @ts-expect-error webpack is not updated to work on @embroider/core 4.x
     let meta = getAppMeta(this.pathToVanillaApp);
     let rootURL = meta['ember-addon']['root-url'];
     let entrypoints = [];

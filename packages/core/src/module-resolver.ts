@@ -9,7 +9,7 @@ import {
   syntheticJStoHBS,
 } from '@embroider/shared-internals';
 import { dirname, resolve, posix, basename } from 'path';
-import type { Package, V2Package } from '@embroider/shared-internals';
+import type { Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
@@ -242,7 +242,7 @@ export class Resolver {
     return resolution;
   }
 
-  private logicalPackage(owningPackage: V2Package, file: string): V2Package {
+  private logicalPackage(owningPackage: Package, file: string): Package {
     let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
     if (logicalLocation) {
       let pkg = this.packageCache.get(logicalLocation.owningEngine.root);
@@ -970,7 +970,7 @@ export class Resolver {
 
     if (pkg.name === packageName) {
       // we found a self-import
-      if (pkg.meta['auto-upgraded']) {
+      if (pkg.meta?.['auto-upgraded']) {
         // auto-upgraded packages always get automatically adjusted. They never
         // supported fancy package.json exports features so this direct mapping
         // to the root is always right.
@@ -1106,7 +1106,7 @@ export class Resolver {
     // choices about what it can import
     let logicalPackage = this.logicalPackage(pkg, fromFile);
 
-    if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
+    if (logicalPackage.meta?.['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
         let dep = this.packageCache.resolve(packageName, logicalPackage);
         if (!dep.isEmberAddon()) {
@@ -1425,7 +1425,7 @@ export class Resolver {
 // dependencies, or importing your own name from within a monorepo (which will
 // work because of the symlinking) without setting up "exports" (which makes
 // your own name reliably resolvable)
-function reliablyResolvable(pkg: V2Package, packageName: string) {
+function reliablyResolvable(pkg: Package, packageName: string) {
   if (pkg.hasDependency(packageName)) {
     return true;
   }

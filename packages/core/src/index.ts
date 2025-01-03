@@ -1,11 +1,4 @@
-export {
-  Packager,
-  PackagerConstructor,
-  Variant,
-  applyVariantToBabelConfig,
-  getAppMeta,
-  getPackagerCacheDir,
-} from './packager';
+export { Packager, PackagerConstructor, Variant, applyVariantToBabelConfig, getPackagerCacheDir } from './packager';
 export { HTMLEntrypoint, BundleSummary } from './html-entrypoint';
 export { default as Stage } from './stage';
 export { default as Options, optionsWithDefaults } from './options';

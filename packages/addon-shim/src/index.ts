@@ -26,7 +26,7 @@ export interface ShimOptions {
 
 function addonMeta(pkgJSON: PackageInfo): AddonMeta {
   let meta = pkgJSON['ember-addon'];
-  if (meta?.version !== 2 || meta?.type !== 'addon') {
+  if (meta?.version !== 2) {
     throw new Error(`did not find valid v2 addon metadata in ${pkgJSON.name}`);
   }
   return meta as AddonMeta;

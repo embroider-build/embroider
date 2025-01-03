@@ -2,7 +2,7 @@ import { Memoize } from 'typescript-memoize';
 import { readFileSync, existsSync } from 'fs-extra';
 import { join, extname } from 'path';
 import get from 'lodash/get';
-import type { AddonMeta, AppMeta, PackageInfo } from './metadata';
+import type { AddonMeta, PackageInfo } from './metadata';
 import type PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
 
@@ -40,8 +40,8 @@ export default class Package {
   // order here matters because we rely on it in categorizeDependency
   private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
 
-  constructor(readonly root: string, protected packageCache: PackageCache, private isApp: boolean) {
-    this.dependencyKeys = isApp
+  constructor(readonly root: string, protected packageCache: PackageCache, private _isApp: boolean) {
+    this.dependencyKeys = _isApp
       ? ['dependencies', 'devDependencies', 'peerDependencies']
       : ['dependencies', 'peerDependencies'];
   }
@@ -71,30 +71,16 @@ export default class Package {
       }
     }
     if (forcedV2Packages().includes(json.name)) {
-      let defaults: AddonMeta | AppMeta;
-      if (this.isApp) {
-        defaults = {
-          version: 2,
-          type: 'app',
-          assets: [],
-          'root-url': '/',
-        };
-      } else {
-        defaults = {
-          version: 2,
-          type: 'addon',
-        };
-      }
+      let defaults: AddonMeta = {
+        version: 2,
+      };
       json['ember-addon'] = Object.assign(defaults, json['ember-addon']);
     }
     return json;
   }
 
-  get meta(): AddonMeta | AppMeta | undefined {
+  get meta(): AddonMeta | undefined {
     let m = this.packageJSON['ember-addon'];
-    if (this.isV2App()) {
-      return m as unknown as AppMeta;
-    }
     if (this.isV2Addon()) {
       return m as AddonMeta;
     }
@@ -106,7 +92,7 @@ export default class Package {
   }
 
   isEngine(): boolean {
-    if (this.isApp) {
+    if (this.isApp()) {
       // an app is implicitly an engine
       return true;
     }
@@ -118,23 +104,20 @@ export default class Package {
     return this.isEngine() && Boolean(get(this.packageJSON, 'ember-addon.lazy-engine'));
   }
 
-  isV2Ember(): this is V2Package {
-    return (
-      get(this.packageJSON, 'ember-addon.version') === 2 &&
-      (get(this.packageJSON, 'ember-addon.type') === 'app' || this.isEmberAddon())
-    );
+  isV2Ember(): boolean {
+    return this.isApp() || this.isV2Addon();
   }
 
-  isV2App(): this is V2AppPackage {
-    return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'app';
+  isApp(): boolean {
+    return this._isApp;
   }
 
   needsLooseResolving(): boolean {
-    return this.isV2App() || ((this.isV2Addon() && this.meta['auto-upgraded']) ?? false);
+    return this.isApp() || ((this.isV2Addon() && this.meta['auto-upgraded']) ?? false);
   }
 
   isV2Addon(): this is V2AddonPackage {
-    return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'addon';
+    return this.isEmberAddon() && this.packageJSON['ember-addon']?.version === 2;
   }
 
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {
@@ -283,14 +266,6 @@ export interface PackageConstructor {
   new (root: string, mayUseDevDeps: boolean, packageCache: PackageCache): Package;
 }
 
-export interface V2Package extends Package {
-  meta: AddonMeta | AppMeta;
-}
-
 export interface V2AddonPackage extends Package {
   meta: AddonMeta;
-}
-
-export interface V2AppPackage extends Package {
-  meta: AppMeta;
 }

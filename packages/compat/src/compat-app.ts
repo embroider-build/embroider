@@ -408,7 +408,6 @@ export default class CompatApp {
       let remapAsset = this.remapAsset.bind(this);
 
       let addonMeta: AddonMeta = {
-        type: 'addon',
         version: 2,
         'implicit-scripts': this._implicitScripts.map(remapAsset).filter(forbiddenVendorPath),
         'implicit-styles': this._implicitStyles.map(remapAsset),
@@ -469,7 +468,6 @@ export default class CompatApp {
 
     return new AddToTree(styles, outputPath => {
       let addonMeta: AddonMeta = {
-        type: 'addon',
         version: 2,
         'public-assets': {},
       };

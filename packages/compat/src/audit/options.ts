@@ -1,5 +1,6 @@
 export interface AuditOptions {
-  debug?: boolean;
+  entrypoints: string[];
+  rootURL: string;
 }
 
 export interface AuditBuildOptions extends AuditOptions {

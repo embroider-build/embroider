@@ -13,8 +13,8 @@ async function main() {
     relativeLocalPaths: false,
     nativeRouteTemplates: false,
     defaultOutput: 'gts',
-    routeTemplates: [],
-    components: ['app/components/role-choice.hbs', 'app/components/login.js'],
+    // routeTemplates: [],
+    // components: ['app/components/role-choice.hbs', 'app/components/login.js'],
     templateInsertion: 'end',
   });
   await processRouteTemplates(opts);

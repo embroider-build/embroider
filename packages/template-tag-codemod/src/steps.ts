@@ -343,9 +343,13 @@ function withoutExtension(name: string, extensions: string[]): string {
 async function chooseImport(
   fromFile: string,
   targetFile: string,
+  importedModule: string,
   importedName: string,
   opts: OptionsWithDefaults
 ): Promise<string> {
+  if (!importedModule.startsWith('@embroider/virtual')) {
+    return importedModule;
+  }
   let pkg = resolver.packageCache.ownerOfFile(targetFile);
   if (!pkg) {
     throw new Error(`Unexpected unowned file ${targetFile}`);
@@ -405,7 +409,7 @@ async function resolveImports(filename: string, result: MetaResult, opts: Option
       throw new Error(`Unable to resolve ${module} from ${filename}`);
     } else {
       resolutions.set(resolution.filename, resolution);
-      resolvedModule = await chooseImport(filename, resolution.filename, imported, opts);
+      resolvedModule = await chooseImport(filename, resolution.filename, module, imported, opts);
     }
     resolvedScope.set(templateName, {
       local,

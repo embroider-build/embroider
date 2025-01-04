@@ -18,15 +18,18 @@ export interface Options {
   // ESM convensions, but it's not supported by Ember's classic build.
   relativeLocalPaths?: boolean;
 
-  // file extensions that can represent components
+  // file extensions to search when resolving dependencies inside templates
   extensions?: string[];
 
   // when true, assume we can use https://github.com/emberjs/rfcs/pull/1046.
   // Otherwise, assume we're using the ember-route-template addon.
   nativeRouteTemplates?: boolean;
 
-  // list of globs of the route templates we should convert
+  // list of globs of the route templates we should convert.
   routeTemplates?: string[];
+
+  // list of globs of the components we should convert
+  components?: string[];
 
   // when a .js or .ts file already exists, we necessarily convert to .gjs or
   // .gts respectively. But when only an .hbs file exists, we have a choice of
@@ -36,17 +39,26 @@ export interface Options {
   // snippet of typescript to use for the type signature of route templates.
   // Defaults to `{ Args: { model: unknown, controller: unknown } }`
   routeTemplateSignature?: string;
+
+  // snippet of typescript to use for the type signature of newly-converted
+  // template-only components. Defaults to `{ Args: {} }`
+  templateOnlyComponentSignature?: string;
+
+  templateInsertion?: 'beginning' | 'end';
 }
 
 export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
   return Object.assign(
     {
       relativeLocalPaths: true,
-      extensions: ['.gts', '.gjs', '.ts', '.js', '.hbs.js', '.hbs'],
+      extensions: ['.gts', '.gjs', '.ts', '.js', '.hbs'],
       nativeRouteTemplates: true,
-      routeTemplates: ['app/templates/*.hbs'],
+      routeTemplates: ['app/templates/**/*.hbs'],
+      components: ['app/components/**/*.{js,ts,hbs}'],
       defaultOutput: 'gjs',
       routeTemplateSignature: `{ Args: { model: unknown, controller: unknown } }`,
+      templateOnlyComponentSignature: `{ Args: {} }`,
+      templateInsertion: 'beginning',
     },
     options
   );
@@ -90,7 +102,12 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
 const resolver = new ResolverLoader(process.cwd()).resolver;
 const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; content: string }>();
 
-async function inspectContents(src: string, filename: string, isRouteTemplate: boolean, opts: OptionsWithDefaults) {
+export async function inspectContents(
+  filename: string,
+  isRouteTemplate: boolean,
+  opts: OptionsWithDefaults
+): Promise<{ templateSource: string; scope: MetaResult['scope'] }> {
+  let src = readFileSync(filename, 'utf8');
   let strictSource = (await transformAsync(hbsToJS(src), {
     filename,
     plugins: [
@@ -128,8 +145,8 @@ async function inspectContents(src: string, filename: string, isRouteTemplate: b
   return { templateSource, scope };
 }
 
-export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults) {
-  let { templateSource, scope } = await inspectContents(readFileSync(filename, 'utf8'), filename, true, opts);
+export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<void> {
+  let { templateSource, scope } = await inspectContents(filename, true, opts);
 
   let outSource: string[] = [];
 
@@ -164,10 +181,124 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
   console.log(`route template: ${filename} `);
 }
 
-export async function processComponentTemplates() {
-  for (let filename of globSync('app/components/*.hbs')) {
-    console.log(`component template: ${filename} `);
+export async function processComponents(opts: OptionsWithDefaults): Promise<void> {
+  let components = new Set<string>();
+  for (let pattern of opts.components) {
+    for (let filename of globSync(pattern)) {
+      components.add(withoutExtension(filename, opts.extensions));
+    }
   }
+  for (let component of components) {
+    let presentExtensions = opts.extensions.filter(ext => existsSync(component + ext));
+    if (!presentExtensions.includes('.hbs')) {
+      continue;
+    }
+    let jsExtensions = presentExtensions.filter(ext => ext !== '.hbs');
+    if (jsExtensions.length > 1) {
+      throw new Error(
+        `while processing ${component}, found several files when we expected one: ${jsExtensions.join(', ')}`
+      );
+    }
+    let jsExtension = jsExtensions[0];
+    if (['.gjs', '.gts'].includes(jsExtension)) {
+      throw new Error(`found both hbs and gjs/gts for ${component}, having both is not well-defined.`);
+    }
+    await processComponent(component + '.hbs', jsExtension ? component + jsExtension : undefined, opts);
+  }
+}
+
+async function locateTemplateInsertionPoint(
+  jsSource: string,
+  jsPath: string,
+  opts: OptionsWithDefaults
+): Promise<number> {
+  let result = await parseAsync(jsSource, {
+    filename: jsPath,
+    plugins: [
+      [require.resolve('@babel/plugin-syntax-decorators'), { legacy: true }],
+      require.resolve('@babel/plugin-syntax-typescript'),
+    ],
+  });
+  if (!result) {
+    throw new Error(`unexpected failure to parse ${jsPath} with content\n${jsSource}`);
+  }
+  for (let statement of result.program.body) {
+    if (statement.type === 'ExportDefaultDeclaration') {
+      let dec = statement.declaration;
+      switch (dec.type) {
+        case 'ClassDeclaration':
+        case 'ClassExpression':
+          let loc = dec.body.loc;
+          if (!loc) {
+            throw new Error(`parser is missing source location info`);
+          }
+          if (opts.templateInsertion === 'beginning') {
+            return loc.start.index + 1;
+          } else {
+            return loc.end.index - 1;
+          }
+        default:
+          throw new Error(`unimplemented declaration: ${dec.type}`);
+      }
+    }
+    if (statement.type === 'ExportNamedDeclaration') {
+      throw new Error(`unimplemented`);
+    }
+  }
+  throw new Error(`found no export default in ${jsPath}`);
+}
+
+export async function processComponent(
+  hbsPath: string,
+  jsPath: string | undefined,
+  opts: OptionsWithDefaults
+): Promise<void> {
+  let { templateSource, scope } = await inspectContents(hbsPath, false, opts);
+
+  if (jsPath) {
+    let src = await renderJsComponent(templateSource, scope, jsPath, opts);
+    let outExt = jsPath.endsWith('.ts') ? '.gts' : '.gjs';
+    writeFileSync(hbsPath.replace(/.hbs$/, outExt), src);
+    unlinkSync(hbsPath);
+    unlinkSync(jsPath);
+  } else {
+    writeFileSync(
+      hbsPath.replace(/.hbs$/, '.' + opts.defaultOutput),
+      renderHbsOnlyComponent(templateSource, scope, opts)
+    );
+    unlinkSync(hbsPath);
+  }
+  console.log(`component: ${hbsPath}`);
+}
+
+async function renderJsComponent(
+  templateSource: string,
+  scope: MetaResult['scope'],
+  jsPath: string,
+  opts: OptionsWithDefaults
+): Promise<string> {
+  let jsSource = readFileSync(jsPath, 'utf8');
+  let offset = await locateTemplateInsertionPoint(jsSource, jsPath, opts);
+  let outSource: string[] = [];
+  outSource.push(jsSource.slice(0, offset));
+  outSource.push(`<template>${templateSource}</template>`);
+  outSource.push(jsSource.slice(offset));
+  outSource.unshift(renderScopeImports(scope));
+  return outSource.join('\n');
+}
+
+function renderHbsOnlyComponent(templateSource: string, scope: MetaResult['scope'], opts: OptionsWithDefaults): string {
+  let outSource: string[] = [];
+  if (opts.defaultOutput === 'gts') {
+    outSource.unshift(`import type { TemplateOnlyComponent } from '@ember/component/template-only';`);
+    outSource.push(
+      `export default <template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.templateOnlyComponentSignature}>`
+    );
+  } else {
+    outSource.push(`<template>${templateSource}</template>`);
+  }
+  outSource.unshift(renderScopeImports(scope));
+  return outSource.join('\n');
 }
 
 function load(filename: string): string {
@@ -244,7 +375,7 @@ async function chooseImport(
       // this file is in an addon's app tree. Check whether it is just a
       // reexport.
       let content = load(targetFile);
-      let result = await parseAsync(content);
+      let result = await parseAsync(content, { filename: targetFile });
       if (!result) {
         throw new Error(`unexpected failure to parse ${targetFile} with content\n${content}`);
       }

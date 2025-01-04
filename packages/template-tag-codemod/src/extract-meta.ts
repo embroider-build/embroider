@@ -31,6 +31,16 @@ export default function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj
             throw new Error(`unexpected source: ${String(path)}`);
           }
 
+          if (!arg1) {
+            // empty scope
+            let scope: MetaResult['scope'] = new Map();
+            state.opts.result = {
+              templateSource: arg0.value,
+              scope,
+            };
+            return;
+          }
+
           if (arg1.type !== 'ObjectExpression') {
             throw new Error(`unexpected source: ${String(path)}`);
           }
@@ -68,8 +78,18 @@ export default function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj
             if (binding?.path.type === 'ImportDefaultSpecifier') {
               let dec = binding.path.parentPath as Babel.NodePath<Babel.types.ImportDeclaration>;
               scope.set(key.name, { local: value.name, imported: 'default', module: dec.node.source.value });
+            } else if (binding?.path.type === 'ImportSpecifier') {
+              let dec = binding.path.parentPath as Babel.NodePath<Babel.types.ImportDeclaration>;
+              let specifier = binding.path.node as Babel.types.ImportSpecifier;
+              let imported: string;
+              if (specifier.imported.type === 'Identifier') {
+                imported = specifier.imported.name;
+              } else {
+                imported = specifier.imported.value;
+              }
+              scope.set(key.name, { local: value.name, imported, module: dec.node.source.value });
             } else {
-              throw new Error(`unepxected source: ${String(path)}`);
+              throw new Error(`unepxected binding.path.type: ${binding?.path.type}`);
             }
           }
 

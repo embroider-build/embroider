@@ -20,6 +20,8 @@
   "scripts": {},
   "dependencies": {
     "@babel/core": "^7.26.0",
+    "@babel/plugin-syntax-decorators": "^7.25.9",
+    "@babel/plugin-syntax-typescript": "^7.25.9",
     "@embroider/compat": "workspace:^*",
     "@embroider/core": "workspace:^*",
     "@embroider/reverse-exports": "workspace:^*",

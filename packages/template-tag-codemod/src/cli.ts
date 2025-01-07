@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import yargs from 'yargs/yargs';
 import { type Options, optionsWithDefaults, run } from './index.js';
 

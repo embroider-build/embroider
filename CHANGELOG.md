@@ -1,5 +1,17 @@
 # Embroider Changelog
 
+## Release (2025-01-07)
+
+@embroider/compat 3.8.0 (minor)
+@embroider/core 3.5.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/core`, `@embroider/test-scenarios`
+  * [#2210](https://github.com/embroider-build/embroider/pull/2210) Deprecate staticHelpers, staticModifiers, and staticComponents in favour of staticInvokables  ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2024-12-20)
 
 @embroider/webpack 4.0.9 (patch)

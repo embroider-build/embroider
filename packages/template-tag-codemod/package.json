@@ -1,6 +1,6 @@
 {
   "name": "@embroider/template-tag-codemod",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "type": "module",
   "description": "Convert to HBS to GJS with <template></template>",
@@ -11,7 +11,12 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner <edward@eaf4.com>",
-  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "template-tag-codemod": "./src/cli.js"
+  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",

@@ -1,5 +1,5 @@
 import yargs from 'yargs/yargs';
-import { type Options, optionsWithDefaults, run } from './steps.js';
+import { type Options, optionsWithDefaults, run } from './index.js';
 
 yargs(process.argv.slice(2))
   .scriptName('template-tag-codemod')

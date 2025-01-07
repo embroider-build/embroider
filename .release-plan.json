@@ -13,10 +13,28 @@
       "oldVersion": "1.0.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.7.1"
+      "impact": "minor",
+      "oldVersion": "3.7.1",
+      "newVersion": "3.8.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.4.20"
+      "impact": "minor",
+      "oldVersion": "3.4.20",
+      "newVersion": "3.5.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
@@ -43,17 +61,8 @@
       "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.0.8",
-      "newVersion": "4.0.9",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.0.9"
     }
   },
-  "description": "## Release (2024-12-20)\n\n@embroider/webpack 4.0.9 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/webpack`\n  * [#2220](https://github.com/embroider-build/embroider/pull/2220) Set MiniCssExtractPlugin ignoreOrder to true for default config ([@lfloyd117](https://github.com/lfloyd117))\n\n#### Committers: 1\n- Liam Floyd ([@lfloyd117](https://github.com/lfloyd117))\n"
+  "description": "## Release (2025-01-07)\n\n@embroider/compat 3.8.0 (minor)\n@embroider/core 3.5.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/core`, `@embroider/test-scenarios`\n  * [#2210](https://github.com/embroider-build/embroider/pull/2210) Deprecate staticHelpers, staticModifiers, and staticComponents in favour of staticInvokables  ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

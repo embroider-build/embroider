@@ -823,6 +823,9 @@ importers:
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
+      '@types/yargs':
+        specifier: ^17.0.3
+        version: 17.0.33
       babel-plugin-ember-template-compilation:
         specifier: ^2.3.0
         version: 2.3.0
@@ -838,6 +841,9 @@ importers:
       glob:
         specifier: ^11.0.0
         version: 11.0.0
+      yargs:
+        specifier: ^17.0.1
+        version: 17.7.2
     devDependencies:
       '@glimmer/syntax':
         specifier: ^0.84.3

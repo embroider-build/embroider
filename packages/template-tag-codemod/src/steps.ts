@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
-import { explicitRelative, hbsToJS, ResolverLoader } from '@embroider/core';
+import { explicitRelative, hbsToJS, Package, ResolverLoader } from '@embroider/core';
 import { parseAsync, transformAsync, type types } from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
@@ -78,7 +78,13 @@ export async function ensurePrebuild() {
 }
 
 export async function ensureAppSetup() {
-  let pkg = resolver.packageCache.get(process.cwd());
+  let pkg: Package;
+  try {
+    pkg = resolverLoader.resolver.packageCache.get(process.cwd());
+  } catch (err) {
+    console.error(`Run template-tag-codemod inside a Ember app.`);
+    process.exit(-1);
+  }
   if (!pkg.packageJSON.exports) {
     throw new Error(`must use package.json exports for self-resolvability. Plase add this to package.json:
 
@@ -99,7 +105,7 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
   }
 }
 
-const resolver = new ResolverLoader(process.cwd()).resolver;
+const resolverLoader = new ResolverLoader(process.cwd());
 const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; content: string }>();
 
 export async function inspectContents(
@@ -120,7 +126,7 @@ export async function inspectContents(
               require.resolve('@embroider/compat/src/resolver-transform'),
               {
                 appRoot: process.cwd(),
-                emberVersion: resolver.options.emberVersion,
+                emberVersion: resolverLoader.resolver.options.emberVersion,
                 externalNameHint(name: string) {
                   return name;
                 },
@@ -350,12 +356,12 @@ async function chooseImport(
   if (!importedModule.startsWith('@embroider/virtual')) {
     return importedModule;
   }
-  let pkg = resolver.packageCache.ownerOfFile(targetFile);
+  let pkg = resolverLoader.resolver.packageCache.ownerOfFile(targetFile);
   if (!pkg) {
     throw new Error(`Unexpected unowned file ${targetFile}`);
   }
 
-  let importingPkg = resolver.packageCache.ownerOfFile(fromFile);
+  let importingPkg = resolverLoader.resolver.packageCache.ownerOfFile(fromFile);
   if (!importingPkg) {
     throw new Error(`Unexpected unowned file ${fromFile}`);
   }
@@ -374,7 +380,7 @@ async function chooseImport(
   // Look into javascript files that came from addons to attempt to skip over
   // the classical "app tree reexport" path.
   if (targetFile.endsWith('.js') && importedName === 'default') {
-    let match = resolver.reverseSearchAppTree(pkg, targetFile);
+    let match = resolverLoader.resolver.reverseSearchAppTree(pkg, targetFile);
     if (match) {
       // this file is in an addon's app tree. Check whether it is just a
       // reexport.
@@ -401,7 +407,7 @@ async function resolveImports(filename: string, result: MetaResult, opts: Option
   let resolvedScope: MetaResult['scope'] = new Map();
 
   for (let [templateName, { local, imported, module }] of result.scope) {
-    let resolution = await resolver.nodeResolve(module, filename, {
+    let resolution = await resolverLoader.resolver.nodeResolve(module, filename, {
       extensions: opts.extensions,
     });
     let resolvedModule: string;
@@ -465,4 +471,12 @@ function renderScopeImports(scope: MetaResult['scope']) {
       return `import ${sections.join(',')} from "${module}";`;
     })
     .join('\n');
+}
+
+export async function run(partialOpts: Options) {
+  let opts = optionsWithDefaults(partialOpts);
+  await ensureAppSetup();
+  await ensurePrebuild();
+  await processRouteTemplates(opts);
+  await processComponents(opts);
 }

@@ -34,6 +34,8 @@
 /packages/vite/index.d.ts
 /packages/vite/**/*.js
 /packages/vite/**/*.d.ts
+/packages/template-tag-codemod/**/*.js
+/packages/template-tag-codemod/**/*.d.ts
 /packages/reverse-exports/**/*.js
 /packages/reverse-exports/**/*.d.ts
 

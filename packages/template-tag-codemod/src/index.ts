@@ -1,15 +1,17 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
-import { explicitRelative, hbsToJS, type Package, ResolverLoader } from '@embroider/core';
+import core, { type Package } from '@embroider/core';
 import { parseAsync, transformAsync, type types } from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
 import extractMeta, { type ExtractMetaOpts, type MetaResult } from './extract-meta.js';
-import { externalName } from '@embroider/reverse-exports';
+import reverseExports from '@embroider/reverse-exports';
 import { dirname } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { routeTemplateTransform } from './route-template-transform.js';
 
+const { explicitRelative, hbsToJS, ResolverLoader } = core;
+const { externalName } = reverseExports;
 const require = createRequire(import.meta.url);
 
 export interface Options {

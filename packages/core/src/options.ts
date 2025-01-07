@@ -1,33 +1,61 @@
 export default interface Options {
-  // When true, we statically resolve all template helpers at build time. This
-  // causes unused helpers to be left out of the build ("tree shaking" of
-  // helpers).
-  //
-  // Defaults to false, which gives you greater compatibility with classic Ember
-  // apps at the cost of bigger builds.
-  //
-  // Enabling this is a prerequisite for route splitting.
+  /**
+   * When true, we statically resolve all template helpers at build time. This
+   * causes unused helpers to be left out of the build ("tree shaking" of
+   * helpers).
+   *
+   * Defaults to false, which gives you greater compatibility with classic Ember
+   * apps at the cost of bigger builds.
+   *
+   * Enabling this is a prerequisite for route splitting.
+   *
+   * @deprecated use staticInvokables instead
+   */
   staticHelpers?: boolean;
 
-  // When true, we statically resolve all modifiers at build time. This
-  // causes unused modifiers to be left out of the build ("tree shaking" of
-  // modifiers).
-  //
-  // Defaults to false, which gives you greater compatibility with classic Ember
-  // apps at the cost of bigger builds.
-  //
-  // Enabling this is a prerequisite for route splitting.
+  /**
+   * When true, we statically resolve all modifiers at build time. This
+   * causes unused modifiers to be left out of the build ("tree shaking" of
+   * modifiers).
+   *
+   * Defaults to false, which gives you greater compatibility with classic Ember
+   * apps at the cost of bigger builds.
+   *
+   * Enabling this is a prerequisite for route splitting.
+   *
+   * @deprecated use staticInvokables instead
+   */
   staticModifiers?: boolean;
 
-  // When true, we statically resolve all components at build time. This causes
-  // unused components to be left out of the build ("tree shaking" of
-  // components).
-  //
-  // Defaults to false, which gives you greater compatibility with classic Ember
-  // apps at the cost of bigger builds.
-  //
-  // Enabling this is a prerequisite for route splitting.
+  /**
+   * When true, we statically resolve all components at build time. This causes
+   * unused components to be left out of the build ("tree shaking" of
+   * components).
+   *
+   * Defaults to false, which gives you greater compatibility with classic Ember
+   * apps at the cost of bigger builds.
+   *
+   * Enabling this is a prerequisite for route splitting.
+   *
+   * @deprecated use staticInvokables instead
+   */
   staticComponents?: boolean;
+
+  /**
+   * When true, we statically resolve all components, modifiers, and helpers (collectively
+   * knows as Invokables) at build time. This causes any unused Invokables to be left out
+   * of the build if they are unused i.e. "tree shaking".
+   *
+   * Defaults to false which gives you greater compatibility with classic Ember apps at the
+   * cost of bigger builds.
+   *
+   * This setting takes over from `staticHelpers`, `staticModifiers`, and `staticComponents`
+   * because the Developer Experience was less than ideal if any of these settings did not
+   * agree i.e. they all needed to be true or they all needed to be false.
+   *
+   * Enabling this is a prerequisite for route splitting.
+   */
+  staticInvokables?: boolean;
 
   // Enables per-route code splitting. Any route names that match these patterns
   // will be split out of the initial app payload. If you use this, you must
@@ -124,11 +152,13 @@ export default interface Options {
       };
 }
 
-export function optionsWithDefaults(options?: Options): Required<Options> {
+export type CoreOptionsType = Required<
+  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
+> &
+  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+
+export function optionsWithDefaults(options?: Options): CoreOptionsType {
   let defaults = {
-    staticHelpers: false,
-    staticModifiers: false,
-    staticComponents: false,
     splitAtRoutes: [],
     staticAppPaths: [],
     skipBabel: [],

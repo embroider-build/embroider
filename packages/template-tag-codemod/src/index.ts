@@ -36,7 +36,7 @@ export interface Options {
   // when a .js or .ts file already exists, we necessarily convert to .gjs or
   // .gts respectively. But when only an .hbs file exists, we have a choice of
   // default.
-  defaultOutput?: 'gjs' | 'gts';
+  defaultFormat?: 'gjs' | 'gts';
 
   // snippet of typescript to use for the type signature of route templates.
   // Defaults to `{ Args: { model: unknown, controller: unknown } }`
@@ -57,7 +57,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       nativeRouteTemplates: true,
       routeTemplates: ['app/templates/**/*.hbs'],
       components: ['app/components/**/*.{js,ts,hbs}'],
-      defaultOutput: 'gjs',
+      defaultFormat: 'gjs',
       routeTemplateSignature: `{ Args: { model: unknown, controller: unknown } }`,
       templateOnlyComponentSignature: `{ Args: {} }`,
       templateInsertion: 'beginning',
@@ -159,7 +159,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
   let outSource: string[] = [];
 
   if (opts.nativeRouteTemplates) {
-    if (opts.defaultOutput === 'gts') {
+    if (opts.defaultFormat === 'gts') {
       outSource.unshift(`import type { TemplateOnlyComponent } from '@ember/component/template-only';`);
       outSource.push(
         `export default <template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.routeTemplateSignature}>`
@@ -173,7 +173,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
       imported: 'default',
       module: 'ember-route-template',
     });
-    if (opts.defaultOutput === 'gts') {
+    if (opts.defaultFormat === 'gts') {
       outSource.push(
         `export default RouteTemplate<${opts.routeTemplateSignature}>(<template>${templateSource}</template>)`
       );
@@ -184,7 +184,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
 
   outSource.unshift(renderScopeImports(scope));
 
-  writeFileSync(filename.replace(/.hbs$/, '.' + opts.defaultOutput), outSource.join('\n'));
+  writeFileSync(filename.replace(/.hbs$/, '.' + opts.defaultFormat), outSource.join('\n'));
   unlinkSync(filename);
   console.log(`route template: ${filename} `);
 }
@@ -271,7 +271,7 @@ export async function processComponent(
     unlinkSync(jsPath);
   } else {
     writeFileSync(
-      hbsPath.replace(/.hbs$/, '.' + opts.defaultOutput),
+      hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat),
       renderHbsOnlyComponent(templateSource, scope, opts)
     );
     unlinkSync(hbsPath);
@@ -297,7 +297,7 @@ async function renderJsComponent(
 
 function renderHbsOnlyComponent(templateSource: string, scope: MetaResult['scope'], opts: OptionsWithDefaults): string {
   let outSource: string[] = [];
-  if (opts.defaultOutput === 'gts') {
+  if (opts.defaultFormat === 'gts') {
     outSource.unshift(`import type { TemplateOnlyComponent } from '@ember/component/template-only';`);
     outSource.push(
       `export default <template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.templateOnlyComponentSignature}>`

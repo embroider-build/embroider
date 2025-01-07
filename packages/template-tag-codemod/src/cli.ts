@@ -37,9 +37,9 @@ yargs(process.argv.slice(2))
           default: optionsWithDefaults().components,
           describe: `Controls which component files we will convert to template tag. Provide a list of globs.`,
         })
-        .option('defaultOutput', {
+        .option('defaultFormat', {
           type: 'string',
-          default: optionsWithDefaults().defaultOutput,
+          default: optionsWithDefaults().defaultFormat,
           describe: `When a .js or .ts file already exists, we necessarily convert to .gjs or .gts respectively. But when only an .hbs file exists, we have a choice of default.`,
         })
         .option('templateOnlyComponentSignature', {

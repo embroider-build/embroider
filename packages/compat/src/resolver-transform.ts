@@ -431,7 +431,7 @@ class TemplateResolver implements ASTPlugin {
         yieldsComponents: [],
         yieldsArguments: [],
         argumentsAreComponents: [],
-        nameHint,
+        nameHint: importedName,
       };
     }
 

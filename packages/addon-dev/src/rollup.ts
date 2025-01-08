@@ -3,6 +3,7 @@ import { default as gjs } from './rollup-gjs-plugin';
 import { default as publicEntrypoints } from './rollup-public-entrypoints';
 import { default as appReexports } from './rollup-app-reexports';
 import { default as keepAssets } from './rollup-keep-assets';
+import { default as declarations } from './rollup-declarations';
 import { default as dependencies } from './rollup-addon-dependencies';
 import {
   default as publicAssets,
@@ -108,5 +109,9 @@ export class Addon {
 
   publicAssets(path: string, opts?: PublicAssetsOptions) {
     return publicAssets(path, opts);
+  }
+
+  declarations(path: string) {
+    return declarations(path);
   }
 }

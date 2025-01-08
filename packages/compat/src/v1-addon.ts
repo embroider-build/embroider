@@ -14,7 +14,6 @@ import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
 import type { AddonMeta, PackageCache, AddonInstance, AddonTreePath } from '@embroider/core';
 import { debug, findTopmostAddon } from '@embroider/core';
-import type Options from './options';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
@@ -34,6 +33,7 @@ import loadAstPlugins from './prepare-htmlbars-ast-plugins';
 import getRealAddon from './get-real-addon';
 import type { Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import type CompatApp from './compat-app';
+import type { CompatOptionsType } from './options';
 
 const stockTreeNames: AddonTreePath[] = Object.freeze([
   'addon',
@@ -82,7 +82,7 @@ const fastbootPublicationDir = '_fastboot_';
 export default class V1Addon {
   constructor(
     protected addonInstance: AddonInstance,
-    protected addonOptions: Required<Options>,
+    protected addonOptions: CompatOptionsType,
     protected app: CompatApp,
     private packageCache: PackageCache,
     private orderIdx: number
@@ -1094,7 +1094,7 @@ export default class V1Addon {
 export interface V1AddonConstructor {
   new (
     addonInstance: any,
-    options: Required<Options>,
+    options: CompatOptionsType,
     app: CompatApp,
     packageCache: PackageCache,
     orderIdx: number

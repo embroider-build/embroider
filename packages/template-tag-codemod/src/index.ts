@@ -33,6 +33,10 @@ export interface Options {
   // list of globs of the components we should convert
   components?: string[];
 
+  // list of globs for JS/TS files that we will check for rendering tests to
+  // update to template-tag
+  renderTests?: string[];
+
   // when a .js or .ts file already exists, we necessarily convert to .gjs or
   // .gts respectively. But when only an .hbs file exists, we have a choice of
   // default.
@@ -57,6 +61,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       nativeRouteTemplates: true,
       routeTemplates: ['app/templates/**/*.hbs'],
       components: ['app/components/**/*.{js,ts,hbs}'],
+      renderTests: ['tests/**/*.{js,ts}'],
       defaultFormat: 'gjs',
       routeTemplateSignature: `{ Args: { model: unknown, controller: unknown } }`,
       templateOnlyComponentSignature: `{ Args: {} }`,
@@ -475,10 +480,19 @@ function renderScopeImports(scope: MetaResult['scope']) {
     .join('\n');
 }
 
+export async function processRenderTests(opts: OptionsWithDefaults): Promise<void> {
+  for (let pattern of opts.renderTests) {
+    for (let filename of globSync(pattern)) {
+      console.log(`todo: process render tests ${filename}`);
+    }
+  }
+}
+
 export async function run(partialOpts: Options) {
   let opts = optionsWithDefaults(partialOpts);
   await ensureAppSetup();
   await ensurePrebuild();
   await processRouteTemplates(opts);
   await processComponents(opts);
+  await processRenderTests(opts);
 }

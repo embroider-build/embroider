@@ -6,10 +6,6 @@
   "repository": "",
   "license": "MIT",
   "author": "",
-  "directories": {
-    "doc": "doc",
-    "test": "tests"
-  },
   "exports": {
     "./tests/*": "./tests/*",
     "./*": "./app/*"
@@ -48,7 +44,7 @@
     "vite": "^5.0.9"
   },
   "engines": {
-    "node": "16.* || >= 18"
+    "node": ">= 18"
   },
   "ember": {
     "edition": "octane"

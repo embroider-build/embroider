@@ -37,11 +37,11 @@ yargs(process.argv.slice(2))
           default: optionsWithDefaults().components,
           describe: `Controls which component files we will convert to template tag. Provide a list of globs.`,
         })
-        .option('inlineTemplates', {
+        .option('renderTests', {
           array: true,
           type: 'string',
-          default: optionsWithDefaults().inlineTemplates,
-          describe: `Controls the files in which we will search for inline templates to replace with template tags. Provide a list of globs.`,
+          default: optionsWithDefaults().renderTests,
+          describe: `Controls the files in which we will search for rendering tests to convert to template tags. Provide a list of globs.`,
         })
         .option('defaultFormat', {
           type: 'string',

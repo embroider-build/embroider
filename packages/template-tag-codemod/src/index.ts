@@ -1,18 +1,25 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
 import core, { type Package } from '@embroider/core';
-import { parseAsync, transformAsync, type types } from '@babel/core';
+import { traverse, parseAsync, transformAsync, type types } from '@babel/core';
+import * as babel from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
-import extractMeta, { type ExtractMetaOpts, type MetaResult } from './extract-meta.js';
+import { extractMeta, type MetaResult } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
 import { dirname } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { routeTemplateTransform } from './route-template-transform.js';
+import { identifyRenderTests } from './identify-render-tests.js';
+import { ImportUtil } from 'babel-import-util';
+import lodash from 'lodash';
+import type * as babelGenerator from '@babel/generator';
 
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
 const { externalName } = reverseExports;
+const { cloneDeep } = lodash;
 const require = createRequire(import.meta.url);
+const { default: generate } = require('@babel/generator') as typeof babelGenerator;
 
 export interface Options {
   // when true, imports for other files in the same project will use relative
@@ -117,10 +124,10 @@ const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; conten
 
 export async function inspectContents(
   filename: string,
+  src: string,
   isRouteTemplate: boolean,
   opts: OptionsWithDefaults
 ): Promise<{ templateSource: string; scope: MetaResult['scope'] }> {
-  let src = readFileSync(filename, 'utf8');
   let strictSource = (await transformAsync(hbsToJS(src), {
     filename,
     plugins: [
@@ -146,20 +153,13 @@ export async function inspectContents(
     ],
   }))!.code!;
 
-  const meta: ExtractMetaOpts = { result: undefined };
-  await transformAsync(strictSource, {
-    filename,
-    plugins: [[extractMeta, meta]],
-  });
-  if (!meta.result) {
-    throw new Error(`failed to extract metadata while processing ${filename}`);
-  }
-  let { templateSource, scope } = await resolveImports(filename, meta.result, opts);
+  const meta = await extractMeta(strictSource, filename);
+  let { templateSource, scope } = await resolveImports(filename, meta, opts);
   return { templateSource, scope };
 }
 
 export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<void> {
-  let { templateSource, scope } = await inspectContents(filename, true, opts);
+  let { templateSource, scope } = await inspectContents(filename, readFileSync(filename, 'utf8'), true, opts);
 
   let outSource: string[] = [];
 
@@ -266,7 +266,7 @@ export async function processComponent(
   jsPath: string | undefined,
   opts: OptionsWithDefaults
 ): Promise<void> {
-  let { templateSource, scope } = await inspectContents(hbsPath, false, opts);
+  let { templateSource, scope } = await inspectContents(hbsPath, readFileSync(hbsPath, 'utf8'), false, opts);
 
   if (jsPath) {
     let src = await renderJsComponent(templateSource, scope, jsPath, opts);
@@ -483,9 +483,54 @@ function renderScopeImports(scope: MetaResult['scope']) {
 export async function processRenderTests(opts: OptionsWithDefaults): Promise<void> {
   for (let pattern of opts.renderTests) {
     for (let filename of globSync(pattern)) {
-      console.log(`todo: process render tests ${filename}`);
+      await processRenderTest(filename, opts);
     }
   }
+}
+
+export async function processRenderTest(filename: string, opts: OptionsWithDefaults): Promise<void> {
+  let src = readFileSync(filename, 'utf8');
+  let { parsed, renderTests } = await identifyRenderTests(src, filename);
+  if (renderTests.length === 0) {
+    return;
+  }
+
+  let inspectedTests = await Promise.all(
+    renderTests.map(async target => {
+      let { templateSource, scope } = await inspectContents(filename, target.templateContent, false, opts);
+      return { templateSource, scope, node: target.node };
+    })
+  );
+
+  let original = cloneDeep(parsed);
+  let importUtil: ImportUtil;
+
+  traverse(parsed, {
+    Program(path) {
+      importUtil = new ImportUtil(babel, path);
+    },
+    TaggedTemplateExpression(path) {
+      let matched = inspectedTests.find(t => t.node === path.node);
+      if (matched) {
+        for (let [inTemplateName, { imported, module }] of matched.scope) {
+          let name = importUtil.import(path, module, imported, inTemplateName);
+          if (name.name !== inTemplateName) {
+            throw new Error('unimplemented');
+          }
+        }
+      }
+    },
+  });
+  let imports = parsed.program.body
+    .filter(b => b.type === 'ImportDeclaration')
+    .map(d => generate(d).code)
+    .join('\n');
+  console.log(imports);
+
+  // NEXT: identity source ranges in `original` of all the import statements.
+  // Replace them all with our new imports above.
+  //
+  // Then do the string insertion of the actual template tags as well.
 }
 
 export async function run(partialOpts: Options) {

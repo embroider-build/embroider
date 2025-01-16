@@ -10,16 +10,13 @@ import reverseExports from '@embroider/reverse-exports';
 import { dirname } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { routeTemplateTransform } from './route-template-transform.js';
-import { identifyRenderTests } from './identify-render-tests.js';
+import { identifyRenderTests, type RenderTest } from './identify-render-tests.js';
 import { ImportUtil } from 'babel-import-util';
-import lodash from 'lodash';
-import type * as babelGenerator from '@babel/generator';
 
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
 const { externalName } = reverseExports;
-const { cloneDeep } = lodash;
 const require = createRequire(import.meta.url);
-const { default: generate } = require('@babel/generator') as typeof babelGenerator;
+const { default: generate } = require('@babel/generator');
 
 export interface Options {
   // when true, imports for other files in the same project will use relative
@@ -122,12 +119,17 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
 const resolverLoader = new ResolverLoader(process.cwd());
 const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; content: string }>();
 
+export interface InspectedTemplate {
+  templateSource: string;
+  scope: MetaResult['scope'];
+}
+
 export async function inspectContents(
   filename: string,
   src: string,
   isRouteTemplate: boolean,
   opts: OptionsWithDefaults
-): Promise<{ templateSource: string; scope: MetaResult['scope'] }> {
+): Promise<InspectedTemplate> {
   let strictSource = (await transformAsync(hbsToJS(src), {
     filename,
     plugins: [
@@ -488,6 +490,19 @@ export async function processRenderTests(opts: OptionsWithDefaults): Promise<voi
   }
 }
 
+async function inspectTests(
+  filename: string,
+  renderTests: RenderTest[],
+  opts: OptionsWithDefaults
+): Promise<(InspectedTemplate & RenderTest)[]> {
+  return await Promise.all(
+    renderTests.map(async target => {
+      let { templateSource, scope } = await inspectContents(filename, target.templateContent, false, opts);
+      return { ...target, templateSource, scope };
+    })
+  );
+}
+
 export async function processRenderTest(filename: string, opts: OptionsWithDefaults): Promise<void> {
   let src = readFileSync(filename, 'utf8');
   let { parsed, renderTests } = await identifyRenderTests(src, filename);
@@ -495,14 +510,23 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
     return;
   }
 
-  let inspectedTests = await Promise.all(
-    renderTests.map(async target => {
-      let { templateSource, scope } = await inspectContents(filename, target.templateContent, false, opts);
-      return { templateSource, scope, node: target.node };
-    })
-  );
+  let edits = deleteImports(parsed);
+  let inspectedTests = await inspectTests(filename, renderTests, opts);
+  edits.unshift({ start: 0, end: 0, replacement: mergeImports(parsed, inspectedTests) });
+  for (let test of inspectedTests) {
+    edits.push({
+      start: test.startIndex,
+      end: test.endIndex,
+      replacement: '<template>' + test.templateSource + '</template>',
+    });
+  }
+  let newSrc = applyEdits(src, edits);
+  writeFileSync(filename.replace(/\.js$/, '.gjs').replace(/\.ts$/, '.gts'), newSrc);
+  unlinkSync(filename);
+  console.log(`render test: ${filename} `);
+}
 
-  let original = cloneDeep(parsed);
+function mergeImports(parsed: types.File, inspectedTests: (InspectedTemplate & { node: types.Node })[]) {
   let importUtil: ImportUtil;
 
   traverse(parsed, {
@@ -525,12 +549,56 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
     .filter(b => b.type === 'ImportDeclaration')
     .map(d => generate(d).code)
     .join('\n');
-  console.log(imports);
+  return imports;
+}
 
-  // NEXT: identity source ranges in `original` of all the import statements.
-  // Replace them all with our new imports above.
-  //
-  // Then do the string insertion of the actual template tags as well.
+function deleteImports(parsed: types.File): Edit[] {
+  let edits: Edit[] = [];
+  traverse(parsed, {
+    ImportDeclaration(path) {
+      let loc = path.node.loc;
+      if (!loc) {
+        throw new Error(`bug: babel not producing source locations`);
+      }
+      edits.push({
+        start: loc.start.index,
+        end: loc.end.index,
+        replacement: null,
+      });
+    },
+  });
+  return edits;
+}
+
+interface Edit {
+  start: number;
+  end: number;
+  replacement: string | null;
+}
+
+function applyEdits(source: string, edits: { start: number; end: number; replacement: string | null }[]): string {
+  let cursor = 0;
+  let output: string[] = [];
+  let previousDeletion = false;
+  for (let { start, end, replacement } of edits) {
+    if (start > cursor) {
+      let interEditContent = source.slice(cursor, start);
+      if (previousDeletion && replacement === null && /^\s*$/.test(interEditContent)) {
+        // drop whitespace in between two other deletions
+      } else {
+        output.push(interEditContent);
+      }
+    }
+    if (replacement === null) {
+      previousDeletion = true;
+    } else {
+      previousDeletion = false;
+      output.push(replacement);
+    }
+    cursor = end;
+  }
+  output.push(source.slice(cursor));
+  return output.join('');
 }
 
 export async function run(partialOpts: Options) {

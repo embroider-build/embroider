@@ -40,7 +40,6 @@
     "console-ui": "^3.1.2",
     "ember-cli": "^6.0.1",
     "glob": "^11.0.0",
-    "lodash": "^4.17.21",
     "yargs": "^17.0.1"
   },
   "devDependencies": {
@@ -48,7 +47,6 @@
     "@types/babel__code-frame": "^7.0.6",
     "@types/babel__generator": "^7.6.8",
     "@types/glob": "^8.1.0",
-    "@types/lodash": "^4.17.14",
     "@types/node": "^22.9.3",
     "typescript": "^5.4.5"
   },

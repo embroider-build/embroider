@@ -9,7 +9,7 @@ import { extractMeta, type MetaResult } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
 import { dirname } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
-import { routeTemplateTransform } from './route-template-transform.js';
+import { replaceThisTransform } from './replace-this-transform.js';
 import { identifyRenderTests, type RenderTest } from './identify-render-tests.js';
 import { ImportUtil } from 'babel-import-util';
 
@@ -30,6 +30,13 @@ export interface Options {
   // when true, assume we can use https://github.com/emberjs/rfcs/pull/1046.
   // Otherwise, assume we're using the ember-route-template addon.
   nativeRouteTemplates?: boolean;
+
+  // when true, assume we can use
+  // https://github.com/emberjs/babel-plugin-ember-template-compilation/pull/67.
+  // This is mostly useful when codemodding rendering tests, which often access
+  // `{{this.stuff}}` in a template. When false, polyfill that behavior by
+  // introducing a new local variable.
+  nativeLexicalThis?: boolean;
 
   // list of globs of the route templates we should convert.
   routeTemplates?: string[];
@@ -63,6 +70,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       relativeLocalPaths: true,
       extensions: ['.gts', '.gjs', '.ts', '.js', '.hbs'],
       nativeRouteTemplates: true,
+      nativeLexicalThis: true,
       routeTemplates: ['app/templates/**/*.hbs'],
       components: ['app/components/**/*.{js,ts,hbs}'],
       renderTests: ['tests/**/*.{js,ts}'],
@@ -122,14 +130,16 @@ const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; conten
 export interface InspectedTemplate {
   templateSource: string;
   scope: MetaResult['scope'];
+  replacedThisWith: string | false;
 }
 
 export async function inspectContents(
   filename: string,
   src: string,
-  isRouteTemplate: boolean,
+  replaceThisWith: string | false,
   opts: OptionsWithDefaults
 ): Promise<InspectedTemplate> {
+  let replaced = { didReplace: false };
   let strictSource = (await transformAsync(hbsToJS(src), {
     filename,
     plugins: [
@@ -148,7 +158,7 @@ export async function inspectContents(
                 },
               } satisfies ResolverTransformOptions,
             ],
-            ...(isRouteTemplate ? [routeTemplateTransform()] : []),
+            ...(replaceThisWith ? [replaceThisTransform(replaceThisWith, replaced)] : []),
           ],
         } satisfies EtcOptions,
       ],
@@ -157,11 +167,11 @@ export async function inspectContents(
 
   const meta = await extractMeta(strictSource, filename);
   let { templateSource, scope } = await resolveImports(filename, meta, opts);
-  return { templateSource, scope };
+  return { templateSource, scope, replacedThisWith: replaced.didReplace ? replaceThisWith : false };
 }
 
 export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<void> {
-  let { templateSource, scope } = await inspectContents(filename, readFileSync(filename, 'utf8'), true, opts);
+  let { templateSource, scope } = await inspectContents(filename, readFileSync(filename, 'utf8'), '@controller', opts);
 
   let outSource: string[] = [];
 
@@ -497,8 +507,13 @@ async function inspectTests(
 ): Promise<(InspectedTemplate & RenderTest)[]> {
   return await Promise.all(
     renderTests.map(async target => {
-      let { templateSource, scope } = await inspectContents(filename, target.templateContent, false, opts);
-      return { ...target, templateSource, scope };
+      let { templateSource, scope, replacedThisWith } = await inspectContents(
+        filename,
+        target.templateContent,
+        opts.nativeLexicalThis ? false : target.availableBinding,
+        opts
+      );
+      return { ...target, templateSource, scope, replacedThisWith };
     })
   );
 }
@@ -514,6 +529,15 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
   let inspectedTests = await inspectTests(filename, renderTests, opts);
   edits.unshift({ start: 0, end: 0, replacement: mergeImports(parsed, inspectedTests) });
   for (let test of inspectedTests) {
+    if (!opts.nativeLexicalThis) {
+      if (test.replacedThisWith) {
+        edits.push({
+          start: test.statementStart,
+          end: test.statementStart,
+          replacement: `const ${test.replacedThisWith} = this;\n`,
+        });
+      }
+    }
     edits.push({
       start: test.startIndex,
       end: test.endIndex,
@@ -532,6 +556,7 @@ function mergeImports(parsed: types.File, inspectedTests: (InspectedTemplate & {
   traverse(parsed, {
     Program(path) {
       importUtil = new ImportUtil(babel, path);
+      importUtil.removeImport('ember-cli-htmlbars', 'hbs');
     },
     TaggedTemplateExpression(path) {
       let matched = inspectedTests.find(t => t.node === path.node);

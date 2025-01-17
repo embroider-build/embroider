@@ -10,6 +10,8 @@ export interface RenderTest {
   startIndex: number;
   endIndex: number;
   templateContent: string;
+  statementStart: number;
+  availableBinding: string;
 }
 
 export async function identifyRenderTests(
@@ -48,11 +50,25 @@ export async function identifyRenderTests(
             if (!loc) {
               throw new Error(`bug: no locations provided by babel`);
             }
+
+            let counter = 0;
+            let availableBinding = 'self';
+            while (path.scope.getBinding(availableBinding)) {
+              availableBinding = `self${counter++}`;
+            }
+
+            let statementCandidate: NodePath<unknown> = path;
+            while (!statementCandidate.isStatement()) {
+              statementCandidate = statementCandidate.parentPath;
+            }
+
             renderTests.push({
               node: arg0.node,
               startIndex: loc.start.index,
               endIndex: loc.end.index,
               templateContent: arg0.node.quasi.quasis[0].value.raw,
+              statementStart: statementCandidate.node.loc!.start.index,
+              availableBinding,
             });
           }
         } else {

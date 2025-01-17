@@ -25,6 +25,11 @@ yargs(process.argv.slice(2))
           type: 'boolean',
           describe: `When true, assume we can use template-tag directly in route files (requires ember-source >= 6.3.0-beta.3). When false, assume we can use the ember-route-template addon instead.`,
         })
+        .option('nativeLexicalThis', {
+          default: optionsWithDefaults().nativeLexicalThis,
+          type: 'boolean',
+          describe: `When true, assume that Ember supports accessing the lexically-scoped "this" from template-tags that are used as expressions (requires ember-source >= TODO). When false, introduce a new local variable to make "this" accessible.`,
+        })
         .option('routeTemplates', {
           array: true,
           type: 'string',

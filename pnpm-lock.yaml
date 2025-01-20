@@ -1705,8 +1705,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/vite
       '@glimmer/component':
-        specifier: ^1.1.2
-        version: 1.1.2(@babel/core@7.26.0)
+        specifier: ^2.0.0
+        version: 2.0.0
       '@glimmer/tracking':
         specifier: ^1.1.2
         version: 1.1.2
@@ -1733,7 +1733,7 @@ importers:
         version: 13.1.0(ember-source@6.3.0-alpha.3)
       ember-source:
         specifier: 6.3.0-alpha.3
-        version: 6.3.0-alpha.3(@glimmer/component@1.1.2)
+        version: 6.3.0-alpha.3(@glimmer/component@2.0.0)
       qunit:
         specifier: ^2.19.4
         version: 2.23.1
@@ -5751,7 +5751,7 @@ packages:
       '@simple-dom/interface': 1.4.0
       decorator-transforms: 2.3.0(@babel/core@7.26.0)
       dom-element-descriptors: 0.5.1
-      ember-source: 6.3.0-alpha.3(@glimmer/component@1.1.2)
+      ember-source: 6.3.0-alpha.3(@glimmer/component@2.0.0)
     transitivePeerDependencies:
       - '@babel/core'
       - '@glint/template'
@@ -6376,6 +6376,16 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
+
+  /@glimmer/component@2.0.0:
+    resolution: {integrity: sha512-eATSzBOUm0MZ9+YfJx7Y5p3gbwnaeMzLSSsCDn1ihDtUOIm5YYEV0ee0G7tXt/uKxowt8tXYn/EMbI9OlRF0CA==}
+    engines: {node: '>= 18'}
+    dependencies:
+      '@embroider/addon-shim': 1.9.0
+      '@glimmer/env': 0.1.7
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
 
   /@glimmer/debug@0.87.1:
     resolution: {integrity: sha512-rja9/Hofv1NEjIqp8P2eQuHY3+orlS3BL4fbFyvrE+Pw4lRwQPLm6UdgCMHZGGe9yweZAGvNVH6CimDBq7biwA==}
@@ -15791,7 +15801,7 @@ packages:
       decorator-transforms: 2.3.0(@babel/core@7.26.0)
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
-      ember-source: 6.3.0-alpha.3(@glimmer/component@1.1.2)
+      ember-source: 6.3.0-alpha.3(@glimmer/component@2.0.0)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -16051,7 +16061,7 @@ packages:
       '@ember/test-helpers': 4.0.4(@babel/core@7.26.0)(ember-source@6.3.0-alpha.3)
       '@embroider/addon-shim': 1.9.0
       '@embroider/macros': 1.16.10(@glint/template@1.5.0)
-      ember-source: 6.3.0-alpha.3(@glimmer/component@1.1.2)
+      ember-source: 6.3.0-alpha.3(@glimmer/component@2.0.0)
       qunit: 2.23.1
       qunit-theme-ember: 1.0.0
     transitivePeerDependencies:
@@ -16155,7 +16165,7 @@ packages:
         optional: true
     dependencies:
       ember-cli-babel: 7.26.11
-      ember-source: 6.3.0-alpha.3(@glimmer/component@1.1.2)
+      ember-source: 6.3.0-alpha.3(@glimmer/component@2.0.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -16862,7 +16872,7 @@ packages:
       - webpack
     dev: true
 
-  /ember-source@6.3.0-alpha.3(@glimmer/component@1.1.2):
+  /ember-source@6.3.0-alpha.3(@glimmer/component@2.0.0):
     resolution: {integrity: sha512-qToUyqaFUonUzDDNC0POxeZwwbjjSmJONOkdRg0/qQ0zZySgdfdhFns8jC6ubXgunPl3cseMETh0gU+hHEncdw==}
     engines: {node: '>= 18.*'}
     peerDependencies:
@@ -16872,7 +16882,7 @@ packages:
       '@ember/edition-utils': 1.2.0
       '@embroider/addon-shim': 1.9.0
       '@glimmer/compiler': 0.92.4
-      '@glimmer/component': 1.1.2(@babel/core@7.26.0)
+      '@glimmer/component': 2.0.0
       '@glimmer/destroyable': 0.92.3
       '@glimmer/env': 0.1.7
       '@glimmer/global-context': 0.92.3

@@ -9,20 +9,20 @@ import type { Resolver } from './module-resolver';
 
 export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolution, Error>> {
   static create: RequestAdapterCreate<
-    { resolver: Resolver; specifier: string; fromFile: string },
+    { resolver: Resolver; specifier: string; fromFile: string; extensions: string[] },
     Resolution<NodeResolution, Error>
-  > = ({ resolver, specifier, fromFile }) => {
+  > = ({ resolver, specifier, fromFile, extensions }) => {
     return {
       initialState: {
         specifier,
         fromFile,
         meta: undefined,
       },
-      adapter: new NodeRequestAdapter(resolver),
+      adapter: new NodeRequestAdapter(resolver, extensions),
     };
   };
 
-  private constructor(private resolver: Resolver) {}
+  private constructor(private resolver: Resolver, private extensions: string[]) {}
 
   get debugType() {
     return 'node';
@@ -47,7 +47,7 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
       virtual,
       result: {
         type: 'virtual' as const,
-        content: virtualContent(virtual.specifier, this.resolver).src,
+        content: virtualContent(virtual, this.resolver).src,
         filename: virtual.specifier,
       },
     };
@@ -75,7 +75,7 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
 
     let initialError;
 
-    for (let candidate of candidates(specifier)) {
+    for (let candidate of candidates(specifier, this.extensions)) {
       let filename;
       try {
         filename = require.resolve(candidate, {
@@ -92,6 +92,17 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
 
         continue;
       }
+      if (filename.endsWith('.hbs') && !candidate.endsWith('.hbs')) {
+        // Evaluating the `handlebars` NPM package installs a Node extension
+        // that puts `*.hbs` in the automatic search path. But we can't control
+        // its priority, and it's really important to us that `.hbs` cannot
+        // shadow other extensions with higher priority. For example, when both
+        // `.ts` and `.hbs` exist, resolving is supposed to find the `.ts`.
+        //
+        // This covers the case where we found an hbs "by accident", when we
+        // weren't actually expecting it.
+        continue;
+      }
       return { type: 'found', filename, result: { type: 'real' as 'real', filename }, virtual: false };
     }
 
@@ -99,10 +110,10 @@ export class NodeRequestAdapter implements RequestAdapter<Resolution<NodeResolut
   }
 }
 
-function* candidates(specifier: string) {
-  yield specifier;
+const defaultExtensions = ['.hbs.js', '.hbs'];
 
-  const extensions = ['.hbs.js', '.hbs'];
+function* candidates(specifier: string, extensions: string[]) {
+  yield specifier;
 
   for (let ext of extensions) {
     yield `${specifier}${ext}`;
@@ -113,12 +124,22 @@ type NodeResolution = { type: 'virtual'; filename: string; content: string } | {
 
 type NodeResolutionError = { type: 'not_found'; err: Error };
 
+export interface NodeResolveOpts {
+  extensions?: string[];
+}
+
 export async function nodeResolve(
   resolver: Resolver,
   specifier: string,
-  fromFile: string
+  fromFile: string,
+  opts?: NodeResolveOpts
 ): Promise<NodeResolution | NodeResolutionError> {
-  let request = ModuleRequest.create(NodeRequestAdapter.create, { resolver, fromFile, specifier });
+  let request = ModuleRequest.create(NodeRequestAdapter.create, {
+    resolver,
+    fromFile,
+    specifier,
+    extensions: opts?.extensions ?? defaultExtensions,
+  });
   let resolution = await resolver.resolve(request!);
   switch (resolution.type) {
     case 'not_found':

@@ -8,7 +8,6 @@ export default class extends V1Addon {
       return super.packageMeta;
     }
     return {
-      type: 'addon',
       version: 2,
       'auto-upgraded': true,
     };

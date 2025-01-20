@@ -1,0 +1,7 @@
+# compiled output
+/src/**/*.js
+/src/**/*.d.ts
+
+# dependencies
+/node_modules/
+

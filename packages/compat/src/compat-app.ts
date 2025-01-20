@@ -2,6 +2,7 @@ import type { Node as BroccoliNode } from 'broccoli-node-api';
 import type { Stage, Package } from '@embroider/core';
 import { PackageCache, WaitForTrees, RewrittenPackageCache, locateEmbroiderWorkingDir } from '@embroider/core';
 import type Options from './options';
+import type { CompatOptionsType } from './options';
 import { optionsWithDefaults } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
@@ -41,7 +42,7 @@ interface Group {
 export default class CompatApp {
   private annotation = '@embroider/compat/app';
   private active: CompatAppBuilder | undefined;
-  readonly options: Required<Options>;
+  readonly options: CompatOptionsType;
 
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
   private _implicitScripts: string[] = [];
@@ -408,7 +409,6 @@ export default class CompatApp {
       let remapAsset = this.remapAsset.bind(this);
 
       let addonMeta: AddonMeta = {
-        type: 'addon',
         version: 2,
         'implicit-scripts': this._implicitScripts.map(remapAsset).filter(forbiddenVendorPath),
         'implicit-styles': this._implicitStyles.map(remapAsset),
@@ -469,7 +469,6 @@ export default class CompatApp {
 
     return new AddToTree(styles, outputPath => {
       let addonMeta: AddonMeta = {
-        type: 'addon',
         version: 2,
         'public-assets': {},
       };

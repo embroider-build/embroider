@@ -1,4 +1,4 @@
-export { AppMeta, AddonMeta, PackageInfo } from './metadata';
+export { AddonMeta, PackageInfo } from './metadata';
 export {
   explicitRelative,
   extensionsPattern,
@@ -8,7 +8,7 @@ export {
   correspondingTemplate,
 } from './paths';
 export { getOrCreate } from './get-or-create';
-export { default as Package, V2AddonPackage as AddonPackage, V2AppPackage as AppPackage, V2Package } from './package';
+export { default as Package, V2AddonPackage as AddonPackage } from './package';
 export { default as PackageCache, type PackageCachePublicAPI } from './package-cache';
 export type { RewrittenPackageIndex } from './rewritten-package-cache';
 export { RewrittenPackageCache } from './rewritten-package-cache';

@@ -3,75 +3,17 @@ import { compile } from './js-handlebars';
 import type { Resolver } from './module-resolver';
 import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
-import { join, resolve } from 'path';
-import { extensionsPattern, type PackageCachePublicAPI, type Package } from '@embroider/shared-internals';
+import { join } from 'path';
+import { extensionsPattern } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
-import { encodePublicRouteEntrypoint } from './virtual-route-entrypoint';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
-import { type ModuleRequest } from './module-request';
-import { exports as resolveExports } from 'resolve.exports';
-import { type VirtualResponse } from './virtual-content';
 
-const entrypointPattern = /(?<filename>.*)[\\/]-embroider-entrypoint.js/;
-
-export function virtualEntrypoint(
-  request: ModuleRequest,
-  packageCache: PackageCachePublicAPI
-): VirtualResponse | undefined {
-  //TODO move the extra forwardslash handling out into the vite plugin
-  const candidates = [
-    '@embroider/virtual/compat-modules',
-    '/@embroider/virtual/compat-modules',
-    './@embroider/virtual/compat-modules',
-  ];
-
-  if (!candidates.some(c => request.specifier.startsWith(c + '/') || request.specifier === c)) {
-    return undefined;
-  }
-
-  const result = /\.?\/?@embroider\/virtual\/compat-modules(?:\/(?<packageName>.*))?/.exec(request.specifier);
-
-  if (!result) {
-    throw new Error('bug: entrypoint does not match pattern' + request.specifier);
-  }
-
-  const { packageName } = result.groups!;
-
-  const requestingPkg = packageCache.ownerOfFile(request.fromFile);
-
-  if (!requestingPkg?.isV2Ember()) {
-    throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
-  }
-  let pkg: Package;
-
-  if (packageName) {
-    pkg = packageCache.resolve(packageName, requestingPkg);
-  } else {
-    pkg = requestingPkg;
-  }
-  let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
-    browser: true,
-    conditions: ['default', 'imports'],
-  });
-  return {
-    type: 'entrypoint',
-    specifier: resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js'),
-  };
-}
-
-export function decodeEntrypoint(filename: string): { fromDir: string } | undefined {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes('-embroider-entrypoint')) {
-    return;
-  }
-  let m = entrypointPattern.exec(filename);
-  if (m) {
-    return {
-      fromDir: m.groups!.filename,
-    };
-  }
+export interface EntrypointResponse {
+  type: 'entrypoint';
+  fromDir: string;
+  specifier: string;
 }
 
 export function staticAppPathsPattern(staticAppPaths: string[] | undefined): RegExp | undefined {
@@ -84,7 +26,6 @@ export function renderEntrypoint(
   resolver: Resolver,
   { fromDir }: { fromDir: string }
 ): { src: string; watches: string[] } {
-  // this is new
   const owner = resolver.packageCache.ownerOfFile(fromDir);
 
   let eagerModules: string[] = [];
@@ -167,10 +108,10 @@ export function renderEntrypoint(
       (_: string, filename: string) => {
         requiredAppFiles.push([filename]);
       },
-      (routeNames: string[], _files: string[]) => {
+      (routeNames: string[]) => {
         lazyRoutes.push({
           names: routeNames,
-          path: encodePublicRouteEntrypoint(routeNames, _files),
+          path: `@embroider/core/route/${encodeURIComponent(routeNames[0])}`,
         });
       }
     );

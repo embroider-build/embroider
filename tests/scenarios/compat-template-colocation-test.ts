@@ -84,7 +84,7 @@ function checkContents(
 }
 
 scenarios
-  .map('staticComponent-false', app => {
+  .map('staticInvokables-false', app => {
     merge(app.files, {
       'ember-cli-build.js': `
         'use strict';
@@ -94,7 +94,7 @@ scenarios
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {});
           return prebuild(app, {
-            staticComponents: false,
+            staticInvokables: false,
             staticAddonTrees: false,
           });
         };
@@ -240,7 +240,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
       // TODO running pnpm test in this scenario is causing rollup to build things in a strange order
       // it could just be a specific thing about this scenario but it would be worth investigating more
       // when I debugged it a little bit it seems like thigs from glimmer are being included too early in the
-      // bundle, so it could be related to staticComponents: false being turned on
+      // bundle, so it could be related to staticInvokables: false being turned on
       skip('tests should succeed', async function (assert) {
         let result = await app.execute('pnpm test');
 
@@ -250,7 +250,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
   });
 
 scenarios
-  .map('staticComponents-true', () => {})
+  .map('staticInvokables-true', () => {})
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       throwOnWarnings(hooks);
@@ -316,7 +316,7 @@ appScenarios
         module.exports = function (defaults) {
           let app = new EmberApp(defaults, {});
           return prebuild(app, {
-            staticComponents: false,
+            staticInvokables: false,
           });
         };
       `,

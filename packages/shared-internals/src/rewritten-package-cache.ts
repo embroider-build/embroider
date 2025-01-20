@@ -1,5 +1,5 @@
 import PackageCache, { type PackageCachePublicAPI } from './package-cache';
-import type { V2AddonPackage, V2AppPackage, V2Package } from './package';
+import type { V2AddonPackage } from './package';
 import Package from './package';
 import { existsSync, readJSONSync, realpathSync } from 'fs-extra';
 import { resolve } from 'path';
@@ -238,12 +238,12 @@ class WrappedPackage implements PackageTheGoodParts {
     return this.plainPkg.isLazyEngine();
   }
 
-  isV2Ember(): this is V2Package {
+  isV2Ember(): boolean {
     return this.plainPkg.isV2Ember();
   }
 
-  isV2App(): this is V2AppPackage {
-    return this.plainPkg.isV2App();
+  isApp(): boolean {
+    return this.plainPkg.isApp();
   }
 
   isV2Addon(): this is V2AddonPackage {

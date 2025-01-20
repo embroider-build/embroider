@@ -22,9 +22,7 @@ let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
         return maybeEmbroider(app, {
           staticAddonTrees: true,
           staticAddonTestSupportTrees: true,
-          staticHelpers: true,
-          staticModifiers: true,
-          staticComponents: true,
+          staticInvokables: true,
           splitAtRoutes: ['people'],
         });
       };

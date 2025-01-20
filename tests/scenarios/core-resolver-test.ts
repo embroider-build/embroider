@@ -1,4 +1,4 @@
-import type { AddonMeta, AppMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
+import type { AddonMeta, RewrittenPackageIndex } from '@embroider/shared-internals';
 import { outputFileSync, readJsonSync, writeJSONSync } from 'fs-extra';
 import { resolve } from 'path';
 import QUnit from 'qunit';
@@ -13,17 +13,8 @@ const { module: Qmodule, test } = QUnit;
 
 Scenarios.fromProject(() => new Project())
   .map('core-resolver-test', app => {
-    let appMeta: AppMeta = {
-      type: 'app',
-      version: 2,
-      'auto-upgraded': true,
-      assets: ['index.html'],
-      'root-url': '/',
-    };
     app.pkg = {
       name: 'my-app',
-      keywords: ['ember-addon'],
-      'ember-addon': appMeta as any,
       exports: {
         './*': './*',
         './tests/*': './tests/*',
@@ -98,7 +89,7 @@ Scenarios.fromProject(() => new Project())
       function addonPackageJSON(name = 'my-addon', addonMeta?: Partial<AddonMeta>) {
         return JSON.stringify(
           (() => {
-            let meta: AddonMeta = { type: 'addon', version: 2, 'auto-upgraded': true, ...(addonMeta ?? {}) };
+            let meta: AddonMeta = { version: 2, 'auto-upgraded': true, ...(addonMeta ?? {}) };
             return {
               name,
               keywords: ['ember-addon'],
@@ -203,7 +194,12 @@ Scenarios.fromProject(() => new Project())
             'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
           });
 
-          expectAudit = await assert.audit({ app: app.dir, 'reuse-build': true });
+          expectAudit = await assert.audit({
+            app: app.dir,
+            'reuse-build': true,
+            entrypoints: ['index.html'],
+            rootURL: '/',
+          });
         };
       });
 

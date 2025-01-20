@@ -57,7 +57,7 @@ export function resolver(): Plugin {
     }
   }
 
-  async function ensureResolve(context: PluginContext, specifier: string): Promise<string> {
+  async function ensureVirtualResolve(context: PluginContext, specifier: string): Promise<ResponseMeta> {
     let result = await resolveId(
       context,
       specifier,
@@ -68,16 +68,20 @@ export function resolver(): Plugin {
       throw new Error(`bug: expected to resolve ${specifier}`);
     }
     if (typeof result === 'string') {
-      return result;
+      throw new Error(`bug: expected to get a PartialResolvedId`);
     }
-    return result.id;
+    let meta = result.meta?.['embroider-resolver'] as ResponseMeta | undefined;
+    if (!meta) {
+      throw new Error(`bug: no response meta for ${specifier}`);
+    }
+    return meta;
   }
 
   async function emitVirtualFile(context: PluginContext, fileName: string): Promise<void> {
     context.emitFile({
       type: 'asset',
       fileName,
-      source: virtualContent(await ensureResolve(context, fileName), resolverLoader.resolver).src,
+      source: virtualContent((await ensureVirtualResolve(context, fileName)).virtual, resolverLoader.resolver).src,
     });
   }
 
@@ -137,7 +141,7 @@ export function resolver(): Plugin {
     load(id) {
       let meta = responseMetas.get(normalizePath(id));
       if (meta?.virtual) {
-        let { src, watches } = virtualContent(cleanUrl(id), resolverLoader.resolver);
+        let { src, watches } = virtualContent(meta.virtual, resolverLoader.resolver);
         virtualDeps.set(id, watches);
         server?.watcher.add(watches);
         return src;

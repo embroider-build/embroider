@@ -1,5 +1,6 @@
 import type { ModuleRequest, RequestAdapter, RequestAdapterCreate, Resolution, VirtualResponse } from '@embroider/core';
 import core from '@embroider/core';
+import { resolve } from 'path';
 
 const { cleanUrl, getUrlQueryParams } = core;
 import type { PluginContext, ResolveIdResult } from 'rollup';
@@ -29,6 +30,12 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
       // strip query params off the importer
       let fromFile = cleanUrl(importer);
       let importerQueryParams = getUrlQueryParams(importer);
+
+      if (source.startsWith('/@embroider/virtual/')) {
+        // when our virtual paths are used in HTML they come into here with a /
+        // prefix. We still want them to resolve like packages.
+        source = source.slice(1);
+      }
 
       // strip query params off the source but keep track of them
       // we use regexp-based methods over a URL object because the
@@ -69,7 +76,10 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
       type: 'found',
       filename: virtual.specifier,
       result: {
-        id: this.specifierWithQueryParams(virtual.specifier),
+        // The `resolve` here is necessary on windows, where we might have
+        // unix-like specifiers but Vite needs to see a real windows path in the
+        // result.
+        id: resolve(this.specifierWithQueryParams(virtual.specifier)),
         resolvedBy: this.fromFileWithQueryParams(request.fromFile),
         meta: {
           'embroider-resolver': { virtual } satisfies ResponseMeta,

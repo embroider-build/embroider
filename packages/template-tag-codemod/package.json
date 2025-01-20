@@ -1,0 +1,51 @@
+{
+  "name": "@embroider/template-tag-codemod",
+  "version": "0.4.0",
+  "private": false,
+  "type": "module",
+  "description": "Convert to HBS to GJS with <template></template>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/template-tag-codemod"
+  },
+  "license": "MIT",
+  "author": "Edward Faulkner <edward@eaf4.com>",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "template-tag-codemod": "./src/cli.js"
+  },
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.js.map"
+  ],
+  "scripts": {},
+  "dependencies": {
+    "@babel/core": "^7.26.0",
+    "@babel/plugin-syntax-decorators": "^7.25.9",
+    "@babel/plugin-syntax-typescript": "^7.25.9",
+    "@embroider/compat": "workspace:^*",
+    "@embroider/core": "workspace:^*",
+    "@embroider/reverse-exports": "workspace:^*",
+    "@types/babel__core": "^7.20.5",
+    "@types/yargs": "^17.0.3",
+    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "broccoli": "^3.5.2",
+    "console-ui": "^3.1.2",
+    "ember-cli": "^6.0.1",
+    "glob": "^11.0.0",
+    "yargs": "^17.0.1"
+  },
+  "devDependencies": {
+    "@glimmer/syntax": "^0.84.3",
+    "@types/glob": "^8.1.0",
+    "@types/node": "^22.9.3",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">= 20"
+  }
+}

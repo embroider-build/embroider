@@ -121,3 +121,13 @@ export class ModuleRequest<Res extends Resolution = Resolution> implements Modul
     return new ModuleRequest(this.#adapter, this) as this;
   }
 }
+
+export async function extractResolution<Res extends Resolution = Resolution>(
+  res: Res | (() => Promise<Res>)
+): Promise<Res> {
+  if (typeof res === 'function') {
+    return await res();
+  } else {
+    return res;
+  }
+}

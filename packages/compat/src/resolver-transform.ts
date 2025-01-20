@@ -424,7 +424,7 @@ class TemplateResolver implements ASTPlugin {
     return name;
   }
 
-  private targetComponent(name: string): ComponentResolution | null {
+  private targetComponent(name: string, nameHint: string): ComponentResolution | null {
     if (!this.staticComponentsEnabled) {
       return null;
     }
@@ -459,7 +459,7 @@ class TemplateResolver implements ASTPlugin {
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(name),
+      nameHint: this.nameHint(nameHint),
     };
   }
 
@@ -499,7 +499,7 @@ class TemplateResolver implements ASTPlugin {
       };
     }
 
-    return this.targetComponent(component.path);
+    return this.targetComponent(component.path, component.path);
   }
 
   private targetHelper(path: string): HelperResolution | null {
@@ -629,7 +629,7 @@ class TemplateResolver implements ASTPlugin {
     if (ownComponentRules?.disambiguate[path]) {
       switch (ownComponentRules.disambiguate[path]) {
         case 'component':
-          return this.targetComponent(path);
+          return this.targetComponent(path, path);
         case 'helper':
           return this.targetHelper(path);
         case 'data':
@@ -847,7 +847,7 @@ class TemplateResolver implements ASTPlugin {
         });
         return;
       }
-      let resolution = this.targetComponent(node.path.original);
+      let resolution = this.targetComponent(node.path.original, node.path.original);
       this.emit(path, resolution, (node, newId) => {
         node.path = newId;
       });
@@ -998,7 +998,7 @@ class TemplateResolver implements ASTPlugin {
           // if it starts with lower case, it can't be a component we need to
           // globally resolve
           if (node.tag[0] !== node.tag[0].toLowerCase()) {
-            resolution = this.targetComponent(dasherize(node.tag));
+            resolution = this.targetComponent(dasherize(node.tag), node.tag);
           }
 
           this.emit(path, resolution, (node, newId) => {

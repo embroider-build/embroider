@@ -1,54 +1,20 @@
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import { AppFiles } from './app-files';
 import type { Resolver } from './module-resolver';
-import { resolve } from 'path';
 import { compile } from './js-handlebars';
-import { extensionsPattern, type Package } from '@embroider/shared-internals';
+import { extensionsPattern } from '@embroider/shared-internals';
 import { partition } from 'lodash';
 import { getAppFiles, getFastbootFiles, importPaths, splitRoute, staticAppPathsPattern } from './virtual-entrypoint';
-import { exports as resolveExports } from 'resolve.exports';
 
-const entrypointPattern = /(?<filename>.*)[\\/]-embroider-route-entrypoint.js:route=(?<route>.*)/;
-
-export function encodeRouteEntrypoint(pkg: Package, routeName: string): string {
-  let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
-    browser: true,
-    conditions: ['default', 'imports'],
-  });
-  let target = matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`;
-  return resolve(pkg.root, target);
-}
-
-export function decodeRouteEntrypoint(filename: string): { fromDir: string; route: string } | undefined {
-  // Performance: avoid paying regex exec cost unless needed
-  if (!filename.includes('-embroider-route-entrypoint')) {
-    return;
-  }
-  let m = entrypointPattern.exec(filename);
-  if (m) {
-    return {
-      fromDir: m.groups!.filename,
-      route: m.groups!.route,
-    };
-  }
-}
-
-export function encodePublicRouteEntrypoint(routeNames: string[], _files: string[]) {
-  return `@embroider/core/route/${encodeURIComponent(routeNames[0])}`;
-}
-
-export function decodePublicRouteEntrypoint(specifier: string): string | null {
-  const publicPrefix = '@embroider/core/route/';
-  if (!specifier.startsWith(publicPrefix)) {
-    return null;
-  }
-
-  return specifier.slice(publicPrefix.length);
+export interface RouteEntrypointResponse {
+  type: 'route-entrypoint';
+  fromDir: string;
+  route: string;
 }
 
 export function renderRouteEntrypoint(
-  resolver: Resolver,
-  { fromDir, route }: { fromDir: string; route: string }
+  { fromDir, route }: RouteEntrypointResponse,
+  resolver: Resolver
 ): { src: string; watches: string[] } {
   const owner = resolver.packageCache.ownerOfFile(fromDir);
 

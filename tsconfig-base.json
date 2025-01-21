@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "declaration": true,
+    "typeRoots": ["types", "node_modules/@types"],
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": true,
+    "allowUnreachableCode": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "useUnknownInCatchVariables": false,
+  },
+}

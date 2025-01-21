@@ -4,8 +4,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "default": "./index.mjs",
-      "types": "./index.d.ts"
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "peerDependencies": {
@@ -44,10 +44,6 @@
     "vite": "^5.3.3"
   },
   "files": [
-    "index.mjs",
-    "index.d.ts",
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist"
   ]
 }

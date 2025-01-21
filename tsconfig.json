@@ -6,23 +6,7 @@
     "./test-packages/release/src/**/*.ts",
     "./tests/scenarios/**/*.ts"
   ],
-  "compilerOptions": {
-    "target": "es2019",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "declaration": true,
-    "typeRoots": ["types", "node_modules/@types"],
-    "esModuleInterop": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "sourceMap": true,
-    "inlineSources": true,
-    "experimentalDecorators": true,
-    "allowUnreachableCode": false,
-    "strict": true,
-    "skipLibCheck": true,
-    "useUnknownInCatchVariables": false,
-  },
+  "extends": "./tsconfig-base.json",
   "exclude": [
     "node_modules",
     "packages/*/tmp",
@@ -34,9 +18,11 @@
     "tmp",
     "tests/scenarios/output",
     "packages/config-meta-loader/src",
-    "packages/router/src"
+    "packages/router/src",
+    "packages/vite"
   ],
   "references": [
-    { "path": "packages/config-meta-loader" }
+    { "path": "packages/config-meta-loader" },
+    { "path": "packages/vite" }
   ]
 }

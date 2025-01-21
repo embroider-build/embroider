@@ -1,5 +1,8 @@
 import makeDebug from 'debug';
 import { format } from 'util';
+// @ts-expect-error we can't import the NestedHooks from qunit here
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type qunit from 'qunit';
 
 const todo = makeDebug('embroider:todo');
 const unsupported = makeDebug('embroider:unsupported');

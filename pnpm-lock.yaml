@@ -529,6 +529,9 @@ importers:
       '@types/node':
         specifier: ^22.9.3
         version: 22.10.5
+      '@types/qunit':
+        specifier: ^2.19.12
+        version: 2.19.12
       '@types/resolve':
         specifier: ^1.20.0
         version: 1.20.6
@@ -8710,6 +8713,10 @@ packages:
 
   /@types/qunit@2.19.10:
     resolution: {integrity: sha512-gVB+rxvxmbyPFWa6yjjKgcumWal3hyqoTXI0Oil161uWfo1OCzWZ/rnEumsx+6uVgrwPrCrhpQbLkzfildkSbg==}
+
+  /@types/qunit@2.19.12:
+    resolution: {integrity: sha512-II+C1wgzUia0g+tGAH+PBb4XiTm8/C/i6sN23r21NNskBYOYrv+qnW0tFQ/IxZzKVwrK4CTglf8YO3poJUclQA==}
+    dev: true
 
   /@types/range-parser@1.2.7:
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}

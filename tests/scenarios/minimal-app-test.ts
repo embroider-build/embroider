@@ -71,11 +71,10 @@ minimalAppScenarios
         },
         templates: {
           'application.gjs': `
-          //import pageTitle from 'ember-page-title/helpers/page-title';
+          import pageTitle from 'ember-page-title/helpers/page-title';
 
-          // TODO figure out why pageTitle isn't working
           <template>
-            {{!-- {{pageTitle "MyApp"}} --}}
+            {{pageTitle "MyApp"}}
             {{outlet}}
           </template>
         `,
@@ -169,13 +168,13 @@ minimalAppScenarios
             .module('./index.html')
             .resolves(/\/index.html.*/) // in-html app-boot script
             .toModule()
-            .resolves(/\/app\.ts.*/)
+            .resolves(/\/app\.js.*/)
             .toModule()
-            .resolves(/.*\/-embroider-entrypoint.js/)
+            .resolves(/\/app\/templates\/application.gjs.*/) // page-title is being imported by this template so we should go through here
             .toModule()
-            .withContents((_src, imports) => {
+            .withContents((src, imports) => {
               let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
-              assert.ok(pageTitleImports.length > 0, 'should have at least one import from page-title');
+              assert.ok(pageTitleImports.length > 0, `should have at least one import from page-title. Source: ${src}`);
               for (let pageTitleImport of pageTitleImports) {
                 assert.ok(
                   /\.vite\/deps/.test(pageTitleImport.source),

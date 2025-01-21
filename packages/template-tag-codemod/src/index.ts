@@ -1,18 +1,22 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
 import core, { type Package } from '@embroider/core';
-import { parseAsync, transformAsync, type types } from '@babel/core';
+import { traverse, parseAsync, transformAsync, type types } from '@babel/core';
+import * as babel from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
-import extractMeta, { type ExtractMetaOpts, type MetaResult } from './extract-meta.js';
+import { extractMeta, type MetaResult } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
 import { dirname } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
-import { routeTemplateTransform } from './route-template-transform.js';
+import { replaceThisTransform } from './replace-this-transform.js';
+import { identifyRenderTests, type RenderTest } from './identify-render-tests.js';
+import { ImportUtil } from 'babel-import-util';
 
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
 const { externalName } = reverseExports;
 const require = createRequire(import.meta.url);
+const { default: generate } = require('@babel/generator');
 
 export interface Options {
   // when true, imports for other files in the same project will use relative
@@ -27,11 +31,22 @@ export interface Options {
   // Otherwise, assume we're using the ember-route-template addon.
   nativeRouteTemplates?: boolean;
 
+  // when true, assume we can use
+  // https://github.com/emberjs/babel-plugin-ember-template-compilation/pull/67.
+  // This is mostly useful when codemodding rendering tests, which often access
+  // `{{this.stuff}}` in a template. When false, polyfill that behavior by
+  // introducing a new local variable.
+  nativeLexicalThis?: boolean;
+
   // list of globs of the route templates we should convert.
   routeTemplates?: string[];
 
   // list of globs of the components we should convert
   components?: string[];
+
+  // list of globs for JS/TS files that we will check for rendering tests to
+  // update to template-tag
+  renderTests?: string[];
 
   // when a .js or .ts file already exists, we necessarily convert to .gjs or
   // .gts respectively. But when only an .hbs file exists, we have a choice of
@@ -55,8 +70,10 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       relativeLocalPaths: true,
       extensions: ['.gts', '.gjs', '.ts', '.js', '.hbs'],
       nativeRouteTemplates: true,
+      nativeLexicalThis: true,
       routeTemplates: ['app/templates/**/*.hbs'],
       components: ['app/components/**/*.{js,ts,hbs}'],
+      renderTests: ['tests/**/*.{js,ts}'],
       defaultFormat: 'gjs',
       routeTemplateSignature: `{ Args: { model: unknown, controller: unknown } }`,
       templateOnlyComponentSignature: `{ Args: {} }`,
@@ -110,12 +127,19 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
 const resolverLoader = new ResolverLoader(process.cwd());
 const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; content: string }>();
 
+export interface InspectedTemplate {
+  templateSource: string;
+  scope: MetaResult['scope'];
+  replacedThisWith: string | false;
+}
+
 export async function inspectContents(
   filename: string,
-  isRouteTemplate: boolean,
+  src: string,
+  replaceThisWith: string | false,
   opts: OptionsWithDefaults
-): Promise<{ templateSource: string; scope: MetaResult['scope'] }> {
-  let src = readFileSync(filename, 'utf8');
+): Promise<InspectedTemplate> {
+  let replaced = { didReplace: false };
   let strictSource = (await transformAsync(hbsToJS(src), {
     filename,
     plugins: [
@@ -134,27 +158,20 @@ export async function inspectContents(
                 },
               } satisfies ResolverTransformOptions,
             ],
-            ...(isRouteTemplate ? [routeTemplateTransform()] : []),
+            ...(replaceThisWith ? [replaceThisTransform(replaceThisWith, replaced)] : []),
           ],
         } satisfies EtcOptions,
       ],
     ],
   }))!.code!;
 
-  const meta: ExtractMetaOpts = { result: undefined };
-  await transformAsync(strictSource, {
-    filename,
-    plugins: [[extractMeta, meta]],
-  });
-  if (!meta.result) {
-    throw new Error(`failed to extract metadata while processing ${filename}`);
-  }
-  let { templateSource, scope } = await resolveImports(filename, meta.result, opts);
-  return { templateSource, scope };
+  const meta = await extractMeta(strictSource, filename);
+  let { templateSource, scope } = await resolveImports(filename, meta, opts);
+  return { templateSource, scope, replacedThisWith: replaced.didReplace ? replaceThisWith : false };
 }
 
 export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<void> {
-  let { templateSource, scope } = await inspectContents(filename, true, opts);
+  let { templateSource, scope } = await inspectContents(filename, readFileSync(filename, 'utf8'), '@controller', opts);
 
   let outSource: string[] = [];
 
@@ -261,7 +278,7 @@ export async function processComponent(
   jsPath: string | undefined,
   opts: OptionsWithDefaults
 ): Promise<void> {
-  let { templateSource, scope } = await inspectContents(hbsPath, false, opts);
+  let { templateSource, scope } = await inspectContents(hbsPath, readFileSync(hbsPath, 'utf8'), false, opts);
 
   if (jsPath) {
     let src = await renderJsComponent(templateSource, scope, jsPath, opts);
@@ -475,10 +492,145 @@ function renderScopeImports(scope: MetaResult['scope']) {
     .join('\n');
 }
 
+export async function processRenderTests(opts: OptionsWithDefaults): Promise<void> {
+  for (let pattern of opts.renderTests) {
+    for (let filename of globSync(pattern)) {
+      await processRenderTest(filename, opts);
+    }
+  }
+}
+
+async function inspectTests(
+  filename: string,
+  renderTests: RenderTest[],
+  opts: OptionsWithDefaults
+): Promise<(InspectedTemplate & RenderTest)[]> {
+  return await Promise.all(
+    renderTests.map(async target => {
+      let { templateSource, scope, replacedThisWith } = await inspectContents(
+        filename,
+        target.templateContent,
+        opts.nativeLexicalThis ? false : target.availableBinding,
+        opts
+      );
+      return { ...target, templateSource, scope, replacedThisWith };
+    })
+  );
+}
+
+export async function processRenderTest(filename: string, opts: OptionsWithDefaults): Promise<void> {
+  let src = readFileSync(filename, 'utf8');
+  let { parsed, renderTests } = await identifyRenderTests(src, filename);
+  if (renderTests.length === 0) {
+    return;
+  }
+
+  let edits = deleteImports(parsed);
+  let inspectedTests = await inspectTests(filename, renderTests, opts);
+  edits.unshift({ start: 0, end: 0, replacement: mergeImports(parsed, inspectedTests) });
+  for (let test of inspectedTests) {
+    if (!opts.nativeLexicalThis) {
+      if (test.replacedThisWith) {
+        edits.push({
+          start: test.statementStart,
+          end: test.statementStart,
+          replacement: `const ${test.replacedThisWith} = this;\n`,
+        });
+      }
+    }
+    edits.push({
+      start: test.startIndex,
+      end: test.endIndex,
+      replacement: '<template>' + test.templateSource + '</template>',
+    });
+  }
+  let newSrc = applyEdits(src, edits);
+  writeFileSync(filename.replace(/\.js$/, '.gjs').replace(/\.ts$/, '.gts'), newSrc);
+  unlinkSync(filename);
+  console.log(`render test: ${filename} `);
+}
+
+function mergeImports(parsed: types.File, inspectedTests: (InspectedTemplate & { node: types.Node })[]) {
+  let importUtil: ImportUtil;
+
+  traverse(parsed, {
+    Program(path) {
+      importUtil = new ImportUtil(babel, path);
+      importUtil.removeImport('ember-cli-htmlbars', 'hbs');
+    },
+    TaggedTemplateExpression(path) {
+      let matched = inspectedTests.find(t => t.node === path.node);
+      if (matched) {
+        for (let [inTemplateName, { imported, module }] of matched.scope) {
+          let name = importUtil.import(path, module, imported, inTemplateName);
+          if (name.name !== inTemplateName) {
+            throw new Error('unimplemented');
+          }
+        }
+      }
+    },
+  });
+  let imports = parsed.program.body
+    .filter(b => b.type === 'ImportDeclaration')
+    .map(d => generate(d).code)
+    .join('\n');
+  return imports;
+}
+
+function deleteImports(parsed: types.File): Edit[] {
+  let edits: Edit[] = [];
+  traverse(parsed, {
+    ImportDeclaration(path) {
+      let loc = path.node.loc;
+      if (!loc) {
+        throw new Error(`bug: babel not producing source locations`);
+      }
+      edits.push({
+        start: loc.start.index,
+        end: loc.end.index,
+        replacement: null,
+      });
+    },
+  });
+  return edits;
+}
+
+interface Edit {
+  start: number;
+  end: number;
+  replacement: string | null;
+}
+
+function applyEdits(source: string, edits: { start: number; end: number; replacement: string | null }[]): string {
+  let cursor = 0;
+  let output: string[] = [];
+  let previousDeletion = false;
+  for (let { start, end, replacement } of edits) {
+    if (start > cursor) {
+      let interEditContent = source.slice(cursor, start);
+      if (previousDeletion && replacement === null && /^\s*$/.test(interEditContent)) {
+        // drop whitespace in between two other deletions
+      } else {
+        output.push(interEditContent);
+      }
+    }
+    if (replacement === null) {
+      previousDeletion = true;
+    } else {
+      previousDeletion = false;
+      output.push(replacement);
+    }
+    cursor = end;
+  }
+  output.push(source.slice(cursor));
+  return output.join('');
+}
+
 export async function run(partialOpts: Options) {
   let opts = optionsWithDefaults(partialOpts);
   await ensureAppSetup();
   await ensurePrebuild();
   await processRouteTemplates(opts);
   await processComponents(opts);
+  await processRenderTests(opts);
 }

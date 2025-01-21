@@ -24,7 +24,9 @@
   ],
   "scripts": {},
   "dependencies": {
+    "@babel/code-frame": "^7.26.2",
     "@babel/core": "^7.26.0",
+    "@babel/generator": "^7.26.5",
     "@babel/plugin-syntax-decorators": "^7.25.9",
     "@babel/plugin-syntax-typescript": "^7.25.9",
     "@embroider/compat": "workspace:^*",
@@ -32,6 +34,7 @@
     "@embroider/reverse-exports": "workspace:^*",
     "@types/babel__core": "^7.20.5",
     "@types/yargs": "^17.0.3",
+    "babel-import-util": "^3.0.0",
     "babel-plugin-ember-template-compilation": "^2.3.0",
     "broccoli": "^3.5.2",
     "console-ui": "^3.1.2",
@@ -41,6 +44,8 @@
   },
   "devDependencies": {
     "@glimmer/syntax": "^0.84.3",
+    "@types/babel__code-frame": "^7.0.6",
+    "@types/babel__generator": "^7.6.8",
     "@types/glob": "^8.1.0",
     "@types/node": "^22.9.3",
     "typescript": "^5.4.5"

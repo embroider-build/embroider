@@ -820,9 +820,15 @@ importers:
 
   packages/template-tag-codemod:
     dependencies:
+      '@babel/code-frame':
+        specifier: ^7.26.2
+        version: 7.26.2
       '@babel/core':
         specifier: ^7.26.0
         version: 7.26.0
+      '@babel/generator':
+        specifier: ^7.26.5
+        version: 7.26.5
       '@babel/plugin-syntax-decorators':
         specifier: ^7.25.9
         version: 7.25.9(@babel/core@7.26.0)
@@ -844,6 +850,9 @@ importers:
       '@types/yargs':
         specifier: ^17.0.3
         version: 17.0.33
+      babel-import-util:
+        specifier: ^3.0.0
+        version: 3.0.0
       babel-plugin-ember-template-compilation:
         specifier: ^2.3.0
         version: 2.3.0
@@ -866,6 +875,12 @@ importers:
       '@glimmer/syntax':
         specifier: ^0.84.3
         version: 0.84.3
+      '@types/babel__code-frame':
+        specifier: ^7.0.6
+        version: 7.0.6
+      '@types/babel__generator':
+        specifier: ^7.6.8
+        version: 7.6.8
       '@types/glob':
         specifier: ^8.1.0
         version: 8.1.0
@@ -2507,6 +2522,16 @@ packages:
       '@jridgewell/trace-mapping': 0.3.25
       jsesc: 3.1.0
 
+  /@babel/generator@7.26.5:
+    resolution: {integrity: sha512-2caSP6fN9I7HOe6nqhtft7V4g7/V/gfDsC3Ag4W7kEzzvRGKqiv0pu0HogPiZ3KaVSoNDhUws6IJjDjpfmYIXw==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      '@babel/parser': 7.26.5
+      '@babel/types': 7.26.5
+      '@jridgewell/gen-mapping': 0.3.8
+      '@jridgewell/trace-mapping': 0.3.25
+      jsesc: 3.1.0
+
   /@babel/helper-annotate-as-pure@7.25.9:
     resolution: {integrity: sha512-gv7320KBUFJz1RnylIg5WWYPRXKZ884AGkYpgpWW02TH66Dl+HaC1t1CKd0z3R4b6hdYEcmrNZHUmfCP+1u3/g==}
     engines: {node: '>=6.9.0'}
@@ -2769,6 +2794,13 @@ packages:
     hasBin: true
     dependencies:
       '@babel/types': 7.26.3
+
+  /@babel/parser@7.26.5:
+    resolution: {integrity: sha512-SRJ4jYmXRqV1/Xc+TIVG84WjHBXKlxO9sHQnA2Pf12QQEAp1LOh6kDzNHXcUnbH1QI0FDoPPVOt+vyUDucxpaw==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+    dependencies:
+      '@babel/types': 7.26.5
 
   /@babel/plugin-bugfix-firefox-class-in-computed-class-key@7.25.9(@babel/core@7.26.0):
     resolution: {integrity: sha512-ZkRyVkThtxQ/J6nv3JFYv1RYY+JT5BvU0y3k5bWrmuG4woXypRa4PXmm9RhOwodRkYFWqC0C0cqcJ4OqR7kW+g==}
@@ -4129,6 +4161,13 @@ packages:
 
   /@babel/types@7.26.3:
     resolution: {integrity: sha512-vN5p+1kl59GVKMvTHt55NzzmYVxprfJD+ql7U9NFIfKCBkYE55LYtS+WtPlaYOyzydrKI8Nezd+aZextrd+FMA==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      '@babel/helper-string-parser': 7.25.9
+      '@babel/helper-validator-identifier': 7.25.9
+
+  /@babel/types@7.26.5:
+    resolution: {integrity: sha512-L6mZmwFDK6Cjh1nRCLXpa6no13ZIioJDz7mdkzHv399pThrTa/k0nUlNaenOeh2kWu/iaOQYElEpKPUswUa9Vg==}
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/helper-string-parser': 7.25.9
@@ -8432,7 +8471,6 @@ packages:
 
   /@types/babel__code-frame@7.0.6:
     resolution: {integrity: sha512-Anitqkl3+KrzcW2k77lRlg/GfLZLWXBuNgbEcIOU6M92yw42vsd3xV/Z/yAHEj8m+KUjL6bWOVOFqX8PFPJ4LA==}
-    dev: false
 
   /@types/babel__core@7.20.5:
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -20604,7 +20642,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@babel/core': 7.26.0
-      '@babel/generator': 7.26.3
+      '@babel/generator': 7.26.5
       '@babel/plugin-syntax-jsx': 7.25.9(@babel/core@7.26.0)
       '@babel/plugin-syntax-typescript': 7.25.9(@babel/core@7.26.0)
       '@babel/types': 7.26.3

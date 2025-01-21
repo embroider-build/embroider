@@ -35,3 +35,11 @@ export function prebuild(emberApp: EmberAppInstance, options?: Options): Node {
 
   return mergeTrees([embroiderApp.asStage(addons).tree, writeFile('.stage2-output', () => outputPath)]);
 }
+
+export function compatBuild(emberApp: EmberAppInstance, Builder: any, options?: Options): Node {
+  if (process.env.EMBROIDER_PREBUILD) {
+    return prebuild(emberApp, options);
+  }
+
+  return new Builder([]);
+}

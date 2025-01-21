@@ -21,7 +21,6 @@
     "@embroider/reverse-exports": "workspace:*",
     "@rollup/pluginutils": "^5.1.0",
     "assert-never": "^1.2.1",
-    "broccoli-plugin": "^4.0.7",
     "browserslist": "*",
     "browserslist-to-esbuild": "^2.1.1",
     "content-tag": "^2.0.2",

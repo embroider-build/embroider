@@ -9,4 +9,4 @@ export * from './src/assets.js';
 export * from './src/content-for.js';
 export * from './src/classic-ember-support.js';
 export * from './src/ember.js';
-export * from './src/broccoli-builder.js';
+export * from './src/build-once.js';

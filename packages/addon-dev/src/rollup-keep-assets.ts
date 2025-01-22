@@ -1,6 +1,7 @@
 import type { Plugin } from 'rollup';
 import minimatch from 'minimatch';
 import { dirname, relative } from 'path';
+import { readFileSync } from 'fs';
 
 // randomly chosen, we're just looking to have high-entropy identifiers that
 // won't collide with anyting else in the source
@@ -15,17 +16,44 @@ export default function keepAssets({
   include: string[];
   exports?: undefined | 'default' | '*';
 }): Plugin {
-  const marker = `__copy_asset_marker_${counter++}__`;
+  const marker = `__keep_assets_marker_${counter++}__`;
 
   return {
-    name: 'copy-assets',
+    name: 'keep-assets',
+
+    // we implement a load hook for the assets we're keeping so that we can
+    // capture their true binary representations. If we fell through to the
+    // default rollup load hook we would get utf8 interpretations of them.
+    //
+    // Our plugin should be placed after any other plugins that have their own
+    // load hooks, in which case this will not run but our transform hook will
+    // still over from there.
+    load(id: string) {
+      if (include.some((pattern) => minimatch(id, pattern))) {
+        return {
+          code: readFileSync(id).toString('binary'),
+          meta: {
+            'keep-assets': {
+              binaryLoaded: true,
+            },
+          },
+        };
+      }
+    },
 
     transform(code: string, id: string) {
+      let output: Buffer | string = code;
+      let ourMeta = this.getModuleInfo(id)?.meta?.['keep-assets'];
+      if (ourMeta?.binaryLoaded) {
+        // when the code was produced by our own load hook it is binary-encoded
+        // string and we can emit the true bytes.
+        output = Buffer.from(code, 'binary');
+      }
       if (include.some((pattern) => minimatch(id, pattern))) {
         let ref = this.emitFile({
           type: 'asset',
           fileName: relative(from, id),
-          source: code,
+          source: output,
         });
         if (exports === '*') {
           return `export * from ${marker}("${ref}")`;

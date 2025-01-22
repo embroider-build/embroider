@@ -1,10 +1,11 @@
-import path from 'path';
+import path, { resolve } from 'path';
 import { appScenarios, baseV2Addon } from './scenarios';
 import { PreparedApp, type Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
+import { writeFileSync } from 'fs';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -85,11 +86,7 @@ appScenarios
             addon.gjs(),
             addon.dependencies(),
             addon.publicAssets('public'),
-            addon.keepAssets(["**/*.css"]),
 
-            // this works with custom-asset plugin below to exercise whether we can keepAssets
-            // for generated files that have exports
-            addon.keepAssets(["**/*.xyz"], "default"),
             {
               name: 'virtual-css',
               resolveId(source, importer) {
@@ -116,6 +113,12 @@ appScenarios
                 }
               }
             },
+
+            addon.keepAssets(["**/*.css"]),
+
+            // this works with custom-asset plugin above to exercise whether we can keepAssets
+            // for generated files that have exports
+            addon.keepAssets(["**/*.{xyz,png}"], "default"),
           ],
         };
       `,
@@ -203,6 +206,12 @@ appScenarios
             import value from './custom.xyz';
             export function example() {
               return value;
+            }
+          `,
+          'has-binary-import.js': `
+            import helloURL from './hello.png';
+            export default function() {
+              return helloURL;
             }
           `,
         },
@@ -335,6 +344,13 @@ appScenarios
 
               assert.dom().containsText('namespaced component');
             });
+
+            test('valid image asset is kept in addon', async function (assert) {
+              let module = await import('v2-addon/asset-examples/has-binary-import');
+              this.url = module.default();
+              await render(hbs\`<img alt="hello" src={{this.url}}>\`);
+              assert.dom('img').hasStyle({'width': '30px'});
+            })
           });
         `,
         'asset-test.js': `
@@ -391,6 +407,17 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
+        // fixturify (via scenario-tester) has no binary output support
+        let v2AddonPath = path.dirname(require.resolve(`v2-addon/package.json`, { paths: [app.dir] }));
+        console.log(`v2addonpath`, v2AddonPath);
+        console.log(`resolved`, resolve(v2AddonPath, 'src/asset-examples/hello.png'));
+        writeFileSync(
+          resolve(v2AddonPath, 'src/asset-examples/hello.png'),
+          Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAB4AAAALCAYAAABoKz2KAAACYElEQVQ4y8WU3UuTYRjGf8+77d2XuplL5vdMI0QzwhTRLEgUEqIQwg76Oo7ypD+goIPO60Q6DTq2giAKAiHNvoaRijNDrYk606Fuc9v7Pk8Hs+k6CI/ygvvkgvu5bq7rfm5RVVWl2Ado7BM0gNZqPx6HTnd9gOPlvn83CMGVtgb6u5qpPegBwG7RuNHZxK2uZlw2696Eyzxurp9pRhPQUltBfXkxhlTs9t9UClNmGKUUE+EINf4iAj4vAIZUfJlfoqHSj1vfEVYK0n+99QfW3uY6pheWWUukAKir8PPwWiWfZ37yePgrpw6X0dNUhyYEg+/HGZ5Z4NPcEn1pI2ew0e8L9LU1Zjm3buVmdwv+wgJC4WUevQliqp0RtKOBUp5+mMwS8WSKJ0NBTtZVU+jUuXy6iZGpOUan57nUfgybZW9r0XviCF6Xk4GX72gMlNJaU5JrdfhXlJmV9SwxH1kjtLiKpgm8Ljv5DjtNNeU0BkqJxrewamJPwsWefL4trjC1HGU5ukFt8YGM/dtlffZxMicDtcuOrZRBPJVm4NUo4WicQqdOIm1mcjUlvnwXQmSyVEohpaLEm8dKbIvNRBJfvhuLJshz2lmNJQC4c6ED3WbFGvwRyQpJJZEqswxSKjZTBkPjM9y92EkybRBZj3FvcAilYCQ0x/mWBg75i7j//C2GVIzNLtDf087YbJgXwRC3z3Xw4OpZEimD1xOzCKDA5UC32RC7D4ghFZrIfJmkKbFv52nRNAqcOpGNRI7VSVMiBOialrUxaUosQmDTBKYCn9vBSiyBRWT6UlKCIlf4f+I3ZibyifAuOoEAAAAASUVORK5CYII=',
+            'base64'
+          )
+        );
         let result = await inDependency(app, 'v2-addon').execute('pnpm build');
         if (result.exitCode !== 0) {
           throw new Error(result.output);

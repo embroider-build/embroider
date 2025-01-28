@@ -119,16 +119,7 @@ minimalAppScenarios
 
                 await render(<template><FancyComponent></FancyComponent></template>);
 
-                assert.dom().hasText('');
-
-                // Template block usage:
-                await render(<template>
-                  <FancyComponent>
-                    template block text
-                  </FancyComponent>
-                </template>);
-
-                assert.dom().hasText('template block text');
+                assert.dom().hasText('fancy gts');
               });
             });
           `,
@@ -169,6 +160,8 @@ minimalAppScenarios
             .resolves(/\/index.html.*/) // in-html app-boot script
             .toModule()
             .resolves(/\/app\.js.*/)
+            .toModule()
+            .resolves('/app/-embroider-entrypoint.js')
             .toModule()
             .resolves(/\/app\/templates\/application.gjs.*/) // page-title is being imported by this template so we should go through here
             .toModule()

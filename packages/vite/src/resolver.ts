@@ -148,12 +148,17 @@ export function resolver(): Plugin {
       }
     },
     async buildEnd() {
-      emitVirtualFile(this, '@embroider/virtual/vendor.js');
-      emitVirtualFile(this, '@embroider/virtual/vendor.css');
+      // TODO this is not the greatest API so we should probaly move these emits to the build plugin
+      // but there seems to be some interdependencies that we need to unwind in this file in emitVirtualFile
+      // and ensureVirtualResolve
+      if ((this.meta as any).embroiderBuildPluginHasRun) {
+        emitVirtualFile(this, '@embroider/virtual/vendor.js');
+        emitVirtualFile(this, '@embroider/virtual/vendor.css');
 
-      if (mode !== 'production') {
-        emitVirtualFile(this, '@embroider/virtual/test-support.js');
-        emitVirtualFile(this, '@embroider/virtual/test-support.css');
+        if (mode !== 'production') {
+          emitVirtualFile(this, '@embroider/virtual/test-support.js');
+          emitVirtualFile(this, '@embroider/virtual/test-support.css');
+        }
       }
     },
   };

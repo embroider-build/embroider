@@ -59,6 +59,7 @@ export function compatPrebuild(): Plugin {
       resolvableExtensions = config.resolve?.extensions;
     },
     async buildStart() {
+      (this.meta as any).embroiderBuildPluginHasRun = true;
       if (!viteCommand) {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's command`);
       }

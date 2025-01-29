@@ -1,4 +1,5 @@
 import type * as Babel from '@babel/core';
+import { transformAsync } from '@babel/core';
 
 export interface MetaResult {
   templateSource: string;
@@ -12,7 +13,7 @@ export interface MetaResult {
   >;
 }
 
-export interface ExtractMetaOpts {
+interface ExtractMetaOpts {
   result: MetaResult | undefined;
 }
 
@@ -21,7 +22,7 @@ export interface ExtractMetaOpts {
   necessary that it covers every possible way of expressing a template in
   javascript
 */
-export default function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: ExtractMetaOpts }> {
+function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: ExtractMetaOpts }> {
   return {
     visitor: {
       CallExpression(path, state) {
@@ -101,4 +102,16 @@ export default function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj
       },
     },
   };
+}
+
+export async function extractMeta(source: string, filename: string) {
+  const meta: ExtractMetaOpts = { result: undefined };
+  await transformAsync(source, {
+    filename,
+    plugins: [[extractMetaPlugin, meta]],
+  });
+  if (!meta.result) {
+    throw new Error(`failed to extract metadata while processing ${filename}`);
+  }
+  return meta.result;
 }

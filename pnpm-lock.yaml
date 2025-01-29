@@ -820,9 +820,15 @@ importers:
 
   packages/template-tag-codemod:
     dependencies:
+      '@babel/code-frame':
+        specifier: ^7.26.2
+        version: 7.26.2
       '@babel/core':
         specifier: ^7.26.0
         version: 7.26.7
+      '@babel/generator':
+        specifier: ^7.26.5
+        version: 7.26.5
       '@babel/plugin-syntax-decorators':
         specifier: ^7.25.9
         version: 7.25.9(@babel/core@7.26.7)
@@ -844,6 +850,9 @@ importers:
       '@types/yargs':
         specifier: ^17.0.3
         version: 17.0.33
+      babel-import-util:
+        specifier: ^3.0.0
+        version: 3.0.0
       babel-plugin-ember-template-compilation:
         specifier: ^2.3.0
         version: 2.3.0
@@ -866,6 +875,12 @@ importers:
       '@glimmer/syntax':
         specifier: ^0.84.3
         version: 0.84.3
+      '@types/babel__code-frame':
+        specifier: ^7.0.6
+        version: 7.0.6
+      '@types/babel__generator':
+        specifier: ^7.6.8
+        version: 7.6.8
       '@types/glob':
         specifier: ^8.1.0
         version: 8.1.0
@@ -3285,7 +3300,7 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/core': 7.26.7
+      '@babel/core': 7.26.7(supports-color@8.1.1)
       '@babel/helper-plugin-utils': 7.26.5
 
   /@babel/plugin-transform-class-properties@7.25.9(@babel/core@7.26.7):
@@ -7291,7 +7306,7 @@ packages:
       '@glimmer/component': 1.1.2(@babel/core@7.26.7)
       '@glint/template': 1.5.2
       ember-cli-htmlbars: 6.3.0
-      ember-modifier: 4.2.0(@babel/core@7.26.7)(ember-source@5.12.0)
+      ember-modifier: 4.2.0(@babel/core@7.26.7)(ember-source@5.3.0)
     dev: true
 
   /@glint/environment-ember-template-imports@1.5.2(@glint/environment-ember-loose@1.5.2)(@glint/template@1.5.2):
@@ -8607,7 +8622,6 @@ packages:
 
   /@types/babel__code-frame@7.0.6:
     resolution: {integrity: sha512-Anitqkl3+KrzcW2k77lRlg/GfLZLWXBuNgbEcIOU6M92yw42vsd3xV/Z/yAHEj8m+KUjL6bWOVOFqX8PFPJ4LA==}
-    dev: false
 
   /@types/babel__core@7.20.5:
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}

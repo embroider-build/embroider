@@ -1,5 +1,5 @@
 import { baseAddon, tsAppScenarios } from './scenarios';
-import type { PreparedApp, Project, Scenario } from 'scenario-tester';
+import type { PreparedApp, Project, Scenario, Scenarios } from 'scenario-tester';
 import QUnit from 'qunit';
 import fetch from 'node-fetch';
 import CommandWatcher from './helpers/command-watcher';
@@ -321,7 +321,8 @@ function runViteInternalsTest(scenario: Scenario) {
     });
 
     Qmodule('vite optimize', function () {
-      test('vite optimize should succeed', async function (assert) {
+      // skipped due to https://github.com/vitejs/vite/issues/19316
+      QUnit.skip('vite optimize should succeed', async function (assert) {
         let result = await app.execute('pnpm vite optimize --force');
 
         assert.equal(result.exitCode, 0, result.output);
@@ -339,17 +340,26 @@ function runViteInternalsTest(scenario: Scenario) {
   });
 }
 
+function viteMatrix(scenarios: Scenarios) {
+  return scenarios.expand({
+    '5.x': app => {
+      app.linkDevDependency('vite', { resolveName: 'vite-5', baseDir: __dirname });
+    },
+    '6.x': app => {
+      app.linkDevDependency('vite', { resolveName: 'vite-6', baseDir: __dirname });
+    },
+  });
+}
+
 // We use LTS 5.12 to exercise our support for non-colocated templates
-tsAppScenarios
-  .only('lts_5_12')
+viteMatrix(tsAppScenarios.only('lts_5_12'))
   .map('vite-internals', app => {
     buildViteInternalsTest(true, app);
   })
   .forEachScenario(runViteInternalsTest);
 
 // After 5.12, there is no non-colocated templates in ember.
-tsAppScenarios
-  .skip('lts_5_12')
+viteMatrix(tsAppScenarios.skip('lts_5_12'))
   .map('vite-internals', app => {
     buildViteInternalsTest(false, app);
   })

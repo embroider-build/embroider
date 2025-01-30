@@ -1,0 +1,11 @@
+{
+  "include": [
+    "./*.ts",
+    "./helpers/*.ts",
+  ],
+  "extends": "../../tsconfig-base.json",
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "dist"
+  },
+}

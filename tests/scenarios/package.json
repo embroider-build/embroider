@@ -80,6 +80,7 @@
     "ember-data-4.4": "npm:ember-data@~4.4.0",
     "ember-data-4.8": "npm:ember-data@~4.8.0",
     "ember-data-5.3": "npm:ember-data@~5.3.0",
+    "ember-data-canary": "npm:ember-data@canary",
     "ember-data-beta": "npm:ember-data@beta",
     "ember-data-latest": "npm:ember-data@latest",
     "ember-engines": "^0.8.23",

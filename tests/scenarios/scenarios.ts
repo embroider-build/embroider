@@ -63,7 +63,7 @@ async function release(project: Project) {
 async function beta(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-beta' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-beta' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
   project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
   project.linkDevDependency('@babel/core', { baseDir: __dirname });
@@ -72,7 +72,7 @@ async function beta(project: Project) {
 async function canary(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-canary' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-canary' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
   project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
 }

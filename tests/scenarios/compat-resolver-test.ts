@@ -681,11 +681,13 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
+          import Stuff_ from "@embroider/virtual/components/stuff"
           import myHelper_ from "@embroider/virtual/helpers/myHelper";
-          export default precompileTemplate("<Stuff @value={{myHelper_ 1}} />", {
+          export default precompileTemplate("<Stuff_ @value={{myHelper_ 1}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
-               myHelper_,
+              Stuff_,
+              myHelper_,
             }),
           });
         `);
@@ -979,10 +981,12 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
+          import Thing_ from "@embroider/virtual/components/thing";
           import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
-          export default precompileTemplate("<Thing {{scrollTop_ @scrollTopPos}} />", {
+          export default precompileTemplate("<Thing_ {{scrollTop_ @scrollTopPos}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              Thing_,
               scrollTop_
             })
           });
@@ -996,10 +1000,12 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
+          import Thing_ from "@embroider/virtual/components/thing";
           import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
-          export default precompileTemplate("<Thing as |f|><f.Input {{scrollTop_ @scrollTopPos}} /></Thing>", {
+          export default precompileTemplate("<Thing_ as |f|><f.Input {{scrollTop_ @scrollTopPos}} /></Thing_>", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              Thing_,
               scrollTop_
             })
           });
@@ -1026,8 +1032,12 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          export default precompileTemplate("<Form as |f|> <input {{f.auto-focus}} /></Form>", {
-            moduleName: "my-app/templates/application.hbs"
+          import Form_ from "@embroider/virtual/components/form";
+          export default precompileTemplate("<Form_ as |f|> <input {{f.auto-focus}} /></Form_>", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              Form_,
+            }),
           });
         `);
       });
@@ -1188,10 +1198,14 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
+        import { hash } from "@ember/helper";
+        import { LinkTo } from "@ember/routing";
         import { on } from "@ember/modifier";
         export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#let (hash submit=(action doit)) as |thing|}}\\n        {{/let}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
+            hash,
+            LinkTo,
             on,
           }),
         });
@@ -1328,8 +1342,12 @@ Scenarios.fromProject(() => new Project())
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          export default precompileTemplate("{{component (ensure-safe-component this.which)}}", {
-            moduleName: "my-app/templates/application.hbs"
+          import ensureSafeComponent_ from "@embroider/virtual/helpers/ensure-safe-component";
+          export default precompileTemplate("{{component (ensureSafeComponent_ this.which)}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              ensureSafeComponent_,
+            }),
           });
         `);
       });
@@ -1515,11 +1533,13 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import capitalize_ from "@embroider/virtual/helpers/capitalize";
+        import Form_ from "@embroider/virtual/components/form";
         import validate_ from "@embroider/virtual/modifiers/validate";
-        export default precompileTemplate("\\n          {{#each things as |capitalize|}} {{(capitalize)}} {{/each}} {{(capitalize_)}}\\n          <Form as |validate|><input {{validate}} /></Form> <input {{validate_}} />\\n          ", {
+        export default precompileTemplate("\\n          {{#each things as |capitalize|}} {{(capitalize)}} {{/each}} {{(capitalize_)}}\\n          <Form_ as |validate|><input {{validate}} /></Form_> <input {{validate_}} />\\n          ", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
             capitalize_,
+            Form_,
             validate_
           })
         });
@@ -2140,11 +2160,13 @@ Scenarios.fromProject(() => new Project())
         });
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
-        import { precompileTemplate } from "@ember/template-compilation";
+          import { precompileTemplate } from "@ember/template-compilation";
+          import Example_ from "@embroider/virtual/components/example";
           import title_ from "@embroider/virtual/helpers/title";
-          export default precompileTemplate("<Example @arg={{(title_)}} as |title|>{{(title)}}</Example>", {
+          export default precompileTemplate("<Example_ @arg={{(title_)}} as |title|>{{(title)}}</Example_>", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              Example_,
               title_
             })
           });
@@ -2157,11 +2179,13 @@ Scenarios.fromProject(() => new Project())
         });
         await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
-        import { precompileTemplate } from "@ember/template-compilation";
+          import { precompileTemplate } from "@ember/template-compilation";
+          import example_ from "@embroider/virtual/components/example";
           import title_ from "@embroider/virtual/helpers/title";
-          export default precompileTemplate("{{#example arg=(title_) as |title|}}{{(title)}}{{/example}}", {
+          export default precompileTemplate("{{#example_ arg=(title_) as |title|}}{{(title)}}{{/example_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              example_,
               title_
             })
           });

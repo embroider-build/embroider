@@ -44,14 +44,19 @@ export default interface Options extends CoreOptions {
   // apply.
   staticAddonTestSupportTrees?: boolean;
 
-  // when true, we will load ember-source as ES modules. This means unused parts
-  // of ember-source won't be included. But it also means that addons using old
-  // APIs to try to `require()` things from Ember -- particularly from within
-  // vendor.js -- cannot do that anymore.
-  //
-  // When false (the default) we load ember-source the traditional way, which is
-  // that a big ol' script gets smooshed into vendor.js, and none of ember's
-  // public module API actually exists as modules at build time.
+  /**
+   * When true, we will load ember-source as ES modules. This means unused parts
+   * of ember-source won't be included. But it also means that addons using old
+   * APIs to try to `require()` things from Ember -- particularly from within
+   * vendor.js -- cannot do that anymore.
+   *
+   * When false (the default) we load ember-source the traditional way, which is
+   * that a big ol' script gets smooshed into vendor.js, and none of ember's
+   * public module API actually exists as modules at build time.
+   *
+   * Note: This setting will be removed in the next version of Embroider and
+   * will effectively default to true
+   */
   staticEmberSource?: boolean;
 
   // Allows you to override how specific addons will build. Like:
@@ -114,6 +119,11 @@ export type CompatOptionsType = Required<
   Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
 
 export function optionsWithDefaults(options?: Options): CompatOptionsType {
+  if (!options?.staticEmberSource) {
+    console.log(
+      `The setting 'staticEmberSource' will default to true in the next version of Embroider and can't be turned off. To prepare for this you should set 'staticEmberSource: true' in your Embroider config.`
+    );
+  }
   return Object.assign({}, defaults, options);
 }
 

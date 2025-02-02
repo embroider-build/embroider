@@ -117,10 +117,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   useAddonConfigModule: true,
 });
 
-export type CompatOptionsType = Required<
-  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
-> &
-  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+export type CompatOptionsType = Required<Options>;
 
 export function optionsWithDefaults(options?: Options): CompatOptionsType {
   if (!(options as any)?.staticEmberSource) {

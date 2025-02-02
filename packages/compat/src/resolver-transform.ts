@@ -29,10 +29,7 @@ type Env = WithJSUtils<ASTPluginEnvironment> & {
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type UserConfig = Pick<
-  Required<CompatOptions>,
-  'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'allowUnsafeDynamicComponents'
->;
+type UserConfig = Pick<Required<CompatOptions>, 'staticInvokables' | 'allowUnsafeDynamicComponents'>;
 
 export interface CompatResolverOptions extends CoreResolverOptions {
   activePackageRules: ActivePackageRules[];
@@ -326,21 +323,21 @@ class TemplateResolver implements ASTPlugin {
     if (!this.config?.options) {
       return true;
     }
-    return this.config.options.staticComponents || Boolean(this.auditHandler);
+    return this.config.options.staticInvokables || Boolean(this.auditHandler);
   }
 
   private get staticHelpersEnabled(): boolean {
     if (!this.config?.options) {
       return true;
     }
-    return this.config.options.staticHelpers || Boolean(this.auditHandler);
+    return this.config.options.staticInvokables || Boolean(this.auditHandler);
   }
 
   private get staticModifiersEnabled(): boolean {
     if (!this.config?.options) {
       return true;
     }
-    return this.config.options.staticModifiers || Boolean(this.auditHandler);
+    return this.config.options.staticInvokables || Boolean(this.auditHandler);
   }
 
   private isIgnoredComponent(dasherizedName: string) {

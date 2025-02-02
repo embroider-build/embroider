@@ -141,6 +141,12 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
     );
   }
 
+  if ((options as any)?.skipBabel !== undefined) {
+    throw new Error(
+      `You have set 'skipBabel' on your Embroider options. This setting has been removed and you can now configure your babel ignores directly in the babel config in your repo https://babeljs.io/docs/options#ignore`
+    );
+  }
+
   return Object.assign({}, defaults, options);
 }
 

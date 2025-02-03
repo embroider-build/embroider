@@ -30,7 +30,10 @@ Or for an Ember V1 Addon's dummy app:
 ```js
 const app = new EmberAddon(defaults, {
   trees: {
-    app: sideWatch('tests/dummy/app', { watching: [ ... ] },
+    app: sideWatch('tests/dummy/app', { watching: [
+      'grand-prix', // this will resolve the package by name and watch all its importable code
+      '../grand-prix/dist', // or you point to a specific directory to be watched
+      ] },
   },
 });
 ```

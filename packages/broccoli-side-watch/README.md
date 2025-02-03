@@ -25,7 +25,7 @@ const app = new EmberApp(defaults, {
 });
 ```
 
-Or for an Ember Addon's dummy app:
+Or for an Ember V1 Addon's dummy app:
 
 ```js
 const app = new EmberAddon(defaults, {

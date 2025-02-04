@@ -675,7 +675,5 @@ interface Preprocessors {
 function forbiddenVendorPath(path: string) {
   // ember-source does not go in vendor under embroider (we always use the
   // separate ES modules)
-  //
-  // loader.js sets up AMD. We don't use AMD.
-  return !['./vendor/loader/loader.js', './vendor/ember/ember.js'].includes(path);
+  return !['./vendor/ember/ember.js'].includes(path);
 }

@@ -58,11 +58,25 @@ function loadCompatConfig(options?: CompatOptions): CompatBabelState {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(compatFile);
   }
-  let macros = MacrosConfig.for({}, process.cwd());
+  let root = process.cwd();
+  let macros = MacrosConfig.for({}, root);
   let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
   setConfig(macros);
 
-  options?.['@embroider/macros']?.configure?.(macros);
+  if (options?.['@embroider/macros']) {
+    let { setOwnConfig, setConfig, configure } = options['@embroider/macros'];
+    if (setOwnConfig) {
+      macros.setOwnConfig(root, setOwnConfig);
+    }
+
+    if (setConfig) {
+      for (let [packageName, config] of Object.entries(setConfig)) {
+        macros.setConfig(root, packageName, config as object);
+      }
+    }
+
+    configure?.(macros);
+  }
 
   if (process.env.NODE_ENV === 'development') {
     macros.enablePackageDevelopment(process.cwd());

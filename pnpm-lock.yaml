@@ -2054,8 +2054,8 @@ importers:
         specifier: npm:vite@^5.0.0
         version: /vite@5.4.14
       vite-6:
-        specifier: npm:vite@^6.0.0
-        version: /vite@6.0.11(terser@5.37.0)
+        specifier: npm:vite@^6.1.0-beta.1
+        version: /vite@6.1.0-beta.1
       webpack:
         specifier: ^5.90.3
         version: 5.97.1
@@ -13280,7 +13280,7 @@ packages:
       ember-source: ^3.28.0 || >= 4.0.0
     dependencies:
       ember-cli-babel: 7.26.11
-      ember-source: 5.12.0(@glimmer/component@1.1.2)(@glint/template@1.5.2)(webpack@5.97.1)
+      ember-source: 5.12.0(@glimmer/component@1.1.2)
       git-repo-info: 2.1.1
     transitivePeerDependencies:
       - supports-color
@@ -16021,7 +16021,7 @@ packages:
     peerDependencies:
       ember-source: '>= 5'
     dependencies:
-      ember-source: 5.12.0(@glimmer/component@1.1.2)(@glint/template@1.5.2)(webpack@5.97.1)
+      ember-source: 5.12.0(@glimmer/component@1.1.2)
     dev: true
 
   /ember-maybe-import-regenerator@1.0.0:
@@ -16074,7 +16074,7 @@ packages:
       decorator-transforms: 2.3.0(@babel/core@7.26.7)
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
-      ember-source: 5.12.0(@glimmer/component@1.1.2)(@glint/template@1.5.2)(webpack@5.97.1)
+      ember-source: 5.12.0(@glimmer/component@1.1.2)
     transitivePeerDependencies:
       - '@babel/core'
       - supports-color
@@ -26126,6 +26126,53 @@ packages:
       postcss: 8.5.1
       rollup: 4.32.1
       terser: 5.37.0
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
+  /vite@6.1.0-beta.1:
+    resolution: {integrity: sha512-Jmf6t03OcMUFiih6wiwktzHNr827tkuRr3NET/S2oUxdgmEGaWkZ6wXQ40zDqJ7+nmz3U/p18vk73jtlWgdl4Q==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      jiti: '>=1.21.0'
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      sass-embedded: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+    dependencies:
+      esbuild: 0.24.2
+      postcss: 8.5.1
+      rollup: 4.32.1
     optionalDependencies:
       fsevents: 2.3.3
     dev: true

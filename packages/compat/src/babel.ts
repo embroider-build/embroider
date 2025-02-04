@@ -18,7 +18,41 @@ export interface CompatBabelState {
   templateMacros: Transform[];
 }
 
-function loadCompatConfig(): CompatBabelState {
+interface CompatOptions {
+  /**
+   * Options for @embroider/macros
+   */
+  '@embroider/macros': {
+    /**
+     * How you configure your own package / app
+     */
+    setOwnConfig?: object;
+    /**
+     * This is how you can optionally send configuration into
+     * your dependencies, if those dependencies choose to use
+     * @embroider/macros configs.
+     *
+     * @example
+     * ```js
+     * setConfig: {
+     *   'some-dependency': {
+     *      // config for some-dependency
+     *   }
+     * }
+     * ```
+     */
+    setConfig?: Record<string, object>;
+
+    /**
+     * Callback for further manipulation of the macros' configuration instance.
+     *
+     * Useful for libraries to provide their own config with defaults shared between sub-dependencies of those libraries.
+     */
+    configure?: (macrosInstance: MacrosConfig) => void;
+  };
+}
+
+function loadCompatConfig(options?: CompatOptions): CompatBabelState {
   let compatFile = join(locateEmbroiderWorkingDir(process.cwd()), '_babel_compat_.js');
   if (existsSync(compatFile)) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -27,6 +61,9 @@ function loadCompatConfig(): CompatBabelState {
   let macros = MacrosConfig.for({}, process.cwd());
   let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
   setConfig(macros);
+
+  options?.['@embroider/macros']?.configure?.(macros);
+
   if (process.env.NODE_ENV === 'development') {
     macros.enablePackageDevelopment(process.cwd());
     macros.enableRuntimeMode();

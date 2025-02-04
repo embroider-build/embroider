@@ -84,8 +84,8 @@ export function pluginsFromV1Addons(options?: CompatOptions) {
   return config.plugins;
 }
 
-export function transformsFromV1Addons() {
-  let config = loadCompatConfig();
+export function transformsFromV1Addons(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.templateTransforms;
 }
 
@@ -98,13 +98,13 @@ export function looseModeSupport(): Transform {
   return [require.resolve('./resolver-transform'), opts];
 }
 
-export function templateMacros() {
-  let config = loadCompatConfig();
+export function templateMacros(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.templateMacros;
 }
 
-export function babelMacros() {
-  let config = loadCompatConfig();
+export function babelMacros(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.babelMacros;
 }
 
@@ -188,9 +188,9 @@ export function templateColocation(): PluginItem {
 }
 
 export function babelCompatSupport(options?: CompatOptions): PluginItem[] {
-  return [...babelMacros(), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons(options)];
+  return [...babelMacros(options), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons(options)];
 }
 
-export function templateCompatSupport(): Transform[] {
-  return [...transformsFromV1Addons(), ...templateMacros(), looseModeSupport()];
+export function templateCompatSupport(options?: CompatOptions): Transform[] {
+  return [...transformsFromV1Addons(options), ...templateMacros(options), looseModeSupport()];
 }

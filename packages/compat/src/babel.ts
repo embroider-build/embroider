@@ -79,8 +79,8 @@ function loadCompatConfig(options?: CompatOptions): CompatBabelState {
 
 const resolverLoader = new ResolverLoader(process.cwd());
 
-export function pluginsFromV1Addons() {
-  let config = loadCompatConfig();
+export function pluginsFromV1Addons(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.plugins;
 }
 
@@ -187,8 +187,8 @@ export function templateColocation(): PluginItem {
   return [templateColocationPluginPath, colocationOptions];
 }
 
-export function babelCompatSupport(): PluginItem[] {
-  return [...babelMacros(), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons()];
+export function babelCompatSupport(options?: CompatOptions): PluginItem[] {
+  return [...babelMacros(), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons(options)];
 }
 
 export function templateCompatSupport(): Transform[] {

@@ -27,10 +27,28 @@ export interface Options {
    * Useful for libraries to provide their own config with defaults shared between sub-dependencies of those libraries.
    */
   configure?: (macrosInstance: MacrosConfig) => void;
+
+  /**
+   * Override the default directory used for the MacrosConfig
+   *
+   * defaults to the CWD, via process.cwd()
+   */
+  dir?: string;
 }
 
-export function buildMacros(options: Options = {}) {
-  let root = process.cwd();
+interface ConfiguredMacros {
+  /**
+   * Array of plugins to add to the babel config plugins array
+   */
+  babelMacros: ReturnType<MacrosConfig['babelPluginConfig']>;
+  /**
+   * Array of template transforms to pass to the transforms array of the babel-plugin-ember-template-compilation babel plugin
+   */
+  templateMacros: ReturnType<(typeof MacrosConfig)['transforms']>['plugins'];
+}
+
+export function buildMacros(options: Options = {}): ConfiguredMacros {
+  let root = options.dir || process.cwd();
   let macros = MacrosConfig.for({}, root);
 
   let transforms = MacrosConfig.transforms();

@@ -10,6 +10,50 @@ The [Embroider package spec](../../docs/spec.md) proposes fixing this by making 
 
 This package works in both Embroider and Classical builds, so that addon authors can switch to this newer pattern without disruption.
 
+## Setting Configuration: from a babel config
+
+1. Add `@embroider/macros` as `devDependency`.
+2. In your babel config, do:
+
+```js
+const { buildMacros } = require('@embroider/macros/babel'); 
+
+const macros = buildMacros({
+  // this is how you configure your own package
+  setOwnConfig: {
+    // your config goes here
+  },
+  // this is how you can optionally send configuration into your
+  // dependencies, if those dependencies choose to use
+  // @embroider/macros configs.
+  setConfig: {
+    'some-dependency': {
+      // config for some-dependency
+    },
+  },
+});
+
+module.exports = {
+  plugins: [
+   // ... 
+    [
+      "babel-plugin-ember-template-compilation",
+      {
+        compilerPath: "ember-source/dist/ember-template-compiler.js",
+        enableLegacyModules: [
+          "ember-cli-htmlbars",
+          "ember-cli-htmlbars-inline-precompile",
+          "htmlbars-inline-precompile",
+        ],
+        transforms: [...macros.templateMacros],
+      },
+    ],
+    ...macros.babelMacros,
+  ],
+  // ...
+};
+```
+
 ## Setting Configuration: from an Ember app
 
 1. Add `@embroider/macros` as `devDependency`.

@@ -11,7 +11,7 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
     env['EMBROIDER_RESOLVABLE_EXTENSIONS'] = resolvableExtensions?.join(',');
   }
 
-  if (command === 'build' || process.env.FORCE_EMBER_CLI_EXIT) {
+  if (command === 'build') {
     return new Promise((resolve, reject) => {
       const child = fork(
         './node_modules/ember-cli/bin/ember',
@@ -54,7 +54,7 @@ export function compatPrebuild(): Plugin {
     name: 'embroider-builder',
     enforce: 'pre',
     config(config, { mode, command }) {
-      viteCommand = command;
+      viteCommand = process.env.EMBROIDER_VITE_COMMAND ?? command;
       viteMode = mode;
       resolvableExtensions = config.resolve?.extensions;
     },

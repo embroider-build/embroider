@@ -324,7 +324,7 @@ function runViteInternalsTest(scenario: Scenario) {
       test('vite optimize should succeed', async function (assert) {
         let result = await app.execute('pnpm vite optimize --force', {
           env: {
-            FORCE_EMBER_CLI_EXIT: 'true',
+            EMBROIDER_VITE_COMMAND: 'build',
           },
         });
 

@@ -107,7 +107,7 @@ app.forEachScenario(scenario => {
         await execa('pnpm', ['vite', 'optimize', '--force'], {
           cwd: app.dir,
           env: {
-            FORCE_EMBER_CLI_EXIT: 'true',
+            EMBROIDER_VITE_COMMAND: 'build',
           },
         });
         assert.ok(existsSync(join(app.dir, 'node_modules', '.vite')));

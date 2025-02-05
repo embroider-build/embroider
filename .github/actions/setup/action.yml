@@ -18,6 +18,7 @@ runs:
       shell: bash
     - uses: pnpm/action-setup@v4
       name: Install pnpm
+      version: latest
     - uses: actions/setup-node@v4
       with:
         node-version: 20

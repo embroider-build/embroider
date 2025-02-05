@@ -321,9 +321,12 @@ function runViteInternalsTest(scenario: Scenario) {
     });
 
     Qmodule('vite optimize', function () {
-      // skipped due to https://github.com/vitejs/vite/issues/19316
-      QUnit.skip('vite optimize should succeed', async function (assert) {
-        let result = await app.execute('pnpm vite optimize --force');
+      test('vite optimize should succeed', async function (assert) {
+        let result = await app.execute('pnpm vite optimize --force', {
+          env: {
+            FORCE_EMBER_CLI_EXIT: 'true',
+          },
+        });
 
         assert.equal(result.exitCode, 0, result.output);
       });

@@ -11,7 +11,7 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
     env['EMBROIDER_RESOLVABLE_EXTENSIONS'] = resolvableExtensions?.join(',');
   }
 
-  if (command === 'build') {
+  if (command === 'build' || process.env.FORCE_EMBER_CLI_EXIT) {
     return new Promise((resolve, reject) => {
       const child = fork(
         './node_modules/ember-cli/bin/ember',

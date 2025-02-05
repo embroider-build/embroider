@@ -54,7 +54,7 @@ export function compatPrebuild(): Plugin {
     name: 'embroider-builder',
     enforce: 'pre',
     config(config, { mode, command }) {
-      viteCommand = command;
+      viteCommand = process.env.EMBROIDER_VITE_COMMAND ?? command;
       viteMode = mode;
       resolvableExtensions = config.resolve?.extensions;
     },

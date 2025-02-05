@@ -9,7 +9,8 @@ import {
 import { join } from 'path';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
-import MacrosConfig from '@embroider/macros/src/macros-config';
+import { buildMacros } from '@embroider/macros/babel';
+import type { Options as MacrosOptions } from '@embroider/macros/babel';
 
 export interface CompatBabelState {
   plugins: PluginItem[];
@@ -22,34 +23,7 @@ interface CompatOptions {
   /**
    * Options for @embroider/macros
    */
-  '@embroider/macros': {
-    /**
-     * How you configure your own package / app
-     */
-    setOwnConfig?: object;
-    /**
-     * This is how you can optionally send configuration into
-     * your dependencies, if those dependencies choose to use
-     * @embroider/macros configs.
-     *
-     * @example
-     * ```js
-     * setConfig: {
-     *   'some-dependency': {
-     *      // config for some-dependency
-     *   }
-     * }
-     * ```
-     */
-    setConfig?: Record<string, object>;
-
-    /**
-     * Callback for further manipulation of the macros' configuration instance.
-     *
-     * Useful for libraries to provide their own config with defaults shared between sub-dependencies of those libraries.
-     */
-    configure?: (macrosInstance: MacrosConfig) => void;
-  };
+  '@embroider/macros': MacrosOptions;
 }
 
 function loadCompatConfig(options?: CompatOptions): CompatBabelState {
@@ -58,36 +32,14 @@ function loadCompatConfig(options?: CompatOptions): CompatBabelState {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(compatFile);
   }
-  let root = process.cwd();
-  let macros = MacrosConfig.for({}, root);
-  let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
-  setConfig(macros);
 
-  if (options?.['@embroider/macros']) {
-    let { setOwnConfig, setConfig, configure } = options['@embroider/macros'];
-    if (setOwnConfig) {
-      macros.setOwnConfig(root, setOwnConfig);
-    }
+  let macros = buildMacros(options?.['@embroider/macros']);
 
-    if (setConfig) {
-      for (let [packageName, config] of Object.entries(setConfig)) {
-        macros.setConfig(root, packageName, config as object);
-      }
-    }
-
-    configure?.(macros);
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    macros.enablePackageDevelopment(process.cwd());
-    macros.enableRuntimeMode();
-  }
-  macros.finalize();
   return {
     plugins: [],
     templateTransforms: [],
-    babelMacros: macros.babelPluginConfig(),
-    templateMacros: templateMacros as any,
+    babelMacros: macros.babelMacros,
+    templateMacros: macros.templateMacros as any,
   };
 }
 

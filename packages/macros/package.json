@@ -14,6 +14,11 @@
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./babel": "./src/babel.js",
+    "./src/*": "./src/*"
+  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",

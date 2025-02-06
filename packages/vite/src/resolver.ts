@@ -26,9 +26,10 @@ export function resolver(): Plugin {
     context: PluginContext,
     source: string,
     importer: string | undefined,
-    options: { custom?: Record<string, unknown> }
+    options: { custom?: Record<string, unknown>; scan?: boolean }
   ) {
-    if (options.custom?.depScan) {
+    // vite 5 exposes `custom.depscan`, vite 6 exposes `options.scan`
+    if (options.custom?.depScan || options.scan) {
       return await observeDepScan(context, source, importer, options);
     }
 

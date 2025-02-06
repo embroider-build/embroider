@@ -106,6 +106,9 @@ app.forEachScenario(scenario => {
         // wait until deps are generated without accessing any API
         await execa('pnpm', ['vite', 'optimize', '--force'], {
           cwd: app.dir,
+          env: {
+            EMBROIDER_VITE_COMMAND: 'build',
+          },
         });
         assert.ok(existsSync(join(app.dir, 'node_modules', '.vite')));
         const deps = readdirSync(join(app.dir, 'node_modules', '.vite'))[0];

@@ -1,0 +1,56 @@
+{
+  "name": "app-template-minimal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Small description for app-template goes here",
+  "repository": "",
+  "license": "MIT",
+  "author": "",
+  "exports": {
+    "./tests/*": "./tests/*",
+    "./*": "./app/*"
+  },
+  "scripts": {
+    "build": "vite build",
+    "start": "vite",
+    "test": "vite build --mode test && ember test --path dist",
+    "test:ember": "vite build --mode test && ember test --path dist"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/plugin-transform-runtime": "^7.25.4",
+    "@babel/runtime": "^7.25.6",
+    "@ember/optional-features": "^2.0.0",
+    "@ember/string": "^3.1.1",
+    "@ember/test-helpers": "^5.0.0",
+    "@embroider/compat": "workspace:*",
+    "@embroider/core": "workspace:*",
+    "@embroider/router": "workspace:*",
+    "@embroider/test-setup": "workspace:*",
+    "@embroider/vite": "workspace:*",
+    "@glimmer/component": "^2.0.0",
+    "@glimmer/tracking": "^1.1.2",
+    "@rollup/plugin-babel": "^5.3.1",
+    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "decorator-transforms": "^2.0.0",
+    "ember-modifier": "^4.1.0",
+    "ember-page-title": "^7.0.0",
+    "ember-qunit": "^9.0.1",
+    "ember-resolver": "^13.1.0",
+    "ember-source": "6.3.0-alpha.3",
+    "qunit": "^2.19.4",
+    "qunit-dom": "^3.4.0",
+    "tracked-built-ins": "^3.1.1",
+    "vite": "^5.0.9"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "ember": {
+    "edition": "octane"
+  },
+  "ember-addon": {
+    "type": "app",
+    "version": 2
+  }
+}

@@ -136,6 +136,10 @@ export function baseTSApp() {
   return Project.fromDir(dirname(require.resolve('../ts-app-template/package.json')), { linkDevDeps: true });
 }
 
+export function baseMinimalApp() {
+  return Project.fromDir(dirname(require.resolve('../app-template-minimal/package.json')), { linkDevDeps: true });
+}
+
 export function baseTSAppClassic() {
   return Project.fromDir(dirname(require.resolve('../ts-app-template-classic/package.json')), { linkDevDeps: true });
 }
@@ -152,6 +156,8 @@ export const wideAppScenarios = fullSupportMatrix(Scenarios.fromProject(baseApp)
 // at 4.8. So we're not going to run type tests on older releases that don't
 // support them.
 export const tsAppScenarios = supportMatrix(Scenarios.fromProject(baseTSApp)).skip('lts_3_28').skip('lts_4_4');
+
+export const minimalAppScenarios = supportMatrix(Scenarios.fromProject(baseMinimalApp));
 
 export const tsAppClassicScenarios = supportMatrix(Scenarios.fromProject(baseTSAppClassic))
   .skip('lts_3_28')

@@ -102,6 +102,7 @@
     "ember-truth-helpers": "^3.0.0",
     "ember-welcome-page": "^7.0.2",
     "execa": "^5.1.1",
+    "loader.js": "^4.7.0",
     "node-fetch": "2.7.0",
     "popper.js": "^1.16.1",
     "strip-ansi": "^6.0.0",

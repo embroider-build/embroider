@@ -109,6 +109,7 @@ appScenarios
 
 appScenarios
   .map('classic-macro-tests', project => {
+    project.linkDevDependency('loader.js', { baseDir: __dirname });
     scenarioSetup(project);
     merge(project.files, loadFromFixtureData('macro-test-classic'));
   })
@@ -162,6 +163,7 @@ appScenarios
 appScenarios
   .only('canary')
   .map('macro-babel-cache-busting-classic', project => {
+    project.linkDevDependency('loader.js', { baseDir: __dirname });
     scenarioSetup(project);
     merge(project.files, loadFromFixtureData('macro-test-classic'));
   })

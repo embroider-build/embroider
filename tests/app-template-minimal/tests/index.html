@@ -17,6 +17,9 @@
     <script src="/testem.js" integrity="" data-embroider-ignore></script>
     <script type="module">
       import "ember-testing";
+      // Needed until we have:
+      // https://github.com/emberjs/ember-test-helpers/pull/1528
+      globalThis.EmberENV = {};
     </script>
 
     <script type="module">

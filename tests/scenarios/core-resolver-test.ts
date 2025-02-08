@@ -153,9 +153,7 @@ Scenarios.fromProject(() => new Project())
             modulePrefix: 'my-app',
             podModulePrefix: opts?.podModulePrefix,
             options: {
-              staticComponents: false,
-              staticHelpers: false,
-              staticModifiers: false,
+              staticInvokables: false,
               allowUnsafeDynamicComponents: false,
             },
             activePackageRules: [

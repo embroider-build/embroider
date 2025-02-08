@@ -24,10 +24,6 @@ import type { CompatOptionsType } from './options';
 // which also exists during pipeline-construction time.
 
 export class CompatAppBuilder {
-  private staticComponents = false;
-  private staticHelpers = false;
-  private staticModifiers = false;
-
   constructor(
     private origAppPackage: Package,
     private appPackageWithMovedDeps: Package,
@@ -37,39 +33,7 @@ export class CompatAppBuilder {
     private contentForTree: ContentForConfig,
     private synthVendor: Package,
     private synthStyles: Package
-  ) {
-    // staticInvokables always wins when configured
-    if (typeof options.staticInvokables !== 'undefined') {
-      if (
-        typeof options.staticComponents !== 'undefined' ||
-        typeof options.staticHelpers !== 'undefined' ||
-        typeof options.staticModifiers !== 'undefined'
-      ) {
-        throw new Error(
-          'You cannot set `staticHelpers`, `staticComponents`, or `staticModifiers` if you have set `staticInvokables`. Delete these configs to continue.'
-        );
-      }
-      this.staticComponents = this.staticHelpers = this.staticModifiers = options.staticInvokables;
-      return;
-    }
-
-    if (typeof options.staticComponents !== 'undefined') {
-      // TODO it doesn't seem like we have any real deprecation functionality in this package yet.
-      // do we need it?
-      console.error(`Setting 'staticComponents' is deprecated. Use 'staticInvokables' instead`);
-      this.staticComponents = options.staticComponents;
-    }
-
-    if (typeof options.staticHelpers !== 'undefined') {
-      console.error(`Setting 'staticHelpers' is deprecated. Use 'staticInvokables' instead`);
-      this.staticHelpers = options.staticHelpers;
-    }
-
-    if (typeof options.staticModifiers !== 'undefined') {
-      console.error(`Setting 'staticModifiers' is deprecated. Use 'staticInvokables' instead`);
-      this.staticModifiers = options.staticModifiers;
-    }
-  }
+  ) {}
 
   private modulePrefix(): string {
     return this.configTree.readConfig().modulePrefix;
@@ -94,9 +58,7 @@ export class CompatAppBuilder {
           ...allActiveAddons.filter(p => p.meta['auto-upgraded']),
         ]);
         options.options = {
-          staticHelpers: this.staticHelpers,
-          staticModifiers: this.staticModifiers,
-          staticComponents: this.staticComponents,
+          staticInvokables: this.options.staticInvokables,
           allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
         };
         return options;

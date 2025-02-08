@@ -1,47 +1,5 @@
 export default interface Options {
   /**
-   * When true, we statically resolve all template helpers at build time. This
-   * causes unused helpers to be left out of the build ("tree shaking" of
-   * helpers).
-   *
-   * Defaults to false, which gives you greater compatibility with classic Ember
-   * apps at the cost of bigger builds.
-   *
-   * Enabling this is a prerequisite for route splitting.
-   *
-   * @deprecated use staticInvokables instead
-   */
-  staticHelpers?: boolean;
-
-  /**
-   * When true, we statically resolve all modifiers at build time. This
-   * causes unused modifiers to be left out of the build ("tree shaking" of
-   * modifiers).
-   *
-   * Defaults to false, which gives you greater compatibility with classic Ember
-   * apps at the cost of bigger builds.
-   *
-   * Enabling this is a prerequisite for route splitting.
-   *
-   * @deprecated use staticInvokables instead
-   */
-  staticModifiers?: boolean;
-
-  /**
-   * When true, we statically resolve all components at build time. This causes
-   * unused components to be left out of the build ("tree shaking" of
-   * components).
-   *
-   * Defaults to false, which gives you greater compatibility with classic Ember
-   * apps at the cost of bigger builds.
-   *
-   * Enabling this is a prerequisite for route splitting.
-   *
-   * @deprecated use staticInvokables instead
-   */
-  staticComponents?: boolean;
-
-  /**
    * When true, we statically resolve all components, modifiers, and helpers (collectively
    * knows as Invokables) at build time. This causes any unused Invokables to be left out
    * of the build if they are unused i.e. "tree shaking".
@@ -101,13 +59,29 @@ export default interface Options {
   pluginHints?: { resolve: string[]; useMethod?: string }[];
 }
 
-export type CoreOptionsType = Required<
-  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
-> &
-  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+export type CoreOptionsType = Required<Options>;
 
 export function optionsWithDefaults(options?: Options): CoreOptionsType {
+  if ((options as any)?.staticHelpers !== undefined) {
+    throw new Error(
+      `You have set 'staticHelpers' on your Embroider options. This setting has been removed and replaced with 'staticInvokables'`
+    );
+  }
+
+  if ((options as any)?.staticComponents !== undefined) {
+    throw new Error(
+      `You have set 'staticComponents' on your Embroider options. This setting has been removed and replaced with 'staticInvokables'`
+    );
+  }
+
+  if ((options as any)?.staticModifiers !== undefined) {
+    throw new Error(
+      `You have set 'staticModifiers' on your Embroider options. This setting has been removed and replaced with 'staticInvokables'`
+    );
+  }
+
   let defaults = {
+    staticInvokables: true,
     splitAtRoutes: [],
     staticAppPaths: [],
     pluginHints: [],

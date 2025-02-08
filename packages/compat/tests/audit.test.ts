@@ -46,9 +46,7 @@ describe('audit', function () {
       appRoot: app.baseDir,
       modulePrefix: 'audit-this-app',
       options: {
-        staticComponents: true,
-        staticHelpers: true,
-        staticModifiers: true,
+        staticInvokables: true,
         allowUnsafeDynamicComponents: false,
       },
       activePackageRules: [],

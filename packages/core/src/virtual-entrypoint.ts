@@ -61,13 +61,9 @@ export function renderEntrypoint(
   let options = (resolver.options as CompatResolverOptions).options ?? optionsWithDefaults();
 
   let requiredAppFiles = [appFiles.otherAppFiles];
-  if (!options.staticComponents) {
+  if (!options.staticInvokables) {
     requiredAppFiles.push(appFiles.components);
-  }
-  if (!options.staticHelpers) {
     requiredAppFiles.push(appFiles.helpers);
-  }
-  if (!options.staticModifiers) {
     requiredAppFiles.push(appFiles.modifiers);
   }
 

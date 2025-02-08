@@ -459,7 +459,7 @@ export default class CompatApp {
       // internal implementation detail, and respecting outputPaths here is
       // unnecessary complexity. The corresponding code that adjusts the HTML
       // <link> is in updateHTML in app.ts.
-      outputPaths: { app: `/assets/${this.name}.css` },
+      outputPaths: { app: `/@embroider/virtual/app.css` },
       registry: this.legacyEmberAppInstance.registry,
       minifyCSS: this.legacyEmberAppInstance.options.minifyCSS.options,
     };
@@ -472,10 +472,10 @@ export default class CompatApp {
         version: 2,
         'public-assets': {},
       };
-      let assetPath = join(outputPath, 'assets');
+      let assetPath = join(outputPath, '@embroider', 'virtual');
       if (pathExistsSync(assetPath)) {
         for (let file of walkSync(assetPath, { directories: false })) {
-          addonMeta['public-assets']![`./assets/${file}`] = `/assets/${file}`;
+          addonMeta['public-assets']![`./@embroider/virtual/${file}`] = `/@embroider/virtual/${file}`;
         }
       }
       let meta: PackageInfo = {

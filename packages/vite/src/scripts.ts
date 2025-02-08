@@ -26,11 +26,14 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
       }
     });
 
+  let config: any = null;
+
   return {
     name: 'embroider-scripts',
     enforce: 'pre',
 
     configResolved(resolvedConfig) {
+      config = resolvedConfig;
       optimizer = new ScriptOptimizer(resolvedConfig.root);
     },
 
@@ -47,7 +50,7 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
       // we don't do anything in `vite dev`, we only need to work in `vite
       // build`
       if (!context.server) {
-        return optimizer.transformHTML(htmlIn);
+        return optimizer.transformHTML(htmlIn, config.base);
       }
     },
   };
@@ -123,15 +126,24 @@ class ScriptOptimizer {
     return fileParts.join('.');
   }
 
-  transformHTML(htmlIn: string) {
+  transformHTML(htmlIn: string, baseUrl: string) {
     if (this.transformState?.htmlIn !== htmlIn) {
       let parsed = new JSDOM(htmlIn);
+      let linkTags = [...parsed.window.document.querySelectorAll('link')] as HTMLLinkElement[];
+      for (const linkTag of linkTags) {
+        if (linkTag.href.startsWith('/@embroider/virtual')) {
+          linkTag.href = baseUrl + linkTag.href.slice(1);
+        }
+      }
       let scriptTags = [...parsed.window.document.querySelectorAll('script')] as HTMLScriptElement[];
       for (let scriptTag of scriptTags) {
         if (scriptTag.type !== 'module') {
           let fingerprinted = this.emitted.get(scriptTag.src);
           if (fingerprinted) {
             scriptTag.src = fingerprinted;
+          }
+          if (scriptTag.src.startsWith('/@embroider/virtual')) {
+            scriptTag.src = baseUrl + scriptTag.src.slice(1);
           }
         }
       }

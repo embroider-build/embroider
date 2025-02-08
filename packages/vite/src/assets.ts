@@ -43,8 +43,12 @@ export function assets(): Plugin {
     configureServer(server) {
       return () => {
         server.middlewares.use((req, res, next) => {
-          if (req.originalUrl && req.originalUrl.length > 1) {
-            const assetUrl = findPublicAsset(req.originalUrl.split('?')[0], resolverLoader.resolver);
+          let originalUrl = req.originalUrl;
+          if (originalUrl?.startsWith(server.config.base)) {
+            originalUrl = req.originalUrl!.slice((server.config.base.length || 1) - 1);
+          }
+          if (originalUrl && originalUrl.length > 1) {
+            const assetUrl = findPublicAsset(originalUrl.split('?')[0], resolverLoader.resolver);
             if (assetUrl) {
               return send(req, assetUrl).pipe(res as unknown as NodeJS.WritableStream);
             }

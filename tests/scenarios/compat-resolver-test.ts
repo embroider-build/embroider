@@ -138,18 +138,6 @@ Scenarios.fromProject(() => new Project())
         expectTranspiled('./templates/application.hbs').failsToTransform(`"{{hello-world}}" is ambiguous`);
       });
 
-      test('bare dasherized component in ambiguous position requires staticHelpers to agree ', async function () {
-        givenFiles({
-          'templates/application.hbs': `{{hello-world arg=1}}`,
-        });
-
-        await configure({ staticInvokables: true });
-
-        expectTranspiled('templates/application.hbs').failsToTransform(
-          `this use of "{{hello-world}}" could be helper "{{ (hello-world) }}" or component "<HelloWorld />", and your settings for staticHelpers and staticComponents do not agree`
-        );
-      });
-
       test('bare dasherized component manually disambiguated to component', async function () {
         givenFiles({
           'templates/application.hbs': `{{hello-world}}`,

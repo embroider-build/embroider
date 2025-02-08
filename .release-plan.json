@@ -13,28 +13,19 @@
       "oldVersion": "1.0.1"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "3.7.1",
-      "newVersion": "3.8.0",
+      "impact": "patch",
+      "oldVersion": "3.8.0",
+      "newVersion": "3.8.1",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Appears in changelog section :memo: Documentation"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "impact": "minor",
-      "oldVersion": "3.4.20",
-      "newVersion": "3.5.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.5.0"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
@@ -64,5 +55,5 @@
       "oldVersion": "4.0.9"
     }
   },
-  "description": "## Release (2025-01-07)\n\n@embroider/compat 3.8.0 (minor)\n@embroider/core 3.5.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/core`, `@embroider/test-scenarios`\n  * [#2210](https://github.com/embroider-build/embroider/pull/2210) Deprecate staticHelpers, staticModifiers, and staticComponents in favour of staticInvokables  ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-02-08)\n\n@embroider/compat 3.8.1 (patch)\n\n#### :memo: Documentation\n* `@embroider/compat`\n  * [#2244](https://github.com/embroider-build/embroider/pull/2244) add a simple deprecation for staticAddonTrees and staticAddonTestSupportTrees ([@mansona](https://github.com/mansona))\n  * [#2245](https://github.com/embroider-build/embroider/pull/2245) add a simple deprecation for staticEmberSource: false ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

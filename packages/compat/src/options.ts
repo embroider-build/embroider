@@ -123,7 +123,7 @@ export type CompatOptionsType = Required<
   Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
 
 export function optionsWithDefaults(options?: Options): CompatOptionsType {
-  if (!options?.staticEmberSource) {
+  if (!(options as any)?.staticEmberSource) {
     console.log(
       `The setting 'staticEmberSource' will default to true in the next version of Embroider and can't be turned off. To prepare for this you should set 'staticEmberSource: true' in your Embroider config.`
     );

@@ -1,5 +1,17 @@
 # Embroider Changelog
 
+## Release (2025-02-08)
+
+@embroider/compat 3.8.1 (patch)
+
+#### :memo: Documentation
+* `@embroider/compat`
+  * [#2244](https://github.com/embroider-build/embroider/pull/2244) add a simple deprecation for staticAddonTrees and staticAddonTestSupportTrees ([@mansona](https://github.com/mansona))
+  * [#2245](https://github.com/embroider-build/embroider/pull/2245) add a simple deprecation for staticEmberSource: false ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-01-07)
 
 @embroider/compat 3.8.0 (minor)

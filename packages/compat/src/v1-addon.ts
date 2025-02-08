@@ -759,39 +759,20 @@ export default class V1Addon {
       // .hbs.js
       templateExtensions: ['.hbs', '.hbs.js'],
     });
-    if (this.addonOptions.staticAddonTrees) {
-      if (this.isEngine()) {
-        // even when staticAddonTrees is enabled, engines may have a router map
-        // that needs to be dynamically resolved.
-        let hasRoutesModule = false;
 
-        tree = new ObserveTree(tree, outputDir => {
-          hasRoutesModule = existsSync(resolve(outputDir, 'routes.js'));
-        });
-        built.dynamicMeta.push(() => ({
-          'implicit-modules': hasRoutesModule ? ['./routes.js'] : [],
-        }));
-      }
-    } else {
-      let filenames: string[] = [];
-      let templateOnlyComponentNames: string[] = [];
+    if (this.isEngine()) {
+      // even when staticAddonTrees is enabled, engines may have a router map
+      // that needs to be dynamically resolved.
+      let hasRoutesModule = false;
 
       tree = new ObserveTree(tree, outputDir => {
-        filenames = walkSync(outputDir, { globs: ['**/*.js', '**/*.hbs'] })
-          .map(f => `./${f.replace(/\.js$/i, '')}`)
-          .filter(notColocatedTemplate);
+        hasRoutesModule = existsSync(resolve(outputDir, 'routes.js'));
       });
-
-      templateOnlyComponents = new ObserveTree(templateOnlyComponents, outputDir => {
-        templateOnlyComponentNames = walkSync(outputDir, { globs: ['**/*.js'] }).map(
-          f => `./${f.replace(/\.js$/i, '')}`
-        );
-      });
-
       built.dynamicMeta.push(() => ({
-        'implicit-modules': filenames.concat(templateOnlyComponentNames),
+        'implicit-modules': hasRoutesModule ? ['./routes.js'] : [],
       }));
     }
+
     built.trees.push(tree);
     built.trees.push(templateOnlyComponents);
   }
@@ -863,15 +844,6 @@ export default class V1Addon {
       addonTestSupportTree = this.transpile(this.stockTree('addon-test-support'));
     }
     if (addonTestSupportTree) {
-      if (!this.addonOptions.staticAddonTestSupportTrees) {
-        let filenames: string[] = [];
-        addonTestSupportTree = new ObserveTree(addonTestSupportTree, outputPath => {
-          filenames = walkSync(outputPath, { globs: ['**/*.js', '**/*.hbs'] }).map(f => `./${f.replace(/.js$/i, '')}`);
-        });
-        built.dynamicMeta.push(() => ({
-          'implicit-test-modules': filenames,
-        }));
-      }
       built.trees.push(addonTestSupportTree);
     }
   }
@@ -1145,10 +1117,6 @@ function babelPluginAllowedInStage1(plugin: PluginItem) {
   }
 
   return true;
-}
-
-function notColocatedTemplate(path: string) {
-  return !/^\.\/components\/.*\.hbs$/.test(path);
 }
 
 const markedEmptyTree = new UnwatchedDir(process.cwd());

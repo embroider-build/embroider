@@ -8,46 +8,6 @@ import type { PackageRules } from './dependency-rules';
 // the cost of slower or bigger builds. As you eliminate sources of legacy
 // behavior you can benefit from the more aggressive modes.
 export default interface Options extends CoreOptions {
-  /**
-   * Controls whether your addon's "addon" trees should be resolved statically
-   * at build time.
-   *
-   * Note: This setting will be removed in the next version of Embroider and
-   * will effectively default to true
-   *
-   *   false (the current default): implies maximum backward compatibility at
-   *   the cost of bigger builds. In this mode, we force every file into the
-   *   Ember app, which is the legacy behavior.
-   *
-   *   true: produces smaller builds. The addon files must be imported from
-   *   somewhere we can statically see during the build. In this mode, your app
-   *   will only include files that are actually imported from somewhere.
-   *
-   * Commentary: most v1 addons already work well with this set to true, because
-   * they tend to either offer Javascript that users are supposed to directly
-   * `import` or components / helpers / services that get directly imported and
-   * re-exported by code in App Javascript. The exceptions are addons that do
-   * runtime shenanigans with `require` or scoped runtime resolutions.
-   *
-   * To workaround an addon that is preventing you from enabling this flag, you
-   * can use addonDependencyRules.
-   */
-  staticAddonTrees?: boolean;
-
-  // Controls whether your addon's "addonTestSupport" trees should be resolved
-  // statically at build time.
-  //
-  //   false (the default): implies maximum backward compatibility at the cost
-  //   of bigger builds. All test support files will be forced into your Ember
-  //   app, which is the legacy behavior.
-  //
-  //   true: produces smaller builds. Only files that are explicitly imported
-  //   will end up in your app.
-  //
-  // Commentary: this is analogous to staticAddonTrees and the same guidelines
-  // apply.
-  staticAddonTestSupportTrees?: boolean;
-
   // Allows you to override how specific addons will build. Like:
   //
   //   import V1Addon from '@embroider/compat'; let compatAdapters = new Map();
@@ -129,16 +89,40 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
     );
   }
 
-  if (!options?.staticAddonTrees) {
-    console.log(
-      `The setting 'staticAddonTrees' will default to true in the next version of Embroider and can't be turned off. To prepare for this you should set 'staticAddonTrees: true' in your Embroider config.`
-    );
+  if ((options as any)?.staticEmberSource !== undefined) {
+    if ((options as any).staticEmberSource === false) {
+      throw new Error(
+        `You have set 'staticEmberSource' to 'false' in your Embroider options. This option has been removed is always considered to have the value 'true'. Please remove this setting to continue.`
+      );
+    } else {
+      console.log(
+        `You have set 'staticEmberSource' in your Embroider options. This can safely be removed now and it defaults to true.`
+      );
+    }
   }
 
-  if (!options?.staticAddonTestSupportTrees) {
-    console.log(
-      `The setting 'staticAddonTestSupportTrees' will default to true in the next version of Embroider and can't be turned off. To prepare for this you should set 'staticAddonTestSupportTrees: true' in your Embroider config.`
-    );
+  if ((options as any)?.staticAddonTrees !== undefined) {
+    if ((options as any).staticAddonTrees === false) {
+      throw new Error(
+        `You have set 'staticAddonTrees' to 'false' in your Embroider options. This option has been removed is always considered to have the value 'true'. Please remove this setting to continue.`
+      );
+    } else {
+      console.log(
+        `You have set 'staticAddonTrees' in your Embroider options. This can safely be removed now and it defaults to true.`
+      );
+    }
+  }
+
+  if ((options as any)?.staticAddonTestSupportTrees !== undefined) {
+    if ((options as any).staticAddonTestSupportTrees === false) {
+      throw new Error(
+        `You have set 'staticAddonTestSupportTrees' to 'false' in your Embroider options. This option has been removed is always considered to have the value 'true'. Please remove this setting to continue.`
+      );
+    } else {
+      console.log(
+        `You have set 'staticAddonTestSupportTrees' in your Embroider options. This can safely be removed now and it defaults to true.`
+      );
+    }
   }
 
   return Object.assign({}, defaults, options);

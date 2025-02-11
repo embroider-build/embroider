@@ -115,11 +115,13 @@ export function resolver(): Plugin {
       return () => {
         server.middlewares.use((req, _res, next) => {
           const base = server.config.base || '/';
-          const originalUrl = req.originalUrl!.slice(base.length - 1);
+          let originalUrl = req.originalUrl;
+          if (originalUrl?.startsWith(base)) {
+            originalUrl = req.originalUrl!.slice(base.length - 1);
+          }
           if (originalUrl && originalUrl.length > 1) {
             if (originalUrl?.match(/^\/tests($|\?)/)) {
-              req.originalUrl = `${base}tests/index.html`;
-              (req as any).url = `${base}tests/index.html`;
+              req.url = `/tests/index.html`;
               return next();
             }
           }

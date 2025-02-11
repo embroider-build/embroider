@@ -10,7 +10,7 @@ import type { Application } from 'express';
   "/tests/index.html" URL.
 */
 
-export function testemProxy(targetURL: string) {
+export function testemProxy(targetURL: string, base = '/') {
   return function testemProxyHandler(app: Application) {
     const proxy = httpProxy.createProxyServer({
       changeOrigin: true,
@@ -23,10 +23,11 @@ export function testemProxy(targetURL: string) {
 
     app.all('*', (req, res, next) => {
       let url = req.url;
-      if (url === '/testem.js' || url.startsWith('/testem/')) {
+      if (url === `${base}testem.js` || url.startsWith('/testem/')) {
+        req.url = req.url.replace(base, '/');
         return next();
       }
-      let m = /^(\/\d+)\/tests($|.)+/.exec(url);
+      let m = /^(\/\d+).*\/tests($|.)+/.exec(url);
       if (m) {
         url = url.slice(m[1].length);
       }

@@ -23,6 +23,13 @@
     "src/**/*.js.map"
   ],
   "scripts": {},
+  "release-plan": {
+    "semverIncrementAs": {
+      "minor": "preminor",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "@babel/code-frame": "^7.26.2",
     "@babel/core": "^7.26.0",

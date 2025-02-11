@@ -16,6 +16,13 @@
   },
   "author": "Balint Erdi",
   "license": "MIT",
+  "release-plan": {
+    "semverIncrementAs": {
+      "minor": "preminor",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "@embroider/shared-internals": "workspace:^",
     "broccoli-merge-trees": "^4.2.0",

@@ -1,6 +1,7 @@
 {
   "name": "@embroider/test-setup",
   "version": "4.0.0",
+  "private": "true",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",

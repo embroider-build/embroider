@@ -33,6 +33,14 @@
       "optional": true
     }
   },
+  "release-plan": {
+    "semverIncrementAs": {
+      "major": "premajor",
+      "minor": "prerelease",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "@embroider/core": "workspace:^",
     "@rollup/pluginutils": "^5.1.0",

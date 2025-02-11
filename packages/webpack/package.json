@@ -1,7 +1,7 @@
 {
   "name": "@embroider/webpack",
   "version": "4.0.9",
-  "private": false,
+  "private": true,
   "description": "Builds EmberJS apps with Webpack",
   "repository": {
     "type": "git",

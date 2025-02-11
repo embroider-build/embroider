@@ -17,6 +17,14 @@
     "src/**/*.js.map"
   ],
   "scripts": {},
+  "release-plan": {
+    "semverIncrementAs": {
+      "major": "premajor",
+      "minor": "prerelease",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {},
   "devDependencies": {
     "@embroider/core": "workspace:^",

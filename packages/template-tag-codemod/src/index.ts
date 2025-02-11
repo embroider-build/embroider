@@ -470,7 +470,10 @@ function renderScopeImports(scope: MetaResult['scope']) {
         sections.push(def[0]);
       }
 
-      let named = entries.filter(e => e[1] !== 'default');
+      // it's possible to have more than one local name for the default export,
+      // so this filter must only ignore the entry that we handled above, not
+      // any others that happen to use `default` as their imported name.
+      let named = entries.filter(e => e !== def);
       if (named.length > 0) {
         sections.push(
           '{' +

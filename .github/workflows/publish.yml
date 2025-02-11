@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - main
+      - master
 
 concurrency:
   group: publish-${{ github.head_ref || github.ref }}
@@ -40,6 +41,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@v4
@@ -52,8 +55,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: npm publish
-        run: pnpm release-plan publish
-
+        run: NPM_CONFIG_PROVENANCE=true pnpm release-plan publish
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

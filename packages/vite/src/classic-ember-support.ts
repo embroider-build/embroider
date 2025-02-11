@@ -6,7 +6,6 @@ import { contentFor } from './content-for.js';
 import browserslistToEsbuild from 'browserslist-to-esbuild';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { mergeConfig, type UserConfig } from 'vite';
 import { pathToFileURL } from 'url';
 
 export function classicEmberSupport() {
@@ -18,22 +17,18 @@ export function classicEmberSupport() {
     contentFor(),
     {
       name: 'vite-plugin-ember-browser-targets',
-      async config(userConfig: UserConfig) {
+      async config() {
         const targetsPath = join(process.cwd(), 'config/targets.js');
         if (existsSync(targetsPath)) {
           const targets = await import(pathToFileURL(targetsPath).toString());
           if (targets.default.browsers) {
-            return mergeConfig(
-              {
-                build: {
-                  target: browserslistToEsbuild(targets.browsers),
-                },
+            return {
+              build: {
+                target: browserslistToEsbuild(targets.browsers),
               },
-              userConfig
-            );
+            };
           }
         }
-        return userConfig;
       },
     },
   ];

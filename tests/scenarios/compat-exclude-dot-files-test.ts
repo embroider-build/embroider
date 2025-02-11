@@ -21,9 +21,7 @@ appScenarios
       module.exports = function (defaults) {
         let app = new EmberApp(defaults, {});
 
-        return maybeEmbroider(app, {
-          staticAddonTrees: false,
-        });
+        return maybeEmbroider(app);
       };
       `,
       app: {
@@ -95,17 +93,6 @@ appScenarios
             // we are relying on the assertinos here so we always return true
             return true;
           });
-      });
-
-      test('dot files are not included as addon implicit-modules', function () {
-        // Dot files should exist on disk
-        expectFile('./node_modules/my-addon/.fooaddon.js').exists();
-        expectFile('./node_modules/my-addon/baraddon.js').exists();
-
-        let myAddonPackage = expectFile('./node_modules/my-addon/package.json').json();
-
-        // dot files are not included as implicit-modules
-        myAddonPackage.get(['ember-addon', 'implicit-modules']).deepEquals(['./baraddon']);
       });
     });
   });

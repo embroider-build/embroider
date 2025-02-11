@@ -25,8 +25,6 @@ appScenarios
           });
 
           return maybeEmbroider(app, {
-            staticAddonTestSupportTrees: false,
-            staticAddonTrees: false,
             staticComponents: false,
             staticHelpers: false,
             staticModifiers: false,
@@ -129,20 +127,6 @@ appScenarios
         myAddonPkg
           .get('ember-addon.app-js')
           .deepEquals({ './components/hello-world.js': './_app_/components/hello-world.js' });
-
-        myAddonPkg
-          .get('ember-addon.implicit-modules')
-          .includes(
-            './components/hello-world',
-            'staticAddonTrees is off so we should include the component implicitly'
-          );
-
-        myAddonPkg
-          .get('ember-addon.implicit-modules')
-          .includes(
-            './templates/components/hello-world.hbs',
-            'staticAddonTrees is off so we should include the template implicitly'
-          );
 
         myAddonPkg.get('ember-addon.version').deepEquals(2);
       });

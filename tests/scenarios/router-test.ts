@@ -36,11 +36,6 @@ function setupScenario(project: Project) {
             staticAddonTrees: true,
             staticInvokables: true,
             splitAtRoutes: ['split-me'],
-            skipBabel: [
-              {
-                package: 'qunit',
-              },
-            ],
           });
         };
       `,

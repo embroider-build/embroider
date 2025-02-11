@@ -53,8 +53,8 @@ importers:
         specifier: ^2.3.1
         version: 2.8.8
       release-plan:
-        specifier: ^0.9.0
-        version: 0.9.2
+        specifier: ^0.11.0
+        version: 0.11.0
       typescript:
         specifier: ^5.5.2
         version: 5.7.3
@@ -3303,7 +3303,7 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/core': 7.26.7
+      '@babel/core': 7.26.7(supports-color@8.1.1)
       '@babel/helper-plugin-utils': 7.26.5
 
   /@babel/plugin-transform-class-properties@7.25.9(@babel/core@7.26.7):
@@ -24006,8 +24006,8 @@ packages:
     dependencies:
       jsesc: 3.0.2
 
-  /release-plan@0.9.2:
-    resolution: {integrity: sha512-KSK81V5vPNeKgRcfQftG1DL/ZAX7V+NNp/Y/LNIbYrCUs6AmgLioThz71O2AcDTCwndyEanq1VjuF4oJmpAJXg==}
+  /release-plan@0.11.0:
+    resolution: {integrity: sha512-241SKOFD87J4mAE8mbXR6xDaqTYIvB8O1itH1bTWvY6q5X/xP4wNlhmx7NGXrzq3z9tCP3OcjzoOi19RC9yTsA==}
     hasBin: true
     dependencies:
       '@manypkg/get-packages': 2.2.2

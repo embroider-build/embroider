@@ -77,10 +77,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   useAddonConfigModule: true,
 });
 
-export type CompatOptionsType = Required<
-  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
-> &
-  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+export type CompatOptionsType = Required<Options>;
 
 export function optionsWithDefaults(options?: Options): CompatOptionsType {
   if (!(options as any)?.staticEmberSource) {
@@ -123,6 +120,12 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
         `You have set 'staticAddonTestSupportTrees' in your Embroider options. This can safely be removed now and it defaults to true.`
       );
     }
+  }
+
+  if ((options as any)?.skipBabel !== undefined) {
+    throw new Error(
+      `You have set 'skipBabel' on your Embroider options. This setting has been removed and you can now configure your babel ignores directly in the babel config in your repo https://babeljs.io/docs/options#ignore`
+    );
   }
 
   return Object.assign({}, defaults, options);

@@ -10,12 +10,5 @@ module.exports = function (defaults) {
     },
   });
 
-  return maybeEmbroider(app, {
-
-    skipBabel: [
-      {
-        package: 'qunit',
-      },
-    ],
-  });
+  return maybeEmbroider(app);
 };

@@ -52,11 +52,6 @@ appScenarios
 
           return maybeEmbroider(app, {
             availableContentForTypes: ['custom'],
-            skipBabel: [
-              {
-                package: 'qunit',
-              },
-            ],
           });
         };
       `,

@@ -73,9 +73,7 @@ Scenarios.fromProject(() => new Project())
             modulePrefix: 'my-app',
             podModulePrefix: undefined,
             options: {
-              staticComponents: false,
-              staticHelpers: false,
-              staticModifiers: false,
+              staticInvokables: false,
               allowUnsafeDynamicComponents: false,
               ...opts,
             },
@@ -135,21 +133,9 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{hello-world}}`,
         });
 
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
 
         expectTranspiled('./templates/application.hbs').failsToTransform(`"{{hello-world}}" is ambiguous`);
-      });
-
-      test('bare dasherized component in ambiguous position requires staticHelpers to agree ', async function () {
-        givenFiles({
-          'templates/application.hbs': `{{hello-world arg=1}}`,
-        });
-
-        await configure({ staticComponents: true });
-
-        expectTranspiled('templates/application.hbs').failsToTransform(
-          `this use of "{{hello-world}}" could be helper "{{ (hello-world) }}" or component "<HelloWorld />", and your settings for staticHelpers and staticComponents do not agree`
-        );
       });
 
       test('bare dasherized component manually disambiguated to component', async function () {
@@ -158,7 +144,7 @@ Scenarios.fromProject(() => new Project())
         });
 
         await configure(
-          { staticComponents: true, staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               appTemplates: {
@@ -189,7 +175,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{hello-world arg=1}}`,
         });
 
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
 
         expectTranspiled('templates/application.hbs').equalsCode(`
             import { precompileTemplate } from "@ember/template-compilation";
@@ -208,7 +194,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{hello-world arg=1}}`,
         });
 
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
 
         expectTranspiled('templates/application.hbs').equalsCode(`
             import { precompileTemplate } from "@ember/template-compilation";
@@ -226,7 +212,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{something/hello-world}}`,
         });
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
             import { precompileTemplate } from "@ember/template-compilation";
             import somethingHelloWorld_ from "@embroider/virtual/ambiguous/something/hello-world";
@@ -243,7 +229,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<HelloWorld /><HelloWorld />`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import HelloWorld_ from "@embroider/virtual/components/hello-world";
@@ -261,9 +247,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `<Thing @foo={{1}} />`,
         });
         await configure({
-          staticComponents: true,
-          staticHelpers: true,
-          staticModifiers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
@@ -281,7 +265,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{#hello-world}} {{/hello-world}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/components/hello-world";
@@ -298,7 +282,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<HelloWorld />`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import HelloWorld_ from "@embroider/virtual/components/hello-world";
@@ -315,7 +299,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<Hello::World />`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import HelloWorld_ from "@embroider/virtual/components/hello/world";
@@ -332,7 +316,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<HelloWorld></HelloWorld>`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import HelloWorld_ from "@embroider/virtual/components/hello-world";
@@ -354,7 +338,7 @@ Scenarios.fromProject(() => new Project())
             });
           `,
         });
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           precompileTemplate('{{#helloWorld as |h|}} {{h.title flavor="chocolate"}} {{/helloWorld}}', {
@@ -372,7 +356,7 @@ Scenarios.fromProject(() => new Project())
             });
           `,
         });
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           precompileTemplate('<helloWorld as |H|> <H.title @flavor="chocolate" /> </helloWorld>', {
@@ -390,7 +374,7 @@ Scenarios.fromProject(() => new Project())
             });
           `,
         });
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
           precompileTemplate('<helloWorld as |h|> <h.title @flavor="chocolate" /> </helloWorld>', {
@@ -404,7 +388,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{this-one x=true}}<ThisOne />`,
         });
         await configure(
-          { staticComponents: true, staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -426,7 +410,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{#this-one}} {{/this-one}}`,
         });
         await configure(
-          { staticComponents: true, staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -448,7 +432,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `<ThisOne />`,
         });
         await configure(
-          { staticComponents: true, staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -470,7 +454,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{this-one x=true}}`,
         });
         await configure(
-          { staticComponents: true, staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -492,7 +476,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{this-one x=true}}`,
         });
         await configure(
-          { staticComponents: true, staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -515,7 +499,7 @@ Scenarios.fromProject(() => new Project())
         });
 
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -548,7 +532,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{#hello-world iAmAComponent='first-target' }}{{/hello-world}}{{#hello-world iAmAComponent='second-target' }}{{/hello-world}}`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -581,7 +565,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{hello-world iAmAComponent='first-target' }}{{hello-world iAmAComponent='second-target' }}`,
         });
         await configure(
-          { staticComponents: true, staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -613,7 +597,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{(this.myHelper)}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{(this.myHelper)}}", {
@@ -626,7 +610,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{(this.myHelper 42)}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{(this.myHelper 42)}}", {
@@ -639,7 +623,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{#if (this.myHelper)}}{{/if}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{#if (this.myHelper)}}{{/if}}", {
@@ -653,9 +637,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{#if (thing.is 1) }}{{/if}}`,
         });
         await configure({
-          staticComponents: true,
-          staticHelpers: true,
-          staticModifiers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
@@ -670,9 +652,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{#if (@thing 1) }}{{/if}}`,
         });
         await configure({
-          staticComponents: true,
-          staticHelpers: true,
-          staticModifiers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
@@ -686,14 +666,16 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<Stuff @value={{myHelper 1}}/>`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
+          import Stuff_ from "@embroider/virtual/components/stuff"
           import myHelper_ from "@embroider/virtual/helpers/myHelper";
-          export default precompileTemplate("<Stuff @value={{myHelper_ 1}} />", {
+          export default precompileTemplate("<Stuff_ @value={{myHelper_ 1}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
-               myHelper_,
+              Stuff_,
+              myHelper_,
             }),
           });
         `);
@@ -703,7 +685,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<div class={{myHelper 1}}/>`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import myHelper_ from "@embroider/virtual/helpers/myHelper";
@@ -722,7 +704,7 @@ Scenarios.fromProject(() => new Project())
           <div>{{c}}</div>
         {{/let}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import div_ from "@embroider/virtual/helpers/div";
@@ -739,7 +721,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<div class={{await 1}}/>`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import await_ from "@embroider/virtual/helpers/await";
@@ -757,7 +739,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{myHelper}}`,
         });
         await configure(
-          { staticHelpers: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               appTemplates: {
@@ -786,7 +768,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{#this.myComponent}}hello{{/this.myComponent}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{#this.myComponent}}hello{{/this.myComponent}}", {
@@ -799,7 +781,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{#this.myComponent 42}}hello{{/this.myComponent}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{#this.myComponent 42}}hello{{/this.myComponent}}", {
@@ -812,7 +794,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{component 'hello-world'}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/components/hello-world";
@@ -829,7 +811,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{helper 'hello-world'}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/helpers/hello-world";
@@ -846,7 +828,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{#component "hello-world"}}{{/component}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/components/hello-world";
@@ -863,7 +845,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{(component "hello-world")}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/components/hello-world";
@@ -880,7 +862,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{(helper "hello-world")}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/helpers/hello-world";
@@ -903,7 +885,7 @@ Scenarios.fromProject(() => new Project())
             {{/let}}
           `,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/helpers/hello-world";
@@ -920,7 +902,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<div {{(modifier 'hello-world')}} />`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import helloWorld_ from "@embroider/virtual/modifiers/hello-world";
@@ -937,7 +919,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<div {{scroll-top}}/>`,
         });
-        await configure({ staticModifiers: false });
+        await configure({ staticInvokables: false });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("<div {{scroll-top}} />", {
@@ -950,7 +932,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<div {{scroll-top}}/>`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
@@ -967,7 +949,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<div {{scroll-top @scrollTopPos}}/>`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
@@ -984,13 +966,15 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<Thing {{scroll-top @scrollTopPos}}/>`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
+          import Thing_ from "@embroider/virtual/components/thing";
           import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
-          export default precompileTemplate("<Thing {{scrollTop_ @scrollTopPos}} />", {
+          export default precompileTemplate("<Thing_ {{scrollTop_ @scrollTopPos}} />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              Thing_,
               scrollTop_
             })
           });
@@ -1001,13 +985,15 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<Thing as |f|><f.Input {{scroll-top @scrollTopPos}}/></Thing>`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
+          import Thing_ from "@embroider/virtual/components/thing";
           import scrollTop_ from "@embroider/virtual/modifiers/scroll-top";
-          export default precompileTemplate("<Thing as |f|><f.Input {{scrollTop_ @scrollTopPos}} /></Thing>", {
+          export default precompileTemplate("<Thing_ as |f|><f.Input {{scrollTop_ @scrollTopPos}} /></Thing_>", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              Thing_,
               scrollTop_
             })
           });
@@ -1018,7 +1004,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<input {{@auto-focus}} />`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("<input {{@auto-focus}} />", {
@@ -1031,11 +1017,15 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<Form as |f|> <input {{f.auto-focus}} /></Form>`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          export default precompileTemplate("<Form as |f|> <input {{f.auto-focus}} /></Form>", {
-            moduleName: "my-app/templates/application.hbs"
+          import Form_ from "@embroider/virtual/components/form";
+          export default precompileTemplate("<Form_ as |f|> <input {{f.auto-focus}} /></Form_>", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              Form_,
+            }),
           });
         `);
       });
@@ -1048,7 +1038,7 @@ Scenarios.fromProject(() => new Project())
           {{/let}}
         {{/let}}`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           import addListener_ from "@embroider/virtual/modifiers/add-listener";
@@ -1065,7 +1055,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{component "input"}}{{component "link-to"}}{{component "textarea"}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import { Input, Textarea } from "@ember/component";
@@ -1085,7 +1075,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<Input/><LinkTo/><Textarea/>`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import { Input, Textarea } from "@ember/component";
@@ -1105,7 +1095,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{helper "fn"}}{{helper "array"}}{{helper "concat"}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import { fn, array, concat } from "@ember/helper";
@@ -1124,7 +1114,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{(fn)}}{{(array)}}{{(concat)}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import { fn, array, concat } from "@ember/helper";
@@ -1143,7 +1133,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{(unique-id)}}`,
         });
-        await configure({ staticHelpers: true }, undefined, '4.6.0');
+        await configure({ staticInvokables: true }, undefined, '4.6.0');
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         export default precompileTemplate("{{(unique-id)}}", {
@@ -1156,7 +1146,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{(unique-id)}}`,
         });
-        await configure({ staticHelpers: true }, undefined, '5.2.0');
+        await configure({ staticInvokables: true }, undefined, '5.2.0');
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import { uniqueId } from "@ember/helper";
@@ -1173,7 +1163,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{modifier "on"}}{{modifier "action"}}`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         export default precompileTemplate("{{modifier \\"on\\"}}{{modifier \\"action\\"}}", {
@@ -1193,13 +1183,17 @@ Scenarios.fromProject(() => new Project())
         <form {{on "submit" doit}}></form>
       `,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
+        import { hash } from "@ember/helper";
+        import { LinkTo } from "@ember/routing";
         import { on } from "@ember/modifier";
         export default precompileTemplate("\\n        {{outlet}}\\n        {{yield bar}}\\n        {{#let (hash submit=(action doit)) as |thing|}}\\n        {{/let}}\\n        <LinkTo @route=\\"index\\" />\\n        <form {{on \\"submit\\" doit}}></form>\\n      ", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
+            hash,
+            LinkTo,
             on,
           }),
         });
@@ -1211,7 +1205,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{input}}`,
         });
 
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
 
         expectTranspiled('./templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
@@ -1230,7 +1224,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{get this "stuff"}}`,
         });
 
-        await configure({ staticComponents: true, staticHelpers: true });
+        await configure({ staticInvokables: true });
 
         expectTranspiled('./templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
@@ -1248,7 +1242,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{component "my-addon@thing"}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import thing_ from "@embroider/virtual/components/my-addon@thing";
@@ -1267,7 +1261,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
+            staticInvokables: true,
           },
           {
             astPlugins: ['@embroider/test-support/example-template-namespacing-plugin'],
@@ -1291,7 +1285,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticHelpers: true,
+            staticInvokables: true,
           },
           {
             astPlugins: ['@embroider/test-support/example-template-namespacing-plugin'],
@@ -1313,7 +1307,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{component this.which}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').failsToTransform(
           `Unsafe dynamic component: this.which in templates${sep}application.hbs`
         );
@@ -1323,7 +1317,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{component (some-helper this.which)}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').failsToTransform(
           'Unsafe dynamic component: cannot statically analyze this expression'
         );
@@ -1333,11 +1327,15 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{component (ensure-safe-component this.which)}}`,
         });
-        await configure({ staticComponents: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          export default precompileTemplate("{{component (ensure-safe-component this.which)}}", {
-            moduleName: "my-app/templates/application.hbs"
+          import ensureSafeComponent_ from "@embroider/virtual/helpers/ensure-safe-component";
+          export default precompileTemplate("{{component (ensureSafeComponent_ this.which)}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              ensureSafeComponent_,
+            }),
           });
         `);
       });
@@ -1346,7 +1344,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{helper this.which}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("{{helper this.which}}", {
@@ -1359,7 +1357,7 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<div {{(modifier this.which)}} />`,
         });
-        await configure({ staticModifiers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
           export default precompileTemplate("<div {{(modifier this.which)}} />", {
@@ -1380,7 +1378,7 @@ Scenarios.fromProject(() => new Project())
         `,
         });
         await configure({
-          staticComponents: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
@@ -1400,7 +1398,7 @@ Scenarios.fromProject(() => new Project())
         `,
         });
         await configure({
-          staticComponents: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
@@ -1420,7 +1418,7 @@ Scenarios.fromProject(() => new Project())
         `,
         });
         await configure({
-          staticHelpers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
@@ -1440,7 +1438,7 @@ Scenarios.fromProject(() => new Project())
         `,
         });
         await configure({
-          staticHelpers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
@@ -1460,7 +1458,7 @@ Scenarios.fromProject(() => new Project())
         `,
         });
         await configure({
-          staticComponents: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
@@ -1480,7 +1478,7 @@ Scenarios.fromProject(() => new Project())
         `,
         });
         await configure({
-          staticModifiers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
@@ -1500,7 +1498,7 @@ Scenarios.fromProject(() => new Project())
         `,
         });
         await configure({
-          staticComponents: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs.js').equalsCode(`
           import { precompileTemplate } from '@ember/template-compilation';
@@ -1518,17 +1516,18 @@ Scenarios.fromProject(() => new Project())
           `,
         });
         await configure({
-          staticHelpers: true,
-          staticModifiers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
         import capitalize_ from "@embroider/virtual/helpers/capitalize";
+        import Form_ from "@embroider/virtual/components/form";
         import validate_ from "@embroider/virtual/modifiers/validate";
-        export default precompileTemplate("\\n          {{#each things as |capitalize|}} {{(capitalize)}} {{/each}} {{(capitalize_)}}\\n          <Form as |validate|><input {{validate}} /></Form> <input {{validate_}} />\\n          ", {
+        export default precompileTemplate("\\n          {{#each things as |capitalize|}} {{(capitalize)}} {{/each}} {{(capitalize_)}}\\n          <Form_ as |validate|><input {{validate}} /></Form_> <input {{validate_}} />\\n          ", {
           moduleName: "my-app/templates/application.hbs",
           scope: () => ({
             capitalize_,
+            Form_,
             validate_
           })
         });
@@ -1540,9 +1539,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{thing.body x=1}}{{#thing.body}}{{/thing.body}}`,
         });
         await configure({
-          staticComponents: true,
-          staticHelpers: true,
-          staticModifiers: true,
+          staticInvokables: true,
         });
         expectTranspiled('templates/application.hbs').equalsCode(`
         import { precompileTemplate } from "@ember/template-compilation";
@@ -1558,9 +1555,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1590,9 +1585,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1622,9 +1615,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1654,9 +1645,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1686,9 +1675,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1720,9 +1707,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1754,9 +1739,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1788,9 +1771,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1822,9 +1803,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1856,9 +1835,7 @@ Scenarios.fromProject(() => new Project())
         });
         await configure(
           {
-            staticComponents: true,
-            staticHelpers: true,
-            staticModifiers: true,
+            staticInvokables: true,
           },
           {
             appPackageRules: {
@@ -1889,7 +1866,7 @@ Scenarios.fromProject(() => new Project())
           'components/form-builder.hbs': `{{component @title}}{{component title}}{{component this.title}}`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -1916,7 +1893,7 @@ Scenarios.fromProject(() => new Project())
         </FormBuilder>`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -1949,7 +1926,7 @@ Scenarios.fromProject(() => new Project())
         {{/form-builder}}`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -1982,7 +1959,7 @@ Scenarios.fromProject(() => new Project())
         {{/form-builder}}`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -2015,7 +1992,7 @@ Scenarios.fromProject(() => new Project())
         </FormBuilder>`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -2039,7 +2016,7 @@ Scenarios.fromProject(() => new Project())
         {{/form-builder}}`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -2066,7 +2043,7 @@ Scenarios.fromProject(() => new Project())
           `,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -2087,7 +2064,7 @@ Scenarios.fromProject(() => new Project())
           'components/my-thing.hbs': `{{component this.which}}`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               components: {
@@ -2127,7 +2104,7 @@ Scenarios.fromProject(() => new Project())
           'templates/index.hbs': `{{component this.which}}`,
         });
         await configure(
-          { staticComponents: true },
+          { staticInvokables: true },
           {
             appPackageRules: {
               appTemplates: {
@@ -2169,13 +2146,15 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `<Example @arg={{(title)}} as |title|>{{(title)}}</Example>`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
-        import { precompileTemplate } from "@ember/template-compilation";
+          import { precompileTemplate } from "@ember/template-compilation";
+          import Example_ from "@embroider/virtual/components/example";
           import title_ from "@embroider/virtual/helpers/title";
-          export default precompileTemplate("<Example @arg={{(title_)}} as |title|>{{(title)}}</Example>", {
+          export default precompileTemplate("<Example_ @arg={{(title_)}} as |title|>{{(title)}}</Example_>", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              Example_,
               title_
             })
           });
@@ -2186,13 +2165,15 @@ Scenarios.fromProject(() => new Project())
         givenFiles({
           'templates/application.hbs': `{{#example arg=(title) as |title|}}{{(title)}}{{/example}}`,
         });
-        await configure({ staticHelpers: true });
+        await configure({ staticInvokables: true });
         expectTranspiled('templates/application.hbs').equalsCode(`
-        import { precompileTemplate } from "@ember/template-compilation";
+          import { precompileTemplate } from "@ember/template-compilation";
+          import example_ from "@embroider/virtual/components/example";
           import title_ from "@embroider/virtual/helpers/title";
-          export default precompileTemplate("{{#example arg=(title_) as |title|}}{{(title)}}{{/example}}", {
+          export default precompileTemplate("{{#example_ arg=(title_) as |title|}}{{(title)}}{{/example_}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
+              example_,
               title_
             })
           });

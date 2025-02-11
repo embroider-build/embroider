@@ -29,10 +29,7 @@ type Env = WithJSUtils<ASTPluginEnvironment> & {
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type UserConfig = Pick<
-  Required<CompatOptions>,
-  'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'allowUnsafeDynamicComponents'
->;
+type UserConfig = Pick<Required<CompatOptions>, 'staticInvokables' | 'allowUnsafeDynamicComponents'>;
 
 export interface CompatResolverOptions extends CoreResolverOptions {
   activePackageRules: ActivePackageRules[];
@@ -322,25 +319,11 @@ class TemplateResolver implements ASTPlugin {
     }
   }
 
-  private get staticComponentsEnabled(): boolean {
+  private get staticInvokablesEnabled(): boolean {
     if (!this.config?.options) {
       return true;
     }
-    return this.config.options.staticComponents || Boolean(this.auditHandler);
-  }
-
-  private get staticHelpersEnabled(): boolean {
-    if (!this.config?.options) {
-      return true;
-    }
-    return this.config.options.staticHelpers || Boolean(this.auditHandler);
-  }
-
-  private get staticModifiersEnabled(): boolean {
-    if (!this.config?.options) {
-      return true;
-    }
-    return this.config.options.staticModifiers || Boolean(this.auditHandler);
+    return this.config.options.staticInvokables || Boolean(this.auditHandler);
   }
 
   private isIgnoredComponent(dasherizedName: string) {
@@ -425,7 +408,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private targetComponent(name: string, nameHint: string): ComponentResolution | null {
-    if (!this.staticComponentsEnabled) {
+    if (!this.staticInvokablesEnabled) {
       return null;
     }
 
@@ -468,7 +451,7 @@ class TemplateResolver implements ASTPlugin {
     loc: Loc,
     impliedBecause?: { componentName: string; argumentName: string }
   ): ComponentResolution | ResolutionFail | null {
-    if (!this.staticComponentsEnabled) {
+    if (!this.staticInvokablesEnabled) {
       return null;
     }
 
@@ -503,7 +486,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private targetHelper(path: string): HelperResolution | null {
-    if (!this.staticHelpersEnabled) {
+    if (!this.staticInvokablesEnabled) {
       return null;
     }
 
@@ -592,7 +575,7 @@ class TemplateResolver implements ASTPlugin {
     */
 
     // first, bail out on all the stuff we can obviously ignore
-    if ((!this.staticHelpersEnabled && !this.staticComponentsEnabled) || this.isIgnoredComponent(path)) {
+    if (!this.staticInvokablesEnabled || this.isIgnoredComponent(path)) {
       return null;
     }
 
@@ -653,21 +636,6 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
-    // Above we already bailed out if both of these were disabled, so we know at
-    // least one is turned on. If both aren't turned on, we're stuck, because we
-    // can't even tell if this *is* a component vs a helper.
-    if (!this.staticHelpersEnabled || !this.staticComponentsEnabled) {
-      this.reportError({
-        type: 'error',
-        message: 'unsupported ambiguity between helper and component',
-        detail: `this use of "{{${path}}}" could be helper "{{ (${path}) }}" or component "<${capitalize(
-          camelCase(path)
-        )} />", and your settings for staticHelpers and staticComponents do not agree. Either switch to one of the unambiguous forms, or make staticHelpers and staticComponents agree, or use a "disambiguate" packageRule to work around the problem if its in third-party code you cannot easily fix.`,
-        loc,
-      });
-      return null;
-    }
-
     let componentRules = this.rules.components.get(path);
     return {
       type: 'component',
@@ -681,7 +649,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private targetElementModifier(path: string): ModifierResolution | null {
-    if (!this.staticModifiersEnabled) {
+    if (!this.staticInvokablesEnabled) {
       return null;
     }
 
@@ -709,7 +677,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   targetDynamicModifier(modifier: ComponentLocator, loc: Loc): ModifierResolution | ResolutionFail | null {
-    if (!this.staticModifiersEnabled) {
+    if (!this.staticInvokablesEnabled) {
       return null;
     }
 
@@ -726,7 +694,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private targetDynamicHelper(helper: ComponentLocator): HelperResolution | null {
-    if (!this.staticHelpersEnabled) {
+    if (!this.staticInvokablesEnabled) {
       return null;
     }
 

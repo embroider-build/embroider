@@ -55,7 +55,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: npm publish
-        run: NPM_CONFIG_PROVENANCE=true pnpm release-plan publish
+        run: NPM_CONFIG_PROVENANCE=true pnpm release-plan publish --tag alpha
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

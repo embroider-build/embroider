@@ -30,11 +30,6 @@ appScenarios
             staticComponents: false,
             staticHelpers: false,
             staticModifiers: false,
-            skipBabel: [
-              {
-                package: 'qunit',
-              },
-            ],
           });
         };
       `,

@@ -8,11 +8,5 @@ module.exports = function (defaults) {
     'ember-cli-babel': { enableTypeScriptTransform: true },
   });
 
-  return maybeEmbroider(app, {
-    skipBabel: [
-      {
-        package: 'qunit',
-      },
-    ],
-  });
+  return maybeEmbroider(app);
 };

@@ -16,6 +16,14 @@
     "test": "tests"
   },
   "scripts": {},
+  "release-plan": {
+    "semverIncrementAs": {
+      "major": "premajor",
+      "minor": "prerelease",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "@embroider/shared-internals": "workspace:^",
     "broccoli-funnel": "^3.0.8",

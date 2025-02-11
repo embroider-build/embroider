@@ -22,6 +22,14 @@
   "scripts": {
     "test": "jest"
   },
+  "release-plan": {
+    "semverIncrementAs": {
+      "major": "premajor",
+      "minor": "prerelease",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",

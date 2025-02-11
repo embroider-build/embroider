@@ -29,6 +29,14 @@
     "test": "echo 'A v2 addon does not have tests, run tests in test-app'",
     "prepack": "rollup --config"
   },
+  "release-plan": {
+    "semverIncrementAs": {
+      "major": "premajor",
+      "minor": "prerelease",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "@ember/test-waiters": "^3.0.2",
     "@embroider/addon-shim": "workspace:^"

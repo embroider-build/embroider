@@ -9,6 +9,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "release-plan": {
+    "semverIncrementAs": {
+      "patch": "prepatch"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "resolve.exports": "^2.0.2"
   }

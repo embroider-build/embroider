@@ -18,6 +18,14 @@
     "src/**/*.js.map"
   ],
   "scripts": {},
+  "release-plan": {
+    "semverIncrementAs": {
+      "major": "premajor",
+      "minor": "prerelease",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {},
   "devDependencies": {
     "typescript": "^5.4.5"

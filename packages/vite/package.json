@@ -15,6 +15,14 @@
   "scripts": {
     "test": "jest"
   },
+  "release-plan": {
+    "semverIncrementAs": {
+      "major": "premajor",
+      "minor": "prerelease",
+      "patch": "prerelease"
+    },
+    "semverIncrementTag": "alpha"
+  },
   "dependencies": {
     "@babel/core": "^7.22.9",
     "@embroider/macros": "workspace:*",

@@ -33,7 +33,7 @@ tsAppScenarios
         await assert.codeMod({
           from: { 'app/components/example.hbs': 'Hello world' },
           to: { 'app/components/example.gjs': '<template>Hello world</template>' },
-          via: './node_modules/.bin/template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });
       });
 
@@ -45,7 +45,7 @@ tsAppScenarios
               import type { TemplateOnlyComponent } from '@ember/component/template-only';
               export default <template>Hello world</template> satisfies TemplateOnlyComponent<{ Args: {} }>`,
           },
-          via: './node_modules/.bin/template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts',
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts',
         });
       });
     });

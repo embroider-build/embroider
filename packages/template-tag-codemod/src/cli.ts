@@ -71,6 +71,11 @@ yargs(process.argv.slice(2))
 
     async argv => {
       await run(argv as Options);
+
+      // we need this to be explicit because our prebuild runs things like
+      // broccoli-babel-transpiler which leak worker processes and will
+      // otherwise prevent exit.🤮
+      process.exit(0);
     }
   )
   .parse();

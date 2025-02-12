@@ -238,6 +238,7 @@ async function locateTemplateInsertionPoint(
   opts: OptionsWithDefaults
 ): Promise<number> {
   let result = await parseAsync(jsSource, {
+    configFile: false,
     filename: jsPath,
     plugins: [
       [require.resolve('@babel/plugin-syntax-decorators'), { legacy: true }],
@@ -404,7 +405,7 @@ async function chooseImport(
       // this file is in an addon's app tree. Check whether it is just a
       // reexport.
       let content = load(targetFile);
-      let result = await parseAsync(content, { filename: targetFile });
+      let result = await parseAsync(content, { filename: targetFile, configFile: false });
       if (!result) {
         throw new Error(`unexpected failure to parse ${targetFile} with content\n${content}`);
       }

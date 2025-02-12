@@ -9,6 +9,13 @@ tsAppScenarios
   .only('release')
   .map('template-tag-codemod', project => {
     project.linkDevDependency('@embroider/template-tag-codemod', { baseDir: __dirname });
+    project.mergeFiles({
+      app: {
+        helpers: {
+          't.js': `export default function t() {}`,
+        },
+      },
+    });
   })
   .forEachScenario(async scenario => {
     Qmodule(`${scenario.name}`, function (hooks) {
@@ -46,6 +53,19 @@ tsAppScenarios
               export default <template>Hello world</template> satisfies TemplateOnlyComponent<{ Args: {} }>`,
           },
           via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts',
+        });
+      });
+
+      test('helper used as both content and attribute', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': `<div data-test={{t "hello"}}>{{t "hello"}}</div>` },
+          to: {
+            'app/components/example.gjs': `
+              import t from "../helpers/t.js";
+              <template><div data-test={{t "hello"}}>{{t "hello"}}</div></template>
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });
       });
     });

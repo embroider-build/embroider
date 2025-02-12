@@ -1405,6 +1405,9 @@ importers:
       qunit:
         specifier: ^2.16.0
         version: 2.24.1
+      scenario-tester:
+        specifier: ^4.1.1
+        version: 4.1.1
       typescript-memoize:
         specifier: ^1.0.1
         version: 1.1.1
@@ -1848,6 +1851,9 @@ importers:
       '@embroider/shared-internals':
         specifier: workspace:*
         version: link:../../packages/shared-internals
+      '@embroider/template-tag-codemod':
+        specifier: workspace:*
+        version: link:../../packages/template-tag-codemod
       '@embroider/test-support':
         specifier: workspace:*
         version: link:../../test-packages/support

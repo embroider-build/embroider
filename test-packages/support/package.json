@@ -25,6 +25,7 @@
     "loader.js": "^4.7.0",
     "lodash": "^4.17.10",
     "qunit": "^2.16.0",
+    "scenario-tester": "^4.1.1",
     "typescript-memoize": "^1.0.1",
     "webpack": "^5"
   },

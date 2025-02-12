@@ -7,6 +7,7 @@
     "@embroider/core": "workspace:*",
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/shared-internals": "workspace:*",
+    "@embroider/template-tag-codemod": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@embroider/webpack": "workspace:*",
     "@types/qunit": "2.19.10",

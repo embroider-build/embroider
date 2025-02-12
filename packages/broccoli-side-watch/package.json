@@ -5,6 +5,11 @@
   "keywords": [
     "ember"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/broccoli-side-watch"
+  },
   "main": "src/index.js",
   "files": [
     "src/**/*.js",

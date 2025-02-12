@@ -2,6 +2,26 @@
 
 ## Release (2025-02-12)
 
+@embroider/broccoli-side-watch 1.1.0-alpha.1 (patch)
+@embroider/core 4.0.0-alpha.1 (patch)
+@embroider/reverse-exports 0.1.1-alpha.1 (patch)
+@embroider/router 3.0.0-alpha.1 (patch)
+@embroider/vite 1.0.0-alpha.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/broccoli-side-watch`, `@embroider/reverse-exports`, `@embroider/vite`
+  * [#2265](https://github.com/embroider-build/embroider/pull/2265) Fix package jsons ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/broccoli-side-watch`, `@embroider/core`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/vite`
+  * [#2267](https://github.com/embroider-build/embroider/pull/2267) Fix release plan setup for main ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-02-12)
+
 @embroider/addon-dev 8.0.0-alpha.0 (major)
 @embroider/addon-shim 2.0.0-alpha.0 (major)
 @embroider/babel-loader-9 4.0.0-alpha.0 (major)

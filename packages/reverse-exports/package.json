@@ -2,6 +2,11 @@
   "name": "@embroider/reverse-exports",
   "version": "0.1.1-alpha.0",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/reverse-exports"
+  },
   "main": "src/index.js",
   "scripts": {
     "test": "jest"

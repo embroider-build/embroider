@@ -107,6 +107,7 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
 export async function extractMeta(source: string, filename: string) {
   const meta: ExtractMetaOpts = { result: undefined };
   await transformAsync(source, {
+    configFile: false,
     filename,
     plugins: [[extractMetaPlugin, meta]],
   });

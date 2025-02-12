@@ -20,6 +20,7 @@ export async function identifyRenderTests(
 ): Promise<{ renderTests: RenderTest[]; parsed: types.File }> {
   let renderTests: RenderTest[] = [];
   let parsed = await parseAsync(source, {
+    configFile: false,
     filename,
     plugins: [
       [require.resolve('@babel/plugin-syntax-decorators'), { legacy: true }],

@@ -23,7 +23,8 @@
   "license": "MIT",
   "release-plan": {
     "semverIncrementAs": {
-      "minor": "preminor",
+      "major": "prerelease",
+      "minor": "prerelease",
       "patch": "prerelease"
     },
     "semverIncrementTag": "alpha"

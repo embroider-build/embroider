@@ -16,7 +16,9 @@
   "license": "ISC",
   "release-plan": {
     "semverIncrementAs": {
-      "patch": "prepatch"
+      "major": "prerelease",
+      "minor": "prerelease",
+      "patch": "prerelease"
     },
     "semverIncrementTag": "alpha"
   },

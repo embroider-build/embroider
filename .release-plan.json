@@ -195,7 +195,7 @@
     "@embroider/macros": {
       "impact": "major",
       "oldVersion": "1.16.10",
-      "newVersion": "2.0.0-alpha.0",
+      "newVersion": "1.17.0-alpha.0",
       "constraints": [
         {
           "impact": "patch",

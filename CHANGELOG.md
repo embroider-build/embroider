@@ -10,7 +10,7 @@
 @embroider/config-meta-loader 1.0.0-alpha.0 (major)
 @embroider/core 4.0.0-alpha.0 (major)
 @embroider/hbs-loader 4.0.0-alpha.0 (major)
-@embroider/macros 2.0.0-alpha.0 (major)
+@embroider/macros 1.17.0-alpha.0 (major)
 @embroider/reverse-exports 0.1.1-alpha.0 (patch)
 @embroider/router 3.0.0-alpha.0 (major)
 @embroider/shared-internals 3.0.0-alpha.0 (major)

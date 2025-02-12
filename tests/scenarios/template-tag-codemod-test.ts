@@ -68,5 +68,36 @@ tsAppScenarios
           via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });
       });
+
+      test('name collision between original js and added import', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `<div>{{t "hello"}}</div>`,
+            'app/components/example.js': `
+              import t from "./somewhere-else.js";
+              import Component from "@glimmer/component";
+              export default class extends Component {
+                get thing() {
+                  return t();
+                }
+              }
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+              import t0 from "../helpers/t.js";
+              import t from "./somewhere-else.js";
+              import Component from "@glimmer/component";
+              export default class extends Component {
+                <template><div>{{t0 "hello"}}</div></template>
+                get thing() {
+                  return t();
+                }
+              }
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
     });
   });

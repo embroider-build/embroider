@@ -1,6 +1,6 @@
 {
   "name": "@embroider/router",
-  "version": "2.1.8",
+  "version": "3.0.0-alpha.0",
   "description": "Lazy loading router",
   "keywords": [
     "ember-addon"

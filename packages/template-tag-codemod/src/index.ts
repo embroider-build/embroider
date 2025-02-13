@@ -141,6 +141,7 @@ export async function inspectContents(
 ): Promise<InspectedTemplate> {
   let replaced = { didReplace: false };
   let strictSource = (await transformAsync(hbsToJS(src), {
+    configFile: false,
     filename,
     plugins: [
       [

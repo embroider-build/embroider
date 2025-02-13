@@ -65,8 +65,6 @@ export default interface Options extends CoreOptions {
 }
 
 const defaults = Object.assign(coreWithDefaults(), {
-  staticAddonTrees: false,
-  staticAddonTestSupportTrees: false,
   compatAdapters: new Map(),
   extraPublicTrees: [],
   workspaceDir: null,
@@ -144,8 +142,6 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
 export const recommendedOptions: { [name: string]: Options } = Object.freeze({
   safe: Object.freeze({}),
   optimized: Object.freeze({
-    staticAddonTrees: true,
-    staticAddonTestSupportTrees: true,
     allowUnsafeDynamicComponents: false,
     staticInvokables: true,
   }),

@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-02-13)
+
+@embroider/compat 4.0.0-alpha.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2268](https://github.com/embroider-build/embroider/pull/2268) remove the last few references to staticAddonTrees ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-02-12)
 
 @embroider/broccoli-side-watch 1.1.0-alpha.1 (patch)

@@ -10,42 +10,25 @@
       "oldVersion": "4.0.0-alpha.0"
     },
     "@embroider/broccoli-side-watch": {
-      "impact": "patch",
-      "oldVersion": "1.1.0-alpha.0",
-      "newVersion": "1.1.0-alpha.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/broccoli-side-watch/package.json"
+      "oldVersion": "1.1.0-alpha.1"
     },
     "@embroider/compat": {
-      "oldVersion": "4.0.0-alpha.0"
-    },
-    "@embroider/config-meta-loader": {
-      "oldVersion": "1.0.0-alpha.0"
-    },
-    "@embroider/core": {
       "impact": "patch",
       "oldVersion": "4.0.0-alpha.0",
       "newVersion": "4.0.0-alpha.1",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/reverse-exports"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "pkgJSONPath": "./packages/compat/package.json"
+    },
+    "@embroider/config-meta-loader": {
+      "oldVersion": "1.0.0-alpha.0"
+    },
+    "@embroider/core": {
+      "oldVersion": "4.0.0-alpha.1"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0-alpha.0"
@@ -54,32 +37,10 @@
       "oldVersion": "1.17.0-alpha.0"
     },
     "@embroider/reverse-exports": {
-      "impact": "patch",
-      "oldVersion": "0.1.1-alpha.0",
-      "newVersion": "0.1.1-alpha.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/reverse-exports/package.json"
+      "oldVersion": "0.1.1-alpha.1"
     },
     "@embroider/router": {
-      "impact": "patch",
-      "oldVersion": "3.0.0-alpha.0",
-      "newVersion": "3.0.0-alpha.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "oldVersion": "3.0.0-alpha.1"
     },
     "@embroider/shared-internals": {
       "oldVersion": "3.0.0-alpha.0"
@@ -91,25 +52,8 @@
       "oldVersion": "1.14.0-alpha.0"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.0-alpha.0",
-      "newVersion": "1.0.0-alpha.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/reverse-exports"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.0.0-alpha.1"
     }
   },
-  "description": "## Release (2025-02-12)\n\n@embroider/broccoli-side-watch 1.1.0-alpha.1 (patch)\n@embroider/core 4.0.0-alpha.1 (patch)\n@embroider/reverse-exports 0.1.1-alpha.1 (patch)\n@embroider/router 3.0.0-alpha.1 (patch)\n@embroider/vite 1.0.0-alpha.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/broccoli-side-watch`, `@embroider/reverse-exports`, `@embroider/vite`\n  * [#2265](https://github.com/embroider-build/embroider/pull/2265) Fix package jsons ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :house: Internal\n* `@embroider/broccoli-side-watch`, `@embroider/core`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/vite`\n  * [#2267](https://github.com/embroider-build/embroider/pull/2267) Fix release plan setup for main ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-02-13)\n\n@embroider/compat 4.0.0-alpha.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#2268](https://github.com/embroider-build/embroider/pull/2268) remove the last few references to staticAddonTrees ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

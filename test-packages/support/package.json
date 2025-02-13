@@ -33,6 +33,6 @@
     "@types/babel__traverse": "^7.18.5",
     "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
-    "@types/node": "^10.5.2"
+    "@types/node": "^22.9.3"
   }
 }

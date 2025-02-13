@@ -20,8 +20,6 @@ let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
       module.exports = function (defaults) {
         let app = new EmberApp(defaults, {});
         return maybeEmbroider(app, {
-          staticAddonTrees: true,
-          staticAddonTestSupportTrees: true,
           staticInvokables: true,
           splitAtRoutes: ['people'],
         });

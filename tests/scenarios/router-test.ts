@@ -32,8 +32,6 @@ function setupScenario(project: Project) {
           });
 
           return maybeEmbroider(app, {
-            staticAddonTestSupportTrees: true,
-            staticAddonTrees: true,
             staticInvokables: true,
             splitAtRoutes: ['split-me'],
           });

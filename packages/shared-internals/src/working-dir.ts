@@ -9,7 +9,10 @@ export function locateEmbroiderWorkingDir(appRoot: string): string {
   if (cache.has(appRoot)) {
     return cache.get(appRoot);
   }
-  if (existsSync(resolve(appRoot, 'package.json'))) {
+  if (process.env.EMBROIDER_WORKING_DIRECTORY) {
+    let path = resolve(appRoot, process.env.EMBROIDER_WORKING_DIRECTORY);
+    return path;
+  } else if (existsSync(resolve(appRoot, 'package.json'))) {
     // the normal case
     let path = resolve(appRoot, 'node_modules', '.embroider');
     cache.set(appRoot, path);

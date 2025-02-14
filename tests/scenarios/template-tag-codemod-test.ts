@@ -16,6 +16,9 @@ tsAppScenarios
         },
         components: {
           'message-box.hbs': `<div></div>`,
+          nested: {
+            'example.js': 'export default class {}',
+          },
         },
       },
     });
@@ -43,6 +46,18 @@ tsAppScenarios
         await assert.codeMod({
           from: { 'app/components/example.hbs': 'Hello world' },
           to: { 'app/components/example.gjs': '<template>Hello world</template>' },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('hbs only component that needs name rewriting', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<Nested::Example />' },
+          to: {
+            'app/components/example.gjs': `
+            import NestedExample from "./nested/example.js";
+            <template><NestedExample /></template>`,
+          },
           via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });
       });

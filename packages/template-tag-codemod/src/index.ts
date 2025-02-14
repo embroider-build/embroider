@@ -302,7 +302,9 @@ export async function processComponent(
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
     }
     let newSrc =
-      extractImports(ast, path => path !== '@ember/template-compilation') + '\n' + hbsOnlyComponent(hbsSource, opts);
+      extractImports(ast, path => path !== '@ember/template-compilation') +
+      '\n' +
+      hbsOnlyComponent(finalTemplates[0].templateSource, opts);
     writeFileSync(hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat), newSrc);
     unlinkSync(hbsPath);
   }

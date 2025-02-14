@@ -4,10 +4,8 @@ import codeFrame from '@babel/code-frame';
 const { codeFrameColumns } = codeFrame;
 
 export interface RenderTest {
-  node: types.Node;
   startIndex: number;
   endIndex: number;
-  templateContent: string;
   statementStart: number;
   availableBinding: string;
 }
@@ -47,10 +45,8 @@ export async function identifyRenderTests(ast: types.File, source: string, filen
             }
 
             renderTests.push({
-              node: arg0.node,
               startIndex: loc.start.index,
               endIndex: loc.end.index,
-              templateContent: arg0.node.quasi.quasis[0].value.raw,
               statementStart: statementCandidate.node.loc!.start.index,
               availableBinding,
             });

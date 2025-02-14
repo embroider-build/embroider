@@ -236,6 +236,11 @@ tsAppScenarios
                   await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
                   assert.strictEqual(this.element.textContent.trim(), 'template block text');
                 });
+                test('with self already in local scope', async function (assert) {
+                  let self = 'hi';
+                  await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
+                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                });
               });
             `,
           },
@@ -252,6 +257,12 @@ tsAppScenarios
                 test('it renders', async function (assert) {
                   const self = this;
                   await render(<template><MessageBox @thing={{self.thing}} /></template>);
+                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                });
+                test('with self already in local scope', async function (assert) {
+                  let self = 'hi';
+                  const self0 = this;
+                  await render(<template><MessageBox @thing={{self0.thing}} /></template>);
                   assert.strictEqual(this.element.textContent.trim(), 'template block text');
                 });
               });

@@ -491,6 +491,8 @@ export async function processRenderTests(opts: OptionsWithDefaults): Promise<voi
   }
 }
 
+const selfToken = '___self9370___';
+
 export async function processRenderTest(filename: string, opts: OptionsWithDefaults): Promise<void> {
   let src = readFileSync(filename, 'utf8');
   let ast = await parseJS(filename, src);
@@ -502,7 +504,7 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
   let edits = deleteImports(ast);
 
   let invokables = await locateInvokables(filename, ast, opts);
-  ast = await runResolverTransform(ast, filename, invokables, opts.nativeLexicalThis ? undefined : 'self');
+  ast = await runResolverTransform(ast, filename, invokables, opts.nativeLexicalThis ? undefined : selfToken);
   let finalTemplates = await extractTemplates(ast, filename);
   if (finalTemplates.length !== renderTests.length) {
     throw new Error(
@@ -516,17 +518,21 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
     replacement: extractImports(ast, path => !['@ember/template-compilation', 'ember-cli-htmlbars'].includes(path)),
   });
   for (let [index, test] of renderTests.entries()) {
+    let templateSource = finalTemplates[index].templateSource;
     if (!opts.nativeLexicalThis) {
-      edits.push({
-        start: test.statementStart,
-        end: test.statementStart,
-        replacement: `const self = this;\n`,
-      });
+      if (templateSource.includes(selfToken)) {
+        edits.push({
+          start: test.statementStart,
+          end: test.statementStart,
+          replacement: `const ${test.availableBinding} = this;\n`,
+        });
+        templateSource = templateSource.replaceAll(selfToken, test.availableBinding);
+      }
     }
     edits.push({
       start: test.startIndex,
       end: test.endIndex,
-      replacement: '<template>' + finalTemplates[index].templateSource + '</template>',
+      replacement: '<template>' + templateSource + '</template>',
     });
   }
   let newSrc = applyEdits(src, edits);
@@ -541,7 +547,6 @@ async function runResolverTransform(
   invokables: Map<string, string>,
   replaceThisWith: string | undefined
 ): Promise<types.File> {
-  let replaced = { didReplace: false };
   let result = await babel.transformFromAstAsync(parsed, undefined, {
     ast: true,
     code: false,
@@ -563,7 +568,7 @@ async function runResolverTransform(
                 externalResolve: module => invokables.get(module) ?? module,
               } satisfies ResolverTransformOptions,
             ],
-            ...(replaceThisWith ? [replaceThisTransform(replaceThisWith, replaced)] : []),
+            ...(replaceThisWith ? [replaceThisTransform(replaceThisWith)] : []),
           ],
         } satisfies EtcOptions,
       ],

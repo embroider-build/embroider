@@ -125,7 +125,6 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
 }
 
 const resolverLoader = new ResolverLoader(process.cwd());
-const resolutions = new Map<string, { type: 'real' } | { type: 'virtual'; content: string }>();
 
 export interface InspectedTemplate {
   templateSource: string;
@@ -189,8 +188,7 @@ async function resolveVirtualImport(filename: string, request: string, opts: Opt
   if (resolution.type === 'not_found') {
     throw new Error(`Unable to resolve ${request} from ${filename}`);
   } else {
-    resolutions.set(request, resolution);
-    return await chooseImport(filename, resolution.filename, request, 'default', opts);
+    return await chooseImport(filename, resolution, request, 'default', opts);
   }
 }
 
@@ -387,13 +385,11 @@ function hbsOnlyComponent(templateSource: string, opts: OptionsWithDefaults): st
   return outSource.join('\n');
 }
 
-function load(filename: string): string {
-  let resolution = resolutions.get(filename);
-  if (!resolution) {
-    throw new Error(`${filename} was not resolved by us`);
-  }
+function load(
+  resolution: { type: 'real'; filename: string } | { type: 'virtual'; filename: string; content: string }
+): string {
   if (resolution.type === 'real') {
-    return readFileSync(filename, 'utf8');
+    return readFileSync(resolution.filename, 'utf8');
   } else {
     return resolution.content;
   }
@@ -428,7 +424,7 @@ function withoutExtension(name: string, extensions: string[]): string {
 
 async function chooseImport(
   fromFile: string,
-  targetFile: string,
+  resolution: { type: 'real'; filename: string } | { type: 'virtual'; content: string; filename: string },
   importedModule: string,
   importedName: string,
   opts: OptionsWithDefaults
@@ -436,6 +432,7 @@ async function chooseImport(
   if (!importedModule.startsWith('@embroider/virtual')) {
     return importedModule;
   }
+  let targetFile = resolution.filename;
   let pkg = resolverLoader.resolver.packageCache.ownerOfFile(targetFile);
   if (!pkg) {
     throw new Error(`Unexpected unowned file ${targetFile}`);
@@ -464,7 +461,7 @@ async function chooseImport(
     if (match) {
       // this file is in an addon's app tree. Check whether it is just a
       // reexport.
-      let content = load(targetFile);
+      let content = load(resolution);
       let result = await parseAsync(content, { filename: targetFile, configFile: false });
       if (!result) {
         throw new Error(`unexpected failure to parse ${targetFile} with content\n${content}`);

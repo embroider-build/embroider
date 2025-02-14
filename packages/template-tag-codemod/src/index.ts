@@ -232,9 +232,17 @@ export async function inspectContents(
 }
 
 export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<void> {
-  let { templateSource, scope } = await inspectContents(filename, readFileSync(filename, 'utf8'), '@controller', opts);
-
-  let outSource: string[] = [];
+  let hbsSource = readFileSync(filename, 'utf8');
+  let jsSource = hbsToJS(hbsSource);
+  let ast = await parseJS(filename, jsSource);
+  let invokables = await locateInvokables(filename, ast, opts);
+  ast = await runResolverTransform(ast, filename, invokables);
+  let finalTemplates = await extractTemplates(ast, filename);
+  if (finalTemplates.length !== 1) {
+    throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
+  }
+  let templateSource = finalTemplates[0].templateSource;
+  let outSource: string[] = [extractImports(ast, path => path !== '@ember/template-compilation')];
 
   if (opts.nativeRouteTemplates) {
     if (opts.defaultFormat === 'gts') {
@@ -246,11 +254,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
       outSource.push(`<template>${templateSource}</template>`);
     }
   } else {
-    scope.set('RouteTemplate', {
-      local: 'RouteTemplate',
-      imported: 'default',
-      module: 'ember-route-template',
-    });
+    outSource.unshift(`import RouteTemplate from 'ember-route-template`);
     if (opts.defaultFormat === 'gts') {
       outSource.push(
         `export default RouteTemplate<${opts.routeTemplateSignature}>(<template>${templateSource}</template>)`
@@ -259,8 +263,6 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
       outSource.push(`export default RouteTemplate(<template>${templateSource}</template>)`);
     }
   }
-
-  outSource.unshift(renderScopeImports(scope));
 
   writeFileSync(filename.replace(/.hbs$/, '.' + opts.defaultFormat), outSource.join('\n'));
   unlinkSync(filename);
@@ -381,6 +383,7 @@ async function processComponent(hbsPath: string, jsPath: string | undefined, opt
     writeFileSync(hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat), newSrc);
     unlinkSync(hbsPath);
   }
+  console.log(`component: ${hbsPath} `);
 }
 
 async function parseJS(filename: string, src: string): Promise<types.File> {

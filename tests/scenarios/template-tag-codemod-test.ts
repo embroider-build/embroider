@@ -98,5 +98,68 @@ tsAppScenarios
           via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });
       });
+
+      test('basic route template - native js', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/templates/example.hbs': `<div>{{t "hello"}}</div>`,
+          },
+          to: {
+            'app/templates/example.gjs': `
+              import t from "../helpers/t.js";
+              <template><div>{{t "hello"}}</div></template>
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates ./app/templates/example.hbs --components false',
+        });
+      });
+
+      test('basic route template - native ts', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/templates/example.hbs': `<div>{{t "hello"}}</div>`,
+          },
+          to: {
+            'app/templates/example.gts': `
+              import type { TemplateOnlyComponent } from '@ember/component/template-only';
+              import t from "../helpers/t.js";
+              export default <template><div>{{t "hello"}}</div></template> satisfies TemplateOnlyComponent<{ Args: { model: unknown, controller: unknown } }>
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --defaultFormat gts',
+        });
+      });
+
+      test('basic route template - addon js', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/templates/example.hbs': `<div>{{t "hello"}}</div>`,
+          },
+          to: {
+            'app/templates/example.gjs': `
+              import RouteTemplate from 'ember-route-template
+              import t from "../helpers/t.js";
+              export default RouteTemplate(<template><div>{{t "hello"}}</div></template>)
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false',
+        });
+      });
+
+      test('basic route template - addon ts', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/templates/example.hbs': `<div>{{t "hello"}}</div>`,
+          },
+          to: {
+            'app/templates/example.gts': `
+              import RouteTemplate from 'ember-route-template
+              import t from "../helpers/t.js";
+              export default RouteTemplate<{ Args: { model: unknown, controller: unknown } }>(<template><div>{{t "hello"}}</div></template>)
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false --defaultFormat gts',
+        });
+      });
     });
   });

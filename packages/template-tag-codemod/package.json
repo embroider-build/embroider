@@ -12,15 +12,15 @@
   "license": "MIT",
   "author": "Edward Faulkner <edward@eaf4.com>",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./dist/src/index.js"
   },
   "bin": {
-    "template-tag-codemod": "./src/cli.js"
+    "template-tag-codemod": "./dist/src/cli.js"
   },
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist/src/**/*.js",
+    "dist/src/**/*.d.ts",
+    "dist/src/**/*.js.map"
   ],
   "scripts": {},
   "release-plan": {

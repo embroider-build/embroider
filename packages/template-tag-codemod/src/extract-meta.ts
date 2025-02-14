@@ -1,27 +1,15 @@
 import type * as Babel from '@babel/core';
-import { transformAsync } from '@babel/core';
+import { transformFromAstAsync, type types } from '@babel/core';
 
-export interface MetaResult {
+export interface ExtractedTemplate {
   templateSource: string;
-  scope: Map<
-    string,
-    {
-      local: string;
-      imported: string;
-      module: string;
-    }
-  >;
+  scope: Map<string, string>;
 }
 
 interface ExtractMetaOpts {
-  result: MetaResult | undefined;
+  result: ExtractedTemplate[];
 }
 
-/*
-  This only needs to be able to parse the output of our own transforms, it's not
-  necessary that it covers every possible way of expressing a template in
-  javascript
-*/
 function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: ExtractMetaOpts }> {
   return {
     visitor: {
@@ -34,11 +22,11 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
 
           if (!arg1) {
             // empty scope
-            let scope: MetaResult['scope'] = new Map();
-            state.opts.result = {
+            let scope: ExtractedTemplate['scope'] = new Map();
+            state.opts.result.push({
               templateSource: arg0.value,
               scope,
-            };
+            });
             return;
           }
 
@@ -61,7 +49,7 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
             throw new Error(`unexpected source: ${String(path)}`);
           }
 
-          let scope: MetaResult['scope'] = new Map();
+          let scope: ExtractedTemplate['scope'] = new Map();
           for (let prop of body.properties) {
             if (prop.type !== 'ObjectProperty') {
               throw new Error(`unexpected source: ${String(path)}`);
@@ -75,38 +63,30 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
             if (value.type !== 'Identifier') {
               throw new Error(`unexpected source: ${String(path)}`);
             }
-            let binding = path.scope.bindings[value.name];
-            if (binding?.path.type === 'ImportDefaultSpecifier') {
-              let dec = binding.path.parentPath as Babel.NodePath<Babel.types.ImportDeclaration>;
-              scope.set(key.name, { local: value.name, imported: 'default', module: dec.node.source.value });
-            } else if (binding?.path.type === 'ImportSpecifier') {
-              let dec = binding.path.parentPath as Babel.NodePath<Babel.types.ImportDeclaration>;
-              let specifier = binding.path.node as Babel.types.ImportSpecifier;
-              let imported: string;
-              if (specifier.imported.type === 'Identifier') {
-                imported = specifier.imported.name;
-              } else {
-                imported = specifier.imported.value;
-              }
-              scope.set(key.name, { local: value.name, imported, module: dec.node.source.value });
-            } else {
-              throw new Error(`unepxected binding.path.type: ${binding?.path.type}`);
-            }
+            scope.set(key.name, value.name);
           }
 
-          state.opts.result = {
+          state.opts.result.push({
             templateSource: arg0.value,
             scope,
-          };
+          });
         }
       },
     },
   };
 }
 
-export async function extractMeta(source: string, filename: string) {
-  const meta: ExtractMetaOpts = { result: undefined };
-  await transformAsync(source, {
+function extractLoc(node: types.Node): { start: number; end: number } {
+  let { loc } = node;
+  if (!loc) {
+    throw new Error(`bug: parse should have loc info`);
+  }
+  return { start: loc.start.index, end: loc.end.index };
+}
+
+export async function extractTemplates(ast: types.File, filename: string) {
+  const meta: ExtractMetaOpts = { result: [] };
+  await transformFromAstAsync(ast, undefined, {
     configFile: false,
     filename,
     plugins: [[extractMetaPlugin, meta]],
@@ -115,4 +95,45 @@ export async function extractMeta(source: string, filename: string) {
     throw new Error(`failed to extract metadata while processing ${filename}`);
   }
   return meta.result;
+}
+
+interface LocatePluginOpts {
+  templates: { start: number; end: number }[];
+  componentBody: { loc: { start: number; end: number }; node: types.ClassBody } | undefined;
+}
+
+function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePluginOpts }> {
+  return {
+    visitor: {
+      ExportDefaultDeclaration(path, state) {
+        let dec = path.node.declaration;
+        switch (dec.type) {
+          case 'ClassDeclaration':
+          case 'ClassExpression':
+            state.opts.componentBody = { loc: extractLoc(dec.body), node: dec.body };
+            return;
+          default:
+            throw new Error(`unimplemented declaration: ${dec.type}`);
+        }
+      },
+      CallExpression(path, state) {
+        if (path.get('callee').referencesImport('@ember/template-compilation', 'precompileTemplate')) {
+          state.opts.templates.push(extractLoc(path.node));
+        }
+      },
+    },
+  };
+}
+
+export async function locateTemplates(ast: types.File, filename: string) {
+  const meta: LocatePluginOpts = { componentBody: undefined, templates: [] };
+  await transformFromAstAsync(ast, undefined, {
+    configFile: false,
+    filename,
+    plugins: [[locatePlugin, meta]],
+  });
+  if (!meta.componentBody) {
+    throw new Error(`failed to locate component template insertion point in ${filename}`);
+  }
+  return meta;
 }

@@ -13,7 +13,27 @@ interface ExtractMetaOpts {
 function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: ExtractMetaOpts }> {
   return {
     visitor: {
+      TaggedTemplateExpression(path, state) {
+        if (path.get('tag').referencesImport('ember-cli-htmlbars', 'hbs')) {
+          state.opts.result.push({
+            templateSource: path.node.quasi.quasis[0].value.raw,
+            scope: new Map(),
+          });
+        }
+      },
       CallExpression(path, state) {
+        if (path.get('callee').referencesImport('ember-cli-htmlbars', 'hbs')) {
+          let [arg0] = path.node.arguments;
+          if (arg0.type !== 'StringLiteral') {
+            throw new Error(`unexpected source: ${String(path)}`);
+          }
+
+          state.opts.result.push({
+            templateSource: arg0.value,
+            scope: new Map(),
+          });
+        }
+
         if (path.get('callee').referencesImport('@ember/template-compilation', 'precompileTemplate')) {
           let [arg0, arg1] = path.node.arguments;
           if (arg0.type !== 'StringLiteral') {

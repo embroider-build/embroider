@@ -14,6 +14,9 @@ tsAppScenarios
         helpers: {
           't.js': `export default function t() {}`,
         },
+        components: {
+          'message-box.hbs': `<div></div>`,
+        },
       },
     });
   })
@@ -159,6 +162,102 @@ tsAppScenarios
             `,
           },
           via: 'npx template-tag-codemod  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false --defaultFormat gts',
+        });
+      });
+
+      test('route template rewrite this to @controller', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/templates/example.hbs': `<div>{{t this.message}}</div>`,
+          },
+          to: {
+            'app/templates/example.gjs': `
+              import t from "../helpers/t.js";
+              <template><div>{{t @controller.message}}</div></template>
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates ./app/templates/example.hbs --components false',
+        });
+      });
+
+      test('convert rendering test with native lexical this', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'tests/integration/components/example-test.js': `
+
+              import { module, test } from 'qunit';
+              import { setupRenderingTest } from 'ember-qunit';
+              import { render } from '@ember/test-helpers';
+              import { hbs } from 'ember-cli-htmlbars';
+
+              module('Integration | Component | message-box', function (hooks) {
+                setupRenderingTest(hooks);
+                test('it renders', async function (assert) {
+                  await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
+                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                });
+              });
+            `,
+          },
+          to: {
+            'tests/integration/components/example-test.gjs': `
+
+              import { module, test } from 'qunit';
+              import { setupRenderingTest } from 'ember-qunit';
+              import { render } from '@ember/test-helpers';
+              import MessageBox from "../../../app/components/message-box.js";
+
+              module('Integration | Component | message-box', function (hooks) {
+                setupRenderingTest(hooks);
+                test('it renders', async function (assert) {
+                  await render(<template><MessageBox @thing={{this.thing}} /></template>);
+                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                });
+              });
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false ',
+        });
+      });
+
+      test('convert rendering test without native lexical this', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'tests/integration/components/example-test.js': `
+
+              import { module, test } from 'qunit';
+              import { setupRenderingTest } from 'ember-qunit';
+              import { render } from '@ember/test-helpers';
+              import { hbs } from 'ember-cli-htmlbars';
+
+              module('Integration | Component | message-box', function (hooks) {
+                setupRenderingTest(hooks);
+                test('it renders', async function (assert) {
+                  await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
+                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                });
+              });
+            `,
+          },
+          to: {
+            'tests/integration/components/example-test.gjs': `
+
+              import { module, test } from 'qunit';
+              import { setupRenderingTest } from 'ember-qunit';
+              import { render } from '@ember/test-helpers';
+              import MessageBox from "../../../app/components/message-box.js";
+
+              module('Integration | Component | message-box', function (hooks) {
+                setupRenderingTest(hooks);
+                test('it renders', async function (assert) {
+                  const self = this;
+                  await render(<template><MessageBox @thing={{self.thing}} /></template>);
+                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                });
+              });
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false --nativeLexicalThis false',
         });
       });
     });

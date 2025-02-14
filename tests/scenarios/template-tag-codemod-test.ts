@@ -155,7 +155,7 @@ tsAppScenarios
           },
           to: {
             'app/templates/example.gjs': `
-              import RouteTemplate from 'ember-route-template
+              import RouteTemplate from 'ember-route-template'
               import t from "../helpers/t.js";
               export default RouteTemplate(<template><div>{{t "hello"}}</div></template>)
             `,
@@ -171,7 +171,7 @@ tsAppScenarios
           },
           to: {
             'app/templates/example.gts': `
-              import RouteTemplate from 'ember-route-template
+              import RouteTemplate from 'ember-route-template'
               import t from "../helpers/t.js";
               export default RouteTemplate<{ Args: { model: unknown, controller: unknown } }>(<template><div>{{t "hello"}}</div></template>)
             `,

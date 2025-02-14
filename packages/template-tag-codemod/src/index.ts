@@ -215,7 +215,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
       outSource.push(`<template>${templateSource}</template>`);
     }
   } else {
-    outSource.unshift(`import RouteTemplate from 'ember-route-template`);
+    outSource.unshift(`import RouteTemplate from 'ember-route-template'`);
     if (opts.defaultFormat === 'gts') {
       outSource.push(
         `export default RouteTemplate<${opts.routeTemplateSignature}>(<template>${templateSource}</template>)`

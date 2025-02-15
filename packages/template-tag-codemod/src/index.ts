@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync, rmSync } from 'fs';
 import { globSync } from 'glob';
 import core, { type Package } from '@embroider/core';
 import { traverse, parseAsync, type types, transformFromAstAsync } from '@babel/core';
@@ -86,7 +86,12 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
 type OptionsWithDefaults = Required<Options>;
 
 export async function ensurePrebuild() {
-  if (!existsSync('node_modules/.embroider')) {
+  const stablePrebuildExists = existsSync('node_modules/.embroider/rewritten-app');
+  if (!existsSync('node_modules/.embroider') || stablePrebuildExists) {
+    if (stablePrebuildExists) {
+      // we need to clear the stable prebuild for the codemod to work as resolver has changed
+      rmSync('node_modules/.embroider', { force: true, recursive: true });
+    }
     console.log(`Running addon prebuild...`);
     let { prebuild } = await import('./prebuild.js');
     await prebuild();

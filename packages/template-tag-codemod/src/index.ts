@@ -101,11 +101,15 @@ export async function ensureAppSetup() {
   try {
     pkg = resolverLoader.resolver.packageCache.get(process.cwd());
   } catch (err) {
-    console.error(`Run template-tag-codemod inside a Ember app.`);
+    console.error(`Run template-tag-codemod inside a Ember app or run an Embroider build of the app first`);
     process.exit(-1);
   }
   if (!pkg.packageJSON.exports) {
-    throw new Error(`must use package.json exports for self-resolvability. Plase add this to package.json:
+    pkg.packageJSON.exports = {
+      './tests/*': './tests/*',
+      './*': './app/*',
+    };
+    console.info(`Using package.json exports for self-resolvability. Please add this to package.json to silence this message:
 
  "exports": {
     "./tests/*": "./tests/*",

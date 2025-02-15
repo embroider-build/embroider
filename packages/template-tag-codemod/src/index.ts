@@ -5,7 +5,7 @@ import { traverse, parseAsync, type types, transformFromAstAsync } from '@babel/
 import * as babel from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
-import { extractTemplates, locateTemplates, type ExtractedTemplate } from './extract-meta.js';
+import { extractTemplates, locateTemplates } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
 import { dirname } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
@@ -125,12 +125,6 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
 }
 
 const resolverLoader = new ResolverLoader(process.cwd());
-
-export interface InspectedTemplate {
-  templateSource: string;
-  scope: ExtractedTemplate['scope'];
-  replacedThisWith: string | false;
-}
 
 async function locateInvokables(
   filename: string,

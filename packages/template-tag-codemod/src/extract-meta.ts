@@ -1,13 +1,8 @@
 import type * as Babel from '@babel/core';
 import { transformFromAstAsync, type types } from '@babel/core';
 
-export interface ExtractedTemplate {
-  templateSource: string;
-  scope: Map<string, string>;
-}
-
 interface ExtractMetaOpts {
-  result: ExtractedTemplate[];
+  result: { templateSource: string }[];
 }
 
 function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: ExtractMetaOpts }> {
@@ -17,7 +12,6 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
         if (path.get('tag').referencesImport('ember-cli-htmlbars', 'hbs')) {
           state.opts.result.push({
             templateSource: path.node.quasi.quasis[0].value.raw,
-            scope: new Map(),
           });
         }
       },
@@ -30,7 +24,6 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
 
           state.opts.result.push({
             templateSource: arg0.value,
-            scope: new Map(),
           });
         }
 
@@ -41,11 +34,8 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
           }
 
           if (!arg1) {
-            // empty scope
-            let scope: ExtractedTemplate['scope'] = new Map();
             state.opts.result.push({
               templateSource: arg0.value,
-              scope,
             });
             return;
           }
@@ -69,7 +59,6 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
             throw new Error(`unexpected source: ${String(path)}`);
           }
 
-          let scope: ExtractedTemplate['scope'] = new Map();
           for (let prop of body.properties) {
             if (prop.type !== 'ObjectProperty') {
               throw new Error(`unexpected source: ${String(path)}`);
@@ -83,12 +72,13 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
             if (value.type !== 'Identifier') {
               throw new Error(`unexpected source: ${String(path)}`);
             }
-            scope.set(key.name, value.name);
+            if (key.name !== value.name) {
+              throw new Error(`bug: unexpected name remapping`);
+            }
           }
 
           state.opts.result.push({
             templateSource: arg0.value,
-            scope,
           });
         }
       },
@@ -145,7 +135,7 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
   };
 }
 
-export async function locateTemplates(ast: types.File, filename: string) {
+export async function locateTemplates(ast: types.File, filename: string): Promise<LocatePluginOpts> {
   const meta: LocatePluginOpts = { componentBody: undefined, templates: [] };
   await transformFromAstAsync(ast, undefined, {
     configFile: false,

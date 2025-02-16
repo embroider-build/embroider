@@ -162,8 +162,16 @@ export async function inspectContents(
               {
                 appRoot: process.cwd(),
                 emberVersion: resolverLoader.resolver.options.emberVersion,
-                externalNameHint(name: string) {
-                  return name;
+                externalNameHint(path: string) {
+                  return path
+                    .split('::')
+                    .map(part =>
+                      part
+                        .split('-')
+                        .map(innerPart => innerPart.charAt(0).toUpperCase() + innerPart.slice(1))
+                        .join('')
+                    )
+                    .join('_');
                 },
               } satisfies ResolverTransformOptions,
             ],

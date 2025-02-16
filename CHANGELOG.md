@@ -1,5 +1,24 @@
 # Embroider Changelog
 
+## Release (2025-02-16)
+
+@embroider/addon-dev 8.0.0-alpha.1 (patch)
+@embroider/compat 4.0.0-alpha.2 (patch)
+@embroider/core 4.0.0-alpha.2 (patch)
+@embroider/macros 1.17.0-alpha.1 (patch)
+@embroider/shared-internals 3.0.0-alpha.1 (patch)
+@embroider/vite 1.0.0-alpha.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2274](https://github.com/embroider-build/embroider/pull/2274) remove duplicate options default ([@void-mAlex](https://github.com/void-mAlex))
+* `@embroider/addon-dev`, `@embroider/shared-internals`
+  * [#2272](https://github.com/embroider-build/embroider/pull/2272) Cleanup v2 addon rollup warnings, update virtual parkages list ([@chancancode](https://github.com/chancancode))
+
+#### Committers: 2
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Godfrey Chan ([@chancancode](https://github.com/chancancode))
+
 ## Release (2025-02-13)
 
 @embroider/compat 4.0.0-alpha.1 (patch)

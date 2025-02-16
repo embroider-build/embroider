@@ -31,7 +31,7 @@ export async function prebuild() {
 
   let project = new Project(root, pkg, ui, cli);
   let app = new EmberApp({ project });
-  let builder = new broccoli.Builder(Compat.prebuild(app, { staticEmberSource: true }));
+  let builder = new broccoli.Builder(Compat.prebuild(app));
 
   await builder.build();
 }

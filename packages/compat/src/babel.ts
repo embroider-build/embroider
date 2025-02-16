@@ -9,7 +9,8 @@ import {
 import { join } from 'path';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
-import MacrosConfig from '@embroider/macros/src/macros-config';
+import { buildMacros } from '@embroider/macros/babel';
+import type { Options as MacrosOptions } from '@embroider/macros/babel';
 
 export interface CompatBabelState {
   plugins: PluginItem[];
@@ -18,37 +19,39 @@ export interface CompatBabelState {
   templateMacros: Transform[];
 }
 
-function loadCompatConfig(): CompatBabelState {
+interface CompatOptions {
+  /**
+   * Options for @embroider/macros
+   */
+  '@embroider/macros': MacrosOptions;
+}
+
+function loadCompatConfig(options?: CompatOptions): CompatBabelState {
   let compatFile = join(locateEmbroiderWorkingDir(process.cwd()), '_babel_compat_.js');
   if (existsSync(compatFile)) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(compatFile);
   }
-  let macros = MacrosConfig.for({}, process.cwd());
-  let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
-  setConfig(macros);
-  if (process.env.NODE_ENV === 'development') {
-    macros.enablePackageDevelopment(process.cwd());
-    macros.enableRuntimeMode();
-  }
-  macros.finalize();
+
+  let macros = buildMacros(options?.['@embroider/macros']);
+
   return {
     plugins: [],
     templateTransforms: [],
-    babelMacros: macros.babelPluginConfig(),
-    templateMacros: templateMacros as any,
+    babelMacros: macros.babelMacros,
+    templateMacros: macros.templateMacros as any,
   };
 }
 
 const resolverLoader = new ResolverLoader(process.cwd());
 
-export function pluginsFromV1Addons() {
-  let config = loadCompatConfig();
+export function pluginsFromV1Addons(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.plugins;
 }
 
-export function transformsFromV1Addons() {
-  let config = loadCompatConfig();
+export function transformsFromV1Addons(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.templateTransforms;
 }
 
@@ -61,13 +64,13 @@ export function looseModeSupport(): Transform {
   return [require.resolve('./resolver-transform'), opts];
 }
 
-export function templateMacros() {
-  let config = loadCompatConfig();
+export function templateMacros(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.templateMacros;
 }
 
-export function babelMacros() {
-  let config = loadCompatConfig();
+export function babelMacros(options?: CompatOptions) {
+  let config = loadCompatConfig(options);
   return config.babelMacros;
 }
 
@@ -150,10 +153,10 @@ export function templateColocation(): PluginItem {
   return [templateColocationPluginPath, colocationOptions];
 }
 
-export function babelCompatSupport(): PluginItem[] {
-  return [...babelMacros(), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons()];
+export function babelCompatSupport(options?: CompatOptions): PluginItem[] {
+  return [...babelMacros(options), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons(options)];
 }
 
-export function templateCompatSupport(): Transform[] {
-  return [...transformsFromV1Addons(), ...templateMacros(), looseModeSupport()];
+export function templateCompatSupport(options?: CompatOptions): Transform[] {
+  return [...transformsFromV1Addons(options), ...templateMacros(options), looseModeSupport()];
 }

@@ -17,11 +17,13 @@
     "tmp",
     "packages/config-meta-loader/src",
     "packages/router/src",
-    "packages/vite"
+    "packages/vite",
+    "packages/template-tag-codemod"
   ],
   "references": [
     { "path": "packages/config-meta-loader" },
     { "path": "packages/vite" },
+    { "path": "packages/template-tag-codemod" },
     { "path": "tests/scenarios" }
   ]
 }

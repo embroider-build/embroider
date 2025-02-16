@@ -40,10 +40,13 @@ export interface ExternalNameHint {
   (path: string): string | null;
 }
 
+export type ExternalResolver = (module: string) => string;
+
 export interface Options {
   appRoot: string;
   emberVersion: string;
   externalNameHint?: ExternalNameHint;
+  externalResolve?: (module: string) => string;
 }
 
 type BuiltIn = {
@@ -180,7 +183,8 @@ class TemplateResolver implements ASTPlugin {
     private env: Env,
     private config: CompatResolverOptions,
     private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>,
-    private externalNameHint?: ExternalNameHint
+    private externalNameHint?: ExternalNameHint,
+    private externalResolve?: ExternalResolver
   ) {
     this.moduleResolver = new Resolver(config);
     if ((globalThis as any).embroider_audit) {
@@ -200,7 +204,11 @@ class TemplateResolver implements ASTPlugin {
       case 'component':
       case 'modifier':
       case 'helper': {
-        let name = this.env.meta.jsutils.bindImport(resolution.specifier, resolution.importedName, parentPath, {
+        let specifier = resolution.specifier;
+        if (this.externalResolve) {
+          specifier = this.externalResolve(specifier);
+        }
+        let name = this.env.meta.jsutils.bindImport(specifier, resolution.importedName, parentPath, {
           nameHint: resolution.nameHint,
         });
         setter(parentPath.node, this.env.syntax.builders.path(name));
@@ -988,7 +996,7 @@ class TemplateResolver implements ASTPlugin {
 }
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-export default function makeResolverTransform({ appRoot, emberVersion, externalNameHint }: Options) {
+export default function makeResolverTransform({ appRoot, emberVersion, externalNameHint, externalResolve }: Options) {
   let loader = new ResolverLoader(appRoot);
   let config = loader.resolver.options as CompatResolverOptions;
   const resolverTransform: ASTPluginBuilder<Env> = env => {
@@ -998,7 +1006,7 @@ export default function makeResolverTransform({ appRoot, emberVersion, externalN
         visitor: {},
       };
     }
-    return new TemplateResolver(env, config, builtInKeywords(emberVersion), externalNameHint);
+    return new TemplateResolver(env, config, builtInKeywords(emberVersion), externalNameHint, externalResolve);
   };
   (resolverTransform as any).parallelBabel = {
     requireFile: __filename,

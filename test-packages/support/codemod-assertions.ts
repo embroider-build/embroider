@@ -1,6 +1,6 @@
 import type { PreparedApp } from 'scenario-tester';
 import { resolve } from 'path';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, outputFileSync } from 'fs-extra';
 import { removeSync } from 'fs-extra';
 
 declare global {
@@ -18,7 +18,7 @@ export function codeModAssertions(hooks: NestedHooks, app: () => PreparedApp) {
     ) {
       for (let [name, content] of Object.entries(params.from)) {
         cleanup.add(name);
-        writeFileSync(resolve(app().dir, name), content, 'utf8');
+        outputFileSync(resolve(app().dir, name), content, 'utf8');
       }
       let result = await app().execute(params.via, {
         env: {

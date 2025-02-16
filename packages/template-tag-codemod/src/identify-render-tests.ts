@@ -1,36 +1,17 @@
-import { type NodePath, parseAsync, traverse, type types } from '@babel/core';
-import { createRequire } from 'module';
+import { type NodePath, traverse, type types } from '@babel/core';
 import codeFrame from '@babel/code-frame';
 
-const require = createRequire(import.meta.url);
 const { codeFrameColumns } = codeFrame;
 
 export interface RenderTest {
-  node: types.Node;
   startIndex: number;
   endIndex: number;
-  templateContent: string;
   statementStart: number;
   availableBinding: string;
 }
 
-export async function identifyRenderTests(
-  source: string,
-  filename: string
-): Promise<{ renderTests: RenderTest[]; parsed: types.File }> {
+export async function identifyRenderTests(ast: types.File, source: string, filename: string): Promise<RenderTest[]> {
   let renderTests: RenderTest[] = [];
-  let parsed = await parseAsync(source, {
-    configFile: false,
-    filename,
-    plugins: [
-      [require.resolve('@babel/plugin-syntax-decorators'), { legacy: true }],
-      require.resolve('@babel/plugin-syntax-typescript'),
-    ],
-  });
-
-  if (!parsed) {
-    throw new Error(`bug, unexpected output from babel parseAsync`);
-  }
 
   function fail(node: types.Node, message: string) {
     let m = `[${filename}] ${message}`;
@@ -40,7 +21,7 @@ export async function identifyRenderTests(
     return new Error(m);
   }
 
-  traverse(parsed, {
+  traverse(ast, {
     CallExpression(path) {
       if (path.get('callee').referencesImport('@ember/test-helpers', 'render')) {
         let [arg0] = path.get('arguments');
@@ -64,10 +45,8 @@ export async function identifyRenderTests(
             }
 
             renderTests.push({
-              node: arg0.node,
               startIndex: loc.start.index,
               endIndex: loc.end.index,
-              templateContent: arg0.node.quasi.quasis[0].value.raw,
               statementStart: statementCandidate.node.loc!.start.index,
               availableBinding,
             });
@@ -78,7 +57,7 @@ export async function identifyRenderTests(
       }
     },
   });
-  return { renderTests, parsed };
+  return renderTests;
 }
 
 function isLooseHBS(path: NodePath<types.Expression>) {

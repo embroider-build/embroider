@@ -44,10 +44,15 @@ emberVirtualPeerDeps.add('ember-source');
 
 // rfc176-data only covers things up to the point where Ember stopped needing
 // the modules-api-polyfill. Newer APIs need to be added here.
-emberVirtualPackages.add('@ember/owner');
 
 // Added in ember-source 4.5.0-beta.1
 emberVirtualPackages.add('@ember/renderer');
+
+// Added in ember-source 4.10.0-beta.1
+emberVirtualPackages.add('@ember/owner');
+
+// Added in ember-source 6.1.0-beta.1
+emberVirtualPackages.add('@ember/template-compiler');
 
 // Not provided by rfc176-data, but is needed for special librarys
 // that know the dangers of importing private APIs

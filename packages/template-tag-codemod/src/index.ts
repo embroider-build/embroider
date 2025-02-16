@@ -106,7 +106,7 @@ export async function ensureAppSetup() {
   try {
     pkg = resolverLoader.resolver.packageCache.get(process.cwd());
   } catch (err) {
-    console.error(`Run template-tag-codemod inside a Ember app or run an Embroider build of the app first`);
+    console.error(`Run template-tag-codemod inside a Ember app.`);
     process.exit(-1);
   }
   if (!pkg.packageJSON.exports) {

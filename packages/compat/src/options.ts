@@ -90,18 +90,6 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
     }
   }
 
-  if ((options as any)?.staticEmberSource !== undefined) {
-    if ((options as any).staticEmberSource === false) {
-      throw new Error(
-        `You have set 'staticEmberSource' to 'false' in your Embroider options. This option has been removed is always considered to have the value 'true'. Please remove this setting to continue.`
-      );
-    } else {
-      console.log(
-        `You have set 'staticEmberSource' in your Embroider options. This can safely be removed now and it defaults to true.`
-      );
-    }
-  }
-
   if ((options as any)?.staticAddonTrees !== undefined) {
     if ((options as any).staticAddonTrees === false) {
       throw new Error(

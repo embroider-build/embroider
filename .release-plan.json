@@ -1,7 +1,16 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.0.0-alpha.0"
+      "impact": "patch",
+      "oldVersion": "8.0.0-alpha.0",
+      "newVersion": "8.0.0-alpha.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "2.0.0-alpha.0"
@@ -14,12 +23,16 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.0.0-alpha.0",
-      "newVersion": "4.0.0-alpha.1",
+      "oldVersion": "4.0.0-alpha.1",
+      "newVersion": "4.0.0-alpha.2",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
@@ -28,13 +41,35 @@
       "oldVersion": "1.0.0-alpha.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.0.0-alpha.1"
+      "impact": "patch",
+      "oldVersion": "4.0.0-alpha.1",
+      "newVersion": "4.0.0-alpha.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0-alpha.0"
     },
     "@embroider/macros": {
-      "oldVersion": "1.17.0-alpha.0"
+      "impact": "patch",
+      "oldVersion": "1.17.0-alpha.0",
+      "newVersion": "1.17.0-alpha.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.1-alpha.1"
@@ -43,7 +78,16 @@
       "oldVersion": "3.0.0-alpha.1"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "3.0.0-alpha.0"
+      "impact": "patch",
+      "oldVersion": "3.0.0-alpha.0",
+      "newVersion": "3.0.0-alpha.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/template-tag-codemod": {
       "oldVersion": "0.5.0-alpha.0"
@@ -52,8 +96,17 @@
       "oldVersion": "1.14.0-alpha.0"
     },
     "@embroider/vite": {
-      "oldVersion": "1.0.0-alpha.1"
+      "impact": "patch",
+      "oldVersion": "1.0.0-alpha.1",
+      "newVersion": "1.0.0-alpha.2",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-02-13)\n\n@embroider/compat 4.0.0-alpha.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#2268](https://github.com/embroider-build/embroider/pull/2268) remove the last few references to staticAddonTrees ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-02-16)\n\n@embroider/addon-dev 8.0.0-alpha.1 (patch)\n@embroider/compat 4.0.0-alpha.2 (patch)\n@embroider/core 4.0.0-alpha.2 (patch)\n@embroider/macros 1.17.0-alpha.1 (patch)\n@embroider/shared-internals 3.0.0-alpha.1 (patch)\n@embroider/vite 1.0.0-alpha.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2274](https://github.com/embroider-build/embroider/pull/2274) remove duplicate options default ([@void-mAlex](https://github.com/void-mAlex))\n* `@embroider/addon-dev`, `@embroider/shared-internals`\n  * [#2272](https://github.com/embroider-build/embroider/pull/2272) Cleanup v2 addon rollup warnings, update virtual parkages list ([@chancancode](https://github.com/chancancode))\n\n#### Committers: 2\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Godfrey Chan ([@chancancode](https://github.com/chancancode))\n"
 }

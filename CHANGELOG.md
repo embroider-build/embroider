@@ -1,5 +1,32 @@
 # Embroider Changelog
 
+## Release (2025-02-17)
+
+@embroider/addon-dev 8.0.0-alpha.2 (patch)
+@embroider/addon-shim 2.0.0-alpha.1 (patch)
+@embroider/babel-loader-9 4.0.0-alpha.1 (patch)
+@embroider/compat 4.0.0-alpha.3 (patch)
+@embroider/config-meta-loader 1.0.0-alpha.1 (patch)
+@embroider/core 4.0.0-alpha.3 (patch)
+@embroider/hbs-loader 4.0.0-alpha.1 (patch)
+@embroider/macros 1.17.0-alpha.2 (patch)
+@embroider/shared-internals 3.0.0-alpha.2 (patch)
+@embroider/template-tag-codemod 0.5.0-alpha.1 (minor)
+@embroider/util 1.14.0-alpha.1 (patch)
+@embroider/vite 1.0.0-alpha.3 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2271](https://github.com/embroider-build/embroider/pull/2271) Template tag codemod stability fixes ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :house: Internal
+* `@embroider/addon-dev`, `@embroider/addon-shim`, `@embroider/babel-loader-9`, `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/hbs-loader`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/util`
+  * [#2276](https://github.com/embroider-build/embroider/pull/2276) make sure all packages stay within pre-release ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-02-16)
 
 @embroider/addon-dev 8.0.0-alpha.1 (patch)

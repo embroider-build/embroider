@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
-import core, { locateEmbroiderWorkingDir, type Package } from '@embroider/core';
+import core, { locateEmbroiderWorkingDir } from '@embroider/core';
 import { traverse, parseAsync, type types, transformFromAstAsync } from '@babel/core';
 import * as babel from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';

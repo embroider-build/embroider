@@ -1,4 +1,4 @@
-import { tsAppScenarios } from './scenarios';
+import { baseV2Addon, tsAppScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import { codeModAssertions } from '@embroider/test-support/codemod-assertions';
@@ -13,6 +13,7 @@ tsAppScenarios
       app: {
         helpers: {
           't.js': `export default function t() {}`,
+          'div.js': `export default function div(a,b) { return a / b }`,
         },
         components: {
           'message-box.hbs': `<div></div>`,
@@ -21,7 +22,39 @@ tsAppScenarios
           },
         },
       },
+      lib: {
+        'custom-renaming.mjs': `
+          import defaultRules from '@embroider/template-tag-codemod/default-renaming';
+          export default function customRenaming(name, kind) {
+            let result = defaultRules(name, kind);
+            if (result === 'MessageBox') {
+              return 'CustomRenamedMessageBox';
+            }
+            return result;
+          }
+        `,
+      },
     });
+
+    let myAddon = baseV2Addon();
+    myAddon.pkg.name = 'my-addon';
+    myAddon.pkg.exports = {
+      './*': './*.js',
+    };
+    myAddon.mergeFiles({
+      _app_: {
+        components: {
+          'reexported-widget.js': `export { default } from "my-addon/components/widget"`,
+        },
+      },
+      components: {
+        'widget.js': `export default function () {}`,
+      },
+    });
+    myAddon.pkg['ember-addon']['app-js'] = {
+      './components/reexported-widget.js': './_app_/components/reexported-widget.js',
+    };
+    project.addDevDependency(myAddon);
   })
   .forEachScenario(async scenario => {
     Qmodule(`${scenario.name}`, function (hooks) {
@@ -50,13 +83,73 @@ tsAppScenarios
         });
       });
 
-      test('hbs only component that needs name rewriting', async function (assert) {
+      test('default handling for ::-namespaced components', async function (assert) {
         await assert.codeMod({
           from: { 'app/components/example.hbs': '<Nested::Example />' },
           to: {
             'app/components/example.gjs': `
-            import NestedExample from "./nested/example.js";
-            <template><NestedExample /></template>`,
+            import Example from "./nested/example.js";
+            <template><Example /></template>`,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('default handling for @-namespaced components', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '{{component "my-addon@widget"}}' },
+          to: {
+            'app/components/example.gjs': `
+            import Widget from "my-addon/components/widget";
+            <template>{{component Widget}}</template>`,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('default handling for known HTML element collisions', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<div>The answer is {{div 4 2}}</div>' },
+          to: {
+            'app/components/example.gjs': `
+            import div_ from "../helpers/div.js";
+            <template><div>The answer is {{div_ 4 2}}</div></template>`,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('default handling for lowercase components', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '{{component "message-box"}}' },
+          to: {
+            'app/components/example.gjs': `
+            import MessageBox from "./message-box.js";
+            <template>{{component MessageBox}}</template>`,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      QUnit.skip('custom renaming', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<MessageBox />' },
+          to: {
+            'app/components/example.gjs': `
+            import CustomRenamedMessageBox from "./message-box.js";
+            <template><CustomRenamedMessageBox /></template>`,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs --renamingRules "./lib/custom-renaming.mjs"',
+        });
+      });
+
+      test('traverses through app reexports', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<ReexportedWidget />' },
+          to: {
+            'app/components/example.gjs': `
+            import ReexportedWidget from "my-addon/components/widget";
+            <template><ReexportedWidget /></template>`,
           },
           via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });

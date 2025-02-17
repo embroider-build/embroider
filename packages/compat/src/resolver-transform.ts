@@ -37,7 +37,7 @@ export interface CompatResolverOptions extends CoreResolverOptions {
 }
 
 export interface ExternalNameHint {
-  (path: string): string | null;
+  (path: string, kind: 'component' | 'helper' | 'modifier' | 'ambiguous-component-or-helper'): string | null;
 }
 
 export type ExternalResolver = (module: string) => string;
@@ -450,7 +450,7 @@ class TemplateResolver implements ASTPlugin {
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(nameHint),
+      nameHint: this.nameHint(nameHint, 'component'),
     };
   }
 
@@ -522,7 +522,7 @@ class TemplateResolver implements ASTPlugin {
       type: 'helper',
       specifier: `@embroider/virtual/helpers/${path}`,
       importedName: 'default',
-      nameHint: this.nameHint(path),
+      nameHint: this.nameHint(path, 'helper'),
     };
   }
 
@@ -652,7 +652,7 @@ class TemplateResolver implements ASTPlugin {
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(path),
+      nameHint: this.nameHint(path, 'ambiguous-component-or-helper'),
     };
   }
 
@@ -680,7 +680,7 @@ class TemplateResolver implements ASTPlugin {
       type: 'modifier',
       specifier: `@embroider/virtual/modifiers/${path}`,
       importedName: 'default',
-      nameHint: this.nameHint(path),
+      nameHint: this.nameHint(path, 'modifier'),
     };
   }
 
@@ -716,12 +716,12 @@ class TemplateResolver implements ASTPlugin {
     return null;
   }
 
-  private nameHint(path: string) {
+  private nameHint(path: string, kind: 'component' | 'helper' | 'modifier' | 'ambiguous-component-or-helper') {
     let parts = path.split('@');
 
     // the extra underscore here guarantees that we will never collide with an
     // HTML element.
-    return this.externalNameHint?.(path) ?? parts[parts.length - 1] + '_';
+    return this.externalNameHint?.(path, kind) ?? parts[parts.length - 1] + '_';
   }
 
   private handleDynamicModifier(param: ASTv1.Expression): ModifierResolution | ResolutionFail | null {

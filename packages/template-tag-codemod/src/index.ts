@@ -1,13 +1,13 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
-import core from '@embroider/core';
+import core, { locateEmbroiderWorkingDir } from '@embroider/core';
 import { traverse, parseAsync, type types, transformFromAstAsync } from '@babel/core';
 import * as babel from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
 import { extractTemplates, locateTemplates } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
-import { dirname, resolve } from 'path';
+import { dirname, relative, resolve } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { identifyRenderTests } from './identify-render-tests.js';
 import { ImportUtil } from 'babel-import-util';
@@ -98,14 +98,25 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
 type OptionsWithDefaults = Required<Options>;
 
 export async function ensurePrebuild() {
-  if (!existsSync('node_modules/.embroider')) {
-    console.log(`Running addon prebuild...`);
-    let { prebuild } = await import('./prebuild.js');
-    await prebuild();
-    console.log(`Completed addon prebuild.`);
-  } else {
-    console.log(`Reusing addon prebuild in node_modules/.embroider`);
+  let working = locateEmbroiderWorkingDir(process.cwd());
+  let versions: Record<string, string> = {};
+  try {
+    versions = JSON.parse(readFileSync(resolve(working, 'version.json'), 'utf8'));
+  } catch (err) {}
+
+  if (
+    versions['@embroider/core'] &&
+    versions['@embroider/core'] ===
+      JSON.parse(readFileSync(require.resolve('@embroider/core/package.json'), 'utf8')).version
+  ) {
+    console.log(`Reusing addon prebuild in ${relative(process.cwd(), working)}`);
+    return;
   }
+
+  console.log(`Running addon prebuild...`);
+  let { prebuild } = await import('./prebuild.js');
+  await prebuild();
+  console.log(`Completed addon prebuild.`);
 }
 
 export async function ensureAppSetup() {

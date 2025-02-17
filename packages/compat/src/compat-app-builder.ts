@@ -3,7 +3,7 @@ import { locateEmbroiderWorkingDir } from '@embroider/core';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
-import { outputJSONSync, writeFileSync } from 'fs-extra';
+import { outputJSONSync, readJSONSync, writeFileSync, writeJSONSync } from 'fs-extra';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion, Portable } from '@embroider/core/src/portable';
 import { Memoize } from 'typescript-memoize';
@@ -80,6 +80,7 @@ export class CompatAppBuilder {
     this.addEmberEnvConfig(config.EmberENV);
     this.outputAppBootError(config.modulePrefix, config.APP, contentForConfig);
     this.addBabelCompat();
+    this.addVersionMarker();
   }
 
   @Memoize()
@@ -128,6 +129,16 @@ export class CompatAppBuilder {
       module.exports = new Portable().hydrate(${JSON.stringify(portableConfig.value, null, 2)});
       `,
       'utf8'
+    );
+  }
+
+  private addVersionMarker() {
+    writeJSONSync(
+      join(locateEmbroiderWorkingDir(this.compatApp.root), 'version.json'),
+      {
+        '@embroider/core': readJSONSync(require.resolve('@embroider/core/package.json')).version,
+      },
+      { spaces: 2 }
     );
   }
 

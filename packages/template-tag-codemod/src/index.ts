@@ -62,6 +62,17 @@ export interface Options {
   templateOnlyComponentSignature?: string;
 
   templateInsertion?: 'beginning' | 'end';
+
+  // Path to an ES module whose default export implements a function like
+  //
+  //    (name: string, kind: 'component' | 'helper' | 'modifier' | 'ambiguous-component-or-helper') => string;
+  //
+  // Return a string to pick the desired name for a given invocation of the component,
+  // helper, or modifier. Return null to fall back to default behavior.
+  //
+  // The default value is "@embroider/template-tag-codemod/defeault-renaming",
+  // which is public API that you may choose to call directly.
+  renamingRules?: 'string';
 }
 
 export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
@@ -78,6 +89,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       routeTemplateSignature: `{ Args: { model: unknown, controller: unknown } }`,
       templateOnlyComponentSignature: `{ Args: {} }`,
       templateInsertion: 'beginning',
+      renamingRules: '@embroider/template-tag-codemod/default-renaming',
     },
     options
   );
@@ -190,7 +202,7 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
   let jsSource = hbsToJS(hbsSource);
   let ast = await parseJS(filename, jsSource);
   let invokables = await locateInvokables(filename, ast, opts);
-  ast = await runResolverTransform(ast, filename, invokables, '@controller');
+  ast = await runResolverTransform(ast, filename, invokables, '@controller', opts);
   let finalTemplates = await extractTemplates(ast, filename);
   if (finalTemplates.length !== 1) {
     throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
@@ -269,7 +281,7 @@ export async function processComponent(
     }
     ast = await insertComponentTemplate(ast, componentBody.loc, hbsSource);
     let invokables = await locateInvokables(jsPath, ast, opts);
-    ast = await runResolverTransform(ast, jsPath, invokables, undefined);
+    ast = await runResolverTransform(ast, jsPath, invokables, undefined, opts);
     let finalTemplates = await extractTemplates(ast, jsPath);
     if (finalTemplates.length !== 1) {
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
@@ -289,7 +301,7 @@ export async function processComponent(
     let jsSource = hbsToJS(hbsSource);
     let ast = await parseJS(hbsPath, jsSource);
     let invokables = await locateInvokables(hbsPath, ast, opts);
-    ast = await runResolverTransform(ast, hbsPath, invokables, undefined);
+    ast = await runResolverTransform(ast, hbsPath, invokables, undefined, opts);
     let finalTemplates = await extractTemplates(ast, hbsPath);
     if (finalTemplates.length !== 1) {
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
@@ -496,7 +508,7 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
   let edits = deleteImports(ast);
 
   let invokables = await locateInvokables(filename, ast, opts);
-  ast = await runResolverTransform(ast, filename, invokables, opts.nativeLexicalThis ? undefined : selfToken);
+  ast = await runResolverTransform(ast, filename, invokables, opts.nativeLexicalThis ? undefined : selfToken, opts);
   let finalTemplates = await extractTemplates(ast, filename);
   if (finalTemplates.length !== renderTests.length) {
     throw new Error(
@@ -537,8 +549,10 @@ async function runResolverTransform(
   parsed: types.File,
   filename: string,
   invokables: Map<string, string>,
-  replaceThisWith: string | undefined
+  replaceThisWith: string | undefined,
+  opts: OptionsWithDefaults
 ): Promise<types.File> {
+  let { default: externalNameHint } = await import(opts.renamingRules); // NEXT make this resolve from the proejct, not from ourselves
   let result = await babel.transformFromAstAsync(parsed, undefined, {
     ast: true,
     code: false,
@@ -556,7 +570,7 @@ async function runResolverTransform(
               {
                 appRoot: process.cwd(),
                 emberVersion: resolverLoader.resolver.options.emberVersion,
-                externalNameHint: name => name,
+                externalNameHint,
                 externalResolve: module => invokables.get(module) ?? module,
               } satisfies ResolverTransformOptions,
             ],

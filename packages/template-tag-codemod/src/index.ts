@@ -1,13 +1,13 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { globSync } from 'glob';
-import core, { type Package } from '@embroider/core';
+import core from '@embroider/core';
 import { traverse, parseAsync, type types, transformFromAstAsync } from '@babel/core';
 import * as babel from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
 import { extractTemplates, locateTemplates } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { identifyRenderTests } from './identify-render-tests.js';
 import { ImportUtil } from 'babel-import-util';
@@ -97,22 +97,21 @@ export async function ensurePrebuild() {
 }
 
 export async function ensureAppSetup() {
-  let pkg: Package;
+  let filename = resolve(process.cwd(), 'package.json');
+  let content: string;
   try {
-    pkg = resolverLoader.resolver.packageCache.get(process.cwd());
+    content = readFileSync(filename, 'utf8');
   } catch (err) {
     console.error(`Run template-tag-codemod inside a Ember app.`);
     process.exit(-1);
   }
-  if (!pkg.packageJSON.exports) {
-    throw new Error(`must use package.json exports for self-resolvability. Plase add this to package.json:
-
- "exports": {
-    "./tests/*": "./tests/*",
-    "./*": "./app/*"
-  },
-
-`);
+  let json = JSON.parse(content);
+  if (!json.exports) {
+    json.exports = {
+      './tests/*': './tests/*',
+      './*': './app/*',
+    };
+    writeFileSync(filename, JSON.stringify(json, null, 2));
   }
 }
 

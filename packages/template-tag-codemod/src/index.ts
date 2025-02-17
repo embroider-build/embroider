@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync, rmSync } from 'fs';
 import { globSync } from 'glob';
 import core, { type Package } from '@embroider/core';
 import { traverse, parseAsync, transformAsync, type types } from '@babel/core';
@@ -86,7 +86,12 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
 type OptionsWithDefaults = Required<Options>;
 
 export async function ensurePrebuild() {
-  if (!existsSync('node_modules/.embroider')) {
+  const stablePrebuildExists = existsSync('node_modules/.embroider/rewritten-app');
+  if (!existsSync('node_modules/.embroider') || stablePrebuildExists) {
+    if (stablePrebuildExists) {
+      // we need to clear the stable prebuild for the codemod to work as resolver has changed
+      rmSync('node_modules/.embroider', { force: true, recursive: true });
+    }
     console.log(`Running addon prebuild...`);
     let { prebuild } = await import('./prebuild.js');
     await prebuild();
@@ -105,7 +110,11 @@ export async function ensureAppSetup() {
     process.exit(-1);
   }
   if (!pkg.packageJSON.exports) {
-    throw new Error(`must use package.json exports for self-resolvability. Plase add this to package.json:
+    pkg.packageJSON.exports = {
+      './tests/*': './tests/*',
+      './*': './app/*',
+    };
+    console.info(`Using package.json exports for self-resolvability. Please add this to package.json to silence this message:
 
  "exports": {
     "./tests/*": "./tests/*",
@@ -153,8 +162,16 @@ export async function inspectContents(
               {
                 appRoot: process.cwd(),
                 emberVersion: resolverLoader.resolver.options.emberVersion,
-                externalNameHint(name: string) {
-                  return name;
+                externalNameHint(path: string) {
+                  return path
+                    .split('::')
+                    .map(part =>
+                      part
+                        .split('-')
+                        .map(innerPart => innerPart.charAt(0).toUpperCase() + innerPart.slice(1))
+                        .join('')
+                    )
+                    .join('_');
                 },
               } satisfies ResolverTransformOptions,
             ],

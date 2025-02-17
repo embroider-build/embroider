@@ -2,6 +2,36 @@
 
 ## Release (2025-02-17)
 
+@embroider/compat 4.0.0-alpha.4 (minor)
+@embroider/core 4.0.0-alpha.4 (patch)
+@embroider/macros 1.17.0-alpha.3 (patch)
+@embroider/shared-internals 3.0.0-alpha.3 (minor)
+@embroider/template-tag-codemod 0.5.0-alpha.2 (minor)
+@embroider/vite 1.0.0-alpha.4 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2283](https://github.com/embroider-build/embroider/pull/2283) Finish implementing --renamingRules for template-tag-codemod ([@ef4](https://github.com/ef4))
+* `@embroider/compat`, `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2282](https://github.com/embroider-build/embroider/pull/2282) Customizable renaming support in template-tag-codemod ([@ef4](https://github.com/ef4))
+* `@embroider/shared-internals`
+  * [#2270](https://github.com/embroider-build/embroider/pull/2270) Introduce `EMBROIDER_WORKING_DIRECTORY` env var for concurrent builds ([@simonihmig](https://github.com/simonihmig))
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/template-tag-codemod`
+  * [#2281](https://github.com/embroider-build/embroider/pull/2281) Include version in prebuild output ([@ef4](https://github.com/ef4))
+* `@embroider/template-tag-codemod`
+  * [#2279](https://github.com/embroider-build/embroider/pull/2279) fix failure on first-run and auto-apply package.json updates ([@ef4](https://github.com/ef4))
+  * [#2277](https://github.com/embroider-build/embroider/pull/2277) Revert "Merge pull request #2271 from embroider-build/template-tag-co… ([@ef4](https://github.com/ef4))
+* `@embroider/compat`, `@embroider/template-tag-codemod`, `@embroider/test-support`, `@embroider/test-scenarios`
+  * [#2264](https://github.com/embroider-build/embroider/pull/2264) Improved codemod scope management ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2025-02-17)
+
 @embroider/addon-dev 8.0.0-alpha.2 (patch)
 @embroider/addon-shim 2.0.0-alpha.1 (patch)
 @embroider/babel-loader-9 4.0.0-alpha.1 (patch)

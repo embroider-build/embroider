@@ -116,28 +116,30 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 
 ## Template Tag Codemod
 
+Edit `ember-cli-build.js`:
+```js
+return require('@embroider/compat').templateTagCodemod(app, {
+  shouldTransformPath: (path) => { return true; },
+  nameHint: (path) => { 
+    // example path: shared/my-button
+    return path; 
+  },
+  dryRun: true,
+});
+```
+Run a normal ember build to transform your hbs templates into template tag single file components.
 Requires optimized build (static* flags to be turned on)
 
-```bash
-  pnpm dlx @embroider/template-tag-codemod@alpha --help
-```
-Or equivalent
-```bash
-  npx @embroider/template-tag-codemod@alpha --help
-```
+### Options
 
-### Example runs
-```bash
-  # will will process only components 
-  npx @embroider/template-tag-codemod@alpha --routeTemplates false --renderTests false --components "app/components/**/*.{js,ts,hbs}"
-  # will will process only tests
-  npx @embroider/template-tag-codemod@alpha --routeTemplates false --renderTests "tests/**/*.{js,ts}" --components false
-  # will will process only route templates
-  npx @embroider/template-tag-codemod@alpha --routeTemplates "app/templates/**/*.hbs" --renderTests false --components false
+* `shouldTransformPath` - allows users to filter the templates that the code mod would run on
+* `nameHint` - optional function control the import name and template replacement values - valid JS identifier required or it will be coerced into one
+* `dryRun` - option can be used to obtain a summary of the changed the build would perform and which files it would act upon
 
-  # will will process only components the folder(s) you specify
-  npx @embroider/template-tag-codemod@alpha --routeTemplates false --renderTests false --components "app/components/some/path/*.{js,ts,hbs}" --components "app/components/some/other/path/*.{js,ts,hbs}"
-```
+### Limitations
+
+* App templates only
+* `@embroider/compat` >= 3.6.0
 
 ## Compatibility
 

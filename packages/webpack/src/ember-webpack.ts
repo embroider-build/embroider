@@ -111,6 +111,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraThreadLoaderOptions: object | false | undefined;
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
   private extraCssLoaderOptions: object | undefined;
+  private disableCssProcessing: boolean | undefined;
   private extraStyleLoaderOptions: object | undefined;
   private _bundleSummary: BundleSummary | undefined;
   private beginBarrier: BeginFn;
@@ -134,6 +135,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
     this.extraCssLoaderOptions = options?.cssLoaderOptions;
+    this.disableCssProcessing = options?.disableCssProcessing;
     this.extraStyleLoaderOptions = options?.styleLoaderOptions;
     [this.beginBarrier, this.incrementBarrier] = createBarrier();
     warmUp(this.extraThreadLoaderOptions);
@@ -192,7 +194,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       }
     }
 
-    let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
+    let stylePlugins: WebpackPluginInstance[] = [];
+    let styleLoaders: RuleSetUseItem[] = [];
+
+    if (!this.disableCssProcessing) {
+      const { plugins, loaders } = this.setupStyleConfig(variant);
+      stylePlugins = plugins;
+      styleLoaders = loaders;
+    }
 
     let babelLoaderOptions = makeBabelLoaderOptions(
       variant,
@@ -247,10 +256,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
               makeBabelLoaderOptions(variant, join(this.appRoot, 'babel.config.cjs'), this.extraBabelLoaderOptions),
             ]),
           },
-          {
-            test: isCSS,
-            use: styleLoaders,
-          },
+          ...[
+            this.disableCssProcessing
+              ? {}
+              : {
+                  test: isCSS,
+                  use: styleLoaders,
+                },
+          ],
         ],
       },
       output: {

@@ -12,6 +12,8 @@ import type { ResolverTransformOptions } from '@embroider/compat';
 import { identifyRenderTests } from './identify-render-tests.js';
 import { ImportUtil } from 'babel-import-util';
 import { replaceThisTransform } from './replace-this-transform.js';
+// @ts-expect-error library ships types incompatible with moduleResolution:nodenext
+import { ModuleImporter } from '@humanwhocodes/module-importer';
 
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
 const { externalName } = reverseExports;
@@ -71,7 +73,9 @@ export interface Options {
   // helper, or modifier. Return null to fall back to default behavior.
   //
   // The default value is "@embroider/template-tag-codemod/defeault-renaming",
-  // which is public API that you may choose to call directly.
+  // which is public API that you may choose to call directly (remember you may
+  // need to install `@embroider/template-tag-codemod` as a dependency to access
+  // it in this way)
   renamingRules?: 'string';
 }
 
@@ -556,6 +560,27 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
   console.log(`render test: ${filename} `);
 }
 
+const loadRenamingRules = (() => {
+  return async function (renamingRules: string): Promise<NonNullable<ResolverTransformOptions['externalNameHint']>> {
+    // First we resolve from the project
+    try {
+      // This uses process.cwd() by default, which is what we want.
+      let mod = await new ModuleImporter().import(renamingRules);
+      return mod.default;
+    } catch (err) {
+      if (err.code !== 'MODULE_NOT_FOUND') {
+        throw err;
+      }
+    }
+
+    // Then we resolve from ourself. This case covers importing
+    // `@embroider/template-tag-codemod/default-renaming` when the project
+    // doesn't have a dependency on the codemod.
+    let mod = await import(renamingRules);
+    return mod.default;
+  };
+})();
+
 async function runResolverTransform(
   parsed: types.File,
   filename: string,
@@ -563,7 +588,8 @@ async function runResolverTransform(
   replaceThisWith: string | undefined,
   opts: OptionsWithDefaults
 ): Promise<types.File> {
-  let { default: externalNameHint } = await import(opts.renamingRules); // NEXT make this resolve from the proejct, not from ourselves
+  // This uses process.cwd() by default, which is what we want.
+  let externalNameHint = await loadRenamingRules(opts.renamingRules);
   let result = await babel.transformFromAstAsync(parsed, undefined, {
     ast: true,
     code: false,

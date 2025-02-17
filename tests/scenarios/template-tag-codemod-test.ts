@@ -131,7 +131,7 @@ tsAppScenarios
         });
       });
 
-      QUnit.skip('custom renaming', async function (assert) {
+      test('custom renaming', async function (assert) {
         await assert.codeMod({
           from: { 'app/components/example.hbs': '<MessageBox />' },
           to: {

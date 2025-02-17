@@ -844,6 +844,9 @@ importers:
       '@embroider/reverse-exports':
         specifier: workspace:^*
         version: link:../reverse-exports
+      '@humanwhocodes/module-importer':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -7413,7 +7416,6 @@ packages:
   /@humanwhocodes/module-importer@1.0.1:
     resolution: {integrity: sha512-bxveV4V8v5Yb4ncFTT3rPSgZBOpCkjfK0y4oVVVJwIuDVBRMDXrPyXRL988i5ap9m9bnyEEjWfm5WkBmtffLfA==}
     engines: {node: '>=12.22'}
-    dev: true
 
   /@humanwhocodes/object-schema@1.2.1:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}

@@ -10,6 +10,8 @@ const projectBoilerplate = {
   'tsconfig.json': JSON.stringify({
     include: ['src/**/*'],
     compilerOptions: {
+      target: 'es2022',
+      module: 'esnext',
       declaration: true,
       declarationDir: 'declarations',
       emitDeclarationOnly: true,
@@ -90,6 +92,10 @@ describe('declarations', function () {
         import bar from './bar.gts';
         import baz from './baz.ts';
         export { foo, bar, baz };
+
+        export class Foo {
+          bar = import('./bar.gts')
+        }
       `,
       'foo.gts': 'export default 123',
       'bar.gts': 'export default 234',
@@ -108,5 +114,6 @@ describe('declarations', function () {
     expect(output).toContain(`import foo from './foo';`);
     expect(output).toContain(`import bar from './bar';`);
     expect(output).toContain(`import baz from './baz.ts';`);
+    expect(output).toContain(`import('./bar')`);
   });
 });

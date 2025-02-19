@@ -1,5 +1,51 @@
 # Embroider Changelog
 
+## Release (2025-02-08)
+
+@embroider/compat 3.8.1 (patch)
+
+#### :memo: Documentation
+* `@embroider/compat`
+  * [#2244](https://github.com/embroider-build/embroider/pull/2244) add a simple deprecation for staticAddonTrees and staticAddonTestSupportTrees ([@mansona](https://github.com/mansona))
+  * [#2245](https://github.com/embroider-build/embroider/pull/2245) add a simple deprecation for staticEmberSource: false ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-01-07)
+
+@embroider/compat 3.8.0 (minor)
+@embroider/core 3.5.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/core`, `@embroider/test-scenarios`
+  * [#2210](https://github.com/embroider-build/embroider/pull/2210) Deprecate staticHelpers, staticModifiers, and staticComponents in favour of staticInvokables  ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2024-12-20)
+
+@embroider/webpack 4.0.9 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/webpack`
+  * [#2220](https://github.com/embroider-build/embroider/pull/2220) Set MiniCssExtractPlugin ignoreOrder to true for default config ([@lfloyd117](https://github.com/lfloyd117))
+
+#### Committers: 1
+- Liam Floyd ([@lfloyd117](https://github.com/lfloyd117))
+
+## Release (2024-12-19)
+
+@embroider/addon-dev 7.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2217](https://github.com/embroider-build/embroider/pull/2217) Fix declarations plugin to cover import() ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 1
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2024-12-16)
 
 @embroider/addon-dev 7.1.0 (minor)

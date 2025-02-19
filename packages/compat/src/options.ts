@@ -9,25 +9,30 @@ import type { PackageRules } from './dependency-rules';
 // the cost of slower or bigger builds. As you eliminate sources of legacy
 // behavior you can benefit from the more aggressive modes.
 export default interface Options extends CoreOptions {
-  // Controls whether your addon's "addon" trees should be resolved statically
-  // at build time.
-  //
-  //   false (the default): implies maximum backward compatibility at the cost
-  //   of bigger builds. In this mode, we force every file into the Ember app,
-  //   which is the legacy behavior.
-  //
-  //   true: produces smaller builds. The addon files must be imported from
-  //   somewhere we can statically see during the build. In this mode, your app
-  //   will only include files that are actually imported from somewhere.
-  //
-  // Commentary: most v1 addons already work well with this set to true, because
-  // they tend to either offer Javascript that users are supposed to directly
-  // `import` or components / helpers / services that get directly imported and
-  // re-exported by code in App Javascript. The exceptions are addons that do
-  // runtime shenanigans with `require` or scoped runtime resolutions.
-  //
-  // To workaround an addon that is preventing you from enabling this flag, you
-  // can use addonDependencyRules.
+  /**
+   * Controls whether your addon's "addon" trees should be resolved statically
+   * at build time.
+   *
+   * Note: This setting will be removed in the next version of Embroider and
+   * will effectively default to true
+   *
+   *   false (the current default): implies maximum backward compatibility at
+   *   the cost of bigger builds. In this mode, we force every file into the
+   *   Ember app, which is the legacy behavior.
+   *
+   *   true: produces smaller builds. The addon files must be imported from
+   *   somewhere we can statically see during the build. In this mode, your app
+   *   will only include files that are actually imported from somewhere.
+   *
+   * Commentary: most v1 addons already work well with this set to true, because
+   * they tend to either offer Javascript that users are supposed to directly
+   * `import` or components / helpers / services that get directly imported and
+   * re-exported by code in App Javascript. The exceptions are addons that do
+   * runtime shenanigans with `require` or scoped runtime resolutions.
+   *
+   * To workaround an addon that is preventing you from enabling this flag, you
+   * can use addonDependencyRules.
+   */
   staticAddonTrees?: boolean;
 
   // Controls whether your addon's "addonTestSupport" trees should be resolved
@@ -44,14 +49,19 @@ export default interface Options extends CoreOptions {
   // apply.
   staticAddonTestSupportTrees?: boolean;
 
-  // when true, we will load ember-source as ES modules. This means unused parts
-  // of ember-source won't be included. But it also means that addons using old
-  // APIs to try to `require()` things from Ember -- particularly from within
-  // vendor.js -- cannot do that anymore.
-  //
-  // When false (the default) we load ember-source the traditional way, which is
-  // that a big ol' script gets smooshed into vendor.js, and none of ember's
-  // public module API actually exists as modules at build time.
+  /**
+   * When true, we will load ember-source as ES modules. This means unused parts
+   * of ember-source won't be included. But it also means that addons using old
+   * APIs to try to `require()` things from Ember -- particularly from within
+   * vendor.js -- cannot do that anymore.
+   *
+   * When false (the default) we load ember-source the traditional way, which is
+   * that a big ol' script gets smooshed into vendor.js, and none of ember's
+   * public module API actually exists as modules at build time.
+   *
+   * Note: This setting will be removed in the next version of Embroider and
+   * will effectively default to true
+   */
   staticEmberSource?: boolean;
 
   // Allows you to override how specific addons will build. Like:
@@ -108,7 +118,30 @@ const defaults = Object.assign(coreWithDefaults(), {
   allowUnsafeDynamicComponents: false,
 });
 
-export function optionsWithDefaults(options?: Options): Required<Options> {
+export type CompatOptionsType = Required<
+  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
+> &
+  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+
+export function optionsWithDefaults(options?: Options): CompatOptionsType {
+  if (!options?.staticEmberSource) {
+    console.log(
+      `The setting 'staticEmberSource' will default to true in the next version of Embroider and can't be turned off. To prepare for this you should set 'staticEmberSource: true' in your Embroider config.`
+    );
+  }
+
+  if (!options?.staticAddonTrees) {
+    console.log(
+      `The setting 'staticAddonTrees' will default to true in the next version of Embroider and can't be turned off. To prepare for this you should set 'staticAddonTrees: true' in your Embroider config.`
+    );
+  }
+
+  if (!options?.staticAddonTestSupportTrees) {
+    console.log(
+      `The setting 'staticAddonTestSupportTrees' will default to true in the next version of Embroider and can't be turned off. To prepare for this you should set 'staticAddonTestSupportTrees: true' in your Embroider config.`
+    );
+  }
+
   return Object.assign({}, defaults, options);
 }
 
@@ -121,10 +154,8 @@ export const recommendedOptions: { [name: string]: Options } = Object.freeze({
   optimized: Object.freeze({
     staticAddonTrees: true,
     staticAddonTestSupportTrees: true,
-    staticHelpers: true,
-    staticModifiers: true,
-    staticComponents: true,
     staticEmberSource: true,
     allowUnsafeDynamicComponents: false,
+    staticInvokables: true,
   }),
 });

@@ -60,6 +60,7 @@ import escapeRegExp from 'escape-string-regexp';
 
 import type CompatApp from './compat-app';
 import { SyncDir } from './sync-dir';
+import type { CompatOptionsType } from './options';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -67,17 +68,52 @@ import { SyncDir } from './sync-dir';
 export class CompatAppBuilder {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
+  private staticComponents = false;
+  private staticHelpers = false;
+  private staticModifiers = false;
 
   constructor(
     private root: string,
     private origAppPackage: Package,
     private appPackageWithMovedDeps: Package,
-    private options: Required<Options>,
+    private options: CompatOptionsType,
     private compatApp: CompatApp,
     private configTree: V1Config,
     private synthVendor: Package,
     private synthStyles: Package
-  ) {}
+  ) {
+    // staticInvokables always wins when configured
+    if (typeof options.staticInvokables !== 'undefined') {
+      if (
+        typeof options.staticComponents !== 'undefined' ||
+        typeof options.staticHelpers !== 'undefined' ||
+        typeof options.staticModifiers !== 'undefined'
+      ) {
+        throw new Error(
+          'You cannot set `staticHelpers`, `staticComponents`, or `staticModifiers` if you have set `staticInvokables`. Delete these configs to continue.'
+        );
+      }
+      this.staticComponents = this.staticHelpers = this.staticModifiers = options.staticInvokables;
+      return;
+    }
+
+    if (typeof options.staticComponents !== 'undefined') {
+      // TODO it doesn't seem like we have any real deprecation functionality in this package yet.
+      // do we need it?
+      console.error(`Setting 'staticComponents' is deprecated. Use 'staticInvokables' instead`);
+      this.staticComponents = options.staticComponents;
+    }
+
+    if (typeof options.staticHelpers !== 'undefined') {
+      console.error(`Setting 'staticHelpers' is deprecated. Use 'staticInvokables' instead`);
+      this.staticHelpers = options.staticHelpers;
+    }
+
+    if (typeof options.staticModifiers !== 'undefined') {
+      console.error(`Setting 'staticModifiers' is deprecated. Use 'staticInvokables' instead`);
+      this.staticModifiers = options.staticModifiers;
+    }
+  }
 
   @Memoize()
   private fastbootJSSrcDir() {
@@ -269,9 +305,9 @@ export class CompatAppBuilder {
     }
 
     let options: CompatResolverOptions['options'] = {
-      staticHelpers: this.options.staticHelpers,
-      staticModifiers: this.options.staticModifiers,
-      staticComponents: this.options.staticComponents,
+      staticHelpers: this.staticHelpers,
+      staticModifiers: this.staticModifiers,
+      staticComponents: this.staticComponents,
       allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
     };
 
@@ -1021,12 +1057,7 @@ export class CompatAppBuilder {
       transforms.push(macroPlugin as any);
     }
 
-    if (
-      this.options.staticComponents ||
-      this.options.staticHelpers ||
-      this.options.staticModifiers ||
-      (globalThis as any).embroider_audit
-    ) {
+    if (this.staticComponents || this.staticHelpers || this.staticModifiers || (globalThis as any).embroider_audit) {
       let opts: ResolverTransformOptions = {
         appRoot: resolverConfig.appRoot,
         emberVersion: this.emberVersion(),
@@ -1036,7 +1067,7 @@ export class CompatAppBuilder {
 
     let resolver = new Resolver(resolverConfig);
     let resolution = resolver.nodeResolve(
-      'ember-source/dist/ember-template-compiler',
+      'ember-source/dist/ember-template-compiler.js',
       resolvePath(this.root, 'package.json')
     );
     if (resolution.type !== 'real') {
@@ -1211,13 +1242,13 @@ export class CompatAppBuilder {
     let eagerModules: string[] = [];
 
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
-    if (!this.options.staticComponents) {
+    if (!this.staticComponents) {
       requiredAppFiles.push(appFiles.components);
     }
-    if (!this.options.staticHelpers) {
+    if (!this.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
     }
-    if (!this.options.staticModifiers) {
+    if (!this.staticModifiers) {
       requiredAppFiles.push(appFiles.modifiers);
     }
 

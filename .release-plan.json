@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "minor",
-      "oldVersion": "7.0.0",
-      "newVersion": "7.1.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "7.1.1"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.9.0"
@@ -23,42 +14,24 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.7.0",
-      "newVersion": "3.7.1",
+      "oldVersion": "3.8.0",
+      "newVersion": "3.8.1",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :memo: Documentation"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "3.4.19",
-      "newVersion": "3.4.20",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.5.0"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.16.9",
-      "newVersion": "1.16.10",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.16.10"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -79,8 +52,8 @@
       "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "oldVersion": "4.0.8"
+      "oldVersion": "4.0.9"
     }
   },
-  "description": "## Release (2024-12-16)\n\n@embroider/addon-dev 7.1.0 (minor)\n@embroider/compat 3.7.1 (patch)\n@embroider/core 3.4.20 (patch)\n@embroider/macros 1.16.10 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`\n  * [#2200](https://github.com/embroider-build/embroider/pull/2200) Add rollup declarations plugin ([@simonihmig](https://github.com/simonihmig))\n\n#### :house: Internal\n* `@embroider/sample-transforms`, `@embroider/test-fixtures`, `@embroider/test-scenarios`\n  * [#2204](https://github.com/embroider-build/embroider/pull/2204) Fix stable ([@simonihmig](https://github.com/simonihmig))\n* `@embroider/macros`\n  * [#2201](https://github.com/embroider-build/embroider/pull/2201) Fix type error on stable ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 1\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2025-02-08)\n\n@embroider/compat 3.8.1 (patch)\n\n#### :memo: Documentation\n* `@embroider/compat`\n  * [#2244](https://github.com/embroider-build/embroider/pull/2244) add a simple deprecation for staticAddonTrees and staticAddonTestSupportTrees ([@mansona](https://github.com/mansona))\n  * [#2245](https://github.com/embroider-build/embroider/pull/2245) add a simple deprecation for staticEmberSource: false ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

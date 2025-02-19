@@ -46,5 +46,9 @@ async function fixDeclarationsInMatchingFiles(dir: string) {
 // Strip any .gts extension from imports in d.ts files, as these won't resolve. See https://github.com/typed-ember/glint/issues/628
 // Once Glint v2 is available, this shouldn't be needed anymore.
 function fixDeclarations(content: string) {
-  return content.replace(/from\s+['"]([^'"]+)\.gts['"]/g, `from '$1'`);
+  return content
+    .replace(/from\s+'([^']+)\.gts'/g, `from '$1'`)
+    .replace(/from\s+"([^"]+)\.gts"/g, `from '$1'`)
+    .replace(/import\("([^"]+)\.gts"\)/g, `import('$1')`)
+    .replace(/import\('([^']+)\.gts'\)/g, `import('$1')`);
 }

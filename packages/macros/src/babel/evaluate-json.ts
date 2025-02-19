@@ -113,12 +113,6 @@ export interface UnknownResult {
 
 export type EvaluateResult = ConfidentResult | UnknownResult;
 
-// this is needed to make our strict types work when inter-operating with
-// babel's own built-in evaluator
-function isConfidentResult(result: { confident: boolean; value: any }): result is ConfidentResult {
-  return result.confident;
-}
-
 export interface EvaluationEnv {
   knownPaths?: Map<NodePath, EvaluateResult>;
   locals?: { [localVar: string]: any };
@@ -193,11 +187,6 @@ export class Evaluator {
   }
 
   private realEvaluate(path: NodePath): EvaluateResult {
-    let builtIn = path.evaluate();
-    if (isConfidentResult(builtIn)) {
-      return { ...builtIn, hasRuntimeImplementation: false };
-    }
-
     if (path.isMemberExpression()) {
       return this.evaluateMember(path, false);
     }
@@ -222,6 +211,10 @@ export class Evaluator {
 
     if (path.isNullLiteral()) {
       return { confident: true, value: null, hasRuntimeImplementation: false };
+    }
+
+    if (path.isIdentifier() && path.node.name === 'undefined') {
+      return { confident: true, value: undefined, hasRuntimeImplementation: false };
     }
 
     if (path.isObjectExpression()) {

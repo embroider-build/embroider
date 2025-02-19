@@ -125,7 +125,7 @@ function builtInKeywords(emberVersion: string): Record<string, BuiltIn | undefin
 }
 
 function supportsThisFallback(emberVersion: string): boolean {
-  return satisfies(emberVersion, '<= 4.0-alpha.0', { includePrerelease: true });
+  return satisfies(emberVersion, '<= 4.0.0-alpha.0', { includePrerelease: true });
 }
 
 interface ComponentResolution {

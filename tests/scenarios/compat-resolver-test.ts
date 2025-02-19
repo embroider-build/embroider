@@ -143,7 +143,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{hello-world}}`,
         });
 
-        await configure({ staticComponents: true });
+        await configure({ staticComponents: true, staticHelpers: true }, {}, '3.28.0');
 
         expectTranspiled('./templates/application.hbs').failsToTransform(`"{{hello-world}}" is ambiguous`);
       });

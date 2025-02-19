@@ -113,12 +113,7 @@ describe('audit', function () {
   test(`discovers html, js, and hbs`, async function () {
     let result = await audit();
     expect(result.findings).toEqual([]);
-    expect(Object.keys(result.modules)).toEqual([
-      './index.html',
-      './app.js',
-      './hello.hbs',
-      '/@embroider/ext-cjs/@ember/template-factory',
-    ]);
+    expect(Object.keys(result.modules)).toEqual(['./index.html', './app.js', './hello.hbs']);
   });
 
   test(`reports resolution failures`, async function () {

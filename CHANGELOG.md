@@ -1,5 +1,29 @@
 # Embroider Changelog
 
+## Release (2025-02-19)
+
+@embroider/compat 3.8.2 (patch)
+@embroider/core 3.5.1 (patch)
+@embroider/macros 1.16.11 (patch)
+@embroider/shared-internals 2.9.0 (minor)
+@embroider/webpack 4.0.10 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/shared-internals`
+  * [#2285](https://github.com/embroider-build/embroider/pull/2285) Introduce EMBROIDER_WORKING_DIRECTORY env var for concurrent builds ([@simonihmig](https://github.com/simonihmig))
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2185](https://github.com/embroider-build/embroider/pull/2185) this-property-fallback is not a possibility on ember >=4 ([@ef4](https://github.com/ef4))
+* `@embroider/macros`
+  * [#2286](https://github.com/embroider-build/embroider/pull/2286) Workaround babel evaluation bug ([@ef4](https://github.com/ef4))
+* `@embroider/compat`, `@embroider/core`
+  * [#2291](https://github.com/embroider-build/embroider/pull/2291) Fix nodeResolve's support for package.json exports on stable ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2025-02-08)
 
 @embroider/compat 3.8.1 (patch)

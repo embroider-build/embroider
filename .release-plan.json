@@ -14,24 +14,58 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.8.0",
-      "newVersion": "3.8.1",
+      "oldVersion": "3.8.1",
+      "newVersion": "3.8.2",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :memo: Documentation"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.5.0"
+      "impact": "patch",
+      "oldVersion": "3.5.0",
+      "newVersion": "3.5.1",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.10"
+      "impact": "patch",
+      "oldVersion": "1.16.10",
+      "newVersion": "1.16.11",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -40,7 +74,16 @@
       "oldVersion": "2.1.8"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "2.8.1"
+      "impact": "minor",
+      "oldVersion": "2.8.1",
+      "newVersion": "2.9.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
@@ -52,8 +95,17 @@
       "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "oldVersion": "4.0.9"
+      "impact": "patch",
+      "oldVersion": "4.0.9",
+      "newVersion": "4.0.10",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/webpack/package.json"
     }
   },
-  "description": "## Release (2025-02-08)\n\n@embroider/compat 3.8.1 (patch)\n\n#### :memo: Documentation\n* `@embroider/compat`\n  * [#2244](https://github.com/embroider-build/embroider/pull/2244) add a simple deprecation for staticAddonTrees and staticAddonTestSupportTrees ([@mansona](https://github.com/mansona))\n  * [#2245](https://github.com/embroider-build/embroider/pull/2245) add a simple deprecation for staticEmberSource: false ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-02-19)\n\n@embroider/compat 3.8.2 (patch)\n@embroider/core 3.5.1 (patch)\n@embroider/macros 1.16.11 (patch)\n@embroider/shared-internals 2.9.0 (minor)\n@embroider/webpack 4.0.10 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/shared-internals`\n  * [#2285](https://github.com/embroider-build/embroider/pull/2285) Introduce EMBROIDER_WORKING_DIRECTORY env var for concurrent builds ([@simonihmig](https://github.com/simonihmig))\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#2185](https://github.com/embroider-build/embroider/pull/2185) this-property-fallback is not a possibility on ember >=4 ([@ef4](https://github.com/ef4))\n* `@embroider/macros`\n  * [#2286](https://github.com/embroider-build/embroider/pull/2286) Workaround babel evaluation bug ([@ef4](https://github.com/ef4))\n* `@embroider/compat`, `@embroider/core`\n  * [#2291](https://github.com/embroider-build/embroider/pull/2291) Fix nodeResolve's support for package.json exports on stable ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
 }

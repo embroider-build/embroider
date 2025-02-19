@@ -10,7 +10,6 @@ import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
-import resolveModule from 'resolve';
 import {
   virtualExternalESModule,
   virtualExternalCJSModule,
@@ -25,6 +24,7 @@ import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
 import type UserOptions from './options';
 import { satisfies } from 'semver';
+import { resolve as nodeResolve } from './node-resolve';
 
 const debug = makeDebug('embroider:resolver');
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
@@ -280,19 +280,9 @@ export class Resolver {
           },
         };
       }
-      try {
-        let filename = resolveModule.sync(request.specifier, {
-          basedir: dirname(request.fromFile),
-          extensions: this.options.resolvableExtensions,
-        });
-        return { type: 'found', result: { type: 'real' as 'real', filename } };
-      } catch (err) {
-        if (err.code !== 'MODULE_NOT_FOUND') {
-          throw err;
-        }
-        return { type: 'not_found', err };
-      }
+      return nodeResolve(request.specifier, request.fromFile);
     });
+
     switch (resolution.type) {
       case 'not_found':
         return resolution;

@@ -116,6 +116,15 @@ describe('evaluation', function () {
         expect(code).toMatch(`a: 1`);
         expect(code).toMatch(`b: unknownValue`);
       });
+
+      test('not subject to https://github.com/babel/babel/issues/14197', () => {
+        let code = transform(`
+          const state = { a: 1 };
+          state.a = 2;
+          const result = state.a;
+        `);
+        expect(code).toMatch('result = state.a');
+      });
     },
   });
 });

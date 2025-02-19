@@ -133,7 +133,7 @@ Scenarios.fromProject(() => new Project())
           'templates/application.hbs': `{{hello-world}}`,
         });
 
-        await configure({ staticInvokables: true });
+        await configure({ staticInvokables: true }, {}, '3.28.0');
 
         expectTranspiled('./templates/application.hbs').failsToTransform(`"{{hello-world}}" is ambiguous`);
       });

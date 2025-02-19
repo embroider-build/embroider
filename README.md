@@ -100,6 +100,13 @@ The recommended steps when introducing Embroider into an existing app are:
 3. Enable `staticInvokables` and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
 4. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work. See the packages/router/README.md for details and limitations.
 
+## Environment variables
+
+For optional features, Embroider supports the following environment variables:
+
+- `EMBROIDER_WORKING_DIRECTORY`: by default Embroider writes internal build-time artifacts like rewritten packages to `node_modules/.embroider`. In the case of running multiple builds concurrently (e.g. building for production and test in parallel) this would cause conflicts when concurrent processes try to write into the same directory. For this case you can point each Embroider process to a different directory using this environment variable. It can be an absolute file path, or relative to the application root directory. 
+
+
 ## Configuring asset URLs
 
 If you are serving your assets from a different origin (like a CDN) from where your index.html content will

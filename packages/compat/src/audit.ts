@@ -534,6 +534,11 @@ export class Audit {
   private async resolveDeps(deps: string[], fromFile: string): Promise<InternalModule['resolved']> {
     let resolved = new Map() as NonNullable<InternalModule['resolved']>;
     for (let dep of deps) {
+      if (['@embroider/macros', '@ember/template-factory'].includes(dep)) {
+        // the audit process deliberately removes the @embroider/macros babel
+        // plugins, so the imports are still present and should be left alone.
+        continue;
+      }
       let resolution = await this.resolver.nodeResolve(dep, fromFile);
       switch (resolution.type) {
         case 'virtual':
@@ -542,11 +547,6 @@ export class Audit {
           this.scheduleVisit(resolution.filename, fromFile);
           break;
         case 'not_found':
-          if (['@embroider/macros', '@ember/template-factory'].includes(dep)) {
-            // the audit process deliberately removes the @embroider/macros babel
-            // plugins, so the imports are still present and should be left alone.
-            continue;
-          }
           resolved.set(dep, { isResolutionFailure: true as true });
           break;
         case 'real':

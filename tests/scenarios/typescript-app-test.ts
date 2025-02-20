@@ -70,7 +70,7 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
             module('Rendering', function (hooks) {
               setupRenderingTest(hooks);
 
-              test('increments', async function (assert) {
+              test('TestGts', async function (assert) {
                 await render(<template>
                   <TestGts as |count|>
                     <out>{{count}}</out>
@@ -93,7 +93,7 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
             module('Rendering', function (hooks) {
               setupRenderingTest(hooks);
 
-              test('increments', async function (assert) {
+              test('Incrementer', async function (assert) {
                 await render(hbs\`
                   <Incrementer as |count|>
                     <out>{{count}}</out>

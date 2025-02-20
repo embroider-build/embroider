@@ -123,15 +123,6 @@ typescriptApp.forEachScenario(scenario => {
       let result = await app.execute(`ember test`);
       assert.equal(result.exitCode, 0, result.output);
     });
-  });
-});
-
-typescriptApp.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
-    });
 
     test(`check types`, async function (assert) {
       let result = await app.execute(`pnpm tsc`);

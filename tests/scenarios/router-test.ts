@@ -234,61 +234,52 @@ function setupScenario(project: Project) {
   });
 }
 
-let routerApp = tsAppScenarios.map('router', project => {
-  setupScenario(project);
-});
-
-routerApp.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
-    });
-
-    test(`type checks`, async function (assert) {
-      let result = await app.execute('pnpm tsc');
-      assert.equal(result.exitCode, 0, result.output);
-    });
-  });
-});
-
-routerApp.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
-    });
-
-    test(`EMBROIDER pnpm test:ember`, async function (assert) {
-      let result = await app.execute('pnpm test:ember', {
-        env: {
-          EMBROIDER_TEST_SETUP_FORCE: 'embroider',
-          EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
-        },
+tsAppScenarios
+  .map('router', project => {
+    setupScenario(project);
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
       });
-      assert.equal(result.exitCode, 0, result.output);
-    });
-  });
-});
 
-let routerAppClassic = tsAppClassicScenarios.map('router-classic', project => {
-  setupScenario(project);
-});
-
-routerAppClassic.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
-    });
-
-    test(`CLASSIC pnpm test:ember`, async function (assert) {
-      let result = await app.execute('pnpm ember test', {
-        env: {
-          EMBROIDER_TEST_SETUP_FORCE: 'classic',
-        },
+      test(`type checks`, async function (assert) {
+        let result = await app.execute('pnpm tsc');
+        assert.equal(result.exitCode, 0, result.output);
       });
-      assert.equal(result.exitCode, 0, result.output);
+
+      test(`EMBROIDER pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm test:ember', {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
     });
   });
-});
+
+tsAppClassicScenarios
+  .map('router-classic', project => {
+    setupScenario(project);
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`CLASSIC pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm ember test', {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'classic',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });

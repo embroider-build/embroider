@@ -14,13 +14,14 @@ function setupScenario(project: Project) {
 
   merge(project.files, {
     'ember-cli-build.js': `
-        'use strict';
+      'use strict';
 
-        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+      const { compatBuild } = require('@embroider/compat');
 
-        module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {
+      module.exports = async function (defaults) {
+        const { buildOnce } = await import('@embroider/vite');
+        const app = new EmberApp(defaults, {
             'ember-cli-babel': {
               enableTypeScriptTransform: true,
             },
@@ -31,12 +32,9 @@ function setupScenario(project: Project) {
             }
           });
 
-          return maybeEmbroider(app, {
-            staticInvokables: true,
-            splitAtRoutes: ['split-me'],
-          });
-        };
-      `,
+        return compatBuild(app, buildOnce, { splitAtRoutes: ['split-me'] });
+      };
+    `,
     app: {
       components: {
         'used-in-child.hbs': `

@@ -73,6 +73,7 @@ async function canary(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-beta' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
   project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('@tsconfig/ember', { baseDir: __dirname, resolveName: '@tsconfig/ember-3' });
 }
 
 export function supportMatrix(scenarios: Scenarios) {

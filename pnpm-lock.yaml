@@ -1969,6 +1969,9 @@ importers:
       '@tsconfig/ember':
         specifier: 1.0.1
         version: 1.0.1
+      '@tsconfig/ember-3':
+        specifier: npm:@tsconfig/ember@^3.0.0
+        version: /@tsconfig/ember@3.0.9
       '@types/fs-extra':
         specifier: ^9.0.12
         version: 9.0.13
@@ -8617,6 +8620,10 @@ packages:
 
   /@tsconfig/ember@1.0.1:
     resolution: {integrity: sha512-aPzLw5BfQxsFPrh5fNDOK4SbSkp2q5fMlrKVeniVjMz1lAcyOh2eH5THkKKcBi1YN1/fbMdAWN/dKGW6lg2+8g==}
+    dev: true
+
+  /@tsconfig/ember@3.0.9:
+    resolution: {integrity: sha512-0B44GyEafxJLAZSixH9VBnm9kDFCpaLXu86httaJSDEm1nfl3WWI/XfY4diPsOyOg+pc9N1/YfqH7uKM2dF0lA==}
     dev: true
 
   /@tsconfig/node10@1.0.11:

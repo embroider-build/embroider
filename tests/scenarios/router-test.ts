@@ -233,8 +233,32 @@ function setupScenario(project: Project) {
 }
 
 tsAppScenarios
-  .map('router', project => {
+  .map('router-embroider', project => {
     setupScenario(project);
+    project.mergeFiles({
+      'ember-cli-build.js': `
+        'use strict';
+
+          const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+          const { compatBuild } = require('@embroider/compat');
+
+          module.exports = async function (defaults) {
+            const { buildOnce } = await import('@embroider/vite');
+            const app = new EmberApp(defaults, {
+                'ember-cli-babel': {
+                  enableTypeScriptTransform: true,
+                },
+                '@embroider/macros': {
+                  setOwnConfig: {
+                    expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
+                  }
+                }
+              });
+
+            return compatBuild(app, buildOnce, { splitAtRoutes: ['split-me'] });
+          };
+        `,
+    });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -263,6 +287,32 @@ tsAppScenarios
 tsAppClassicScenarios
   .map('router-classic', project => {
     setupScenario(project);
+    project.mergeFiles({
+      'ember-cli-build.js': `
+      'use strict';
+
+      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+      const { maybeEmbroider } = require('@embroider/test-setup');
+
+      module.exports = function (defaults) {
+        let app = new EmberApp(defaults, {
+          'ember-cli-babel': {
+            enableTypeScriptTransform: true,
+          },
+          '@embroider/macros': {
+            setOwnConfig: {
+              expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
+            }
+          }
+        });
+
+        return maybeEmbroider(app, {
+          staticInvokables: true,
+          splitAtRoutes: ['split-me'],
+        });
+      };
+    `,
+    });
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

@@ -53,6 +53,7 @@
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-typescript": "^11.1.2",
     "@tsconfig/ember": "1.0.1",
+    "@tsconfig/ember-3": "npm:@tsconfig/ember@^3.0.0",
     "@types/fs-extra": "^9.0.12",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.170",

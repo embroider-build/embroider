@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2025-02-21)
+
+@embroider/core 3.5.2 (patch)
+@embroider/webpack 4.1.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/webpack`
+  * [#2299](https://github.com/embroider-build/embroider/pull/2299) Add ability to configure MiniCssExtractPlugin ([@lfloyd117](https://github.com/lfloyd117))
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#2298](https://github.com/embroider-build/embroider/pull/2298) Fix staticInvokables resolution of ts components ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Liam Floyd ([@lfloyd117](https://github.com/lfloyd117))
+
 ## Release (2025-02-19)
 
 @embroider/compat 3.8.2 (patch)

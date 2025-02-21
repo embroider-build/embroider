@@ -123,6 +123,10 @@ function builtInKeywords(emberVersion: string): Record<string, BuiltIn | undefin
   return builtInKeywords;
 }
 
+function supportsThisFallback(emberVersion: string): boolean {
+  return satisfies(emberVersion, '<= 4.0.0-alpha.0', { includePrerelease: true });
+}
+
 interface ComponentResolution {
   type: 'component';
   specifier: string;
@@ -183,6 +187,7 @@ class TemplateResolver implements ASTPlugin {
     private env: Env,
     private config: CompatResolverOptions,
     private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>,
+    private supportsThisFallback: boolean,
     private externalNameHint?: ExternalNameHint,
     private externalResolve?: ExternalResolver
   ) {
@@ -628,7 +633,7 @@ class TemplateResolver implements ASTPlugin {
       }
     }
 
-    if (!hasArgs && !path.includes('/') && !path.includes('@')) {
+    if (!hasArgs && !path.includes('/') && !path.includes('@') && this.supportsThisFallback) {
       // this is the case that could also be property-this-fallback. We're going
       // to force people to disambiguate, because letting a potential component
       // or helper invocation lurk inside every bit of data you render is not
@@ -1006,7 +1011,14 @@ export default function makeResolverTransform({ appRoot, emberVersion, externalN
         visitor: {},
       };
     }
-    return new TemplateResolver(env, config, builtInKeywords(emberVersion), externalNameHint, externalResolve);
+    return new TemplateResolver(
+      env,
+      config,
+      builtInKeywords(emberVersion),
+      supportsThisFallback(emberVersion),
+      externalNameHint,
+      externalResolve
+    );
   };
   (resolverTransform as any).parallelBabel = {
     requireFile: __filename,

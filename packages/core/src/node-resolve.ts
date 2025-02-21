@@ -3,7 +3,8 @@ import { explicitRelative } from '@embroider/shared-internals';
 
 export function resolve(
   specifier: string,
-  fromFile: string
+  fromFile: string,
+  extensions = ['.hbs.js', '.hbs']
 ): { type: 'found'; result: { type: 'real'; filename: string } } | { type: 'not_found'; err: Error } {
   // require.resolve does not like when we resolve from virtual paths.
   // That is, a request like "../thing.js" from
@@ -25,7 +26,7 @@ export function resolve(
 
   let initialError;
 
-  for (let candidate of candidates(specifier, defaultExtensions)) {
+  for (let candidate of candidates(specifier, extensions)) {
     let filename;
     try {
       filename = require.resolve(candidate, {
@@ -66,5 +67,3 @@ function* candidates(specifier: string, extensions: string[]) {
     yield `${specifier}${ext}`;
   }
 }
-
-const defaultExtensions = ['.hbs.js', '.hbs'];

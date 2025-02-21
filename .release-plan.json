@@ -13,21 +13,17 @@
       "oldVersion": "1.1.0-alpha.1"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "4.0.0-alpha.3",
-      "newVersion": "4.0.0-alpha.4",
+      "impact": "patch",
+      "oldVersion": "4.0.0-alpha.4",
+      "newVersion": "4.0.0-alpha.5",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
         },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
@@ -37,13 +33,9 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.0.0-alpha.3",
-      "newVersion": "4.0.0-alpha.4",
+      "oldVersion": "4.0.0-alpha.4",
+      "newVersion": "4.0.0-alpha.5",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -56,12 +48,12 @@
     },
     "@embroider/macros": {
       "impact": "patch",
-      "oldVersion": "1.17.0-alpha.2",
-      "newVersion": "1.17.0-alpha.3",
+      "oldVersion": "1.17.0-alpha.3",
+      "newVersion": "1.17.0-alpha.4",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
@@ -73,41 +65,23 @@
       "oldVersion": "3.0.0-alpha.1"
     },
     "@embroider/shared-internals": {
-      "impact": "minor",
-      "oldVersion": "3.0.0-alpha.2",
-      "newVersion": "3.0.0-alpha.3",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "3.0.0-alpha.3"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "minor",
-      "oldVersion": "0.5.0-alpha.1",
-      "newVersion": "0.5.0-alpha.2",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "0.5.0-alpha.2"
     },
     "@embroider/util": {
       "oldVersion": "1.14.0-alpha.1"
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.0.0-alpha.3",
-      "newVersion": "1.0.0-alpha.4",
+      "oldVersion": "1.0.0-alpha.4",
+      "newVersion": "1.0.0-alpha.5",
       "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -116,5 +90,5 @@
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-02-17)\n\n@embroider/compat 4.0.0-alpha.4 (minor)\n@embroider/core 4.0.0-alpha.4 (patch)\n@embroider/macros 1.17.0-alpha.3 (patch)\n@embroider/shared-internals 3.0.0-alpha.3 (minor)\n@embroider/template-tag-codemod 0.5.0-alpha.2 (minor)\n@embroider/vite 1.0.0-alpha.4 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2283](https://github.com/embroider-build/embroider/pull/2283) Finish implementing --renamingRules for template-tag-codemod ([@ef4](https://github.com/ef4))\n* `@embroider/compat`, `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2282](https://github.com/embroider-build/embroider/pull/2282) Customizable renaming support in template-tag-codemod ([@ef4](https://github.com/ef4))\n* `@embroider/shared-internals`\n  * [#2270](https://github.com/embroider-build/embroider/pull/2270) Introduce `EMBROIDER_WORKING_DIRECTORY` env var for concurrent builds ([@simonihmig](https://github.com/simonihmig))\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/template-tag-codemod`\n  * [#2281](https://github.com/embroider-build/embroider/pull/2281) Include version in prebuild output ([@ef4](https://github.com/ef4))\n* `@embroider/template-tag-codemod`\n  * [#2279](https://github.com/embroider-build/embroider/pull/2279) fix failure on first-run and auto-apply package.json updates ([@ef4](https://github.com/ef4))\n  * [#2277](https://github.com/embroider-build/embroider/pull/2277) Revert \"Merge pull request #2271 from embroider-build/template-tag-co… ([@ef4](https://github.com/ef4))\n* `@embroider/compat`, `@embroider/template-tag-codemod`, `@embroider/test-support`, `@embroider/test-scenarios`\n  * [#2264](https://github.com/embroider-build/embroider/pull/2264) Improved codemod scope management ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2025-02-21)\n\n@embroider/compat 4.0.0-alpha.5 (patch)\n@embroider/core 4.0.0-alpha.5 (patch)\n@embroider/macros 1.17.0-alpha.4 (patch)\n@embroider/vite 1.0.0-alpha.5 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`, `@embroider/test-scenarios`, `ts-app-template`\n  * [#2295](https://github.com/embroider-build/embroider/pull/2295) Ember canary fixes ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/compat`, `@embroider/macros`, `@embroider/test-scenarios`\n  * [#2294](https://github.com/embroider-build/embroider/pull/2294) Merge stable into main ([@ef4](https://github.com/ef4))\n* Other\n  * [#2290](https://github.com/embroider-build/embroider/pull/2290) Add docs for EMBROIDER_WORKING_DIRECTORY ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
 }

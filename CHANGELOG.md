@@ -1,5 +1,26 @@
 # Embroider Changelog
 
+## Release (2025-02-21)
+
+@embroider/compat 4.0.0-alpha.5 (patch)
+@embroider/core 4.0.0-alpha.5 (patch)
+@embroider/macros 1.17.0-alpha.4 (patch)
+@embroider/vite 1.0.0-alpha.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`, `@embroider/test-scenarios`, `ts-app-template`
+  * [#2295](https://github.com/embroider-build/embroider/pull/2295) Ember canary fixes ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/macros`, `@embroider/test-scenarios`
+  * [#2294](https://github.com/embroider-build/embroider/pull/2294) Merge stable into main ([@ef4](https://github.com/ef4))
+* Other
+  * [#2290](https://github.com/embroider-build/embroider/pull/2290) Add docs for EMBROIDER_WORKING_DIRECTORY ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2025-02-08)
 
 @embroider/compat 3.8.1 (patch)

@@ -614,7 +614,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             runtime: variant.runtime === 'browser',
             // It's not reasonable to make assumptions about order when doing CSS via modules
             ignoreOrder: true,
-            ...this.extraCssPluginOptions
+            ...this.extraCssPluginOptions,
           }),
         ],
       };

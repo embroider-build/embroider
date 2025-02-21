@@ -280,7 +280,7 @@ export class Resolver {
           },
         };
       }
-      return nodeResolve(request.specifier, request.fromFile);
+      return nodeResolve(request.specifier, request.fromFile, this.options.resolvableExtensions);
     });
 
     switch (resolution.type) {

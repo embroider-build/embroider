@@ -13,13 +13,13 @@
       "oldVersion": "1.1.0-alpha.1"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.0.0-alpha.4",
-      "newVersion": "4.0.0-alpha.5",
+      "impact": "minor",
+      "oldVersion": "4.0.0-alpha.5",
+      "newVersion": "4.0.0-alpha.6",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         },
         {
           "impact": "patch",
@@ -33,8 +33,8 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.0.0-alpha.4",
-      "newVersion": "4.0.0-alpha.5",
+      "oldVersion": "4.0.0-alpha.5",
+      "newVersion": "4.0.0-alpha.6",
       "constraints": [
         {
           "impact": "patch",
@@ -47,13 +47,13 @@
       "oldVersion": "4.0.0-alpha.1"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.17.0-alpha.3",
-      "newVersion": "1.17.0-alpha.4",
+      "impact": "minor",
+      "oldVersion": "1.17.0-alpha.4",
+      "newVersion": "1.17.0-alpha.5",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
@@ -68,20 +68,25 @@
       "oldVersion": "3.0.0-alpha.3"
     },
     "@embroider/template-tag-codemod": {
-      "oldVersion": "0.5.0-alpha.2"
+      "impact": "patch",
+      "oldVersion": "0.5.0-alpha.2",
+      "newVersion": "0.5.0-alpha.3",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
     },
     "@embroider/util": {
       "oldVersion": "1.14.0-alpha.1"
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.0.0-alpha.4",
-      "newVersion": "1.0.0-alpha.5",
+      "oldVersion": "1.0.0-alpha.5",
+      "newVersion": "1.0.0-alpha.6",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -90,5 +95,5 @@
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-02-21)\n\n@embroider/compat 4.0.0-alpha.5 (patch)\n@embroider/core 4.0.0-alpha.5 (patch)\n@embroider/macros 1.17.0-alpha.4 (patch)\n@embroider/vite 1.0.0-alpha.5 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`, `@embroider/test-scenarios`, `ts-app-template`\n  * [#2295](https://github.com/embroider-build/embroider/pull/2295) Ember canary fixes ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/compat`, `@embroider/macros`, `@embroider/test-scenarios`\n  * [#2294](https://github.com/embroider-build/embroider/pull/2294) Merge stable into main ([@ef4](https://github.com/ef4))\n* Other\n  * [#2290](https://github.com/embroider-build/embroider/pull/2290) Add docs for EMBROIDER_WORKING_DIRECTORY ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2025-02-21)\n\n@embroider/compat 4.0.0-alpha.6 (minor)\n@embroider/core 4.0.0-alpha.6 (patch)\n@embroider/macros 1.17.0-alpha.5 (minor)\n@embroider/template-tag-codemod 0.5.0-alpha.3 (patch)\n@embroider/vite 1.0.0-alpha.6 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/macros`\n  * [#2249](https://github.com/embroider-build/embroider/pull/2249) Expose macros config in babel ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2296](https://github.com/embroider-build/embroider/pull/2296) handle empty pojo arg to precompileTemplate ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

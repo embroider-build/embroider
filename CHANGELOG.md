@@ -2,6 +2,26 @@
 
 ## Release (2025-02-21)
 
+@embroider/compat 4.0.0-alpha.6 (minor)
+@embroider/core 4.0.0-alpha.6 (patch)
+@embroider/macros 1.17.0-alpha.5 (minor)
+@embroider/template-tag-codemod 0.5.0-alpha.3 (patch)
+@embroider/vite 1.0.0-alpha.6 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/macros`
+  * [#2249](https://github.com/embroider-build/embroider/pull/2249) Expose macros config in babel ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2296](https://github.com/embroider-build/embroider/pull/2296) handle empty pojo arg to precompileTemplate ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-02-21)
+
 @embroider/compat 4.0.0-alpha.5 (patch)
 @embroider/core 4.0.0-alpha.5 (patch)
 @embroider/macros 1.17.0-alpha.4 (patch)

@@ -328,6 +328,25 @@ tsAppScenarios
         });
       });
 
+      test('empty pojo argument to precompileTemplate', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'tests/integration/components/example-test.js': `
+              import { precompileTemplate } from '@ember/template-compilation';
+              import { render } from '@ember/test-helpers';
+              render(precompileTemplate('<div></div>', {}));
+            `,
+          },
+          to: {
+            'tests/integration/components/example-test.gjs': `
+              import { render } from '@ember/test-helpers';
+              render(<template><div></div></template>);
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+        });
+      });
+
       test('convert rendering test without native lexical this', async function (assert) {
         await assert.codeMod({
           from: {

@@ -45,6 +45,13 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
           }
 
           let prop0 = arg1.properties[0];
+          if (!prop0) {
+            state.opts.result.push({
+              templateSource: arg0.value,
+            });
+            return;
+          }
+
           if (prop0.type !== 'ObjectProperty') {
             throw new Error(`unexpected source: ${String(path)}`);
           }

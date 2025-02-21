@@ -25,32 +25,29 @@ export async function identifyRenderTests(ast: types.File, source: string, filen
     CallExpression(path) {
       if (path.get('callee').referencesImport('@ember/test-helpers', 'render')) {
         let [arg0] = path.get('arguments');
-        if (arg0.isTaggedTemplateExpression()) {
-          let tag = arg0.get('tag');
-          if (isLooseHBS(tag)) {
-            let loc = arg0.node.loc;
-            if (!loc) {
-              throw new Error(`bug: no locations provided by babel`);
-            }
-
-            let counter = 0;
-            let availableBinding = 'self';
-            while (path.scope.getBinding(availableBinding)) {
-              availableBinding = `self${counter++}`;
-            }
-
-            let statementCandidate: NodePath<unknown> = path;
-            while (!statementCandidate.isStatement()) {
-              statementCandidate = statementCandidate.parentPath;
-            }
-
-            renderTests.push({
-              startIndex: loc.start.index,
-              endIndex: loc.end.index,
-              statementStart: statementCandidate.node.loc!.start.index,
-              availableBinding,
-            });
+        if (isLooseHBS(arg0)) {
+          let loc = arg0.node.loc;
+          if (!loc) {
+            throw new Error(`bug: no locations provided by babel`);
           }
+
+          let counter = 0;
+          let availableBinding = 'self';
+          while (path.scope.getBinding(availableBinding)) {
+            availableBinding = `self${counter++}`;
+          }
+
+          let statementCandidate: NodePath<unknown> = path;
+          while (!statementCandidate.isStatement()) {
+            statementCandidate = statementCandidate.parentPath;
+          }
+
+          renderTests.push({
+            startIndex: loc.start.index,
+            endIndex: loc.end.index,
+            statementStart: statementCandidate.node.loc!.start.index,
+            availableBinding,
+          });
         } else {
           throw fail(arg0.node, `unsupported syntax in rendering test (${arg0.type})`);
         }
@@ -60,11 +57,17 @@ export async function identifyRenderTests(ast: types.File, source: string, filen
   return renderTests;
 }
 
-function isLooseHBS(path: NodePath<types.Expression>) {
-  if (path.isReferencedIdentifier()) {
-    if (path.referencesImport('ember-cli-htmlbars', 'hbs')) {
-      return true;
-    }
+function isLooseHBS(path: NodePath<unknown>) {
+  let callee: NodePath<unknown> | undefined;
+  if (path.isTaggedTemplateExpression()) {
+    callee = path.get('tag');
+  } else if (path.isCallExpression()) {
+    callee = path.get('callee');
   }
-  return false;
+
+  return (
+    callee?.isReferencedIdentifier() &&
+    (callee.referencesImport('ember-cli-htmlbars', 'hbs') ||
+      callee.referencesImport('@ember/template-compilation', 'precompileTemplate'))
+  );
 }

@@ -111,7 +111,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
   private extraCssLoaderOptions: object | undefined;
   private extraStyleLoaderOptions: object | undefined;
-  private disableCssProcessing: boolean | undefined;
+  private enableInternalCssProcessing: boolean;
   private _bundleSummary: BundleSummary | undefined;
   private beginBarrier: BeginFn;
   private incrementBarrier: IncrementFn;
@@ -135,6 +135,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
     this.extraCssLoaderOptions = options?.cssLoaderOptions;
     this.extraStyleLoaderOptions = options?.styleLoaderOptions;
+    this.enableInternalCssProcessing = options?.enableInternalCssProcessing ?? true;
     [this.beginBarrier, this.incrementBarrier] = createBarrier();
     warmUp(this.extraThreadLoaderOptions);
   }
@@ -195,7 +196,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     let stylePlugins: WebpackPluginInstance[] = [];
     let styleLoaders: RuleSetUseItem[] = [];
 
-    if (!this.disableCssProcessing) {
+    if (this.enableInternalCssProcessing) {
       const { plugins, loaders } = this.setupStyleConfig(variant);
       stylePlugins = plugins;
       styleLoaders = loaders;
@@ -263,12 +264,12 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             ]),
           },
           ...[
-            this.disableCssProcessing
-              ? {}
-              : {
+            this.enableInternalCssProcessing
+              ? {
                   test: isCSS,
                   use: styleLoaders,
-                },
+                }
+              : {},
           ],
         ],
       },

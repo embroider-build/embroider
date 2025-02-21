@@ -73,8 +73,10 @@ export interface Options {
   styleLoaderOptions?: object;
 
   /**
-   * Option to opt out of the default CSS processing.
-   * You must provide your own webpack loaders to process your styles.
+   * Controls whether embroider's internal CSS pipeline is activated.
+   * If you set this to false you must provide your own webpack loaders to process your styles.
+   *
+   * Defaults to `true`
    */
-  disableCssProcessing?: boolean;
+  enableInternalCssProcessing?: boolean;
 }

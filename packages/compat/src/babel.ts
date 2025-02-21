@@ -9,7 +9,7 @@ import {
 import { join } from 'path';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
 import type { Options as ResolverTransformOptions } from './resolver-transform';
-import MacrosConfig from '@embroider/macros/src/macros-config';
+import { buildMacros } from '@embroider/macros/babel';
 
 export interface CompatBabelState {
   plugins: PluginItem[];
@@ -24,19 +24,14 @@ function loadCompatConfig(): CompatBabelState {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require(compatFile);
   }
-  let macros = MacrosConfig.for({}, process.cwd());
-  let { plugins: templateMacros, setConfig } = MacrosConfig.transforms();
-  setConfig(macros);
-  if (process.env.NODE_ENV === 'development') {
-    macros.enablePackageDevelopment(process.cwd());
-    macros.enableRuntimeMode();
-  }
-  macros.finalize();
+
+  let macros = buildMacros();
+
   return {
     plugins: [],
     templateTransforms: [],
-    babelMacros: macros.babelPluginConfig(),
-    templateMacros: templateMacros as any,
+    babelMacros: macros.babelMacros,
+    templateMacros: macros.templateMacros as any,
   };
 }
 

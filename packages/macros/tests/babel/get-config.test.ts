@@ -1,17 +1,20 @@
 import { allBabelVersions } from '@embroider/test-support';
-import { makeBabelConfig, allModes, makeRunner } from './helpers';
-import { MacrosConfig } from '../../src/node';
+import { allModes, makeRunner } from './helpers';
 import { dirname } from 'path';
+import { buildMacros } from '../../src/babel';
 
 describe(`getConfig`, function () {
-  let config: MacrosConfig;
+  let macros: ReturnType<typeof buildMacros>;
   let filename: string;
   let run: ReturnType<typeof makeRunner>;
 
   allBabelVersions({
-    babelConfig(version: number) {
-      let c = makeBabelConfig(version, config);
-      c.filename = filename;
+    babelConfig(_version: number) {
+      let c = {
+        filename,
+        presets: [],
+        plugins: macros.babelMacros,
+      };
       return c;
     },
     includePresetsTests: true,
@@ -24,20 +27,26 @@ describe(`getConfig`, function () {
         // we know it will be available.
         filename = `${dirname(require.resolve('@embroider/core/package.json'))}/sample.js`;
 
-        config = MacrosConfig.for({}, dirname(require.resolve('@embroider/core/package.json')));
-        config.setOwnConfig(filename, {
-          beverage: 'coffee',
+        macros = buildMacros({
+          dir: dirname(require.resolve('@embroider/core/package.json')),
+          setOwnConfig: {
+            beverage: 'coffee',
+          },
+          setConfig: {
+            '@babel/core': [1, 2, 3],
+            '@babel/traverse': {
+              sizes: [
+                { name: 'small', oz: 4 },
+                { name: 'medium', oz: 8 },
+              ],
+            },
+          },
+          configure(config) {
+            config.setGlobalConfig(filename, 'something-very-global', { year: 2020 });
+            applyMode(config);
+          },
         });
-        config.setConfig(filename, '@babel/traverse', {
-          sizes: [
-            { name: 'small', oz: 4 },
-            { name: 'medium', oz: 8 },
-          ],
-        });
-        config.setConfig(filename, '@babel/core', [1, 2, 3]);
-        config.setGlobalConfig(filename, 'something-very-global', { year: 2020 });
-        applyMode(config);
-        config.finalize();
+
         run = makeRunner(transform);
       });
 

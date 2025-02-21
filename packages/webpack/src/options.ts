@@ -71,4 +71,10 @@ export interface Options {
    * is used instead of `style-loader` in production builds.
    */
   styleLoaderOptions?: object;
+
+  /**
+   * Option to opt out of the default CSS processing.
+   * You must provide your own webpack loaders to process your styles.
+   */
+  disableCssProcessing?: boolean;
 }

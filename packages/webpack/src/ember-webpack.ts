@@ -111,6 +111,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
   private extraCssLoaderOptions: object | undefined;
   private extraStyleLoaderOptions: object | undefined;
+  private disableCssProcessing: boolean | undefined;
   private _bundleSummary: BundleSummary | undefined;
   private beginBarrier: BeginFn;
   private incrementBarrier: IncrementFn;
@@ -191,7 +192,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       }
     }
 
-    let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
+    let stylePlugins: WebpackPluginInstance[] = [];
+    let styleLoaders: RuleSetUseItem[] = [];
+
+    if (!this.disableCssProcessing) {
+      const { plugins, loaders } = this.setupStyleConfig(variant);
+      stylePlugins = plugins;
+      styleLoaders = loaders;
+    }
 
     let babelLoaderOptions = makeBabelLoaderOptions(
       babel.majorVersion,
@@ -254,10 +262,14 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
               ),
             ]),
           },
-          {
-            test: isCSS,
-            use: styleLoaders,
-          },
+          ...[
+            this.disableCssProcessing
+              ? {}
+              : {
+                  test: isCSS,
+                  use: styleLoaders,
+                },
+          ],
         ],
       },
       output: {

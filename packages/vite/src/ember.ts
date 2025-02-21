@@ -77,6 +77,13 @@ export function ember() {
         if (config.server.port == null) {
           config.server.port = 4200;
         }
+
+        // vite will try to transpile away typescript in .ts files using
+        // esbuild. But if we have any typescript, we expect it to get handled
+        // by babel, because we don't want esbuild's decorator implementation.
+        if (config.esbuild == null) {
+          config.esbuild = false;
+        }
       },
     },
   ];

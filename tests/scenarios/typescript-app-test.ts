@@ -70,7 +70,7 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
             module('Rendering', function (hooks) {
               setupRenderingTest(hooks);
 
-              test('increments', async function (assert) {
+              test('TestGts', async function (assert) {
                 await render(<template>
                   <TestGts as |count|>
                     <out>{{count}}</out>
@@ -93,7 +93,7 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
             module('Rendering', function (hooks) {
               setupRenderingTest(hooks);
 
-              test('increments', async function (assert) {
+              test('Incrementer', async function (assert) {
                 await render(hbs\`
                   <Incrementer as |count|>
                     <out>{{count}}</out>
@@ -122,15 +122,6 @@ typescriptApp.forEachScenario(scenario => {
     test(`pnpm ember test`, async function (assert) {
       let result = await app.execute(`ember test`);
       assert.equal(result.exitCode, 0, result.output);
-    });
-  });
-});
-
-typescriptApp.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
     });
 
     test(`check types`, async function (assert) {

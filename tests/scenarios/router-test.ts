@@ -14,13 +14,14 @@ function setupScenario(project: Project) {
 
   merge(project.files, {
     'ember-cli-build.js': `
-        'use strict';
+      'use strict';
 
-        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
+      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+      const { compatBuild } = require('@embroider/compat');
 
-        module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {
+      module.exports = async function (defaults) {
+        const { buildOnce } = await import('@embroider/vite');
+        const app = new EmberApp(defaults, {
             'ember-cli-babel': {
               enableTypeScriptTransform: true,
             },
@@ -31,12 +32,9 @@ function setupScenario(project: Project) {
             }
           });
 
-          return maybeEmbroider(app, {
-            staticInvokables: true,
-            splitAtRoutes: ['split-me'],
-          });
-        };
-      `,
+        return compatBuild(app, buildOnce, { splitAtRoutes: ['split-me'] });
+      };
+    `,
     app: {
       components: {
         'used-in-child.hbs': `
@@ -234,61 +232,102 @@ function setupScenario(project: Project) {
   });
 }
 
-let routerApp = tsAppScenarios.map('router', project => {
-  setupScenario(project);
-});
+tsAppScenarios
+  .map('router-embroider', project => {
+    setupScenario(project);
+    project.mergeFiles({
+      'ember-cli-build.js': `
+        'use strict';
 
-routerApp.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
+          const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+          const { compatBuild } = require('@embroider/compat');
+
+          module.exports = async function (defaults) {
+            const { buildOnce } = await import('@embroider/vite');
+            const app = new EmberApp(defaults, {
+                'ember-cli-babel': {
+                  enableTypeScriptTransform: true,
+                },
+                '@embroider/macros': {
+                  setOwnConfig: {
+                    expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
+                  }
+                }
+              });
+
+            return compatBuild(app, buildOnce, { splitAtRoutes: ['split-me'] });
+          };
+        `,
     });
-
-    test(`type checks`, async function (assert) {
-      let result = await app.execute('pnpm tsc');
-      assert.equal(result.exitCode, 0, result.output);
-    });
-  });
-});
-
-routerApp.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
-    });
-
-    test(`EMBROIDER pnpm test:ember`, async function (assert) {
-      let result = await app.execute('pnpm test:ember', {
-        env: {
-          EMBROIDER_TEST_SETUP_FORCE: 'embroider',
-          EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
-        },
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
       });
-      assert.equal(result.exitCode, 0, result.output);
-    });
-  });
-});
 
-let routerAppClassic = tsAppClassicScenarios.map('router-classic', project => {
-  setupScenario(project);
-});
-
-routerAppClassic.forEachScenario(scenario => {
-  Qmodule(scenario.name, function (hooks) {
-    let app: PreparedApp;
-    hooks.before(async () => {
-      app = await scenario.prepare();
-    });
-
-    test(`CLASSIC pnpm test:ember`, async function (assert) {
-      let result = await app.execute('pnpm ember test', {
-        env: {
-          EMBROIDER_TEST_SETUP_FORCE: 'classic',
-        },
+      test(`type checks`, async function (assert) {
+        let result = await app.execute('pnpm tsc');
+        assert.equal(result.exitCode, 0, result.output);
       });
-      assert.equal(result.exitCode, 0, result.output);
+
+      test(`EMBROIDER pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm test:ember', {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
     });
   });
-});
+
+tsAppClassicScenarios
+  .map('router-classic', project => {
+    setupScenario(project);
+    project.mergeFiles({
+      'ember-cli-build.js': `
+      'use strict';
+
+      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+      const { maybeEmbroider } = require('@embroider/test-setup');
+
+      module.exports = function (defaults) {
+        let app = new EmberApp(defaults, {
+          'ember-cli-babel': {
+            enableTypeScriptTransform: true,
+          },
+          '@embroider/macros': {
+            setOwnConfig: {
+              expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
+            }
+          }
+        });
+
+        return maybeEmbroider(app, {
+          staticInvokables: true,
+          splitAtRoutes: ['split-me'],
+        });
+      };
+    `,
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`CLASSIC pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm ember test', {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'classic',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });

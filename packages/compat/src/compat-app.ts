@@ -362,7 +362,7 @@ export default class CompatApp {
       trees.push(writeFile('vendor/ember/ember.js', () => ''));
       trees.push(writeFile('vendor/ember/ember-testing.js', () => ''));
       const templateCompilerSrc = readFileSync(join(emberSource.root, 'dist/ember-template-compiler.js'), 'utf8');
-      trees.push(writeFile('vendor/ember/ember-testing.js', () => templateCompilerSrc));
+      trees.push(writeFile('vendor/ember/ember-template-compiler.js', () => templateCompilerSrc));
     }
 
     if (this.vendorTree) {

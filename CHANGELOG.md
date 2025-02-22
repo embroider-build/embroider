@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-02-22)
+
+@embroider/compat 3.8.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2305](https://github.com/embroider-build/embroider/pull/2305) Fix vendor ember-template-compiler.js on v2 ember-source ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-02-21)
 
 @embroider/core 3.5.2 (patch)

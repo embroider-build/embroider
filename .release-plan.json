@@ -13,19 +13,19 @@
       "oldVersion": "1.0.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.8.2"
-    },
-    "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.5.1",
-      "newVersion": "3.5.2",
+      "oldVersion": "3.8.2",
+      "newVersion": "3.8.3",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "pkgJSONPath": "./packages/compat/package.json"
+    },
+    "@embroider/core": {
+      "oldVersion": "3.5.2"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
@@ -52,17 +52,8 @@
       "oldVersion": "0.2.1"
     },
     "@embroider/webpack": {
-      "impact": "minor",
-      "oldVersion": "4.0.10",
-      "newVersion": "4.1.0",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.1.0"
     }
   },
-  "description": "## Release (2025-02-21)\n\n@embroider/core 3.5.2 (patch)\n@embroider/webpack 4.1.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/webpack`\n  * [#2299](https://github.com/embroider-build/embroider/pull/2299) Add ability to configure MiniCssExtractPlugin ([@lfloyd117](https://github.com/lfloyd117))\n\n#### :bug: Bug Fix\n* `@embroider/core`, `@embroider/test-scenarios`\n  * [#2298](https://github.com/embroider-build/embroider/pull/2298) Fix staticInvokables resolution of ts components ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Liam Floyd ([@lfloyd117](https://github.com/lfloyd117))\n"
+  "description": "## Release (2025-02-22)\n\n@embroider/compat 3.8.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2305](https://github.com/embroider-build/embroider/pull/2305) Fix vendor ember-template-compiler.js on v2 ember-source ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

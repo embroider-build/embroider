@@ -1,5 +1,6 @@
 import { type NodePath, traverse, type types } from '@babel/core';
 import codeFrame from '@babel/code-frame';
+import { isLooseHBS } from './detect-inline-hbs.js';
 
 const { codeFrameColumns } = codeFrame;
 
@@ -68,21 +69,6 @@ export async function identifyRenderTests(ast: types.File, source: string, filen
     },
   });
   return renderTests;
-}
-
-function isLooseHBS(path: NodePath<unknown>) {
-  let callee: NodePath<unknown> | undefined;
-  if (path.isTaggedTemplateExpression()) {
-    callee = path.get('tag');
-  } else if (path.isCallExpression()) {
-    callee = path.get('callee');
-  }
-
-  return (
-    callee?.isReferencedIdentifier() &&
-    (callee.referencesImport('ember-cli-htmlbars', 'hbs') ||
-      callee.referencesImport('@ember/template-compilation', 'precompileTemplate'))
-  );
 }
 
 function startOfScope(path: NodePath<unknown>): number {

@@ -359,14 +359,14 @@ tsAppScenarios
 
               module('Integration | Component | message-box', function (hooks) {
                 setupRenderingTest(hooks);
-                test('it renders', async function (assert) {
+                test('need to introduce self', async function (assert) {
                   await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
-                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                  await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
                 });
-                test('with self already in local scope', async function (assert) {
+                test('with unrelated self already in local scope', async function (assert) {
                   let self = 'hi';
                   await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
-                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                  await render(hbs\`<MessageBox @thing={{this.thing}} />\`);
                 });
               });
             `,
@@ -381,16 +381,14 @@ tsAppScenarios
 
               module('Integration | Component | message-box', function (hooks) {
                 setupRenderingTest(hooks);
-                test('it renders', async function (assert) {
-                  const self = this;
+                test('need to introduce self', async function (assert) {const self = this;
                   await render(<template><MessageBox @thing={{self.thing}} /></template>);
-                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                  await render(<template><MessageBox @thing={{self.thing}} /></template>);
                 });
-                test('with self already in local scope', async function (assert) {
+                test('with unrelated self already in local scope', async function (assert) {const self0 = this;
                   let self = 'hi';
-                  const self0 = this;
                   await render(<template><MessageBox @thing={{self0.thing}} /></template>);
-                  assert.strictEqual(this.element.textContent.trim(), 'template block text');
+                  await render(<template><MessageBox @thing={{self0.thing}} /></template>);
                 });
               });
             `,

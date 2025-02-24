@@ -6,8 +6,7 @@ const { codeFrameColumns } = codeFrame;
 export interface RenderTest {
   startIndex: number;
   endIndex: number;
-  statementStart: number;
-  availableBinding: string;
+  availableBinding: () => { identifier: string; needsInsertAt: number | null };
 }
 
 export async function identifyRenderTests(ast: types.File, source: string, filename: string): Promise<RenderTest[]> {
@@ -21,6 +20,8 @@ export async function identifyRenderTests(ast: types.File, source: string, filen
     return new Error(m);
   }
 
+  let availableBindings = new Map<number, RenderTest['availableBinding']>();
+
   traverse(ast, {
     CallExpression(path) {
       if (path.get('callee').referencesImport('@ember/test-helpers', 'render')) {
@@ -31,21 +32,33 @@ export async function identifyRenderTests(ast: types.File, source: string, filen
             throw new Error(`bug: no locations provided by babel`);
           }
 
-          let counter = 0;
-          let availableBinding = 'self';
-          while (path.scope.getBinding(availableBinding)) {
-            availableBinding = `self${counter++}`;
-          }
+          let target = startOfScope(path);
+          let availableBinding = availableBindings.get(target);
+          if (!availableBinding) {
+            let counter = 0;
+            let identifier = 'self';
+            while (path.scope.getBinding(identifier)) {
+              identifier = `self${counter++}`;
+            }
 
-          let statementCandidate: NodePath<unknown> = path;
-          while (!statementCandidate.isStatement()) {
-            statementCandidate = statementCandidate.parentPath;
+            let inserted = false;
+            availableBinding = () => {
+              let needsInsertAt: number | null = null;
+              if (!inserted) {
+                needsInsertAt = target;
+                inserted = true;
+              }
+              return {
+                identifier,
+                needsInsertAt,
+              };
+            };
+            availableBindings.set(target, availableBinding);
           }
 
           renderTests.push({
             startIndex: loc.start.index,
             endIndex: loc.end.index,
-            statementStart: statementCandidate.node.loc!.start.index,
             availableBinding,
           });
         } else {
@@ -70,4 +83,19 @@ function isLooseHBS(path: NodePath<unknown>) {
     (callee.referencesImport('ember-cli-htmlbars', 'hbs') ||
       callee.referencesImport('@ember/template-compilation', 'precompileTemplate'))
   );
+}
+
+function startOfScope(path: NodePath<unknown>): number {
+  let block: NodePath<unknown> = path;
+  while (!block.isBlock() && !block.isProgram()) {
+    block = block.parentPath;
+  }
+  let target: number = block.node.loc!.start.index;
+  if (block.isBlock()) {
+    // actual blocks have a start curly and our scope begins after that
+    target = target + 1;
+  } else {
+    // this is the Program case, our scope starts right where the Program starts
+  }
+  return target;
 }

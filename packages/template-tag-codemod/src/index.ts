@@ -540,12 +540,15 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
     let templateSource = finalTemplates[index].templateSource;
     if (!opts.nativeLexicalThis) {
       if (templateSource.includes(selfToken)) {
-        edits.push({
-          start: test.statementStart,
-          end: test.statementStart,
-          replacement: `const ${test.availableBinding} = this;\n`,
-        });
-        templateSource = templateSource.replaceAll(selfToken, test.availableBinding);
+        let { identifier, needsInsertAt } = test.availableBinding();
+        if (needsInsertAt != null) {
+          edits.push({
+            start: needsInsertAt,
+            end: needsInsertAt,
+            replacement: `const ${identifier} = this;\n`,
+          });
+        }
+        templateSource = templateSource.replaceAll(selfToken, identifier);
       }
     }
     edits.push({
@@ -655,6 +658,7 @@ function applyEdits(source: string, edits: { start: number; end: number; replace
   let cursor = 0;
   let output: string[] = [];
   let previousDeletion = false;
+  edits = [...edits].sort((a, b) => a.start - b.start);
   for (let { start, end, replacement } of edits) {
     if (start > cursor) {
       let interEditContent = source.slice(cursor, start);

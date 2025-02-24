@@ -17,6 +17,7 @@ module('Integration | cross-package-config', function (hooks) {
           shouldBeOverwritten: 'overwritten',
           configFromAddonItself: 'this is the addon',
           configFromMacrosTests: 'exists',
+          configFromConfigFile: 'got it',
         });
       })
     );
@@ -28,6 +29,7 @@ module('Integration | cross-package-config', function (hooks) {
       shouldBeOverwritten: 'overwritten',
       configFromAddonItself: 'this is the addon',
       configFromMacrosTests: 'exists',
+      configFromConfigFile: 'got it',
     });
   });
 
@@ -40,6 +42,7 @@ module('Integration | cross-package-config', function (hooks) {
           shouldBeOverwritten: 'overwritten',
           configFromAddonItself: 'this is the addon',
           configFromMacrosTests: 'exists',
+          configFromConfigFile: 'got it',
         });
       })
     );
@@ -55,6 +58,7 @@ module('Integration | cross-package-config', function (hooks) {
           shouldBeOverwritten: 'overwritten',
           configFromAddonItself: 'this is the addon',
           configFromMacrosTests: 'exists',
+          configFromConfigFile: 'got it',
         });
       })
     );

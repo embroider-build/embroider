@@ -13,50 +13,19 @@
       "oldVersion": "1.1.0-alpha.1"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "4.0.0-alpha.5",
-      "newVersion": "4.0.0-alpha.6",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.0.0-alpha.6"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0-alpha.1"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.0.0-alpha.5",
-      "newVersion": "4.0.0-alpha.6",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.0.0-alpha.6"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0-alpha.1"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.17.0-alpha.4",
-      "newVersion": "1.17.0-alpha.5",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.17.0-alpha.5"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.1-alpha.1"
@@ -68,10 +37,14 @@
       "oldVersion": "3.0.0-alpha.3"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "patch",
-      "oldVersion": "0.5.0-alpha.2",
-      "newVersion": "0.5.0-alpha.3",
+      "impact": "minor",
+      "oldVersion": "0.5.0-alpha.3",
+      "newVersion": "0.5.0-alpha.4",
       "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
@@ -83,17 +56,8 @@
       "oldVersion": "1.14.0-alpha.1"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.0-alpha.5",
-      "newVersion": "1.0.0-alpha.6",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.0.0-alpha.6"
     }
   },
-  "description": "## Release (2025-02-21)\n\n@embroider/compat 4.0.0-alpha.6 (minor)\n@embroider/core 4.0.0-alpha.6 (patch)\n@embroider/macros 1.17.0-alpha.5 (minor)\n@embroider/template-tag-codemod 0.5.0-alpha.3 (patch)\n@embroider/vite 1.0.0-alpha.6 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/macros`\n  * [#2249](https://github.com/embroider-build/embroider/pull/2249) Expose macros config in babel ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2296](https://github.com/embroider-build/embroider/pull/2296) handle empty pojo arg to precompileTemplate ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-02-24)\n\n@embroider/template-tag-codemod 0.5.0-alpha.4 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2309](https://github.com/embroider-build/embroider/pull/2309) codemod: support all the legacy inline hbs module names ([@ef4](https://github.com/ef4))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2307](https://github.com/embroider-build/embroider/pull/2307) Share \"this\" re-bindings within the same scope ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

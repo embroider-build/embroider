@@ -14,6 +14,7 @@ import { ImportUtil } from 'babel-import-util';
 import { replaceThisTransform } from './replace-this-transform.js';
 // @ts-expect-error library ships types incompatible with moduleResolution:nodenext
 import { ModuleImporter } from '@humanwhocodes/module-importer';
+import { allHBSModules, allLegacyModules } from './detect-inline-hbs.js';
 
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
 const { externalName } = reverseExports;
@@ -167,7 +168,7 @@ async function locateInvokables(
         templateCompilation,
         {
           targetFormat: 'hbs',
-          enableLegacyModules: ['ember-cli-htmlbars'],
+          enableLegacyModules: allLegacyModules(),
           transforms: [
             [
               require.resolve('@embroider/compat/src/resolver-transform'),
@@ -534,7 +535,7 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
   edits.unshift({
     start: 0,
     end: 0,
-    replacement: extractImports(ast, path => !['@ember/template-compilation', 'ember-cli-htmlbars'].includes(path)),
+    replacement: extractImports(ast, path => !allHBSModules().includes(path)),
   });
   for (let [index, test] of renderTests.entries()) {
     let templateSource = finalTemplates[index].templateSource;
@@ -603,7 +604,7 @@ async function runResolverTransform(
         templateCompilation,
         {
           targetFormat: 'hbs',
-          enableLegacyModules: ['ember-cli-htmlbars'],
+          enableLegacyModules: allLegacyModules(),
           transforms: [
             [
               require.resolve('@embroider/compat/src/resolver-transform'),

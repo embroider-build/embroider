@@ -1,5 +1,6 @@
 import type * as Babel from '@babel/core';
 import { transformFromAstAsync, type types } from '@babel/core';
+import { isLooseHBS } from './detect-inline-hbs.js';
 
 interface ExtractMetaOpts {
   result: { templateSource: string }[];
@@ -9,25 +10,19 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
   return {
     visitor: {
       TaggedTemplateExpression(path, state) {
-        if (path.get('tag').referencesImport('ember-cli-htmlbars', 'hbs')) {
+        if (isLooseHBS(path)) {
           state.opts.result.push({
             templateSource: path.node.quasi.quasis[0].value.raw,
           });
         }
       },
       CallExpression(path, state) {
-        if (path.get('callee').referencesImport('ember-cli-htmlbars', 'hbs')) {
-          let [arg0] = path.node.arguments;
-          if (arg0.type !== 'StringLiteral') {
-            throw new Error(`unexpected source: ${String(path)}`);
-          }
-
-          state.opts.result.push({
-            templateSource: arg0.value,
-          });
+        let check = isLooseHBS(path);
+        if (!check) {
+          return;
         }
 
-        if (path.get('callee').referencesImport('@ember/template-compilation', 'precompileTemplate')) {
+        if (check.supportsScope) {
           let [arg0, arg1] = path.node.arguments;
           if (arg0.type !== 'StringLiteral') {
             throw new Error(`unexpected source: ${String(path)}`);
@@ -82,6 +77,15 @@ function extractMetaPlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: Extrac
             if (key.name !== value.name) {
               throw new Error(`bug: unexpected name remapping`);
             }
+          }
+
+          state.opts.result.push({
+            templateSource: arg0.value,
+          });
+        } else {
+          let [arg0] = path.node.arguments;
+          if (arg0.type !== 'StringLiteral') {
+            throw new Error(`unexpected source: ${String(path)}`);
           }
 
           state.opts.result.push({

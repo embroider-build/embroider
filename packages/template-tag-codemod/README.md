@@ -92,3 +92,13 @@ In these cases, the codemod's output is controlled by `--defaultFormat`.
 `--defaultFormat gjs` is the default. 
 
 Pass `--defaultFormat gts` instead if you prefer to produce typescript. Also see the interactive docs for `--routeTemplateSignature` and `--templateOnlyComponentSignature` if you want to customize the default type signatures emitted by the codemod. 
+
+# Known Compatibility Issues
+
+## ember-css-modules
+
+If the codemod crashes with:
+
+```BuildError: BroccoliBridge placeholder 'modules' was never fulfilled.```
+
+this is probably because you have [ember-css-modules](https://github.com/salsify/ember-css-modules), and it does extremely cursed things in the classic build pipeline. You can work around this problem by **temporarily removing it from your package.json** while you run the codemod.

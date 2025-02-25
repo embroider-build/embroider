@@ -114,6 +114,58 @@ return require('@embroider/compat').compatBuild(app, Webpack, {
 });
 ```
 
+## Configuring a custom CSS pipeline
+
+Embroider sets up a basic webpack pipeline for CSS that should work for most apps. We use `style-loader` in dev mode to inject your styles and `mini-css-extract-plugin` in production to extract CSS into separate files. Both use `css-loader` to handle `@import` and `url()` usage. There are three options you can use to pass configuration to these webpack plugins:
+
+- `cssLoaderOptions` accepts options that will be passed to the `css-loader` plugin. For example, to enable CSS modules, you can pass `{ modules: true }`.
+- `styleLoaderOptions` accepts options that will be passed to the `style-loader` plugin. For example, to enable source maps, you can pass `{ sourceMap: true }`.
+- `cssPluginOptions` accepts options that will be passed to the `mini-css-extract-plugin` plugin. For example, to change the filename of the extracted CSS, you can pass `{ filename: 'my-custom-filename.css' }`.
+
+If you need to create a custom CSS pipeline, for example to use `postcss-loader` or `sass-loader`, you can disable the default CSS pipeline by setting `enableInternalCssProcessing` to `false` and then pass your custom configuration to the `webpackConfig` option.
+
+```js
+packagerOptions: {
+  enableInternalCssProcessing: false,
+  webpackConfig: {
+    plugins: [
+      new MiniCssExtractPlugin({
+        filename: `assets/chunk.[chunkhash].css`,
+        chunkFilename: `assets/chunk.[chunkhash].css`,
+        runtime: variant.runtime === 'browser',
+        ignoreOrder: true,
+      }),
+    ],
+    module: {
+      rules: [
+        {
+          test: /\.css$/i,
+          use: [
+            isProduction() ? MiniCssExtractPlugin.loader : 'style-loader',
+            'css-loader',
+            {
+              loader: 'postcss-loader',
+              options: {
+                sourceMap: isProduction() === false,
+                postcssOptions: {
+                  config: './postcss.config.js',
+                },
+              },
+            },
+          ],
+        },
+      ],
+    },
+  },
+},
+```
+
+Please refer to the [webpack documentation](https://webpack.js.org/configuration/) for more information on how to configure webpack.
+- [MiniCssExtractPlugin documentation](https://webpack.js.org/plugins/mini-css-extract-plugin/)
+- [css-loader documentation](https://webpack.js.org/loaders/css-loader/)
+- [style-loader documentation](https://webpack.js.org/loaders/style-loader/)
+
+
 ## Template Tag Codemod
 
 Edit `ember-cli-build.js`:

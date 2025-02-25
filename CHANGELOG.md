@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2025-02-25)
+
+@embroider/template-tag-codemod 0.5.0-alpha.5 (patch)
+@embroider/vite 1.0.0-alpha.7 (patch)
+
+#### :memo: Documentation
+* `@embroider/template-tag-codemod`
+  * [#2316](https://github.com/embroider-build/embroider/pull/2316) More codemod docs ([@ef4](https://github.com/ef4))
+  * [#2312](https://github.com/embroider-build/embroider/pull/2312) codemod: document ember-css-modules workaround ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2317](https://github.com/embroider-build/embroider/pull/2317) Vite 6.2 includes breaking changes to esbuild types ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-02-24)
 
 @embroider/template-tag-codemod 0.5.0-alpha.4 (minor)

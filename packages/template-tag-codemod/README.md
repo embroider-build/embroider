@@ -4,15 +4,14 @@ This codemod converts all usage of non-strict handlebars in an Ember app to the 
 
 ## Instructions
 
-1. Ensure your app has support for Template Tag, and that you can write a new component in .gjs (or .gts if you're using typescript) format and it all works.
-2. Ensure your prettier setup supports .gjs format (and .gts, if you're using typescript). This is not strictly necessary, but the codemod assumes you will leave formatting up to another tool like prettier after it runs.
-3. Upgrade @ember/test-helpers to >= 5.0.1 (because you may need [this feature](https://github.com/emberjs/ember-test-helpers/pull/1527/)).
-4. Decide what options you will want to pass to the codemod. See "Options" below.
-5. Start with clean source control. We're going to mutate all your files. Use git to give you control over what changed.
+1. Decide what options you will want to pass to the codemod. See "Important Options" below.
+1. Ensure your app has the prerequisites to use Template Tag. See "Prerequisites" below.
+4. Start with clean source control. We're going to mutate all your files. Use git to give you control over what changed.
 5. Run the codemod via `npx @embroider/template-tag-codemod YOUR_OPTIONS_HERE`
 6. Use `prettier` to apply nice formatting to the results.
 
-## Options
+
+## Important Options
 
 This section explains the important options you should know about before deciding when and how to run the codemod. Additional options are available via interactive `--help`.
 
@@ -20,7 +19,11 @@ This section explains the important options you should know about before decidin
 
 By default, imports within your own app will use relative paths *with* a file extension. This is Node's standard for valid ES modules and it is the most future-proof output, since automatically mapping file extensions can be complex.
 
-But if you're using the classic build, or if you prefer the traditional extensionless imports from the app's name, you can pass `--relativeLocalPaths false`.
+But there are several reasons you might prefer the traditional extensionless imports from the app's module namespace instead
+ - the classic build requires it
+ - `@embroider/webpack` 3.x does not support using the true file extension of some file types like .gjs
+
+To get that behavior you can pass `--relativeLocalPaths false`.
 
 ```js
 // relativeLocalPaths true (default):
@@ -92,6 +95,34 @@ In these cases, the codemod's output is controlled by `--defaultFormat`.
 `--defaultFormat gjs` is the default. 
 
 Pass `--defaultFormat gts` instead if you prefer to produce typescript. Also see the interactive docs for `--routeTemplateSignature` and `--templateOnlyComponentSignature` if you want to customize the default type signatures emitted by the codemod. 
+
+## Prerequisites
+
+1. Your build must support Template Tag. 
+
+    On classic builds or on `@embroider/core` 3.x this means installing the `ember-template-imports` addon.
+
+    On `@embroider/core` 4.x it is natively supported.
+
+    To confirm this step worked, you should be able to write a new component in a .gjs file and see it working in your app.
+
+2. Your prettier configuration should support Template Tag. This was added to the default Ember app blueprint at ember-cli 6.1.0, but you can also set it up manually on earlier blueprint versions. You need the dependency `prettier-plugin-ember-template-tag` and the configuration in `.prettierrc.js` that goes with it.
+
+3. Your ESLint configuration should support Template Tag. This was added to the default Ember app blueprint at ember-cli 6.1.0, but you can also set it up manually on earlier blueprint versions. If you're using ember-cli 6.1.0 as a guide, note that the whole eslint configuration was upgraded to the newer flat-config style. To use Template Tag support in the older style of config, you need a section like:
+ 
+    ```
+    overrides: [
+      {
+        files: ['**/*.{gts,gjs}'],
+        parser: 'ember-eslint-parser',
+      },
+    ```
+
+    And the `ember-eslint-parser` dependency.
+
+4. Upgrade @ember/test-helpers to >= 5.0.1 (because you may need [this feature](https://github.com/emberjs/ember-test-helpers/pull/1527/)).
+
+5. If you're planning to use `--nativeRouteTemplates false` to support Ember < 6.3.0, make sure you have installed the `ember-route-template` addon.
 
 # Known Compatibility Issues
 

@@ -27,7 +27,7 @@ minimalAppScenarios
     app.linkDevDependency('ember-page-title', { baseDir: __dirname });
     app.linkDevDependency('ember-welcome-page', { baseDir: __dirname });
     app.mergeFiles({
-      'testem-dev.js': `
+      'testem-dev.cjs': `
       'use strict';
 
       module.exports = {
@@ -56,7 +56,7 @@ minimalAppScenarios
       };
     `,
 
-      app: {
+      src: {
         components: {
           'fancy-component.gjs': `
           import Component from '@glimmer/component';
@@ -79,8 +79,8 @@ minimalAppScenarios
           </template>
         `,
           'index.gjs': `
-          import FancyButton from '../components/fancy-button';
-          import FancyComponent from 'app-template-minimal/components/fancy-component';
+          import FancyButton from '../components/fancy-button.gjs';
+          import FancyComponent from 'app-template-minimal/components/fancy-component.gjs';
           import WelcomePage from 'ember-welcome-page/components/welcome-page'
 
           <template>
@@ -108,7 +108,7 @@ minimalAppScenarios
                         import { module, test } from 'qunit';
             import { setupRenderingTest } from 'app-template-minimal/tests/helpers';
             import { render } from '@ember/test-helpers';
-            import FancyComponent from 'app-template-minimal/components/fancy-component';
+            import FancyComponent from '#/components/fancy-component.gjs';
 
             module('Integration | Component | fancy-component', function (hooks) {
               setupRenderingTest(hooks);
@@ -161,9 +161,9 @@ minimalAppScenarios
             .toModule()
             .resolves(/\/app\.js.*/)
             .toModule()
-            .resolves('/app/-embroider-entrypoint.js')
+            .resolves(/\/registry\.js.*/)
             .toModule()
-            .resolves(/\/app\/templates\/application.gjs.*/) // page-title is being imported by this template so we should go through here
+            .resolves(/\/src\/templates\/application.gjs.*/) // page-title is being imported by this template so we should go through here
             .toModule()
             .withContents((src, imports) => {
               let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
@@ -179,7 +179,7 @@ minimalAppScenarios
         });
 
         test('run test suite against vite dev', async function (assert) {
-          let result = await app.execute('pnpm testem --file testem-dev.js ci');
+          let result = await app.execute('pnpm testem --file testem-dev.cjs ci');
           assert.equal(result.exitCode, 0, result.output);
         });
       });
@@ -196,7 +196,7 @@ minimalAppScenarios
         test('run tests suite against vite build output', async function (assert) {
           let result = await app.execute('pnpm vite build --mode test');
           assert.equal(result.exitCode, 0, result.output);
-          result = await app.execute('pnpm ember test --path dist');
+          result = await app.execute('pnpm ember test --path dist --config-file ./testem.cjs');
           assert.equal(result.exitCode, 0, result.output);
         });
       });

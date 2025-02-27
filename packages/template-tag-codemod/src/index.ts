@@ -162,6 +162,14 @@ export async function processRouteTemplates(opts: OptionsWithDefaults) {
   }
 }
 
+// this makes sure that we don't fight with other versions of embroider currently running on the system
+// we will only pick our template-tag-codemod specific working directory if there hasn't been one set
+// already. Also note that this is first read with the ResolverLoader below so this is the perfect place
+// to apply this setting
+if (!process.env.EMBROIDER_WORKING_DIRECTORY) {
+  process.env['EMBROIDER_WORKING_DIRECTORY'] = 'node_modules/.template-tag-codemod';
+}
+
 const resolverLoader = new ResolverLoader(process.cwd());
 
 async function locateInvokables(
@@ -693,8 +701,6 @@ function applyEdits(source: string, edits: { start: number; end: number; replace
 }
 
 export async function run(partialOpts: Options) {
-  // this makes sure that we don't fight with other versions of embroider currently running on the system
-  process.env.EMBROIDER_WORKING_DIRECTORY = 'node_modules/.template-tag-codemod';
   let opts = optionsWithDefaults(partialOpts);
   await ensureAppSetup();
   await ensurePrebuild(opts);

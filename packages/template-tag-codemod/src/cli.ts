@@ -72,6 +72,11 @@ yargs(process.argv.slice(2))
           type: 'string',
           default: optionsWithDefaults().renamingRules,
           describe: `The name of a module that will provide a renaming strategy for picking the names of components, helpers, and modifiers in rewritten templates`,
+        })
+        .option('reusePrebuild', {
+          type: 'boolean',
+          default: optionsWithDefaults().reusePrebuild,
+          describe: `Allows you to reuse prebuild between runs of this codemod. While this speeds things up it is not what most people should be doing, use with caution.`,
         }),
 
     async argv => {

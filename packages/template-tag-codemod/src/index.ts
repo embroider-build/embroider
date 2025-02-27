@@ -78,6 +78,14 @@ export interface Options {
   // need to install `@embroider/template-tag-codemod` as a dependency to access
   // it in this way)
   renamingRules?: 'string';
+
+  /**
+   * This allows you to reuse the ember-prebuild if you are running the codemod multiple times.
+   *
+   * You should only set this setting if you know that any changes you're making will not influence
+   * the prebuild in any way. Most people should leave this set to its default `false` value
+   */
+  reusePrebuild?: boolean;
 }
 
 export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
@@ -95,6 +103,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       templateOnlyComponentSignature: `{ Args: {} }`,
       templateInsertion: 'beginning',
       renamingRules: '@embroider/template-tag-codemod/default-renaming',
+      reusePrebuild: false,
     },
     options
   );
@@ -102,20 +111,22 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
 
 type OptionsWithDefaults = Required<Options>;
 
-export async function ensurePrebuild() {
-  let working = locateEmbroiderWorkingDir(process.cwd());
-  let versions: Record<string, string> = {};
-  try {
-    versions = JSON.parse(readFileSync(resolve(working, 'version.json'), 'utf8'));
-  } catch (err) {}
+export async function ensurePrebuild(opts: OptionsWithDefaults) {
+  if (opts.reusePrebuild) {
+    let working = locateEmbroiderWorkingDir(process.cwd());
+    let versions: Record<string, string> = {};
+    try {
+      versions = JSON.parse(readFileSync(resolve(working, 'version.json'), 'utf8'));
+    } catch (err) {}
 
-  if (
-    versions['@embroider/core'] &&
-    versions['@embroider/core'] ===
-      JSON.parse(readFileSync(require.resolve('@embroider/core/package.json'), 'utf8')).version
-  ) {
-    console.log(`Reusing addon prebuild in ${relative(process.cwd(), working)}`);
-    return;
+    if (
+      versions['@embroider/core'] &&
+      versions['@embroider/core'] ===
+        JSON.parse(readFileSync(require.resolve('@embroider/core/package.json'), 'utf8')).version
+    ) {
+      console.log(`Reusing addon prebuild in ${relative(process.cwd(), working)}`);
+      return;
+    }
   }
 
   console.log(`Running addon prebuild...`);
@@ -682,9 +693,11 @@ function applyEdits(source: string, edits: { start: number; end: number; replace
 }
 
 export async function run(partialOpts: Options) {
+  // this makes sure that we don't fight with other versions of embroider currently running on the system
+  process.env.EMBROIDER_WORKING_DIRECTORY = 'node_modules/.template-tag-codemod';
   let opts = optionsWithDefaults(partialOpts);
   await ensureAppSetup();
-  await ensurePrebuild();
+  await ensurePrebuild(opts);
   await processRouteTemplates(opts);
   await processComponents(opts);
   await processRenderTests(opts);

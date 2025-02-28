@@ -15,6 +15,7 @@ import { replaceThisTransform } from './replace-this-transform.js';
 // @ts-expect-error library ships types incompatible with moduleResolution:nodenext
 import { ModuleImporter } from '@humanwhocodes/module-importer';
 import { allHBSModules, allLegacyModules } from './detect-inline-hbs.js';
+import chalk from 'chalk';
 
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
 const { externalName } = reverseExports;
@@ -111,6 +112,11 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
 
 type OptionsWithDefaults = Required<Options>;
 
+type Result =
+  | { context: string; status: 'success' }
+  | { context: string; status: 'failure'; messages: string[] }
+  | { context: string; status: 'noop' };
+
 export async function ensurePrebuild(opts: OptionsWithDefaults) {
   if (opts.reusePrebuild) {
     let working = locateEmbroiderWorkingDir(process.cwd());
@@ -135,6 +141,14 @@ export async function ensurePrebuild(opts: OptionsWithDefaults) {
   console.log(`Completed addon prebuild.`);
 }
 
+function colorGood(s: string): string {
+  return chalk.blue(s);
+}
+
+function colorBad(s: string): string {
+  return chalk.magenta(s);
+}
+
 export async function ensureAppSetup() {
   let filename = resolve(process.cwd(), 'package.json');
   let content: string;
@@ -154,12 +168,16 @@ export async function ensureAppSetup() {
   }
 }
 
-export async function processRouteTemplates(opts: OptionsWithDefaults) {
+export async function processRouteTemplates(opts: OptionsWithDefaults): Promise<Result[]> {
+  let results: Result[] = [];
   for (let pattern of opts.routeTemplates) {
     for (let filename of globSync(pattern)) {
-      await processRouteTemplate(filename, opts);
+      let result = await ensureResult(`route template: ${filename} `, () => processRouteTemplate(filename, opts));
+      briefLogResult(result);
+      results.push(result);
     }
   }
+  return results;
 }
 
 // this makes sure that we don't fight with other versions of embroider currently running on the system
@@ -232,7 +250,7 @@ async function resolveVirtualImport(filename: string, request: string, opts: Opt
   }
 }
 
-export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<void> {
+export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<Result> {
   let hbsSource = readFileSync(filename, 'utf8');
   let jsSource = hbsToJS(hbsSource);
   let ast = await parseJS(filename, jsSource);
@@ -267,10 +285,19 @@ export async function processRouteTemplate(filename: string, opts: OptionsWithDe
 
   writeFileSync(filename.replace(/.hbs$/, '.' + opts.defaultFormat), outSource.join('\n'));
   unlinkSync(filename);
-  console.log(`route template: ${filename} `);
+  return { context: `route template: ${filename} `, status: 'success' };
 }
 
-export async function processComponents(opts: OptionsWithDefaults): Promise<void> {
+async function ensureResult(context: string, cb: () => Promise<Result>): Promise<Result> {
+  try {
+    return await cb();
+  } catch (err) {
+    return { context, status: 'failure', messages: [`Unhandled exception: ${err}`] };
+  }
+}
+
+export async function processComponents(opts: OptionsWithDefaults): Promise<Result[]> {
+  let results: Result[] = [];
   let components = new Set<string>();
   for (let pattern of opts.components) {
     for (let filename of globSync(pattern)) {
@@ -292,15 +319,20 @@ export async function processComponents(opts: OptionsWithDefaults): Promise<void
     if (['.gjs', '.gts'].includes(jsExtension)) {
       throw new Error(`found both hbs and gjs/gts for ${component}, having both is not well-defined.`);
     }
-    await processComponent(component + '.hbs', jsExtension ? component + jsExtension : undefined, opts);
+    let result = await ensureResult(`component: ${component}.hbs`, () =>
+      processComponent(component + '.hbs', jsExtension ? component + jsExtension : undefined, opts)
+    );
+    briefLogResult(result);
+    results.push(result);
   }
+  return results;
 }
 
 export async function processComponent(
   hbsPath: string,
   jsPath: string | undefined,
   opts: OptionsWithDefaults
-): Promise<void> {
+): Promise<Result> {
   let hbsSource = readFileSync(hbsPath, 'utf8');
 
   if (jsPath) {
@@ -348,7 +380,7 @@ export async function processComponent(
     writeFileSync(hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat), newSrc);
     unlinkSync(hbsPath);
   }
-  console.log(`component: ${hbsPath} `);
+  return { context: `component: ${hbsPath}`, status: 'success' };
 }
 
 async function parseJS(filename: string, src: string): Promise<types.File> {
@@ -522,22 +554,32 @@ async function chooseImport(
   return external;
 }
 
-export async function processRenderTests(opts: OptionsWithDefaults): Promise<void> {
+function briefLogResult(result: Result) {
+  if (result.status !== 'noop') {
+    console.log(`${result.status === 'success' ? colorGood('success') : colorBad('failure')} ${result.context}`);
+  }
+}
+
+export async function processRenderTests(opts: OptionsWithDefaults): Promise<Result[]> {
+  let results: Result[] = [];
   for (let pattern of opts.renderTests) {
     for (let filename of globSync(pattern)) {
-      await processRenderTest(filename, opts);
+      let result = await ensureResult(`render test: ${filename}`, () => processRenderTest(filename, opts));
+      results.push(result);
+      briefLogResult(result);
     }
   }
+  return results;
 }
 
 const selfToken = '___self9370___';
 
-export async function processRenderTest(filename: string, opts: OptionsWithDefaults): Promise<void> {
+export async function processRenderTest(filename: string, opts: OptionsWithDefaults): Promise<Result> {
   let src = readFileSync(filename, 'utf8');
   let ast = await parseJS(filename, src);
   let renderTests = await identifyRenderTests(ast, src, filename);
   if (renderTests.length === 0) {
-    return;
+    return { context: `render test: ${filename}`, status: 'noop' };
   }
 
   let edits = deleteImports(ast);
@@ -580,7 +622,7 @@ export async function processRenderTest(filename: string, opts: OptionsWithDefau
   let newSrc = applyEdits(src, edits);
   writeFileSync(filename.replace(/\.js$/, '.gjs').replace(/\.ts$/, '.gts'), newSrc);
   unlinkSync(filename);
-  console.log(`render test: ${filename} `);
+  return { context: `render test: ${filename}`, status: 'success' };
 }
 
 const loadRenamingRules = (() => {
@@ -700,11 +742,36 @@ function applyEdits(source: string, edits: { start: number; end: number; replace
   return output.join('');
 }
 
+function indent(s: string): string {
+  return `    ` + s.replaceAll(/\n/g, `    \n`);
+}
+
 export async function run(partialOpts: Options) {
   let opts = optionsWithDefaults(partialOpts);
+  let results: Result[] = [];
   await ensureAppSetup();
   await ensurePrebuild(opts);
-  await processRouteTemplates(opts);
-  await processComponents(opts);
-  await processRenderTests(opts);
+  results = results.concat(await processRouteTemplates(opts));
+  results = results.concat(await processComponents(opts));
+  results = results.concat(await processRenderTests(opts));
+
+  console.log(`\n${colorGood('Completed run, summarizing results:')}\n`);
+
+  for (let result of results) {
+    if (result.status === 'failure') {
+      console.log(`${colorBad('Failed')} to handle ${result.context} because:`);
+      for (let message of result.messages) {
+        console.log(indent(message));
+      }
+    }
+  }
+
+  let successCount = results.filter(r => r.status === 'success').length;
+  let failureCount = results.filter(r => r.status === 'failure').length;
+
+  console.log(`${colorGood(String(successCount))} successful files, ${colorBad(String(failureCount))} failed files`);
+
+  if (results.some(result => result.status === 'failure')) {
+    process.exit(-1);
+  }
 }

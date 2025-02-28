@@ -94,27 +94,18 @@ export function supportMatrix(scenarios: Scenarios) {
 }
 
 export function fullSupportMatrix(scenarios: Scenarios) {
-  return (
-    scenarios
-      .expand({
-        lts_3_28,
-        lts_4_4,
-        lts_4_8,
-        lts_4_12,
-        lts_5_4,
-        lts_5_8,
-        lts_5_12,
-        release,
-        beta,
-        canary,
-      })
-      // we are skipping these scenarios for now and will likely add them back in one-by one once the
-      // new vite based system is working as we like
-      .skip('lts_3_28')
-      .skip('lts_4_4')
-      .skip('lts_4_8')
-      .skip('lts_4_12')
-  );
+  return scenarios.expand({
+    lts_3_28,
+    lts_4_4,
+    lts_4_8,
+    lts_4_12,
+    lts_5_4,
+    lts_5_8,
+    lts_5_12,
+    release,
+    beta,
+    canary,
+  });
 }
 
 export function baseAddon(as: 'dummy-app' | 'dependency' = 'dependency') {

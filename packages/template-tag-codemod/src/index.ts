@@ -341,10 +341,21 @@ export async function processComponent(
     let edits = deleteImports(ast);
     let { componentBody, templates } = await locateTemplates(ast, jsPath);
     if (templates.length > 0) {
-      throw new Error(`unimplemented: component JS that already has some other templates in it`);
+      return {
+        context: `component: ${hbsPath}`,
+        status: 'failure',
+        messages: [`unimplemented: component JS that already has some other templates in it`],
+      };
     }
     if (!componentBody) {
-      throw new Error(`could not locate where to insert template into ${jsPath}`);
+      return {
+        context: `component: ${hbsPath}`,
+        status: 'failure',
+        messages: [`could not locate where to insert template into ${jsPath}`],
+      };
+    }
+    if ('problem' in componentBody) {
+      return { context: `component: ${hbsPath}`, status: 'failure', messages: [componentBody.problem] };
     }
     ast = await insertComponentTemplate(ast, componentBody.loc, hbsSource);
     let invokables = await locateInvokables(jsPath, ast, opts);

@@ -483,6 +483,66 @@ tsAppScenarios
         });
       });
 
+      test('convert rendering test, this binding with no tail, with native lexical this', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'tests/integration/components/example-test.js': `
+              import { render } from '@ember/test-helpers';
+              import { hbs } from 'ember-cli-htmlbars';
+
+              module('Integration | Component | message-box', function (hooks) {
+                test('need to introduce self', async function (assert) {
+                  await render(hbs\`<MessageBox @thing={{this}} />\`);
+                });
+              });
+            `,
+          },
+          to: {
+            'tests/integration/components/example-test.gjs': `
+              import { render } from '@ember/test-helpers';
+              import MessageBox from "../../../app/components/message-box.js";
+
+              module('Integration | Component | message-box', function (hooks) {
+                test('need to introduce self', async function (assert) {
+                  await render(<template><MessageBox @thing={{this}} /></template>);
+                });
+              });
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+        });
+      });
+
+      test('convert rendering test, this binding with no tail, without native lexical this', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'tests/integration/components/example-test.js': `
+              import { render } from '@ember/test-helpers';
+              import { hbs } from 'ember-cli-htmlbars';
+
+              module('Integration | Component | message-box', function (hooks) {
+                test('need to introduce self', async function (assert) {
+                  await render(hbs\`<MessageBox @thing={{this}} />\`);
+                });
+              });
+            `,
+          },
+          to: {
+            'tests/integration/components/example-test.gjs': `
+              import { render } from '@ember/test-helpers';
+              import MessageBox from "../../../app/components/message-box.js";
+
+              module('Integration | Component | message-box', function (hooks) {
+                test('need to introduce self', async function (assert) {const self = this;
+                  await render(<template><MessageBox @thing={{self}} /></template>);
+                });
+              });
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false --nativeLexicalThis false',
+        });
+      });
+
       test('legacy hbs module name', async function (assert) {
         await assert.codeMod({
           from: {

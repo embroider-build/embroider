@@ -180,6 +180,63 @@ tsAppScenarios
         });
       });
 
+      test('basic js backing component', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `<button {{on "click" this.clicked}}>Click me</button>`,
+            'app/components/example.js': `
+              import Component from "@ember/component";
+              export default class extends Component {
+
+                clicked() {
+                  alert('i got clicked');
+                }
+              }
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+              import Component from "@ember/component";
+              import { on } from "@ember/modifier";
+              export default class extends Component {<template><button {{on "click" this.clicked}}>Click me</button></template>
+                clicked() {
+                  alert('i got clicked');
+                }
+              }
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('basic js backing component', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `<button {{on "click" this.clicked}}>Click me</button>`,
+            'app/components/example.js': `
+              import Component from "@ember/component";
+              export default Component.extend({
+                clicked() {
+                  alert('i got clicked');
+                }
+              })
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+              import Component from "@ember/component";
+              import { on } from "@ember/modifier";
+              export default class extends Component {<template><button {{on "click" this.clicked}}>Click me</button></template>
+                clicked() {
+                  alert('i got clicked');
+                }
+              }
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
       test('name collision between original js and added import', async function (assert) {
         await assert.codeMod({
           from: {

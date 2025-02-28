@@ -395,6 +395,44 @@ tsAppScenarios
         });
       });
 
+      test('rendering test with template defined outside render() and no other references', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'tests/integration/components/example-test.js': `
+              import { precompileTemplate } from '@ember/template-compilation';
+              import { render } from '@ember/test-helpers';
+              let template = precompileTemplate('<div></div>')
+              render(template);
+            `,
+          },
+          to: {
+            'tests/integration/components/example-test.gjs': `
+              import { render } from '@ember/test-helpers';
+              let template = <template><div></div></template>
+              render(template);
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+        });
+      });
+
+      test('rendering test with template defined outside render() with extra references', async function (assert) {
+        await assert.codeModFailure({
+          from: {
+            'tests/integration/components/example-test.js': `
+              import { precompileTemplate } from '@ember/template-compilation';
+              import { render } from '@ember/test-helpers';
+              let template = precompileTemplate('<div></div>')
+              doSomethingTo(template);
+              render(template);
+            `,
+          },
+          matches:
+            /unsupported syntax in rendering test: local variable "template" is a template but it's used in multiple places/,
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+        });
+      });
+
       test('convert rendering test without native lexical this', async function (assert) {
         await assert.codeMod({
           from: {

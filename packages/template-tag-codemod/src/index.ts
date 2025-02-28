@@ -583,7 +583,11 @@ export async function processRenderTests(opts: OptionsWithDefaults): Promise<Res
   return results;
 }
 
-const selfToken = '___self9370___';
+// most of this is just intentionally random, but the presence of '.' is
+// semantically important. Without it, our token can look to embroider's
+// resolver transform like a global helper invocation! Whereas paths with dots
+// are never global invocations.
+const selfToken = '___self93.70___';
 
 export async function processRenderTest(filename: string, opts: OptionsWithDefaults): Promise<Result> {
   let src = readFileSync(filename, 'utf8');

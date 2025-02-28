@@ -7,7 +7,7 @@ export function replaceThisTransform(replacement: string): ASTPluginBuilder {
       visitor: {
         PathExpression(node) {
           if (node.head.type === 'ThisHead') {
-            return builders.path(`${replacement}.${node.tail.join('.')}`);
+            return builders.path([replacement, ...node.tail].join('.'));
           }
         },
       },

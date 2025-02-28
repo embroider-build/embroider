@@ -716,6 +716,19 @@ function deleteImports(parsed: types.File): Edit[] {
         end: loc.end.index,
         replacement: null,
       });
+      for (let comments of [path.node.leadingComments, path.node.trailingComments]) {
+        if (comments) {
+          for (let comment of comments) {
+            if (comment.start != null && comment.end != null) {
+              edits.push({
+                start: comment.start,
+                end: comment.end,
+                replacement: null,
+              });
+            }
+          }
+        }
+      }
     },
   });
   return edits;

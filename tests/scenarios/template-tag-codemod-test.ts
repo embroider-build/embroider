@@ -513,5 +513,37 @@ tsAppScenarios
           via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
         });
       });
+
+      test('comment lines among the imports are left alone', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'tests/integration/components/example-test.js': `
+              import { module, test } from 'qunit';
+              import { render } from '@ember/test-helpers';
+              // @ts-expect-error
+              import hbs from 'htmlbars-inline-precompile';
+              module('Integration | Component | message-box', function (hooks) {
+                test('example', async function (assert) {
+                  await render(hbs\`<MessageBox />\`);
+                });
+              });
+            `,
+          },
+          to: {
+            'tests/integration/components/example-test.gjs': `
+              import { module, test } from 'qunit';
+              import { render } from '@ember/test-helpers';
+              // @ts-expect-error
+              import MessageBox from "../../../app/components/message-box.js";
+              module('Integration | Component | message-box', function (hooks) {
+                test('example', async function (assert) {
+                  await render(<template><MessageBox /></template>);
+                });
+              });
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+        });
+      });
     });
   });

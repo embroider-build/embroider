@@ -223,7 +223,7 @@ tsAppScenarios
             `,
           },
           matches:
-            /Failed to handle component: app\/components\/example\.hbs because:\n\s*This codemod does not support old styles Component\.extend\(\) syntax\. Convert to a native class first\./,
+            /This codemod does not support old styles Component\.extend\(\) syntax\. Convert to a native class first\./,
           via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });
       });

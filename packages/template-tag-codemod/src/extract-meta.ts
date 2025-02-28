@@ -120,7 +120,7 @@ export async function extractTemplates(ast: types.File, filename: string) {
 
 interface LocatePluginOpts {
   templates: { start: number; end: number }[];
-  componentBody: { loc: { start: number; end: number }; node: types.ClassBody } | undefined;
+  componentBody: { loc: { start: number; end: number }; node: types.ClassBody } | { problem: string } | undefined;
 }
 
 function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePluginOpts }> {
@@ -133,8 +133,22 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
           case 'ClassExpression':
             state.opts.componentBody = { loc: extractLoc(dec.body), node: dec.body };
             return;
+          case 'CallExpression':
+            let callee = dec.callee;
+            if (
+              callee.type === 'MemberExpression' &&
+              callee.property.type === 'Identifier' &&
+              callee.property.name === 'extend'
+            ) {
+              state.opts.componentBody = {
+                problem: `This codemod does not support old styles Component.extend() syntax. Convert to a native class first.`,
+              };
+              return;
+            }
           default:
-            throw new Error(`unimplemented declaration: ${dec.type}`);
+            state.opts.componentBody = {
+              problem: `The default export from this JS file is not something we understand. Found ${dec.type}`,
+            };
         }
       },
       CallExpression(path, state) {

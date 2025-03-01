@@ -1,5 +1,27 @@
 # Embroider Changelog
 
+## Release (2025-02-28)
+
+@embroider/template-tag-codemod 0.5.0-alpha.6 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2331](https://github.com/embroider-build/embroider/pull/2331) Don't duplicate comments that appear next to modified imports ([@ef4](https://github.com/ef4))
+  * [#2330](https://github.com/embroider-build/embroider/pull/2330) Handle render tests that define the template outside the render call ([@ef4](https://github.com/ef4))
+* `@embroider/template-tag-codemod`, `@embroider/test-support`, `@embroider/test-scenarios`
+  * [#2328](https://github.com/embroider-build/embroider/pull/2328) Skip and report non-native-class syntax components ([@ef4](https://github.com/ef4))
+* `@embroider/template-tag-codemod`
+  * [#2327](https://github.com/embroider-build/embroider/pull/2327) Improve template-tag-codemod error reporting ([@ef4](https://github.com/ef4))
+  * [#2319](https://github.com/embroider-build/embroider/pull/2319) template-tag-codemod: only reuse ember prebuild if you explicitly pass the option to do so ([@mansona](https://github.com/mansona))
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2332](https://github.com/embroider-build/embroider/pull/2332) Fix lexical this polyfill when "this" has no tail ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-02-25)
 
 @embroider/template-tag-codemod 0.5.0-alpha.5 (patch)

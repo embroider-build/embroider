@@ -37,13 +37,17 @@
       "oldVersion": "3.0.0-alpha.3"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "patch",
-      "oldVersion": "0.5.0-alpha.4",
-      "newVersion": "0.5.0-alpha.5",
+      "impact": "minor",
+      "oldVersion": "0.5.0-alpha.5",
+      "newVersion": "0.5.0-alpha.6",
       "constraints": [
         {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
           "impact": "patch",
-          "reason": "Appears in changelog section :memo: Documentation"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/template-tag-codemod/package.json"
@@ -52,17 +56,8 @@
       "oldVersion": "1.14.0-alpha.1"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.0-alpha.6",
-      "newVersion": "1.0.0-alpha.7",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.0.0-alpha.7"
     }
   },
-  "description": "## Release (2025-02-25)\n\n@embroider/template-tag-codemod 0.5.0-alpha.5 (patch)\n@embroider/vite 1.0.0-alpha.7 (patch)\n\n#### :memo: Documentation\n* `@embroider/template-tag-codemod`\n  * [#2316](https://github.com/embroider-build/embroider/pull/2316) More codemod docs ([@ef4](https://github.com/ef4))\n  * [#2312](https://github.com/embroider-build/embroider/pull/2312) codemod: document ember-css-modules workaround ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/vite`\n  * [#2317](https://github.com/embroider-build/embroider/pull/2317) Vite 6.2 includes breaking changes to esbuild types ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-02-28)\n\n@embroider/template-tag-codemod 0.5.0-alpha.6 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2331](https://github.com/embroider-build/embroider/pull/2331) Don't duplicate comments that appear next to modified imports ([@ef4](https://github.com/ef4))\n  * [#2330](https://github.com/embroider-build/embroider/pull/2330) Handle render tests that define the template outside the render call ([@ef4](https://github.com/ef4))\n* `@embroider/template-tag-codemod`, `@embroider/test-support`, `@embroider/test-scenarios`\n  * [#2328](https://github.com/embroider-build/embroider/pull/2328) Skip and report non-native-class syntax components ([@ef4](https://github.com/ef4))\n* `@embroider/template-tag-codemod`\n  * [#2327](https://github.com/embroider-build/embroider/pull/2327) Improve template-tag-codemod error reporting ([@ef4](https://github.com/ef4))\n  * [#2319](https://github.com/embroider-build/embroider/pull/2319) template-tag-codemod: only reuse ember prebuild if you explicitly pass the option to do so ([@mansona](https://github.com/mansona))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2332](https://github.com/embroider-build/embroider/pull/2332) Fix lexical this polyfill when \"this\" has no tail ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

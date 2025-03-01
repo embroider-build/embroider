@@ -168,24 +168,51 @@ class ReplaceRequire extends Plugin {
     let indexFile = readFileSync(resolve(this.inputPaths[0], 'ember', 'index.js'), 'utf8');
     outputFileSync(
       resolve(this.outputPath, 'ember', 'index.js'),
-      indexFile.replace(
-        `import require, { has } from 'require';`,
-        `function require() { throw new Error('you should not be using require in vite')}
-function has() { console.log('you should not be using require/has in vite'); return false; }
+      indexFile
+        .replace(
+          `import require, { has } from 'require';`,
+          `function require() { throw new Error('you should not be using require in vite')}
+function has(module) {
+  console.log('you should not be using require/has in vite'); return false;
+}
 function define() { throw new Error('you should not be using requirejs/define in vite')}`
-      ),
+        )
+        .replace(`function defineEmberTestingLazyLoad(key) {`, `function defineEmberTestingLazyLoad(key, testing) {`)
+        .replace(
+          `defineEmberTestingLazyLoad('Test');`,
+          `import { isTesting } from '@embroider/macros'
+
+let testing;
+if(isTesting()) {
+testing = await import('../ember-testing/index.js');
+globalThis.testingLoaded = true;
+}
+        defineEmberTestingLazyLoad('Test', testing);`
+        )
+        .replace(
+          `defineEmberTestingLazyLoad('setupForTesting');`,
+          `defineEmberTestingLazyLoad('setupForTesting', testing);`
+        )
+        .replace(`has('ember-testing')`, `testing`)
+        .replace(`let testing = require('ember-testing');`, ''),
       'utf8'
     );
 
     let testIndexFile = readFileSync(resolve(this.inputPaths[0], '@ember', 'test', 'index.js'), 'utf8');
     outputFileSync(
       resolve(this.outputPath, '@ember', 'test', 'index.js'),
-      testIndexFile.replace(
-        `import require, { has } from 'require';`,
-        `function require() { throw new Error('you should not be using require in vite')}
+      testIndexFile
+        .replace(
+          `import require, { has } from 'require';`,
+          `function require() { throw new Error('you should not be using require in vite')}
 function has() { console.log('you should not be using require/has in vite'); return false; }
 function define() { throw new Error('you should not be using requirejs/define in vite')}`
-      ),
+        )
+        .replace(`has('ember-testing')`, 'globalThis.testingLoaded')
+        .replace(
+          `let Test = require('ember-testing').Test`,
+          `let { Test } = await import('../../ember-testing/index.js')`
+        ),
       'utf8'
     );
   }

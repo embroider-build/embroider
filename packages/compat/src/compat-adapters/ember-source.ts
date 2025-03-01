@@ -102,7 +102,9 @@ export default class extends V1Addon {
       // top-level `ember` package tries to import it until 4.10. A
       // spec-compliant ES modules implementation will treat this as a parse
       // error.
-      trees.push(new FixStringLoc([packages]));
+      trees.push(new ReplaceRequire([new FixStringLoc([packages])]));
+    } else {
+      trees.push(new ReplaceRequire([packages]));
     }
 
     if (satisfies(this.packageJSON.version, '<5.12.0')) {
@@ -158,6 +160,34 @@ class FixStringLoc extends Plugin {
       configFile: false,
     })!.code!;
     outputFileSync(resolve(this.outputPath, 'ember', 'index.js'), outSource, 'utf8');
+  }
+}
+
+class ReplaceRequire extends Plugin {
+  build() {
+    let indexFile = readFileSync(resolve(this.inputPaths[0], 'ember', 'index.js'), 'utf8');
+    outputFileSync(
+      resolve(this.outputPath, 'ember', 'index.js'),
+      indexFile.replace(
+        `import require, { has } from 'require';`,
+        `function require() { throw new Error('you should not be using require in vite')}
+function has() { console.log('you should not be using require/has in vite'); return false; }
+function define() { throw new Error('you should not be using requirejs/define in vite')}`
+      ),
+      'utf8'
+    );
+
+    let testIndexFile = readFileSync(resolve(this.inputPaths[0], '@ember', 'test', 'index.js'), 'utf8');
+    outputFileSync(
+      resolve(this.outputPath, '@ember', 'test', 'index.js'),
+      testIndexFile.replace(
+        `import require, { has } from 'require';`,
+        `function require() { throw new Error('you should not be using require in vite')}
+function has() { console.log('you should not be using require/has in vite'); return false; }
+function define() { throw new Error('you should not be using requirejs/define in vite')}`
+      ),
+      'utf8'
+    );
   }
 }
 

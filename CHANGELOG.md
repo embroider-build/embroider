@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-03-02)
+
+@embroider/template-tag-codemod 0.5.0-alpha.7 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`
+  * [#2321](https://github.com/embroider-build/embroider/pull/2321) downgrade ember-cli dependency to support a wider range of ember-source ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-02-28)
 
 @embroider/template-tag-codemod 0.5.0-alpha.6 (minor)

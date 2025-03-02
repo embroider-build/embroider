@@ -37,14 +37,10 @@
       "oldVersion": "3.0.0-alpha.3"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "minor",
-      "oldVersion": "0.5.0-alpha.5",
-      "newVersion": "0.5.0-alpha.6",
+      "impact": "patch",
+      "oldVersion": "0.5.0-alpha.6",
+      "newVersion": "0.5.0-alpha.7",
       "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
@@ -59,5 +55,5 @@
       "oldVersion": "1.0.0-alpha.7"
     }
   },
-  "description": "## Release (2025-02-28)\n\n@embroider/template-tag-codemod 0.5.0-alpha.6 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2331](https://github.com/embroider-build/embroider/pull/2331) Don't duplicate comments that appear next to modified imports ([@ef4](https://github.com/ef4))\n  * [#2330](https://github.com/embroider-build/embroider/pull/2330) Handle render tests that define the template outside the render call ([@ef4](https://github.com/ef4))\n* `@embroider/template-tag-codemod`, `@embroider/test-support`, `@embroider/test-scenarios`\n  * [#2328](https://github.com/embroider-build/embroider/pull/2328) Skip and report non-native-class syntax components ([@ef4](https://github.com/ef4))\n* `@embroider/template-tag-codemod`\n  * [#2327](https://github.com/embroider-build/embroider/pull/2327) Improve template-tag-codemod error reporting ([@ef4](https://github.com/ef4))\n  * [#2319](https://github.com/embroider-build/embroider/pull/2319) template-tag-codemod: only reuse ember prebuild if you explicitly pass the option to do so ([@mansona](https://github.com/mansona))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2332](https://github.com/embroider-build/embroider/pull/2332) Fix lexical this polyfill when \"this\" has no tail ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-03-02)\n\n@embroider/template-tag-codemod 0.5.0-alpha.7 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2321](https://github.com/embroider-build/embroider/pull/2321) downgrade ember-cli dependency to support a wider range of ember-source ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

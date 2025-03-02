@@ -102,7 +102,13 @@ export default class extends V1Addon {
       // top-level `ember` package tries to import it until 4.10. A
       // spec-compliant ES modules implementation will treat this as a parse
       // error.
-      trees.push(new FixStringLoc([packages]));
+      trees.push(new ReplaceRequire([new FixStringLoc([packages])]));
+    } else {
+      trees.push(new ReplaceRequire([packages]));
+    }
+
+    if (satisfies(this.packageJSON.version, '<5.12.0')) {
+      trees.push(new FixDeprecateFunction([packages]));
     }
 
     return mergeTrees(trees, { overwrite: true });
@@ -155,6 +161,106 @@ class FixStringLoc extends Plugin {
     })!.code!;
     outputFileSync(resolve(this.outputPath, 'ember', 'index.js'), outSource, 'utf8');
   }
+}
+
+class ReplaceRequire extends Plugin {
+  build() {
+    let indexFile = readFileSync(resolve(this.inputPaths[0], 'ember', 'index.js'), 'utf8');
+    outputFileSync(
+      resolve(this.outputPath, 'ember', 'index.js'),
+      indexFile.replace(
+        `import require, { has } from 'require';`,
+        `function require() { throw new Error('you should not be using require in vite')}
+function has() { console.log('you should not be using require/has in vite'); return false; }
+function define() { throw new Error('you should not be using requirejs/define in vite')}`
+      ),
+      'utf8'
+    );
+
+    let testIndexFile = readFileSync(resolve(this.inputPaths[0], '@ember', 'test', 'index.js'), 'utf8');
+    outputFileSync(
+      resolve(this.outputPath, '@ember', 'test', 'index.js'),
+      testIndexFile.replace(
+        `import require, { has } from 'require';`,
+        `function require() { throw new Error('you should not be using require in vite')}
+function has() { console.log('you should not be using require/has in vite'); return false; }
+function define() { throw new Error('you should not be using requirejs/define in vite')}`
+      ),
+      'utf8'
+    );
+  }
+}
+
+class FixDeprecateFunction extends Plugin {
+  build() {
+    let inSource = readFileSync(resolve(this.inputPaths[0], '@ember', 'debug', 'index.js'), 'utf8');
+    let outSource = transform(inSource, {
+      plugins: [fixDeprecate],
+      configFile: false,
+    })!.code!;
+    outputFileSync(resolve(this.outputPath, '@ember', 'debug', 'index.js'), outSource, 'utf8');
+  }
+}
+
+function fixDeprecate(babel: typeof Babel) {
+  const { types: t } = babel;
+
+  return {
+    name: 'ast-transform', // not required
+    visitor: {
+      Program(path: NodePath<Babel.types.Program>) {
+        path.node.body.unshift(
+          t.functionDeclaration(
+            t.identifier('newDeprecate'),
+            [t.restElement(t.identifier('rest'))],
+            t.blockStatement([
+              t.returnStatement(
+                t.callExpression(
+                  t.logicalExpression('??', t.identifier('currentDeprecate'), t.identifier('_deprecate')),
+                  [t.spreadElement(t.identifier('rest'))]
+                )
+              ),
+            ])
+          )
+        );
+      },
+      AssignmentExpression(path: NodePath<Babel.types.AssignmentExpression>) {
+        if (path.node.left.type === 'Identifier' && path.node.left.name === 'deprecate') {
+          path.node.left.name = 'currentDeprecate';
+        }
+      },
+
+      ReturnStatement(path: NodePath<Babel.types.ReturnStatement>) {
+        if (path.node.argument?.type === 'Identifier' && path.node.argument.name === 'deprecate') {
+          path.node.argument.name = 'newDeprecate';
+        }
+      },
+
+      CallExpression(path: NodePath<Babel.types.CallExpression>) {
+        if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'deprecate') {
+          path.node.callee.name = 'newDeprecate';
+        }
+        if (
+          path.node.callee.type === 'Identifier' &&
+          path.node.callee.name === 'setDebugFunction' &&
+          path.node.arguments[0].type === 'StringLiteral' &&
+          path.node.arguments[0].value === 'deprecate'
+        ) {
+          path.remove();
+        }
+      },
+      ExportSpecifier(path: NodePath<Babel.types.ExportSpecifier>) {
+        if (path.node.local.name === 'deprecate') {
+          path.node.local = t.identifier('newDeprecate');
+        }
+      },
+      VariableDeclarator(path: NodePath<Babel.types.VariableDeclarator>) {
+        if (path.node.id.type === 'Identifier' && path.node.id.name === 'deprecate') {
+          path.node.id.name = 'currentDeprecate';
+        }
+      },
+    },
+  };
 }
 
 function fixStringLoc(babel: typeof Babel) {

@@ -1,14 +1,25 @@
-import { baseAddon, appScenarios } from './scenarios';
+import { baseAddon, wideAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import { readdirSync } from 'fs-extra';
-import { join } from 'path';
+import { readdirSync, readFileSync, writeFileSync } from 'fs-extra';
+import { join, resolve } from 'path';
+import CommandWatcher from './helpers/command-watcher';
 
 const { module: Qmodule, test } = QUnit;
 
 // TODO check if we need anything in this test or if things are covered elsewhere
-appScenarios
+wideAppScenarios
   .map('vite-app-basics', project => {
+    // These are for a custom testem setup that will let us do runtime tests
+    // inside `vite dev` rather than only against the output of `vite build`.
+    //
+    // Most apps should run their CI against `vite build`, as that's closer to
+    // production. And they can do development tests directly in brower against
+    // `vite dev` at `/tests/index.html`. We're doing `vite dev` in CI here
+    // because we're testing the development experience itself.
+    project.linkDevDependency('testem', { baseDir: __dirname });
+    project.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
+
     let addon = baseAddon();
     addon.pkg.name = 'my-addon';
     // setup addon that triggers packages/compat/src/hbs-to-js-broccoli-plugin.ts
@@ -84,6 +95,34 @@ appScenarios
 
     project.addDevDependency(addon2);
     project.mergeFiles({
+      'testem-dev.js': `
+          'use strict';
+
+          module.exports = {
+            test_page: '/tests?hidepassed',
+            disable_watching: true,
+            launch_in_ci: ['Chrome'],
+            launch_in_dev: ['Chrome'],
+            browser_start_timeout: 120,
+            browser_args: {
+              Chrome: {
+                ci: [
+                  // --no-sandbox is needed when running Chrome inside a container
+                  process.env.CI ? '--no-sandbox' : null,
+                  '--headless',
+                  '--disable-dev-shm-usage',
+                  '--disable-software-rasterizer',
+                  '--mute-audio',
+                  '--remote-debugging-port=0',
+                  '--window-size=1440,900',
+                ].filter(Boolean),
+              },
+            },
+            middleware: [
+              require('@embroider/test-support/testem-proxy').testemProxy('http://localhost:4200', '/')
+            ],
+          };
+        `,
       tests: {
         acceptance: {
           'app-route-test.js': `import { module, test } from 'qunit';
@@ -309,6 +348,28 @@ appScenarios
 
         const assetFiles = readdirSync(join(app.dir, 'dist', '@embroider', 'virtual'));
         assert.ok(assetFiles.length > 1, 'should have created asset files');
+      });
+
+      Qmodule('vite dev', function (hooks) {
+        let server: CommandWatcher;
+
+        hooks.before(async () => {
+          server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
+          const [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+
+          let testem = readFileSync(resolve(app.dir, 'testem-dev.js')).toString();
+          testem = testem.replace(`.testemProxy('http://localhost:4200', '/')`, `.testemProxy('${appURL}', '/')`);
+          writeFileSync(resolve(app.dir, 'testem-dev.js'), testem);
+        });
+
+        hooks.after(async () => {
+          await server?.shutdown();
+        });
+
+        test('run test suite against vite dev', async function (assert) {
+          let result = await app.execute('pnpm testem --file testem-dev.js ci');
+          assert.equal(result.exitCode, 0, result.output);
+        });
       });
     });
   });

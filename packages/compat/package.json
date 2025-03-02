@@ -10,12 +10,15 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./src/*": "./dist/src/*.js",
+    "./*": "./dist/src/*.js"
+  },
   "files": [
     "babel.js",
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist/src/"
   ],
   "scripts": {
     "test": "jest"

@@ -18,9 +18,10 @@
   },
   "scripts": {
     "build": "vite build",
+    "build:test": "NODE_ENV=development vite build --mode test",
     "start": "vite",
     "test": "pnpm test:ember",
-    "test:ember": "vite build --mode test && pnpm dist:ember:test",
+    "test:ember": "pnpm build:test && pnpm dist:ember:test",
     "dist:ember:test": "ember test --path dist --config-file ./testem.cjs"
   },
   "devDependencies": {

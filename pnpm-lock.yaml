@@ -1772,24 +1772,18 @@ importers:
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.2.0
-      '@ember/string':
-        specifier: ^3.1.1
-        version: 3.1.1
       '@ember/test-helpers':
         specifier: ^5.0.0
         version: 5.1.0(@babel/core@7.26.9)(ember-source@6.3.0-alpha.3)
-      '@embroider/compat':
-        specifier: workspace:*
-        version: link:../../packages/compat
       '@embroider/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@embroider/macros':
+        specifier: workspace:*
+        version: link:../../packages/macros
       '@embroider/router':
         specifier: workspace:*
         version: link:../../packages/router
-      '@embroider/test-setup':
-        specifier: workspace:*
-        version: link:../../packages/test-setup
       '@embroider/vite':
         specifier: workspace:*
         version: link:../../packages/vite
@@ -1808,12 +1802,15 @@ importers:
       decorator-transforms:
         specifier: ^2.0.0
         version: 2.3.0(@babel/core@7.26.9)
+      ember-cli:
+        specifier: ^6.2.2
+        version: 6.2.2
       ember-modifier:
         specifier: ^4.1.0
         version: 4.2.0(@babel/core@7.26.9)(ember-source@6.3.0-alpha.3)
       ember-page-title:
-        specifier: ^7.0.0
-        version: 7.0.0
+        specifier: ^8.2.4
+        version: 8.2.4(ember-source@6.3.0-alpha.3)
       ember-qunit:
         specifier: ^9.0.1
         version: 9.0.1(@ember/test-helpers@5.1.0)(ember-source@6.3.0-alpha.3)(qunit@2.24.1)
@@ -1829,9 +1826,6 @@ importers:
       qunit-dom:
         specifier: ^3.4.0
         version: 3.4.0
-      tracked-built-ins:
-        specifier: ^3.1.1
-        version: 3.4.0(@babel/core@7.26.9)
       vite:
         specifier: ^5.0.9
         version: 5.4.14
@@ -16464,6 +16458,19 @@ packages:
       '@embroider/addon-shim': 1.9.0
       '@simple-dom/document': 1.4.0
       ember-source: 5.3.0(@babel/core@7.26.9)(@glimmer/component@1.1.2)(@glint/template@1.5.2)(webpack@5.98.0)
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /ember-page-title@8.2.4(ember-source@6.3.0-alpha.3):
+    resolution: {integrity: sha512-ZZ912IRItIEfD5+35w65DT9TmqppK+suXJeaJenD5OSuvujUnYl6KxBpyAbfjw4mYtURwJO/TmSe+4GGJbsJ0w==}
+    engines: {node: 16.* || >= 18}
+    peerDependencies:
+      ember-source: '>= 3.28.0'
+    dependencies:
+      '@embroider/addon-shim': 1.9.0
+      '@simple-dom/document': 1.4.0
+      ember-source: 6.3.0-alpha.3(@glimmer/component@2.0.0)
     transitivePeerDependencies:
       - supports-color
     dev: true

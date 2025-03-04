@@ -6,41 +6,47 @@
   "repository": "",
   "license": "MIT",
   "author": "",
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*",
+    "#config": "./src/config.js",
+    "#components/*": "./src/components/*"
+  },
   "exports": {
     "./tests/*": "./tests/*",
-    "./*": "./app/*"
+    "./*": "./src/*"
   },
   "scripts": {
     "build": "vite build",
+    "build:test": "NODE_ENV=development vite build --mode test",
     "start": "vite",
-    "test": "vite build --mode test && ember test --path dist",
-    "test:ember": "vite build --mode test && ember test --path dist"
+    "test": "pnpm test:ember",
+    "test:ember": "pnpm build:test && pnpm dist:ember:test",
+    "dist:ember:test": "ember test --path dist --config-file ./testem.cjs"
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",
     "@babel/plugin-transform-runtime": "^7.25.4",
     "@babel/runtime": "^7.25.6",
     "@ember/optional-features": "^2.0.0",
-    "@ember/string": "^3.1.1",
     "@ember/test-helpers": "^5.0.0",
-    "@embroider/compat": "workspace:*",
     "@embroider/core": "workspace:*",
+    "@embroider/macros": "workspace:*",
     "@embroider/router": "workspace:*",
-    "@embroider/test-setup": "workspace:*",
     "@embroider/vite": "workspace:*",
     "@glimmer/component": "^2.0.0",
     "@glimmer/tracking": "^1.1.2",
     "@rollup/plugin-babel": "^5.3.1",
     "babel-plugin-ember-template-compilation": "^2.3.0",
     "decorator-transforms": "^2.0.0",
+    "ember-cli": "^6.2.2",
     "ember-modifier": "^4.1.0",
-    "ember-page-title": "^7.0.0",
+    "ember-page-title": "^8.2.4",
     "ember-qunit": "^9.0.1",
     "ember-resolver": "^13.1.0",
     "ember-source": "6.3.0-alpha.3",
     "qunit": "^2.19.4",
     "qunit-dom": "^3.4.0",
-    "tracked-built-ins": "^3.1.1",
     "vite": "^5.0.9"
   },
   "engines": {

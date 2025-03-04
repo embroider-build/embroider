@@ -8,7 +8,7 @@
   "author": "",
   "type": "module",
   "imports": {
-    "#/*": "./src/*",
+    "#src/*": "./src/*",
     "#config": "./src/config.js",
     "#components/*": "./src/components/*"
   },

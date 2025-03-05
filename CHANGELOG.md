@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2025-03-05)
+
+@embroider/compat 4.0.0-alpha.7 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2323](https://github.com/embroider-build/embroider/pull/2323) Add Vite support for Ember@5.8  ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `app-template-minimal`, `@embroider/test-scenarios`
+  * [#2301](https://github.com/embroider-build/embroider/pull/2301) Make app-template-minimal more minimal ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-03-02)
 
 @embroider/template-tag-codemod 0.5.0-alpha.7 (patch)

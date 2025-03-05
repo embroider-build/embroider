@@ -13,7 +13,16 @@
       "oldVersion": "1.1.0-alpha.1"
     },
     "@embroider/compat": {
-      "oldVersion": "4.0.0-alpha.6"
+      "impact": "minor",
+      "oldVersion": "4.0.0-alpha.6",
+      "newVersion": "4.0.0-alpha.7",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0-alpha.1"
@@ -37,16 +46,7 @@
       "oldVersion": "3.0.0-alpha.3"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "patch",
-      "oldVersion": "0.5.0-alpha.6",
-      "newVersion": "0.5.0-alpha.7",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "0.5.0-alpha.7"
     },
     "@embroider/util": {
       "oldVersion": "1.14.0-alpha.1"
@@ -55,5 +55,5 @@
       "oldVersion": "1.0.0-alpha.7"
     }
   },
-  "description": "## Release (2025-03-02)\n\n@embroider/template-tag-codemod 0.5.0-alpha.7 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2321](https://github.com/embroider-build/embroider/pull/2321) downgrade ember-cli dependency to support a wider range of ember-source ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-03-05)\n\n@embroider/compat 4.0.0-alpha.7 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/test-scenarios`\n  * [#2323](https://github.com/embroider-build/embroider/pull/2323) Add Vite support for Ember@5.8  ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* `app-template-minimal`, `@embroider/test-scenarios`\n  * [#2301](https://github.com/embroider-build/embroider/pull/2301) Make app-template-minimal more minimal ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

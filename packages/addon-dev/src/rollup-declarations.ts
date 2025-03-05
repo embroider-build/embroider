@@ -12,6 +12,7 @@ export default function rollupDeclarationsPlugin(declarationsDir: string) {
         await execa('glint', ['--declaration'], {
           stdio: 'inherit',
           preferLocal: true,
+          reject: false
         });
 
         await fixDeclarationsInMatchingFiles(declarationsDir);

@@ -68,9 +68,6 @@ import type { CompatOptionsType } from './options';
 export class CompatAppBuilder {
   // for each relativePath, an Asset we have already emitted
   private assets: Map<string, InternalAsset> = new Map();
-  private staticComponents = false;
-  private staticHelpers = false;
-  private staticModifiers = false;
 
   constructor(
     private root: string,
@@ -81,39 +78,7 @@ export class CompatAppBuilder {
     private configTree: V1Config,
     private synthVendor: Package,
     private synthStyles: Package
-  ) {
-    // staticInvokables always wins when configured
-    if (typeof options.staticInvokables !== 'undefined') {
-      if (
-        typeof options.staticComponents !== 'undefined' ||
-        typeof options.staticHelpers !== 'undefined' ||
-        typeof options.staticModifiers !== 'undefined'
-      ) {
-        throw new Error(
-          'You cannot set `staticHelpers`, `staticComponents`, or `staticModifiers` if you have set `staticInvokables`. Delete these configs to continue.'
-        );
-      }
-      this.staticComponents = this.staticHelpers = this.staticModifiers = options.staticInvokables;
-      return;
-    }
-
-    if (typeof options.staticComponents !== 'undefined') {
-      // TODO it doesn't seem like we have any real deprecation functionality in this package yet.
-      // do we need it?
-      console.error(`Setting 'staticComponents' is deprecated. Use 'staticInvokables' instead`);
-      this.staticComponents = options.staticComponents;
-    }
-
-    if (typeof options.staticHelpers !== 'undefined') {
-      console.error(`Setting 'staticHelpers' is deprecated. Use 'staticInvokables' instead`);
-      this.staticHelpers = options.staticHelpers;
-    }
-
-    if (typeof options.staticModifiers !== 'undefined') {
-      console.error(`Setting 'staticModifiers' is deprecated. Use 'staticInvokables' instead`);
-      this.staticModifiers = options.staticModifiers;
-    }
-  }
+  ) {}
 
   @Memoize()
   private fastbootJSSrcDir() {
@@ -305,9 +270,9 @@ export class CompatAppBuilder {
     }
 
     let options: CompatResolverOptions['options'] = {
-      staticHelpers: this.staticHelpers,
-      staticModifiers: this.staticModifiers,
-      staticComponents: this.staticComponents,
+      staticHelpers: this.options.staticHelpers,
+      staticModifiers: this.options.staticModifiers,
+      staticComponents: this.options.staticComponents,
       allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
     };
 
@@ -1057,7 +1022,12 @@ export class CompatAppBuilder {
       transforms.push(macroPlugin as any);
     }
 
-    if (this.staticComponents || this.staticHelpers || this.staticModifiers || (globalThis as any).embroider_audit) {
+    if (
+      this.options.staticComponents ||
+      this.options.staticHelpers ||
+      this.options.staticModifiers ||
+      (globalThis as any).embroider_audit
+    ) {
       let opts: ResolverTransformOptions = {
         appRoot: resolverConfig.appRoot,
         emberVersion: this.emberVersion(),
@@ -1242,13 +1212,13 @@ export class CompatAppBuilder {
     let eagerModules: string[] = [];
 
     let requiredAppFiles = [this.requiredOtherFiles(appFiles)];
-    if (!this.staticComponents) {
+    if (!this.options.staticComponents) {
       requiredAppFiles.push(appFiles.components);
     }
-    if (!this.staticHelpers) {
+    if (!this.options.staticHelpers) {
       requiredAppFiles.push(appFiles.helpers);
     }
-    if (!this.staticModifiers) {
+    if (!this.options.staticModifiers) {
       requiredAppFiles.push(appFiles.modifiers);
     }
 

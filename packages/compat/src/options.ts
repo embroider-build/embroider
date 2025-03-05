@@ -118,10 +118,7 @@ const defaults = Object.assign(coreWithDefaults(), {
   allowUnsafeDynamicComponents: false,
 });
 
-export type CompatOptionsType = Required<
-  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
-> &
-  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+export type CompatOptionsType = Required<Omit<Options, 'staticInvokables'>> & Pick<Options, 'staticInvokables'>;
 
 export function optionsWithDefaults(options?: Options): CompatOptionsType {
   if (!options?.staticEmberSource) {

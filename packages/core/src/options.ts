@@ -152,17 +152,47 @@ export default interface Options {
       };
 }
 
-export type CoreOptionsType = Required<
-  Omit<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>
-> &
-  Pick<Options, 'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'staticInvokables'>;
+export type CoreOptionsType = Required<Omit<Options, 'staticInvokables'>> & Pick<Options, 'staticInvokables'>;
 
 export function optionsWithDefaults(options?: Options): CoreOptionsType {
+  let staticComponents, staticHelpers, staticModifiers;
+  // staticInvokables always wins when configured
+  if (typeof options?.staticInvokables !== 'undefined') {
+    if (
+      typeof options.staticComponents !== 'undefined' ||
+      typeof options.staticHelpers !== 'undefined' ||
+      typeof options.staticModifiers !== 'undefined'
+    ) {
+      throw new Error(
+        'You cannot set `staticHelpers`, `staticComponents`, or `staticModifiers` if you have set `staticInvokables`. Delete these configs to continue.'
+      );
+    }
+    staticComponents = staticHelpers = staticModifiers = options.staticInvokables;
+  } else {
+    if (typeof options?.staticComponents !== 'undefined') {
+      console.error(`Setting 'staticComponents' is deprecated. Use 'staticInvokables' instead`);
+      staticComponents = options.staticComponents;
+    }
+
+    if (typeof options?.staticHelpers !== 'undefined') {
+      console.error(`Setting 'staticHelpers' is deprecated. Use 'staticInvokables' instead`);
+      staticHelpers = options.staticHelpers;
+    }
+
+    if (typeof options?.staticModifiers !== 'undefined') {
+      console.error(`Setting 'staticModifiers' is deprecated. Use 'staticInvokables' instead`);
+      staticModifiers = options.staticModifiers;
+    }
+  }
+
   let defaults = {
     splitAtRoutes: [],
     staticAppPaths: [],
     skipBabel: [],
     pluginHints: [],
+    staticHelpers: staticHelpers ?? false,
+    staticModifiers: staticModifiers ?? false,
+    staticComponents: staticComponents ?? false,
     amdCompatibility: 'cjs' as const,
   };
   if (options) {

@@ -35,7 +35,6 @@
     "@embroider/router": "workspace:*",
     "@embroider/vite": "workspace:*",
     "@glimmer/component": "^2.0.0",
-    "@glimmer/tracking": "^1.1.2",
     "@rollup/plugin-babel": "^5.3.1",
     "babel-plugin-ember-template-compilation": "^2.3.0",
     "decorator-transforms": "^2.0.0",

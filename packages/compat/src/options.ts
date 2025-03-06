@@ -139,7 +139,12 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
     );
   }
 
-  return Object.assign({}, defaults, options);
+  return Object.assign({}, defaults, {
+    ...options,
+    staticComponents: options?.staticInvokables ?? options?.staticComponents ?? defaults.staticComponents,
+    staticHelpers: options?.staticInvokables ?? options?.staticHelpers ?? defaults.staticHelpers,
+    staticModifiers: options?.staticInvokables ?? options?.staticModifiers ?? defaults.staticModifiers,
+  });
 }
 
 // These are recommended configurations for addons to test themselves under. By

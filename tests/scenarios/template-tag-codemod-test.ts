@@ -180,6 +180,19 @@ tsAppScenarios
         });
       });
 
+      test('adding named const to a template-only component', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example-foo-bar.hbs': 'Hello world' },
+          to: {
+            'app/components/example-foo-bar.gjs': `
+              const ExampleFooBar = <template>Hello world</template>;
+              export default ExampleFooBar;
+            `,
+          },
+          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example-foo-bar.hbs',
+        });
+      });
+
       test('basic js backing component', async function (assert) {
         await assert.codeMod({
           from: {

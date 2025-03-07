@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2025-03-07)
+
+@embroider/compat 4.0.0-alpha.8 (patch)
+@embroider/core 4.0.0-alpha.7 (patch)
+@embroider/macros 1.17.0-alpha.6 (patch)
+@embroider/shared-internals 3.0.0-alpha.4 (patch)
+@embroider/template-tag-codemod 0.5.0-alpha.8 (patch)
+@embroider/vite 1.0.0-alpha.8 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2352](https://github.com/embroider-build/embroider/pull/2352) Babel import util updates ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-03-05)
 
 @embroider/compat 4.0.0-alpha.7 (minor)

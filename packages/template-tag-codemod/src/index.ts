@@ -490,15 +490,22 @@ function hbsOnlyComponent(templateSource: string, componentName: string, opts: O
   let outSource: string[] = [];
   if (opts.defaultFormat === 'gts') {
     outSource.unshift(`import type { TemplateOnlyComponent } from '@ember/component/template-only';`);
-    outSource.push(
-      `export default <template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.templateOnlyComponentSignature}>`
-    );
-  } else if (opts.addNameToTemplateOnly) {
-    outSource.push(
-      `const ${componentName} = <template>${templateSource}</template>;\nexport default ${componentName};`
-    );
+
+    let template = `<template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.templateOnlyComponentSignature}>`;
+    if (opts.addNameToTemplateOnly) {
+      outSource.push(`const ${componentName} = ${template};`);
+      outSource.push(`export default ${componentName};`);
+    } else {
+      outSource.push(`export default ${template}`);
+    }
   } else {
-    outSource.push(`<template>${templateSource}</template>`);
+    let template = `<template>${templateSource}</template>`;
+    if (opts.addNameToTemplateOnly) {
+      outSource.push(`const ${componentName} = ${template};`);
+      outSource.push(`export default ${componentName};`);
+    } else {
+      outSource.push(template);
+    }
   }
   return outSource.join('\n');
 }

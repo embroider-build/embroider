@@ -167,6 +167,19 @@ tsAppScenarios
         });
       });
 
+      test('hbs only component to gts with a named const', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': 'Hello world' },
+          to: {
+            'app/components/example.gts': `
+              import type { TemplateOnlyComponent } from '@ember/component/template-only';
+              const Example = <template>Hello world</template> satisfies TemplateOnlyComponent<{ Args: {} }>;
+              export default Example;`,
+          },
+          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts',
+        });
+      });
+
       test('helper used as both content and attribute', async function (assert) {
         await assert.codeMod({
           from: { 'app/components/example.hbs': `<div data-test={{t "hello"}}>{{t "hello"}}</div>` },

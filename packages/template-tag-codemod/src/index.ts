@@ -7,7 +7,7 @@ import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-em
 import { createRequire } from 'module';
 import { extractTemplates, locateTemplates } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
-import { dirname, relative, resolve } from 'path';
+import { basename, dirname, relative, resolve } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { identifyRenderTests } from './identify-render-tests.js';
 import { ImportUtil } from 'babel-import-util';
@@ -412,7 +412,7 @@ export async function processComponent(
     if (finalTemplates.length !== 1) {
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
     }
-    let componentName = classify(hbsPath.match(/.*\/(.+)\.hbs$/)![1]);
+    let componentName = classify(basename(hbsPath, '.hbs'));
     let newSrc =
       extractImports(ast, path => path !== '@ember/template-compilation') +
       '\n' +

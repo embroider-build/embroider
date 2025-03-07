@@ -128,5 +128,23 @@ typescriptApp.forEachScenario(scenario => {
       let result = await app.execute(`pnpm tsc`);
       assert.equal(result.exitCode, 0, result.output);
     });
+
+    test(`pnpm ember test safe`, async function (assert) {
+      let result = await app.execute(`ember test`, {
+        env: {
+          EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
+        },
+      });
+      assert.equal(result.exitCode, 0, result.output);
+    });
+
+    test(`pnpm ember test optimized`, async function (assert) {
+      let result = await app.execute(`ember test`, {
+        env: {
+          EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+        },
+      });
+      assert.equal(result.exitCode, 0, result.output);
+    });
   });
 });

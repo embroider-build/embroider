@@ -118,6 +118,69 @@
 * Other
   * [#2290](https://github.com/embroider-build/embroider/pull/2290) Add docs for EMBROIDER_WORKING_DIRECTORY ([@simonihmig](https://github.com/simonihmig))
 
+## Release (2025-03-07)
+
+@embroider/addon-dev 7.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2342](https://github.com/embroider-build/embroider/pull/2342) Avoid crashing the rollup watchmode build when glint hits a syntax error ([@abeforgit](https://github.com/abeforgit))
+
+#### :house: Internal
+* [#2349](https://github.com/embroider-build/embroider/pull/2349) update release-plan ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Arne Bertrand ([@abeforgit](https://github.com/abeforgit))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-02-22)
+
+@embroider/compat 3.8.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2305](https://github.com/embroider-build/embroider/pull/2305) Fix vendor ember-template-compiler.js on v2 ember-source ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-02-21)
+
+@embroider/core 3.5.2 (patch)
+@embroider/webpack 4.1.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/webpack`
+  * [#2299](https://github.com/embroider-build/embroider/pull/2299) Add ability to configure MiniCssExtractPlugin ([@lfloyd117](https://github.com/lfloyd117))
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#2298](https://github.com/embroider-build/embroider/pull/2298) Fix staticInvokables resolution of ts components ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Liam Floyd ([@lfloyd117](https://github.com/lfloyd117))
+
+## Release (2025-02-19)
+
+@embroider/compat 3.8.2 (patch)
+@embroider/core 3.5.1 (patch)
+@embroider/macros 1.16.11 (patch)
+@embroider/shared-internals 2.9.0 (minor)
+@embroider/webpack 4.0.10 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/shared-internals`
+  * [#2285](https://github.com/embroider-build/embroider/pull/2285) Introduce EMBROIDER_WORKING_DIRECTORY env var for concurrent builds ([@simonihmig](https://github.com/simonihmig))
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/test-scenarios`
+  * [#2185](https://github.com/embroider-build/embroider/pull/2185) this-property-fallback is not a possibility on ember >=4 ([@ef4](https://github.com/ef4))
+* `@embroider/macros`
+  * [#2286](https://github.com/embroider-build/embroider/pull/2286) Workaround babel evaluation bug ([@ef4](https://github.com/ef4))
+* `@embroider/compat`, `@embroider/core`
+  * [#2291](https://github.com/embroider-build/embroider/pull/2291) Fix nodeResolve's support for package.json exports on stable ([@ef4](https://github.com/ef4))
+
 #### Committers: 2
 - Edward Faulkner ([@ef4](https://github.com/ef4))
 - Simon Ihmig ([@simonihmig](https://github.com/simonihmig))

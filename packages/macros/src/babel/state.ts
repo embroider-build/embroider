@@ -47,7 +47,7 @@ export default interface State {
   };
 }
 
-export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Program>, state: State) {
+export function initState(t: typeof Babel, path: NodePath<Babel.types.Program>, state: State) {
   state.importUtil = new ImportUtil(t, path);
   state.jobs = [];
   state.removed = new Set();

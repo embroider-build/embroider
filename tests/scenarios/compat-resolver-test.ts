@@ -99,8 +99,8 @@ Scenarios.fromProject(() => new Project())
                   ['babel-plugin-ember-template-compilation', {
                     targetFormat: 'hbs',
                     transforms: [
+                      ...(${JSON.stringify(extraOpts?.astPlugins ?? [])}),
                       ...templateCompatSupport(),
-                      ...(${JSON.stringify(extraOpts?.astPlugins ?? [])})
                     ],
                     enableLegacyModules: [
                       'ember-cli-htmlbars'
@@ -1269,11 +1269,11 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import MyAddonThing_ from "@embroider/virtual/components/my-addon$thing";
-          export default precompileTemplate("<MyAddonThing_ />", {
+          import Thing_ from "@embroider/virtual/components/my-addon@thing";
+          export default precompileTemplate("<Thing_ />", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
-              MyAddonThing_
+              Thing_
             })
           });
       `);
@@ -1293,11 +1293,30 @@ Scenarios.fromProject(() => new Project())
         );
         expectTranspiled('templates/application.hbs').equalsCode(`
           import { precompileTemplate } from "@ember/template-compilation";
-          import myAddonThing_ from "@embroider/virtual/helpers/my-addon$thing";
-          export default precompileTemplate("{{(myAddonThing_)}}", {
+          import thing_ from "@embroider/virtual/helpers/my-addon@thing";
+          export default precompileTemplate("{{(thing_)}}", {
             moduleName: "my-app/templates/application.hbs",
             scope: () => ({
-              myAddonThing_
+              thing_
+            })
+          });
+      `);
+      });
+
+      test('helper containing $', async function () {
+        givenFiles({
+          'templates/application.hbs': `{{ ($helper) }}`,
+        });
+        await configure({
+          staticInvokables: true,
+        });
+        expectTranspiled('templates/application.hbs').equalsCode(`
+          import { precompileTemplate } from "@ember/template-compilation";
+          import $helper_ from "@embroider/virtual/helpers/$helper";
+          export default precompileTemplate("{{($helper_)}}", {
+            moduleName: "my-app/templates/application.hbs",
+            scope: () => ({
+              $helper_
             })
           });
       `);

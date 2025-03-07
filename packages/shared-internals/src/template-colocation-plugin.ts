@@ -64,7 +64,7 @@ export default function main(babel: typeof Babel) {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
-          state.adder = new ImportUtil(t, path);
+          state.adder = new ImportUtil(babel, path);
           let filename = cleanUrl((path.hub as any).file.opts.filename);
 
           if (state.opts.packageGuard) {

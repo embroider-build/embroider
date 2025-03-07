@@ -19,7 +19,7 @@ export default function main(context: typeof Babel): unknown {
   let visitor = {
     Program: {
       enter(path: NodePath<t.Program>, state: State) {
-        initState(t, path, state);
+        initState(context, path, state);
       },
       exit(_: NodePath<t.Program>, state: State) {
         // @embroider/macros itself has no runtime behaviors and should always be removed

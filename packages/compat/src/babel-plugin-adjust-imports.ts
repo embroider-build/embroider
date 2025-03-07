@@ -36,7 +36,6 @@ type InternalConfig = {
 };
 
 export default function main(babel: typeof Babel) {
-  let t = babel.types;
   let cached: InternalConfig | undefined;
   function getConfig(appRoot: string) {
     if (cached) {
@@ -56,7 +55,7 @@ export default function main(babel: typeof Babel) {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
-          addExtraImports(t, path, getConfig(state.opts.appRoot));
+          addExtraImports(babel, path, getConfig(state.opts.appRoot));
         },
       },
     },
@@ -67,19 +66,19 @@ export default function main(babel: typeof Babel) {
   return join(__dirname, '..');
 };
 
-function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: InternalConfig) {
+function addExtraImports(babel: typeof Babel, path: NodePath<t.Program>, config: InternalConfig) {
   let filename: string = cleanUrl((path.hub as any).file.opts.filename);
   let entry = config.extraImports[filename];
-  let adder = new ImportUtil(t, path);
+  let adder = new ImportUtil(babel, path);
   if (entry) {
-    applyRules(t, path, entry, adder, config, filename);
+    applyRules(babel.types, path, entry, adder, config, filename);
   }
 
   let componentName = config.loader.resolver.reverseComponentLookup(filename);
   if (componentName) {
     let rules = config.componentExtraImports[componentName];
     if (rules) {
-      applyRules(t, path, rules, adder, config, filename);
+      applyRules(babel.types, path, rules, adder, config, filename);
     }
   }
 }

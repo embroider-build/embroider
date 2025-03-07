@@ -20,11 +20,17 @@ export function classicEmberSupport() {
       async config() {
         const targetsPath = join(process.cwd(), 'config/targets.js');
         if (existsSync(targetsPath)) {
-          const targets = await import(pathToFileURL(targetsPath).toString());
-          if (targets.default.browsers) {
+          let target = await import(pathToFileURL(targetsPath).toString());
+          if (target.default.browsers) {
+            target = browserslistToEsbuild(target.browsers);
             return {
               build: {
-                target: browserslistToEsbuild(targets.browsers),
+                target,
+              },
+              optimizeDeps: {
+                esbuildOptions: {
+                  target,
+                },
               },
             };
           }

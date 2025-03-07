@@ -1,17 +1,21 @@
+import type { Plugin } from 'rollup';
 import execa from 'execa';
 import walkSync from 'walk-sync';
 import { readFile, writeFile } from 'fs/promises';
 
-export default function rollupDeclarationsPlugin(declarationsDir: string) {
+export default function rollupDeclarationsPlugin(
+  declarationsDir: string
+): Plugin {
   let glintPromise: Promise<void>;
 
   return {
     name: 'glint-dts',
-    buildStart: () => {
+    buildStart() {
       const runGlint = async () => {
         await execa('glint', ['--declaration'], {
           stdio: 'inherit',
           preferLocal: true,
+          reject: this.meta.watchMode,
         });
 
         await fixDeclarationsInMatchingFiles(declarationsDir);

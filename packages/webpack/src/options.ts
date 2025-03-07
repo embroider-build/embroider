@@ -65,6 +65,11 @@ export interface Options {
   cssLoaderOptions?: object;
 
   /**
+   * Options for [`mini-css-extract-plugin`](https://webpack.js.org/plugins/mini-css-extract-plugin/)
+   */
+  cssPluginOptions?: object;
+
+  /**
    * Options for [`style-loader`](https://webpack.js.org/loaders/style-loader/).
    *
    * Note that [`mini-css-extract-plugin`](https://webpack.js.org/plugins/mini-css-extract-plugin/)

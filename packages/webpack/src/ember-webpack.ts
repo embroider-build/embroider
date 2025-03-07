@@ -111,6 +111,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   private extraThreadLoaderOptions: object | false | undefined;
   private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
   private extraCssLoaderOptions: object | undefined;
+  private extraCssPluginOptions: object | undefined;
   private extraStyleLoaderOptions: object | undefined;
   private _bundleSummary: BundleSummary | undefined;
   private beginBarrier: BeginFn;
@@ -134,6 +135,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     this.extraThreadLoaderOptions = options?.threadLoaderOptions;
     this.extraBabelLoaderOptions = options?.babelLoaderOptions;
     this.extraCssLoaderOptions = options?.cssLoaderOptions;
+    this.extraCssPluginOptions = options?.cssPluginOptions;
     this.extraStyleLoaderOptions = options?.styleLoaderOptions;
     [this.beginBarrier, this.incrementBarrier] = createBarrier();
     warmUp(this.extraThreadLoaderOptions);
@@ -609,6 +611,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             runtime: variant.runtime === 'browser',
             // It's not reasonable to make assumptions about order when doing CSS via modules
             ignoreOrder: true,
+            ...this.extraCssPluginOptions,
           }),
         ],
       };

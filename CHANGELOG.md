@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2025-03-07)
+
+@embroider/addon-dev 7.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2342](https://github.com/embroider-build/embroider/pull/2342) Avoid crashing the rollup watchmode build when glint hits a syntax error ([@abeforgit](https://github.com/abeforgit))
+
+#### :house: Internal
+* [#2349](https://github.com/embroider-build/embroider/pull/2349) update release-plan ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Arne Bertrand ([@abeforgit](https://github.com/abeforgit))
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-02-22)
 
 @embroider/compat 3.8.3 (patch)

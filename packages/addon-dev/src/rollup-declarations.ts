@@ -35,7 +35,7 @@ export default function rollupDeclarationsPlugin(
 async function fixDeclarationsInMatchingFiles(dir: string) {
   // can't fix what doesn't exist
   // (happens when glint errors and doesn't output a ${dir} directory
-  if (existsSync(dir)) {
+  if (!existsSync(dir)) {
     return;
   }
   

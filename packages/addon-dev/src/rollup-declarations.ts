@@ -13,11 +13,15 @@ export default function rollupDeclarationsPlugin(
     name: 'glint-dts',
     buildStart() {
       const runGlint = async () => {
-        await execa('glint', ['--declaration'], {
+        let { exitCode } = await execa('glint', ['--declaration'], {
           stdio: 'inherit',
           preferLocal: true,
           reject: !this.meta.watchMode,
         });
+
+        if (this.meta.watchMode && exitCode > 0) {
+          this.warn(`Failed to generate declarations`);
+        }
 
         await fixDeclarationsInMatchingFiles(declarationsDir);
       };
@@ -38,7 +42,7 @@ async function fixDeclarationsInMatchingFiles(dir: string) {
   if (!existsSync(dir)) {
     return;
   }
-  
+
   const dtsFiles = walkSync(dir, {
     globs: ['**/*.d.ts'],
     directories: false,

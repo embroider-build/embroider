@@ -2,8 +2,8 @@
   "solution": {
     "@embroider/addon-dev": {
       "impact": "patch",
-      "oldVersion": "7.1.1",
-      "newVersion": "7.1.2",
+      "oldVersion": "7.1.2",
+      "newVersion": "7.1.3",
       "constraints": [
         {
           "impact": "patch",
@@ -55,5 +55,5 @@
       "oldVersion": "4.1.0"
     }
   },
-  "description": "## Release (2025-03-07)\n\n@embroider/addon-dev 7.1.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2342](https://github.com/embroider-build/embroider/pull/2342) Avoid crashing the rollup watchmode build when glint hits a syntax error ([@abeforgit](https://github.com/abeforgit))\n\n#### :house: Internal\n* [#2349](https://github.com/embroider-build/embroider/pull/2349) update release-plan ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Arne Bertrand ([@abeforgit](https://github.com/abeforgit))\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-03-08)\n\n@embroider/addon-dev 7.1.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2354](https://github.com/embroider-build/embroider/pull/2354) Fix addon-dev's declarations plugin when glint fails ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

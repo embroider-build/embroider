@@ -2,6 +2,7 @@ import type { Plugin } from 'rollup';
 import execa from 'execa';
 import walkSync from 'walk-sync';
 import { readFile, writeFile } from 'fs/promises';
+import { existsSync } from 'fs';
 
 export default function rollupDeclarationsPlugin(
   declarationsDir: string
@@ -32,6 +33,12 @@ export default function rollupDeclarationsPlugin(
 }
 
 async function fixDeclarationsInMatchingFiles(dir: string) {
+  // can't fix what doesn't exist
+  // (happens when glint errors and doesn't output a ${dir} directory
+  if (existsSync(dir)) {
+    return;
+  }
+  
   const dtsFiles = walkSync(dir, {
     globs: ['**/*.d.ts'],
     directories: false,

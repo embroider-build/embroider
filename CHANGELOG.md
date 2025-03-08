@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-03-08)
+
+@embroider/addon-dev 7.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2354](https://github.com/embroider-build/embroider/pull/2354) Fix addon-dev's declarations plugin when glint fails ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-03-07)
 
 @embroider/addon-dev 7.1.2 (patch)

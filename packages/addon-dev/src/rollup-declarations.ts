@@ -10,17 +10,32 @@ export default function rollupDeclarationsPlugin(
   let glintPromise: Promise<void>;
 
   return {
-    name: 'glint-dts',
+    name: 'declarations',
     buildStart() {
       const runGlint = async () => {
-        let { exitCode } = await execa('glint', ['--declaration'], {
-          stdio: 'inherit',
-          preferLocal: true,
-          reject: !this.meta.watchMode,
-        });
+        let { exitCode, escapedCommand } = await execa(
+          'glint',
+          ['--declaration'],
+          {
+            // using stdio: inherit is the only way to retain color output from the
+            // underlying tsc process.
+            // However, the viewer of the error will not know which plugin it comes from.
+            // So that's why we have the additional logging below
+            stdio: 'inherit',
+            preferLocal: true,
+            // Without reject, execa would throw a hard exception
+            reject: false,
+          }
+        );
 
-        if (this.meta.watchMode && exitCode > 0) {
-          this.warn(`Failed to generate declarations`);
+        if (exitCode > 0) {
+          let msg = `Failed to generate declarations via \`${escapedCommand}\``;
+
+          if (this.meta.watchMode) {
+            this.warn(msg);
+          } else {
+            this.error(msg);
+          }
         }
 
         await fixDeclarationsInMatchingFiles(declarationsDir);

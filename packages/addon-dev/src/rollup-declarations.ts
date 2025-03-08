@@ -39,7 +39,9 @@ export default function rollupDeclarationsPlugin(
         }
 
         await fixDeclarationsInMatchingFiles(declarationsDir);
-        this.info(`\`${escapedCommand}\` succeeded`);
+        if (exitCode === 0) {
+          this.info(`\`${escapedCommand}\` succeeded`);
+        }
       };
 
       // We just kick off glint here early in the rollup process, without making rollup wait for this to finish, by not returning the promise

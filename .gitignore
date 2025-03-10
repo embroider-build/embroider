@@ -71,3 +71,8 @@ tests/scenarios/output/
 *.swp
 
 /tsconfig.tsbuildinfo
+
+# build artefacts on main branch
+packages/template-tag-codemod/dist/
+packages/config-meta-loader/dist/
+tests/scenarios/dist/

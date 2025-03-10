@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-03-10)
+
+@embroider/vite 0.2.2 (patch)
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2358](https://github.com/embroider-build/embroider/pull/2358) fix gitignore for switching between stable and main ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-03-08)
 
 @embroider/addon-dev 7.1.3 (patch)

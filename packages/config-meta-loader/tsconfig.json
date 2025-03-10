@@ -4,6 +4,8 @@
   ],
   "compilerOptions": {
     "composite": true,
+    "outDir": "dist",
+    "rootDir": "src",
     "target": "es2019",
     "module": "ESNext",
     "declaration": true,

@@ -11,11 +11,9 @@
   },
   "license": "MIT",
   "author": "Marine Dunstetter",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist"
   ],
   "scripts": {},
   "release-plan": {

@@ -77,6 +77,11 @@ yargs(process.argv.slice(2))
           type: 'boolean',
           default: optionsWithDefaults().reusePrebuild,
           describe: `Allows you to reuse prebuild between runs of this codemod. While this speeds things up it is not what most people should be doing, use with caution.`,
+        })
+        .option('addNameToTemplateOnly', {
+          type: 'boolean',
+          default: optionsWithDefaults().addNameToTemplateOnly,
+          describe: `Exports template-only components via a named const definition. This can improve import autocompletion in IDEs.`,
         }),
 
     async argv => {

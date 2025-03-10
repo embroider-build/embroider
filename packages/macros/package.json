@@ -38,7 +38,7 @@
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
-    "babel-import-util": "^2.0.0",
+    "babel-import-util": "^3.0.1",
     "ember-cli-babel": "^7.26.6",
     "find-up": "^5.0.0",
     "lodash": "^4.17.21",

@@ -217,6 +217,7 @@ class TemplateResolver implements ASTPlugin {
           nameHint: resolution.nameHint,
         });
         setter(parentPath.node, this.env.syntax.builders.path(name));
+        this.scopeStack.emittedResolution(name, resolution);
         return;
       }
       case undefined:
@@ -721,12 +722,21 @@ class TemplateResolver implements ASTPlugin {
     return null;
   }
 
-  private nameHint(path: string, kind: 'component' | 'helper' | 'modifier' | 'ambiguous-component-or-helper') {
-    let parts = path.split('@');
+  private nameHint(path: string, kind: 'component' | 'helper' | 'modifier' | 'ambiguous-component-or-helper'): string {
+    let hint = this.externalNameHint?.(path, kind);
+    if (hint != null) {
+      return hint;
+    }
 
-    // the extra underscore here guarantees that we will never collide with an
-    // HTML element.
-    return this.externalNameHint?.(path, kind) ?? parts[parts.length - 1] + '_';
+    let parts = path.split('@');
+    hint = parts[parts.length - 1];
+
+    // if our name is going to be entirely lower case letter, we add an
+    // underscore to avoid any possible HTML element collision.
+    if (/^[a-z]+$/.test(hint)) {
+      hint += '_';
+    }
+    return hint;
   }
 
   private handleDynamicModifier(param: ASTv1.Expression): ModifierResolution | ResolutionFail | null {
@@ -786,7 +796,7 @@ class TemplateResolver implements ASTPlugin {
         this.ownRules = this.findRules(this.env.filename);
         this.implementInvokesRule(node, path);
         if (this.env.locals) {
-          this.scopeStack.pushMustacheBlock(this.env.locals);
+          this.scopeStack.pushMustacheBlock(this.env.locals, { top: true });
         }
       },
       exit: () => {
@@ -887,6 +897,14 @@ class TemplateResolver implements ASTPlugin {
         }
         let rootName = headOf(node.path);
         if (this.scopeStack.inScope(rootName, path)) {
+          let resolution = this.scopeStack.resolutionInScope(rootName, path);
+          if (resolution?.type === 'component') {
+            this.handleDynamicComponentArguments(
+              node.path.original,
+              resolution.argumentsAreComponents,
+              extendPath(extendPath(path, 'hash'), 'pairs')
+            );
+          }
           return;
         }
         if (isThisHead(node.path)) {
@@ -973,7 +991,14 @@ class TemplateResolver implements ASTPlugin {
     ElementNode: {
       enter: (node, path) => {
         let rootName = node.tag.split('.')[0];
-        if (!this.scopeStack.inScope(rootName, path)) {
+        if (this.scopeStack.inScope(rootName, path)) {
+          let existingResolution = this.scopeStack.resolutionInScope(rootName, path);
+          if (existingResolution?.type === 'component') {
+            this.scopeStack.enteringComponentBlock(existingResolution, ({ argumentsAreComponents }) => {
+              this.handleDynamicComponentArguments(node.tag, argumentsAreComponents, extendPath(path, 'attributes'));
+            });
+          }
+        } else {
           let resolution: ComponentResolution | null = null;
 
           // if it starts with lower case, it can't be a component we need to
@@ -1036,7 +1061,17 @@ interface ComponentBlockMarker {
 }
 
 type ScopeEntry =
-  | { type: 'mustache'; blockParams: string[] }
+  | {
+      type: 'mustache';
+      blockParams: string[];
+
+      // our top-level scope entry is a 'mustache' entry whose block params
+      // represent the scope bag coming in from Javascript. When we emit new
+      // javascript bindings, they up in this top-level scope entry's
+      // blockParams. We also track their original ResolutionResults here so
+      // that we can consistently apply any custom rules that they contain.
+      emittedResolutions?: Map<string, ResolutionResult>;
+    }
   | { type: 'element'; blockParams: string[]; childrenOf: ASTv1.ElementNode }
   | ComponentBlockMarker;
 
@@ -1049,8 +1084,12 @@ class ScopeStack {
   //
   // are relatively simple for us because there's a dedicated `Block` AST node
   // that exactly covers the range in which the variables are in scope.
-  pushMustacheBlock(blockParams: string[]) {
-    this.stack.unshift({ type: 'mustache', blockParams });
+  pushMustacheBlock(blockParams: string[], params?: { top?: boolean }) {
+    let entry: ScopeEntry = { type: 'mustache', blockParams };
+    if (params?.top) {
+      entry.emittedResolutions = new Map();
+    }
+    this.stack.unshift(entry);
   }
 
   // element blocks like:
@@ -1102,6 +1141,33 @@ class ScopeStack {
       }
     }
     return false;
+  }
+
+  // some names in scope are things that this transform itself has already
+  // emitted. This identifies them.
+  resolutionInScope(name: string, fromPath: WalkerPath<ASTv1.Node>): ResolutionResult | undefined {
+    for (let scope of this.stack) {
+      if (scope.type === 'mustache' && scope.blockParams.includes(name)) {
+        if (scope.emittedResolutions) {
+          return scope.emittedResolutions.get(name);
+        }
+      }
+      if (
+        scope.type === 'element' &&
+        scope.blockParams.includes(name) &&
+        withinElementBlock(fromPath, scope.childrenOf)
+      ) {
+        return;
+      }
+    }
+    return;
+  }
+
+  emittedResolution(name: string, resolution: ResolutionResult) {
+    let top = this.stack[0];
+    if (top?.type === 'mustache' && top.emittedResolutions) {
+      top.emittedResolutions.set(name, resolution);
+    }
   }
 
   safeComponentInScope(name: string): boolean {

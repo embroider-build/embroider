@@ -371,7 +371,7 @@ function testRuntime(babelContext: typeof Babel) {
   let visitor = {
     Program: {
       enter(path: NodePath<t.Program>, state: State) {
-        initState(t, path, state);
+        initState(babelContext, path, state);
       },
     },
     VariableDeclarator: {

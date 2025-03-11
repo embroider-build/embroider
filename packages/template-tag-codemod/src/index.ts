@@ -7,7 +7,7 @@ import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-em
 import { createRequire } from 'module';
 import { extractTemplates, locateTemplates } from './extract-meta.js';
 import reverseExports from '@embroider/reverse-exports';
-import { dirname, relative, resolve } from 'path';
+import { basename, dirname, relative, resolve } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { identifyRenderTests } from './identify-render-tests.js';
 import { ImportUtil } from 'babel-import-util';
@@ -87,6 +87,13 @@ export interface Options {
    * the prebuild in any way. Most people should leave this set to its default `false` value
    */
   reusePrebuild?: boolean;
+
+  /**
+   * Exports template-only components via a named const definition.
+   *
+   * This can improve import autocompletion in IDEs like VSCode.
+   */
+  addNameToTemplateOnly?: boolean;
 }
 
 export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
@@ -105,6 +112,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
       templateInsertion: 'beginning',
       renamingRules: '@embroider/template-tag-codemod/default-renaming',
       reusePrebuild: false,
+      addNameToTemplateOnly: false,
     },
     options
   );
@@ -328,6 +336,26 @@ export async function processComponents(opts: OptionsWithDefaults): Promise<Resu
   return results;
 }
 
+// Copied from https://github.com/emberjs/ember-string/blob/16fffa2a565f21c177f9cfa41751ba60b9634863/src/index.ts
+const STRING_CLASSIFY_REGEXP_1 = /^(\-|_)+(.)?/;
+const STRING_CLASSIFY_REGEXP_2 = /(.)(\-|\_|\.|\s)+(.)?/g;
+const STRING_CLASSIFY_REGEXP_3 = /(^|\/|\.)([a-z])/g;
+
+function classify(str: string) {
+  const replace1 = (_match: string, _separator: string, chr: string) => (chr ? `_${chr.toUpperCase()}` : '');
+  const replace2 = (_match: string, initialChar: string, _separator: string, chr: string) =>
+    initialChar + (chr ? chr.toUpperCase() : '');
+  const parts = str.split('/');
+
+  for (let i = 0; i < parts.length; i++) {
+    parts[i] = (parts as any)[i]
+      .replace(STRING_CLASSIFY_REGEXP_1, replace1)
+      .replace(STRING_CLASSIFY_REGEXP_2, replace2);
+  }
+
+  return parts.join('/').replace(STRING_CLASSIFY_REGEXP_3, (match /*, separator, chr */) => match.toUpperCase());
+}
+
 export async function processComponent(
   hbsPath: string,
   jsPath: string | undefined,
@@ -384,10 +412,11 @@ export async function processComponent(
     if (finalTemplates.length !== 1) {
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
     }
+    let componentName = classify(basename(hbsPath, '.hbs'));
     let newSrc =
       extractImports(ast, path => path !== '@ember/template-compilation') +
       '\n' +
-      hbsOnlyComponent(finalTemplates[0].templateSource, opts);
+      hbsOnlyComponent(finalTemplates[0].templateSource, componentName, opts);
     writeFileSync(hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat), newSrc);
     unlinkSync(hbsPath);
   }
@@ -457,15 +486,26 @@ async function insertComponentTemplate(
   return result!.ast!;
 }
 
-function hbsOnlyComponent(templateSource: string, opts: OptionsWithDefaults): string {
+function hbsOnlyComponent(templateSource: string, componentName: string, opts: OptionsWithDefaults): string {
   let outSource: string[] = [];
   if (opts.defaultFormat === 'gts') {
     outSource.unshift(`import type { TemplateOnlyComponent } from '@ember/component/template-only';`);
-    outSource.push(
-      `export default <template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.templateOnlyComponentSignature}>`
-    );
+
+    let template = `<template>${templateSource}</template> satisfies TemplateOnlyComponent<${opts.templateOnlyComponentSignature}>`;
+    if (opts.addNameToTemplateOnly) {
+      outSource.push(`const ${componentName} = ${template};`);
+      outSource.push(`export default ${componentName};`);
+    } else {
+      outSource.push(`export default ${template}`);
+    }
   } else {
-    outSource.push(`<template>${templateSource}</template>`);
+    let template = `<template>${templateSource}</template>`;
+    if (opts.addNameToTemplateOnly) {
+      outSource.push(`const ${componentName} = ${template};`);
+      outSource.push(`export default ${componentName};`);
+    } else {
+      outSource.push(template);
+    }
   }
   return outSource.join('\n');
 }

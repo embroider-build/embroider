@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { type Options, optionsWithDefaults, run } from './index.js';
+import { type Options, run } from './index.js';
 
 import { program } from '@commander-js/extra-typings';
 
@@ -9,77 +9,59 @@ program
   .command('convert', { isDefault: true })
   .option(
     '--no-relativeLocalPaths',
-    `When true, imports for other files in the same project will use relative paths with file extensions. This is the most compatible with modern Node ESM convensions, but it's not supported by Ember's classic build.`,
-    optionsWithDefaults().relativeLocalPaths
+    `When true, imports for other files in the same project will use relative paths with file extensions. This is the most compatible with modern Node ESM convensions, but it's not supported by Ember's classic build.`
   )
   .option(
     '--extensions <...extensions>',
-    `File extensions to search when resolving components, helpers, and modifiers inside your hbs files`,
-    optionsWithDefaults().extensions
+    `File extensions to search when resolving components, helpers, and modifiers inside your hbs files`
   )
   .option(
     '--no-nativeRouteTemplates',
-    `When true, assume we can use template-tag directly in route files (requires ember-source >= 6.3.0-beta.3). When false, assume we can use the ember-route-template addon instead.`,
-    optionsWithDefaults().nativeRouteTemplates
+    `When true, assume we can use template-tag directly in route files (requires ember-source >= 6.3.0-beta.3). When false, assume we can use the ember-route-template addon instead.`
   )
   .option(
-    '--nativeLexicalThis',
-    `When true, assume that Ember supports accessing the lexically-scoped "this" from template-tags that are used as expressions (requires ember-source >= TODO). When false, introduce a new local variable to make "this" accessible.`,
-    optionsWithDefaults().nativeLexicalThis
+    '--no-nativeLexicalThis',
+    `When true, assume that Ember supports accessing the lexically-scoped "this" from template-tags that are used as expressions (requires ember-source >= TODO). When false, introduce a new local variable to make "this" accessible.`
   )
   .option(
-    '--routeTemplates <...globs>',
-    `Controls which route template files we will convert to template tag. Provide a list of globs.`,
-    optionsWithDefaults().routeTemplates
+    '--routeTemplates [globs...]',
+    `Controls which route template files we will convert to template tag. Provide a list of globs.`
   )
   .option(
-    '--components <...globs>',
-    `Controls which component files we will convert to template tag. Provide a list of globs.`,
-    optionsWithDefaults().components
+    '--components [globs...]',
+    `Controls which component files we will convert to template tag. Provide a list of globs.`
   )
   .option(
-    '--renderTests <...globs>',
-    `Controls the files in which we will search for rendering tests to convert to template tags. Provide a list of globs.`,
-    optionsWithDefaults().renderTests
+    '--renderTests [globs...]',
+    `Controls the files in which we will search for rendering tests to convert to template tags. Provide a list of globs.`
   )
   .option(
     '--defaultFormat <value>',
-    `When a .js or .ts file already exists, we necessarily convert to .gjs or .gts respectively. But when only an .hbs file exists, we have a choice of default.`,
-    optionsWithDefaults().defaultFormat
+    `When a .js or .ts file already exists, we necessarily convert to .gjs or .gts respectively. But when only an .hbs file exists, we have a choice of default.`
   )
   .option(
     '--templateOnlyComponentSignature <value>',
-    `Snippet of typescript to use as the type signature of newly-converted template-only components.`,
-    optionsWithDefaults().templateOnlyComponentSignature
+    `Snippet of typescript to use as the type signature of newly-converted template-only components.`
   )
-  .option(
-    '--routeTemplateSignature <value>',
-    `Snippet of typescript to use as the type signature of route templates.`,
-    optionsWithDefaults().routeTemplateSignature
-  )
+  .option('--routeTemplateSignature <value>', `Snippet of typescript to use as the type signature of route templates.`)
   .option(
     '--templateInsertion <value>',
-    `Where should <template> be inserted inside existing class bodies? Say "beginning" or "end".`,
-    optionsWithDefaults().templateInsertion
+    `Where should <template> be inserted inside existing class bodies? Say "beginning" or "end".`
   )
   .option(
     '--renamingRules <value>',
-    `The name of a module that will provide a renaming strategy for picking the names of components, helpers, and modifiers in rewritten templates`,
-    optionsWithDefaults().renamingRules
+    `The name of a module that will provide a renaming strategy for picking the names of components, helpers, and modifiers in rewritten templates`
   )
   .option(
-    '--reusePrebuild <value>',
-    `Allows you to reuse prebuild between runs of this codemod. While this speeds things up it is not what most people should be doing, use with caution.`,
-    optionsWithDefaults().reusePrebuild
+    '--reusePrebuild',
+    `Allows you to reuse prebuild between runs of this codemod. While this speeds things up it is not what most people should be doing, use with caution.`
   )
   .option(
     '--addNameToTemplateOnly',
-    `Exports template-only components via a named const definition. This can improve import autocompletion in IDEs.`,
-    optionsWithDefaults().addNameToTemplateOnly
+    `Exports template-only components via a named const definition. This can improve import autocompletion in IDEs.`
   )
   .action(async args => {
     await run(args as Options);
-
     // we need this to be explicit because our prebuild runs things like
     // broccoli-babel-transpiler which leak worker processes and will
     // otherwise prevent exit.🤮

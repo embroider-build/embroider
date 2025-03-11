@@ -1,5 +1,35 @@
 # Embroider Changelog
 
+## Release (2025-03-11)
+
+@embroider/addon-dev 8.0.0-alpha.3 (patch)
+@embroider/compat 4.0.0-alpha.8 (patch)
+@embroider/config-meta-loader 1.0.0-alpha.2 (patch)
+@embroider/core 4.0.0-alpha.7 (patch)
+@embroider/macros 1.17.0-alpha.6 (patch)
+@embroider/shared-internals 3.0.0-alpha.4 (patch)
+@embroider/template-tag-codemod 0.5.0-alpha.8 (minor)
+@embroider/vite 1.0.0-alpha.8 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2348](https://github.com/embroider-build/embroider/pull/2348) Support named const exports in template-tag-codemod ([@CvX](https://github.com/CvX))
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2352](https://github.com/embroider-build/embroider/pull/2352) Babel import util updates ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/config-meta-loader`
+  * [#2356](https://github.com/embroider-build/embroider/pull/2356) build config-meta-loader into dist folder ([@mansona](https://github.com/mansona))
+* `@embroider/addon-dev`, `@embroider/compat`, `@embroider/webpack`, `@embroider/test-scenarios`
+  * [#2351](https://github.com/embroider-build/embroider/pull/2351) Merge stable into main ([@mansona](https://github.com/mansona))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Jarek Radosz ([@CvX](https://github.com/CvX))
+
 ## Release (2025-03-05)
 
 @embroider/compat 4.0.0-alpha.7 (minor)

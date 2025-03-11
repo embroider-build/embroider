@@ -17,6 +17,10 @@ import { ModuleImporter } from '@humanwhocodes/module-importer';
 import { allHBSModules, allLegacyModules } from './detect-inline-hbs.js';
 import chalk from 'chalk';
 
+import { promisify } from 'node:util';
+import child_process from 'node:child_process';
+const exec = promisify(child_process.exec);
+
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
 const { externalName } = reverseExports;
 const require = createRequire(import.meta.url);
@@ -393,16 +397,99 @@ export async function processComponent(
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
     }
     let index = opts.templateInsertion === 'beginning' ? componentBody.loc.start + 1 : componentBody.loc.end - 1;
-    edits.push({ start: index, end: index, replacement: `<template>${finalTemplates[0].templateSource}</template>` });
     edits.unshift({
       start: 0,
       end: 0,
       replacement: extractImports(ast, path => path !== '@ember/template-compilation'),
     });
+    const intermediateEdits = edits.slice();
+    intermediateEdits.push({
+      start: index,
+      end: index,
+      replacement: `<template>\n\n</template>`,
+    });
+    const jsSourceNoTemplate = applyEdits(jsSource, intermediateEdits);
+    edits.push({ start: index, end: index, replacement: `<template>${finalTemplates[0].templateSource}</template>` });
     let newSrc = applyEdits(jsSource, edits);
-    writeFileSync(jsPath.replace(/\.js$/, '.gjs').replace(/\.ts$/, '.gts'), newSrc);
-    unlinkSync(jsPath);
-    unlinkSync(hbsPath);
+    const updatedPath = jsPath.replace(/\.js$/, '.gjs').replace(/\.ts$/, '.gts');
+
+    let { stderr } = await exec(`git checkout -B file-history`);
+    if (
+      stderr.trim() === "Reset branch 'file-history'" ||
+      stderr.trim() === "Switched to and reset branch 'file-history'"
+    ) {
+      let { stderr } = await exec(`git mv ${hbsPath} ${updatedPath}`);
+      // let { stderr } = await exec(`git mv ${jsPath} ${updatedPath}`);
+      if (stderr) {
+        console.error(stderr);
+      } else {
+        // move hbs first
+        let { stderr } = await exec(`git commit -m "moving ${hbsPath} => ${updatedPath}"`);
+        // let { stderr } = await exec(`git commit -m "moving ${jsPath} => ${updatedPath}"`);
+        if (stderr) {
+          console.error(stderr);
+        } else {
+          // commit updated hbs
+          writeFileSync(updatedPath, finalTemplates[0].templateSource);
+          // writeFileSync(updatedPath, jsSourceNoTemplate);
+          let { stderr } = await exec(`git add ${updatedPath}`);
+          if (!stderr) {
+            let { stderr } = await exec(`git commit -m "apply polaris transforms to ${updatedPath}"`);
+            if (!stderr) {
+              let { stderr } = await exec(`git checkout -`);
+              if (stderr.startsWith('Switched to branch')) {
+                let { stderr } = await exec(`git mv ${jsPath} ${updatedPath}`);
+                // let { stderr } = await exec(`git mv ${hbsPath} ${updatedPath}`);
+                if (!stderr) {
+                  if (!stderr) {
+                    let { stderr } = await exec(`git commit -m "moving ${jsPath} => ${updatedPath}"`);
+                    // let { stderr } = await exec(`git commit -m "moving ${hbsPath} => ${updatedPath}"`);
+                    if (!stderr) {
+                      // write updated js to the same polaris component path
+                      writeFileSync(updatedPath, jsSourceNoTemplate);
+                      // writeFileSync(updatedPath, finalTemplates[0].templateSource);
+                      let { stderr } = await exec(`git add ${updatedPath}`);
+                      if (!stderr) {
+                        let { stderr } = await exec(`git commit -m "codemod template ${updatedPath}"`);
+                        if (!stderr) {
+                          try {
+                            const gitMerge = await exec(
+                              `git merge -m "combine ${jsPath} and ${hbsPath} => ${updatedPath}" file-history`
+                            );
+                            stderr = gitMerge.stderr;
+                          } catch (e) {
+                            stderr = e.message;
+                          }
+                          //expect to fail because we deliberatly caused a conflict
+                          if (stderr) {
+                            // write final version of polaris component to disc to resolve the created conflict from the merge
+                            writeFileSync(updatedPath, newSrc);
+                            let { stderr } = await exec(`git add ${updatedPath}`);
+                            if (!stderr) {
+                              try {
+                                const gitMerge = await exec(
+                                  `git merge --continue -m "combine ${jsPath} and ${hbsPath} => ${updatedPath}"`
+                                );
+                                stderr = gitMerge.stderr;
+                              } catch (e) {
+                                stderr = e.message;
+                              }
+                              if (stderr) {
+                                console.error(stderr);
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   } else {
     let jsSource = hbsToJS(hbsSource);
     let ast = await parseJS(hbsPath, jsSource);
@@ -417,8 +504,13 @@ export async function processComponent(
       extractImports(ast, path => path !== '@ember/template-compilation') +
       '\n' +
       hbsOnlyComponent(finalTemplates[0].templateSource, componentName, opts);
-    writeFileSync(hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat), newSrc);
-    unlinkSync(hbsPath);
+    let { stderr } = await exec(`git mv ${hbsPath} ${hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat)}`);
+    if (!stderr) {
+      let { stderr } = await exec(`git commit -m "codemod template ${hbsPath}"`);
+      if (!stderr) {
+        writeFileSync(hbsPath.replace(/.hbs$/, '.' + opts.defaultFormat), newSrc);
+      }
+    }
   }
   return { context: `component: ${hbsPath}`, status: 'success' };
 }
@@ -817,6 +909,17 @@ function indent(s: string): string {
 export async function run(partialOpts: Options) {
   let opts = optionsWithDefaults(partialOpts);
   let results: Result[] = [];
+  const gitBranch = await exec('git branch --show-current');
+  let stdout = gitBranch.stdout.trim();
+  if (stdout === 'main' || stdout === 'master') {
+    throw new Error('Please create a base branch to work on');
+  }
+  const gitStatus = await exec('git status --porcelain');
+  stdout = gitStatus.stdout;
+  const modifiedFile = /^M\s(.+)$/gm;
+  if (modifiedFile.test(stdout.trim())) {
+    throw new Error('Base branch has uncommitted changes. Please stash or commit these before proceeding');
+  }
   await ensureAppSetup();
   await ensurePrebuild(opts);
   results = results.concat(await processRouteTemplates(opts));

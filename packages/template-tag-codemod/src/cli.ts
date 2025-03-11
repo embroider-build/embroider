@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import yargs from 'yargs/yargs';
 import { type Options, optionsWithDefaults, run } from './index.js';
+import type { MergeHistoryOptions } from './merge-history.js';
 
 yargs(process.argv.slice(2))
   .scriptName('template-tag-codemod')
@@ -91,6 +92,36 @@ yargs(process.argv.slice(2))
       // broccoli-babel-transpiler which leak worker processes and will
       // otherwise prevent exit.🤮
       process.exit(0);
+    }
+  )
+  .command(
+    'merge-history <beforeCommit> <afterCommit>',
+    'Merge the histories of your hbs and js files into your new gjs files',
+    y =>
+      y
+        .positional('beforeCommit', {
+          type: 'string',
+          description: 'A git commit-ish identifying the commit before you ran the template-tag-codemod',
+        })
+        .positional('afterCommit', {
+          type: 'string',
+          description: `A git commit-ish identifying the commit after you ran the template-tag-codemod`,
+        })
+        .option('outputBranch', {
+          type: 'string',
+          default: 'template-tag-codemod',
+          description:
+            'The name of the branch this command will create for you, containing the merged history from "beforeCommit" and "afterCommmit"',
+        })
+        .option('allowOverwrite', {
+          type: 'boolean',
+          default: false,
+          description: 'Destructively replace the existing outputBranch',
+        }),
+
+    async argv => {
+      let { mergeHistory } = await import('./merge-history.js');
+      await mergeHistory(argv as MergeHistoryOptions);
     }
   )
   .strict()

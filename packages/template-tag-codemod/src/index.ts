@@ -582,7 +582,7 @@ async function chooseImport(
   // Look into javascript files that came from addons to attempt to skip over
   // the classical "app tree reexport" path.
   if (targetFile.endsWith('.js') && importedName === 'default') {
-    let match = resolverLoader.resolver.reverseSearchAppTree(pkg, targetFile);
+    let match = resolverLoader.resolver.reverseSearchAppTree(targetFile);
     if (match) {
       // this file is in an addon's app tree. Check whether it is just a
       // reexport.

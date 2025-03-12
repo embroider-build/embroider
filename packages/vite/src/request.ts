@@ -29,6 +29,10 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     if (source && importer && source[0] !== '\0') {
       // strip query params off the importer
       let fromFile = cleanUrl(importer);
+      if (process.platform === 'win32') {
+        // embroider uses real OS paths for filenames. Vite and Esbuild don't do so consistently.
+        fromFile = fromFile.replace(/\//g, '\\');
+      }
       let importerQueryParams = getUrlQueryParams(importer);
 
       if (source.startsWith('/@embroider/virtual/')) {

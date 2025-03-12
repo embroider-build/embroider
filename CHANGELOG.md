@@ -148,6 +148,33 @@
 * Other
   * [#2290](https://github.com/embroider-build/embroider/pull/2290) Add docs for EMBROIDER_WORKING_DIRECTORY ([@simonihmig](https://github.com/simonihmig))
 
+## Release (2025-03-10)
+
+@embroider/core 3.5.3 (patch)
+@embroider/vite 0.2.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#2357](https://github.com/embroider-build/embroider/pull/2357) fix index.ts component resolving ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2358](https://github.com/embroider-build/embroider/pull/2358) fix gitignore for switching between stable and main ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-08)
+
+@embroider/addon-dev 7.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2354](https://github.com/embroider-build/embroider/pull/2354) Fix addon-dev's declarations plugin when glint fails ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-03-07)
 
 @embroider/addon-dev 7.1.2 (patch)

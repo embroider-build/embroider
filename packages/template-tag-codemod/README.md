@@ -126,6 +126,10 @@ Pass `--defaultFormat gts` instead if you prefer to produce typescript. Also see
 
 5. If you're planning to use `--nativeRouteTemplates false` to support Ember < 6.3.0, make sure you have installed the `ember-route-template` addon.
 
+6. *Optional*: if you still have non-co-located component templates (`app/templates/components/**/*.hbs`) this codemod will leave those alone and they won't get upgraded to Template Tag. You should consider moving them to co-located (`app/components/templates/**/*.hbs`) instead. There is a [codemod](https://www.npmjs.com/package/ember-component-template-colocation-migrator). This is also a prerequisite for `ember-source` >= 6.0.0.
+
+7. *Optional*: if you still have components that don't use native class syntax (`Component.extend({})` instead of `class extends Component`), this codemod will leave those alone and they won't get upgraded to Template Tag. There is a [native class codemod](https://www.npmjs.com/package/ember-native-class-codemod) that you could use before using this codemod.
+
 ## merge-history
 
 The `merge-history` command takes a branch where the codemod has already been applied and produces a new branch with the same contents, except that the Git history has been adjusted so that your GJS files inherit correctly from *both* the JS and HBS files that they replaced. Example:

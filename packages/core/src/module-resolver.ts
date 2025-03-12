@@ -108,7 +108,7 @@ type MergeEntry =
     };
 
 type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName */ string, MergeEntry>>;
-type ReverseMergeMap = Map</* filename */ string, /* withinEngineModuleName */ string>;
+type ReverseMergeMap = Map</* filename */ string, { inEngineName: string; owningPackageRoot: string }>;
 
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
@@ -299,7 +299,7 @@ export class Resolver {
   }
 
   private logicalPackage(owningPackage: V2Package, file: string): V2Package {
-    let logicalLocation = this.reverseSearchAppTree(owningPackage, file);
+    let logicalLocation = this.reverseSearchAppTree(file);
     if (logicalLocation) {
       let pkg = this.packageCache.get(logicalLocation.owningEngine.root);
       if (!pkg.isV2Ember()) {
@@ -637,7 +637,7 @@ export class Resolver {
                 `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            reverse.set(resolve(addon.root, inAddonName), inEngineName);
+            reverse.set(resolve(addon.root, inAddonName), { inEngineName, owningPackageRoot: addon.root });
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
@@ -682,7 +682,7 @@ export class Resolver {
                 `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            reverse.set(resolve(addon.root, inAddonName), inEngineName);
+            reverse.set(resolve(addon.root, inAddonName), { inEngineName, owningPackageRoot: addon.root });
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
@@ -907,7 +907,7 @@ export class Resolver {
       // if the requesting file is in an addon's app-js, the relative request
       // should really be understood as a request for a module in the containing
       // engine
-      let logicalLocation = this.reverseSearchAppTree(pkg, request.fromFile);
+      let logicalLocation = this.reverseSearchAppTree(request.fromFile);
       if (logicalLocation) {
         return logTransition(
           'beforeResolve: relative import in app-js',
@@ -1107,7 +1107,7 @@ export class Resolver {
       }
     }
 
-    let logicalLocation = this.reverseSearchAppTree(pkg, fromFile);
+    let logicalLocation = this.reverseSearchAppTree(fromFile);
     if (logicalLocation) {
       // the requesting file is in an addon's appTree. We didn't succeed in
       // resolving this (non-relative) request from inside the actual addon, so
@@ -1207,13 +1207,13 @@ export class Resolver {
   // check whether the given file with the given owningPackage is an addon's
   // appTree, and if so return the notional location within the app (or owning
   // engine) that it "logically" lives at.
-  private reverseSearchAppTree(
-    owningPackage: Package,
-    fromFile: string
-  ): { owningEngine: EngineConfig; inAppName: string } | undefined {
-    let inAppName = this.reverseMergeMap.get(fromFile);
-    if (inAppName) {
-      return { owningEngine: this.owningEngine(owningPackage), inAppName };
+  private reverseSearchAppTree(fromFile: string): { owningEngine: EngineConfig; inAppName: string } | undefined {
+    let match = this.reverseMergeMap.get(fromFile);
+    if (match) {
+      return {
+        owningEngine: this.owningEngine(this.packageCache.get(match.owningPackageRoot)),
+        inAppName: match.inEngineName,
+      };
     }
   }
 
@@ -1240,7 +1240,7 @@ export class Resolver {
       return this.tryReverseComponent(engineConfig.packageName, inAppName);
     }
 
-    let engineInfo = this.reverseSearchAppTree(owningPackage, filename);
+    let engineInfo = this.reverseSearchAppTree(filename);
     if (engineInfo) {
       // we're in some addon's app tree, so we're potentially resolvable as a
       // global component

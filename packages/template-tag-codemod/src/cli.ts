@@ -20,8 +20,16 @@ program
     `When true, assume we can use template-tag directly in route files (requires ember-source >= 6.3.0-beta.3). When false, assume we can use the ember-route-template addon instead.`
   )
   .option(
-    '--no-nativeLexicalThis',
-    `When true, assume that Ember supports accessing the lexically-scoped "this" from template-tags that are used as expressions (requires ember-source >= TODO). When false, introduce a new local variable to make "this" accessible.`
+    '--nativeLexicalThis <value>',
+    `When true, assume that Ember supports accessing the lexically-scoped "this" from template-tags that are used as expressions (requires ember-source >= TODO). When false, introduce a new local variable to make "this" accessible.`,
+    value => {
+      if (value === 'true') {
+        return true;
+      } else if (value === 'false') {
+        return false;
+      }
+      throw new Error(`--nativeLexicalThis can only be set to 'true' or 'false'`);
+    }
   )
   .option(
     '--routeTemplates [globs...]',

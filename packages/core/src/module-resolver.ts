@@ -1371,9 +1371,14 @@ export class Resolver {
     // really be understood as a request for a module in the containing engine
     if (owningPackage.isV2Addon()) {
       let sections = [owningPackage.meta['app-js'], owningPackage.meta['fastboot-js']];
+      let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
+      if (!fromPackageRelativePath.includes('/_app_/')) {
+        // the inAddonName values always contain /_app_/, so we can exit early without it
+        return;
+      }
+
       for (let section of sections) {
         if (section) {
-          let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
           for (let [inAppName, inAddonName] of Object.entries(section)) {
             if (inAddonName === fromPackageRelativePath) {
               return { owningEngine: this.owningEngine(owningPackage), inAppName };

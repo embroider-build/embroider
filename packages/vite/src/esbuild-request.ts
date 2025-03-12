@@ -36,6 +36,10 @@ export class EsBuildRequestAdapter implements RequestAdapter<Resolution<OnResolv
 
     if (path && importer && path[0] !== '\0' && !path.startsWith('virtual-module:')) {
       let fromFile = cleanUrl(importer);
+      if (process.platform === 'win32') {
+        // embroider uses real OS paths for filenames. Vite and Esbuild don't do so consistently.
+        fromFile = fromFile.replace(/\//g, '\\');
+      }
       return {
         initialState: {
           specifier: path,

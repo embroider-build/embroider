@@ -329,7 +329,7 @@ tsAppScenarios
               export default RouteTemplate(<template><div>{{t "hello"}}</div></template>)
             `,
           },
-          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --no-nativeRouteTemplates`,
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false`,
         });
       });
 
@@ -345,7 +345,7 @@ tsAppScenarios
               export default RouteTemplate<{ Args: { model: unknown, controller: unknown } }>(<template><div>{{t "hello"}}</div></template>)
             `,
           },
-          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --no-nativeRouteTemplates --defaultFormat gts`,
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false --defaultFormat gts`,
         });
       });
 

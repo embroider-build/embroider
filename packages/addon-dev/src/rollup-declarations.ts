@@ -2,6 +2,7 @@ import type { Plugin } from 'rollup';
 import execa from 'execa';
 import walkSync from 'walk-sync';
 import { readFile, writeFile } from 'fs/promises';
+import { existsSync } from 'fs';
 
 export default function rollupDeclarationsPlugin(
   declarationsDir: string
@@ -9,16 +10,38 @@ export default function rollupDeclarationsPlugin(
   let glintPromise: Promise<void>;
 
   return {
-    name: 'glint-dts',
+    name: 'declarations',
     buildStart() {
       const runGlint = async () => {
-        await execa('glint', ['--declaration'], {
-          stdio: 'inherit',
-          preferLocal: true,
-          reject: this.meta.watchMode,
-        });
+        let { exitCode, escapedCommand } = await execa(
+          'glint',
+          ['--declaration'],
+          {
+            // using stdio: inherit is the only way to retain color output from the
+            // underlying tsc process.
+            // However, the viewer of the error will not know which plugin it comes from.
+            // So that's why we have the additional logging below
+            stdio: 'inherit',
+            preferLocal: true,
+            // Without reject, execa would throw a hard exception
+            reject: false,
+          }
+        );
+
+        if (exitCode > 0) {
+          let msg = `Failed to generate declarations via \`${escapedCommand}\``;
+
+          if (this.meta.watchMode) {
+            this.warn(msg);
+          } else {
+            this.error(msg);
+          }
+        }
 
         await fixDeclarationsInMatchingFiles(declarationsDir);
+        if (exitCode === 0) {
+          this.info(`\`${escapedCommand}\` succeeded`);
+        }
       };
 
       // We just kick off glint here early in the rollup process, without making rollup wait for this to finish, by not returning the promise
@@ -32,6 +55,12 @@ export default function rollupDeclarationsPlugin(
 }
 
 async function fixDeclarationsInMatchingFiles(dir: string) {
+  // can't fix what doesn't exist
+  // (happens when glint errors and doesn't output a ${dir} directory
+  if (!existsSync(dir)) {
+    return;
+  }
+
   const dtsFiles = walkSync(dir, {
     globs: ['**/*.d.ts'],
     directories: false,

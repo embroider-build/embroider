@@ -108,6 +108,7 @@ type MergeEntry =
     };
 
 type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName */ string, MergeEntry>>;
+type ReverseMergeMap = Map</* filename */ string, /* withinEngineModuleName */ string>;
 
 const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
 
@@ -601,11 +602,20 @@ export class Resolver {
     return this.options.engines.find(e => e.packageName === packageName);
   }
 
+  private get mergeMap(): MergeMap {
+    return this.mergeMaps.forward;
+  }
+
+  private get reverseMergeMap(): ReverseMergeMap {
+    return this.mergeMaps.reverse;
+  }
+
   // This is where we figure out how all the classic treeForApp merging bottoms
   // out.
   @Memoize()
-  private get mergeMap(): MergeMap {
-    let result: MergeMap = new Map();
+  private get mergeMaps(): { forward: MergeMap; reverse: ReverseMergeMap } {
+    let forward: MergeMap = new Map();
+    let reverse: ReverseMergeMap = new Map();
     for (let engine of this.options.engines) {
       let engineModules: Map<string, MergeEntry> = new Map();
       for (let addonConfig of engine.activeAddons) {
@@ -627,6 +637,7 @@ export class Resolver {
                 `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
+            reverse.set(resolve(addon.root, inAddonName), inEngineName);
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
@@ -671,6 +682,7 @@ export class Resolver {
                 `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
+            reverse.set(resolve(addon.root, inAddonName), inEngineName);
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
               case undefined:
@@ -702,9 +714,9 @@ export class Resolver {
           }
         }
       }
-      result.set(engine.root, engineModules);
+      forward.set(engine.root, engineModules);
     }
-    return result;
+    return { forward, reverse };
   }
 
   owningEngine(pkg: Package) {
@@ -1199,20 +1211,9 @@ export class Resolver {
     owningPackage: Package,
     fromFile: string
   ): { owningEngine: EngineConfig; inAppName: string } | undefined {
-    // if the requesting file is in an addon's app-js, the request should
-    // really be understood as a request for a module in the containing engine
-    if (owningPackage.isV2Addon()) {
-      let sections = [owningPackage.meta['app-js'], owningPackage.meta['fastboot-js']];
-      for (let section of sections) {
-        if (section) {
-          let fromPackageRelativePath = explicitRelative(owningPackage.root, fromFile);
-          for (let [inAppName, inAddonName] of Object.entries(section)) {
-            if (inAddonName === fromPackageRelativePath) {
-              return { owningEngine: this.owningEngine(owningPackage), inAppName };
-            }
-          }
-        }
-      }
+    let inAppName = this.reverseMergeMap.get(fromFile);
+    if (inAppName) {
+      return { owningEngine: this.owningEngine(owningPackage), inAppName };
     }
   }
 

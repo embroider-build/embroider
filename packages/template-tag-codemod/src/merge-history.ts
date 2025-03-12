@@ -101,6 +101,7 @@ function applyMoves(workDir: string, changedFiles: string[], sourceExtensions: s
       let sourceFilename = filename.replace(newExtension, sourceExtension);
       if (changedFiles.includes(sourceFilename)) {
         execSync(`git mv ${sourceFilename} ${filename}`, { cwd: workDir });
+        console.log(`renamed ${sourceFilename} -> ${filename}`);
       }
     }
   }
@@ -125,6 +126,7 @@ function concatenateMerge(workDir: string, jsRenameCommit: string, hbsRenameComm
       gitShow(jsRenameCommit, filename) + '\n' + gitShow(hbsRenameCommit, filename)
     );
     execSync(`git add ${filename}`, { cwd: workDir });
+    console.log(`resolved merge conflict in ${filename}`);
   }
 }
 
@@ -132,6 +134,7 @@ function applyCodemod(workDir: string, changedFiles: string[], endpoints: Endpoi
   for (let filename of newFiles(changedFiles)) {
     writeFileSync(resolve(workDir, filename), gitShow(endpoints.afterSha, filename));
     execSync(`git add ${filename}`, { cwd: workDir });
+    console.log(`applied codemod output to ${filename}`);
   }
 }
 

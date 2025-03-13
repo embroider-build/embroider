@@ -206,6 +206,20 @@ tsAppScenarios
         });
       });
 
+      test('adding named const to a template-only component with a name collision', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<Nested::Example />' },
+          to: {
+            'app/components/example.gjs': `
+              import Example from "./nested/example.js";
+              const Example0 = <template><Example /></template>;
+              export default Example0;
+            `,
+          },
+          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
       test('basic js backing component', async function (assert) {
         await assert.codeMod({
           from: {

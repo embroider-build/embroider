@@ -412,7 +412,8 @@ export async function processComponent(
     if (finalTemplates.length !== 1) {
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
     }
-    let componentName = classify(basename(hbsPath, '.hbs'));
+    let desiredComponentName = classify(basename(hbsPath, '.hbs'));
+    let componentName = availableNameForTemplate(ast, desiredComponentName);
     let newSrc =
       extractImports(ast, path => path !== '@ember/template-compilation') +
       '\n' +
@@ -484,6 +485,29 @@ async function insertComponentTemplate(
     throw new Error(`bug: failed to insert component template`);
   }
   return result!.ast!;
+}
+
+function unusedNameLike(desiredName: string, isUsed: (name: string) => boolean): string {
+  let candidate = desiredName;
+  let counter = 0;
+  while (isUsed(candidate)) {
+    candidate = `${desiredName}${counter++}`;
+  }
+  return candidate;
+}
+
+function availableNameForTemplate(ast: types.File, name: string) {
+  return unusedNameLike(name, candidate => {
+    let exists = false;
+    traverse(ast, {
+      Program(path) {
+        if (path.scope.hasBinding(candidate)) {
+          exists = true;
+        }
+      },
+    });
+    return exists;
+  });
 }
 
 function hbsOnlyComponent(templateSource: string, componentName: string, opts: OptionsWithDefaults): string {

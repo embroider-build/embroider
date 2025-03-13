@@ -109,6 +109,10 @@ export default class extends V1Addon {
       trees.push(new FixDeprecateFunction([packages]));
     }
 
+    if (satisfies(this.packageJSON.version, '<5.11.1')) {
+      trees.push(new FixCycleImports([packages]));
+    }
+
     return mergeTrees(trees, { overwrite: true });
   }
 
@@ -227,6 +231,52 @@ function fixDeprecate(babel: typeof Babel) {
       VariableDeclarator(path: NodePath<Babel.types.VariableDeclarator>) {
         if (path.node.id.type === 'Identifier' && path.node.id.name === 'deprecate') {
           path.node.id.name = 'currentDeprecate';
+        }
+      },
+    },
+  };
+}
+
+class FixCycleImports extends Plugin {
+  build() {
+    for (let file of ['@ember/array/index.js', '@ember/object/observable.js', '@ember/utils/lib/is_empty.js']) {
+      let inSource = readFileSync(resolve(this.inputPaths[0], file), 'utf8');
+      let outSource = transform(inSource, {
+        plugins: [moveObjectSpecifiersToMetal],
+        configFile: false,
+      })!.code!;
+      outputFileSync(resolve(this.outputPath, file), outSource, 'utf8');
+    }
+  }
+}
+
+function moveObjectSpecifiersToMetal() {
+  let done = false;
+  // this is an explicit any because I am just using it to save specifiers and move from one place to another
+  // and I don't care about the types at this stage because I'm not interacting with the object at all
+  let movedSpecifiers: any;
+
+  return {
+    visitor: {
+      ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
+        if (path.node.source.value === '@ember/-internals/metal') {
+          if (done) {
+            return;
+          }
+          if (!movedSpecifiers) {
+            const objectimport = (path.parent as Babel.types.Program).body.find(
+              n => n.type === 'ImportDeclaration' && n.source.value === '@ember/object'
+            );
+            movedSpecifiers = (objectimport as Babel.types.ImportDeclaration).specifiers;
+          }
+
+          path.node.specifiers.push(...movedSpecifiers);
+
+          done = true;
+        }
+        if (path.node.source.value === '@ember/object') {
+          movedSpecifiers = path.node.specifiers;
+          path.remove();
         }
       },
     },

@@ -42,7 +42,8 @@ export function esBuildResolver(): EsBuildPlugin {
     if (path.endsWith('.hbs')) {
       src = hbsToJS(src);
     } else if (['.gjs', '.gts'].some(ext => path.endsWith(ext))) {
-      src = preprocessor.process(src, { filename: path });
+      let { code /*,  map */ } = preprocessor.process(src, { filename: path });
+      src = code;
     }
     if (['.hbs', '.gjs', '.gts', '.js', '.ts'].some(ext => path.endsWith(ext))) {
       src = await transformAndAssert(src, path);

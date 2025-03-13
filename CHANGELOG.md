@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2025-03-12)
+
+@embroider/compat 3.8.4 (patch)
+@embroider/core 3.5.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2368](https://github.com/embroider-build/embroider/pull/2368) Optimize reverseSearchAppTree ([@ef4](https://github.com/ef4))
+* `@embroider/compat`, `@embroider/core`
+  * [#2344](https://github.com/embroider-build/embroider/pull/2344) move most of the implementation of staticInvokables to core ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-03-10)
 
 @embroider/core 3.5.3 (patch)

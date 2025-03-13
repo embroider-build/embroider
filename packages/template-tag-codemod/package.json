@@ -30,8 +30,7 @@
       "minor": "prerelease",
       "patch": "prerelease"
     },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
+    "semverIncrementTag": "alpha"
   },
   "dependencies": {
     "@babel/code-frame": "^7.26.2",

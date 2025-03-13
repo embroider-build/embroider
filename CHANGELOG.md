@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## Release (2025-03-13)
+
+@embroider/addon-dev 8.0.0-alpha.4 (patch)
+@embroider/core 4.0.0-alpha.8 (patch)
+@embroider/template-tag-codemod 0.5.0-alpha.9 (minor)
+@embroider/vite 1.0.0-alpha.9 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2363](https://github.com/embroider-build/embroider/pull/2363) Add "merge-history" subcommand to codemod ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* `@embroider/template-tag-codemod`
+  * [#2367](https://github.com/embroider-build/embroider/pull/2367) Adding more detail in template-tag readme ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* Other
+  * [#2371](https://github.com/embroider-build/embroider/pull/2371) Merge stable into main ([@mansona](https://github.com/mansona))
+* `@embroider/addon-dev`, `@embroider/core`, `@embroider/template-tag-codemod`, `@embroider/vite`, `@embroider/test-scenarios`
+  * [#2369](https://github.com/embroider-build/embroider/pull/2369) Merge stable into main ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-03-11)
 
 @embroider/addon-dev 8.0.0-alpha.3 (patch)

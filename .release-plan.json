@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "8.0.0-alpha.3",
-      "newVersion": "8.0.0-alpha.4",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "8.0.0-alpha.4"
     },
     "@embroider/addon-shim": {
       "oldVersion": "2.0.0-alpha.1"
@@ -28,16 +19,7 @@
       "oldVersion": "1.0.0-alpha.2"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.0.0-alpha.7",
-      "newVersion": "4.0.0-alpha.8",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.0.0-alpha.8"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0-alpha.1"
@@ -55,21 +37,13 @@
       "oldVersion": "3.0.0-alpha.4"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "minor",
-      "oldVersion": "0.5.0-alpha.8",
-      "newVersion": "0.5.0-alpha.9",
+      "impact": "patch",
+      "oldVersion": "0.5.0-alpha.9",
+      "newVersion": "0.5.0-alpha.10",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
           "impact": "patch",
-          "reason": "Appears in changelog section :memo: Documentation"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/template-tag-codemod/package.json"
@@ -78,17 +52,8 @@
       "oldVersion": "1.14.0-alpha.1"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.0-alpha.8",
-      "newVersion": "1.0.0-alpha.9",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.0.0-alpha.9"
     }
   },
-  "description": "## Release (2025-03-13)\n\n@embroider/addon-dev 8.0.0-alpha.4 (patch)\n@embroider/core 4.0.0-alpha.8 (patch)\n@embroider/template-tag-codemod 0.5.0-alpha.9 (minor)\n@embroider/vite 1.0.0-alpha.9 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`\n  * [#2363](https://github.com/embroider-build/embroider/pull/2363) Add \"merge-history\" subcommand to codemod ([@ef4](https://github.com/ef4))\n\n#### :memo: Documentation\n* `@embroider/template-tag-codemod`\n  * [#2367](https://github.com/embroider-build/embroider/pull/2367) Adding more detail in template-tag readme ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* Other\n  * [#2371](https://github.com/embroider-build/embroider/pull/2371) Merge stable into main ([@mansona](https://github.com/mansona))\n* `@embroider/addon-dev`, `@embroider/core`, `@embroider/template-tag-codemod`, `@embroider/vite`, `@embroider/test-scenarios`\n  * [#2369](https://github.com/embroider-build/embroider/pull/2369) Merge stable into main ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-03-13)\n\n@embroider/template-tag-codemod 0.5.0-alpha.10 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2370](https://github.com/embroider-build/embroider/pull/2370) Handle name collisions when using `--addNameToTemplateOnly` ([@CvX](https://github.com/CvX))\n\n#### Committers: 1\n- Jarek Radosz ([@CvX](https://github.com/CvX))\n"
 }

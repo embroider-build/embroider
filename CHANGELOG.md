@@ -2,6 +2,17 @@
 
 ## Release (2025-03-13)
 
+@embroider/template-tag-codemod 0.5.0-alpha.10 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2370](https://github.com/embroider-build/embroider/pull/2370) Handle name collisions when using `--addNameToTemplateOnly` ([@CvX](https://github.com/CvX))
+
+#### Committers: 1
+- Jarek Radosz ([@CvX](https://github.com/CvX))
+
+## Release (2025-03-13)
+
 @embroider/addon-dev 8.0.0-alpha.4 (patch)
 @embroider/core 4.0.0-alpha.8 (patch)
 @embroider/template-tag-codemod 0.5.0-alpha.9 (minor)

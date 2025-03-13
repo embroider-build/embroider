@@ -42,7 +42,7 @@ export function esBuildResolver(): EsBuildPlugin {
     if (path.endsWith('.hbs')) {
       src = hbsToJS(src);
     } else if (['.gjs', '.gts'].some(ext => path.endsWith(ext))) {
-      let { code /*,  map */ } = preprocessor.process(src, { filename: path });
+      let { code /*,  map */ } = preprocessor.process(src, { filename: path, inline_source_map: true });
       src = code;
     }
     if (['.hbs', '.gjs', '.gts', '.js', '.ts'].some(ext => path.endsWith(ext))) {

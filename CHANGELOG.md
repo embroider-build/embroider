@@ -2,6 +2,17 @@
 
 ## Release (2025-03-14)
 
+* @embroider/compat 4.0.0-alpha.10 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2379](https://github.com/embroider-build/embroider/pull/2379) fix @ember/object module cycles for ember 5.8 (and potentially older) ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-14)
+
 * @embroider/vite 1.0.0-alpha.11 (minor)
 
 #### :rocket: Enhancement

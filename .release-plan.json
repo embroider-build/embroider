@@ -13,7 +13,17 @@
       "oldVersion": "1.1.0-alpha.2"
     },
     "@embroider/compat": {
-      "oldVersion": "4.0.0-alpha.9"
+      "impact": "minor",
+      "oldVersion": "4.0.0-alpha.9",
+      "newVersion": "4.0.0-alpha.10",
+      "tagName": "alpha",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0-alpha.3"
@@ -43,18 +53,8 @@
       "oldVersion": "1.14.0-alpha.2"
     },
     "@embroider/vite": {
-      "impact": "minor",
-      "oldVersion": "1.0.0-alpha.10",
-      "newVersion": "1.0.0-alpha.11",
-      "tagName": "alpha",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.0.0-alpha.11"
     }
   },
-  "description": "## Release (2025-03-14)\n\n* @embroider/vite 1.0.0-alpha.11 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2372](https://github.com/embroider-build/embroider/pull/2372) always use source maps for gjs in vite ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-03-14)\n\n* @embroider/compat 4.0.0-alpha.10 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`\n  * [#2379](https://github.com/embroider-build/embroider/pull/2379) fix @ember/object module cycles for ember 5.8 (and potentially older) ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

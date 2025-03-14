@@ -2,6 +2,17 @@
 
 ## Release (2025-03-14)
 
+* @embroider/vite 1.0.0-alpha.11 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2372](https://github.com/embroider-build/embroider/pull/2372) always use source maps for gjs in vite ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-03-14)
+
 * @embroider/addon-dev 8.0.0-alpha.5 (patch)
 * @embroider/addon-shim 2.0.0-alpha.2 (patch)
 * @embroider/babel-loader-9 4.0.0-alpha.2 (patch)

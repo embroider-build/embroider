@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "8.0.0-alpha.4",
+  "version": "8.0.0-alpha.5",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",

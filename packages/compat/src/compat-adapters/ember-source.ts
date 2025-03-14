@@ -109,6 +109,10 @@ export default class extends V1Addon {
       trees.push(new FixDeprecateFunction([packages]));
     }
 
+    if (satisfies(this.packageJSON.version, '<5.11.1')) {
+      trees.push(new FixCycleImports([packages]));
+    }
+
     return mergeTrees(trees, { overwrite: true });
   }
 
@@ -227,6 +231,138 @@ function fixDeprecate(babel: typeof Babel) {
       VariableDeclarator(path: NodePath<Babel.types.VariableDeclarator>) {
         if (path.node.id.type === 'Identifier' && path.node.id.name === 'deprecate') {
           path.node.id.name = 'currentDeprecate';
+        }
+      },
+    },
+  };
+}
+
+function updateFileWithTransform(
+  context: Plugin,
+  file: string,
+  transformFunction: Babel.PluginItem | Babel.PluginItem[]
+) {
+  let inSource = readFileSync(resolve(context.inputPaths[0], file), 'utf8');
+
+  let plugins = Array.isArray(transformFunction) ? transformFunction : [transformFunction];
+  let outSource = transform(inSource, {
+    plugins,
+    configFile: false,
+  })!.code!;
+  outputFileSync(resolve(context.outputPath, file), outSource, 'utf8');
+}
+
+class FixCycleImports extends Plugin {
+  build() {
+    for (let file of ['@ember/object/observable.js', '@ember/utils/lib/is_empty.js']) {
+      updateFileWithTransform(this, file, moveObjectSpecifiersToMetal);
+    }
+
+    updateFileWithTransform(this, '@ember/array/index.js', [
+      moveObjectSpecifiersToMetal,
+      function (babel: typeof Babel) {
+        const { types: t } = babel;
+        return {
+          visitor: {
+            ExportNamedDeclaration(path: NodePath<Babel.types.ExportNamedDeclaration>) {
+              if (path.node.source?.value === './lib/make-array') {
+                path.node.source = t.stringLiteral('./make');
+              }
+            },
+          },
+        };
+      },
+    ]);
+
+    updateFileWithTransform(this, '@ember/runloop/index.js', function (babel: typeof Babel) {
+      const { types: t } = babel;
+
+      return {
+        visitor: {
+          CallExpression(path: NodePath<Babel.types.CallExpression>) {
+            if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'flushAsyncObservers') {
+              path.node.arguments = [t.identifier('schedule')];
+            }
+          },
+        },
+      };
+    });
+
+    updateFileWithTransform(this, '@ember/object/core.js', function (babel: typeof Babel) {
+      const { types: t } = babel;
+
+      return {
+        visitor: {
+          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
+            if (path.node.source.value === '@ember/array') {
+              path.node.source = t.stringLiteral('@ember/array/make');
+              path.node.specifiers = [t.importDefaultSpecifier(t.identifier('makeArray'))];
+            }
+          },
+        },
+      };
+    });
+
+    outputFileSync(
+      resolve(this.outputPath, '@ember/array/make.js'),
+      `export { default } from './lib/make-array';`,
+      'utf8'
+    );
+
+    updateFileWithTransform(this, '@ember/-internals/metal/index.js', function (babel: typeof Babel) {
+      const { types: t } = babel;
+
+      return {
+        visitor: {
+          FunctionDeclaration(path: NodePath<Babel.types.FunctionDeclaration>) {
+            if (path.node.id?.name === 'flushAsyncObservers') {
+              path.node.params = [t.identifier('_schedule')];
+            }
+          },
+          IfStatement(path: NodePath<Babel.types.IfStatement>) {
+            if (path.node.test.type === 'Identifier' && path.node.test.name === 'shouldSchedule') {
+              path.node.test.name = '_schedule';
+            }
+          },
+          CallExpression(path: NodePath<Babel.types.CallExpression>) {
+            if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'schedule') {
+              path.node.callee.name = '_schedule';
+            }
+          },
+          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
+            if (path.node.source.value === '@ember/runloop') {
+              path.remove();
+            }
+          },
+        },
+      };
+    });
+  }
+}
+
+function moveObjectSpecifiersToMetal() {
+  let done = false;
+
+  return {
+    visitor: {
+      ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
+        if (path.node.source.value === '@ember/-internals/metal') {
+          if (done) {
+            return;
+          }
+
+          /**
+           * I need to use getAllPRevSiblings and getAllNextSiblings here because I need the siblings
+           * to be paths and path.container only holds nodes (for some strange reason).
+           */
+          const objectimport = [...path.getAllPrevSiblings(), ...path.getAllNextSiblings()].find(
+            p => p.node.type === 'ImportDeclaration' && p.node.source.value === '@ember/object'
+          ) as NodePath<Babel.types.ImportDeclaration>;
+
+          path.node.specifiers.push(...objectimport!.node.specifiers);
+          objectimport.remove();
+
+          done = true;
         }
       },
     },

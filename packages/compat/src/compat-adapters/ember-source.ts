@@ -237,24 +237,111 @@ function fixDeprecate(babel: typeof Babel) {
   };
 }
 
+function updateFileWithTransform(
+  context: Plugin,
+  file: string,
+  transformFunction: Babel.PluginItem | Babel.PluginItem[]
+) {
+  let inSource = readFileSync(resolve(context.inputPaths[0], file), 'utf8');
+
+  let plugins = Array.isArray(transformFunction) ? transformFunction : [transformFunction];
+  let outSource = transform(inSource, {
+    plugins,
+    configFile: false,
+  })!.code!;
+  outputFileSync(resolve(context.outputPath, file), outSource, 'utf8');
+}
+
 class FixCycleImports extends Plugin {
   build() {
-    for (let file of ['@ember/array/index.js', '@ember/object/observable.js', '@ember/utils/lib/is_empty.js']) {
-      let inSource = readFileSync(resolve(this.inputPaths[0], file), 'utf8');
-      let outSource = transform(inSource, {
-        plugins: [moveObjectSpecifiersToMetal],
-        configFile: false,
-      })!.code!;
-      outputFileSync(resolve(this.outputPath, file), outSource, 'utf8');
+    for (let file of ['@ember/object/observable.js', '@ember/utils/lib/is_empty.js']) {
+      updateFileWithTransform(this, file, moveObjectSpecifiersToMetal);
     }
+
+    updateFileWithTransform(this, '@ember/array/index.js', [
+      moveObjectSpecifiersToMetal,
+      function (babel: typeof Babel) {
+        const { types: t } = babel;
+        return {
+          visitor: {
+            ExportNamedDeclaration(path: NodePath<Babel.types.ExportNamedDeclaration>) {
+              if (path.node.source?.value === './lib/make-array') {
+                path.node.source = t.stringLiteral('./make');
+              }
+            },
+          },
+        };
+      },
+    ]);
+
+    updateFileWithTransform(this, '@ember/runloop/index.js', function (babel: typeof Babel) {
+      const { types: t } = babel;
+
+      return {
+        visitor: {
+          CallExpression(path: NodePath<Babel.types.CallExpression>) {
+            if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'flushAsyncObservers') {
+              path.node.arguments = [t.identifier('schedule')];
+            }
+          },
+        },
+      };
+    });
+
+    updateFileWithTransform(this, '@ember/object/core.js', function (babel: typeof Babel) {
+      const { types: t } = babel;
+
+      return {
+        visitor: {
+          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
+            if (path.node.source.value === '@ember/array') {
+              path.node.source = t.stringLiteral('@ember/array/make');
+              path.node.specifiers = [t.importDefaultSpecifier(t.identifier('makeArray'))];
+            }
+          },
+        },
+      };
+    });
+
+    outputFileSync(
+      resolve(this.outputPath, '@ember/array/make.js'),
+      `export { default } from './lib/make-array';`,
+      'utf8'
+    );
+
+    updateFileWithTransform(this, '@ember/-internals/metal/index.js', function (babel: typeof Babel) {
+      const { types: t } = babel;
+
+      return {
+        visitor: {
+          FunctionDeclaration(path: NodePath<Babel.types.FunctionDeclaration>) {
+            if (path.node.id?.name === 'flushAsyncObservers') {
+              path.node.params = [t.identifier('_schedule')];
+            }
+          },
+          IfStatement(path: NodePath<Babel.types.IfStatement>) {
+            if (path.node.test.type === 'Identifier' && path.node.test.name === 'shouldSchedule') {
+              path.node.test.name = '_schedule';
+            }
+          },
+          CallExpression(path: NodePath<Babel.types.CallExpression>) {
+            if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'schedule') {
+              path.node.callee.name = '_schedule';
+            }
+          },
+          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
+            if (path.node.source.value === '@ember/runloop') {
+              path.remove();
+            }
+          },
+        },
+      };
+    });
   }
 }
 
 function moveObjectSpecifiersToMetal() {
   let done = false;
-  // this is an explicit any because I am just using it to save specifiers and move from one place to another
-  // and I don't care about the types at this stage because I'm not interacting with the object at all
-  let movedSpecifiers: any;
 
   return {
     visitor: {
@@ -263,20 +350,19 @@ function moveObjectSpecifiersToMetal() {
           if (done) {
             return;
           }
-          if (!movedSpecifiers) {
-            const objectimport = (path.parent as Babel.types.Program).body.find(
-              n => n.type === 'ImportDeclaration' && n.source.value === '@ember/object'
-            );
-            movedSpecifiers = (objectimport as Babel.types.ImportDeclaration).specifiers;
-          }
 
-          path.node.specifiers.push(...movedSpecifiers);
+          /**
+           * I need to use getAllPRevSiblings and getAllNextSiblings here because I need the siblings
+           * to be paths and path.container only holds nodes (for some strange reason).
+           */
+          const objectimport = [...path.getAllPrevSiblings(), ...path.getAllNextSiblings()].find(
+            p => p.node.type === 'ImportDeclaration' && p.node.source.value === '@ember/object'
+          ) as NodePath<Babel.types.ImportDeclaration>;
+
+          path.node.specifiers.push(...objectimport!.node.specifiers);
+          objectimport.remove();
 
           done = true;
-        }
-        if (path.node.source.value === '@ember/object') {
-          movedSpecifiers = path.node.specifiers;
-          path.remove();
         }
       },
     },

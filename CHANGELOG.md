@@ -1,5 +1,34 @@
 # Embroider Changelog
 
+## Release (2025-03-14)
+
+* @embroider/addon-dev 8.0.0-alpha.5 (patch)
+* @embroider/addon-shim 2.0.0-alpha.2 (patch)
+* @embroider/babel-loader-9 4.0.0-alpha.2 (patch)
+* @embroider/broccoli-side-watch 1.1.0-alpha.2 (patch)
+* @embroider/compat 4.0.0-alpha.9 (patch)
+* @embroider/config-meta-loader 1.0.0-alpha.3 (patch)
+* @embroider/core 4.0.0-alpha.9 (patch)
+* @embroider/hbs-loader 4.0.0-alpha.2 (patch)
+* @embroider/macros 1.17.0-alpha.7 (patch)
+* @embroider/reverse-exports 0.1.1-alpha.2 (patch)
+* @embroider/router 3.0.0-alpha.2 (patch)
+* @embroider/shared-internals 3.0.0-alpha.5 (patch)
+* @embroider/template-tag-codemod 1.0.0 (major)
+* @embroider/util 1.14.0-alpha.2 (patch)
+* @embroider/vite 1.0.0-alpha.10 (patch)
+
+#### :boom: Breaking Change
+* `@embroider/template-tag-codemod`
+  * [#2380](https://github.com/embroider-build/embroider/pull/2380) mark template-codemod as a stable 1.0.0 release ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/addon-dev`, `@embroider/addon-shim`, `@embroider/babel-loader-9`, `@embroider/broccoli-side-watch`, `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/core`, `@embroider/hbs-loader`, `@embroider/macros`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/util`, `@embroider/vite`
+  * [#2375](https://github.com/embroider-build/embroider/pull/2375) tag template-tag-codemod as latest ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-03-13)
 
 @embroider/template-tag-codemod 0.5.0-alpha.10 (patch)

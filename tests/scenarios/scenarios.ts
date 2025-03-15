@@ -113,7 +113,6 @@ export function fullSupportMatrix(scenarios: Scenarios) {
       .skip('lts_3_28')
       .skip('lts_4_4')
       .skip('lts_4_8')
-      .skip('lts_4_12')
   );
 }
 

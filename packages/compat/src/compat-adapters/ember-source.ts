@@ -172,6 +172,52 @@ class ReplaceRequire extends Plugin {
     updateFileWithTransform(this, 'ember/index.js', function (babel: typeof Babel) {
       const { types: t } = babel;
 
+      function createLoader() {
+        return t.objectExpression([
+          t.objectMethod(
+            'get',
+            t.identifier('require'),
+            [],
+            t.blockStatement([
+              t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('require'))),
+            ])
+          ),
+          t.objectMethod(
+            'get',
+            t.identifier('define'),
+            [],
+            t.blockStatement([
+              t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('define'))),
+            ])
+          ),
+          t.objectMethod(
+            'get',
+            t.identifier('registry'),
+            [],
+
+            t.blockStatement([
+              t.returnStatement(
+                t.logicalExpression(
+                  '??',
+                  t.optionalMemberExpression(
+                    t.memberExpression(t.identifier('globalThis'), t.identifier('requirejs')),
+                    t.identifier('entries'),
+                    false,
+                    true
+                  ),
+                  t.optionalMemberExpression(
+                    t.memberExpression(t.identifier('globalThis'), t.identifier('require')),
+                    t.identifier('entries'),
+                    false,
+                    true
+                  )
+                )
+              ),
+            ])
+          ),
+        ]);
+      }
+
       return {
         visitor: {
           CallExpression(path: NodePath<Babel.types.CallExpression>) {
@@ -194,6 +240,19 @@ class ReplaceRequire extends Plugin {
               );
             }
           },
+          VariableDeclaration(path: NodePath<Babel.types.VariableDeclaration>) {
+            if (
+              path.node.declarations[0].id.type === 'Identifier' &&
+              path.node.declarations[0].id.name === 'PartialEmber' &&
+              path.node.declarations[0].init!.type === 'ObjectExpression'
+            ) {
+              const declaration = path.node.declarations[0];
+              const loader = (declaration.init! as Babel.types.ObjectExpression).properties.find(
+                p => (p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name) === '__loader'
+              );
+              (loader as Babel.types.ObjectProperty).value = createLoader();
+            }
+          },
           AssignmentExpression(path: NodePath<Babel.types.AssignmentExpression>) {
             if (
               path.node.left.type === 'MemberExpression' &&
@@ -202,49 +261,7 @@ class ReplaceRequire extends Plugin {
               path.node.left.property.type === 'Identifier' &&
               path.node.left.property.name === '__loader'
             ) {
-              path.node.right = t.objectExpression([
-                t.objectMethod(
-                  'get',
-                  t.identifier('require'),
-                  [],
-                  t.blockStatement([
-                    t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('require'))),
-                  ])
-                ),
-                t.objectMethod(
-                  'get',
-                  t.identifier('define'),
-                  [],
-                  t.blockStatement([
-                    t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('define'))),
-                  ])
-                ),
-                t.objectMethod(
-                  'get',
-                  t.identifier('registry'),
-                  [],
-
-                  t.blockStatement([
-                    t.returnStatement(
-                      t.logicalExpression(
-                        '??',
-                        t.optionalMemberExpression(
-                          t.memberExpression(t.identifier('globalThis'), t.identifier('requirejs')),
-                          t.identifier('entries'),
-                          false,
-                          true
-                        ),
-                        t.optionalMemberExpression(
-                          t.memberExpression(t.identifier('globalThis'), t.identifier('require')),
-                          t.identifier('entries'),
-                          false,
-                          true
-                        )
-                      )
-                    ),
-                  ])
-                ),
-              ]);
+              path.node.right = createLoader();
             }
           },
         },

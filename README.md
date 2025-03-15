@@ -107,6 +107,37 @@ For optional features, Embroider supports the following environment variables:
 - `EMBROIDER_WORKING_DIRECTORY`: by default Embroider writes internal build-time artifacts like rewritten packages to `node_modules/.embroider`. In the case of running multiple builds concurrently (e.g. building for production and test in parallel) this would cause conflicts when concurrent processes try to write into the same directory. For this case you can point each Embroider process to a different directory using this environment variable. It can be an absolute file path, or relative to the application root directory. 
 
 
+## Common Webpack Configurations
+Embroider doesn't currently [include](https://github.com/embroider-build/embroider/pull/1323) an image or font loader. This can be a problem if, for example, your css includes fonts or images through CSS's url function.
+
+```js
+return require('@embroider/compat').compatBuild(app, Webpack, {
+  // Embroider options...
+
+  packagerOptions: {
+    webpackConfig: {
+      module: {
+        rules: [
+          {
+            test: /\.(jpg|jpeg|png|woff|woff2|eot|ttf|svg)$/,
+            use: [
+              {
+                loader: 'url-loader',
+                options: {
+                  limit: 8192,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  },
+});
+```
+
+In the long-run, an [asset import spec](https://github.com/emberjs/rfcs/blob/asset-importing-spec/text/0763-asset-importing-spec.md) will provide guidance on a standard going forward and efforts should be directed towards moving the RFC forward.
+
 ## Configuring asset URLs
 
 If you are serving your assets from a different origin (like a CDN) from where your index.html content will

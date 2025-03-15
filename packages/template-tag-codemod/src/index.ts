@@ -78,7 +78,7 @@ export interface Options {
   // which is public API that you may choose to call directly (remember you may
   // need to install `@embroider/template-tag-codemod` as a dependency to access
   // it in this way)
-  renamingRules?: 'string';
+  renamingRules?: string;
 
   /**
    * This allows you to reuse the ember-prebuild if you are running the codemod multiple times.

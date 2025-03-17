@@ -404,6 +404,10 @@ function updateFileWithTransform(
   file: string,
   transformFunction: Babel.PluginItem | Babel.PluginItem[]
 ) {
+  // only update the file if it exists - this helps the codemods to work across many different versions
+  if (!existsSync(resolve(context.inputPaths[0], file))) {
+    return;
+  }
   let inSource = readFileSync(resolve(context.inputPaths[0], file), 'utf8');
 
   let plugins = Array.isArray(transformFunction) ? transformFunction : [transformFunction];

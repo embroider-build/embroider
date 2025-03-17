@@ -17,7 +17,8 @@ async function lts_4_4(project: Project) {
 
 async function lts_4_8(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.8' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.8' });
+  // ember-cli 4.12 is the earliest version that can have an async function
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
 }
 

@@ -464,6 +464,15 @@ class FixCycleImports extends Plugin {
               path.node.source = t.stringLiteral('@ember/array/make');
               path.node.specifiers = [t.importDefaultSpecifier(t.identifier('makeArray'))];
             }
+
+            if (path.node.source.value === '@ember/-internals/runtime') {
+              path.replaceWith(
+                t.importDeclaration(
+                  [t.importSpecifier(t.identifier('ActionHandler'), t.identifier('default'))],
+                  t.stringLiteral('@ember/-internals/runtime/lib/mixins/action_handler')
+                )
+              );
+            }
           },
         },
       };

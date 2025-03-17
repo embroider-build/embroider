@@ -18,7 +18,7 @@ async function lts_4_4(project: Project) {
 async function lts_4_8(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.8' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.8' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.8' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
 }
 
 async function lts_4_12(project: Project) {
@@ -112,7 +112,6 @@ export function fullSupportMatrix(scenarios: Scenarios) {
       // new vite based system is working as we like
       .skip('lts_3_28')
       .skip('lts_4_4')
-      .skip('lts_4_8')
   );
 }
 

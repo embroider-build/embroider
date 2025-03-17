@@ -11,8 +11,9 @@ export async function lts_3_28(project: Project) {
 
 async function lts_4_4(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.4' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.4' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  // ember-cli 4.12 is the earliest version that can have an async function
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
 }
 
 async function lts_4_8(project: Project) {
@@ -112,7 +113,6 @@ export function fullSupportMatrix(scenarios: Scenarios) {
       // we are skipping these scenarios for now and will likely add them back in one-by one once the
       // new vite based system is working as we like
       .skip('lts_3_28')
-      .skip('lts_4_4')
   );
 }
 

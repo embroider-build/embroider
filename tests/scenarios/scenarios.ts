@@ -24,7 +24,7 @@ async function lts_4_8(project: Project) {
 async function lts_4_12(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.12' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.13' });
 }
 
 async function lts_5_4(project: Project) {

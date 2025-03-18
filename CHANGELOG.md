@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2025-03-18)
+
+* @embroider/compat 4.0.0-alpha.12 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2385](https://github.com/embroider-build/embroider/pull/2385) Add Vite support for Ember 4.12 ([@mansona](https://github.com/mansona))
+
+#### :memo: Documentation
+* [#2378](https://github.com/embroider-build/embroider/pull/2378) Update README.md with link to packages/router/README.md ([@johanrd](https://github.com/johanrd))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@johanrd](https://github.com/johanrd)
+
 ## Release (2025-03-14)
 
 * @embroider/compat 4.0.0-alpha.11 (minor)

@@ -14,8 +14,8 @@
     },
     "@embroider/compat": {
       "impact": "minor",
-      "oldVersion": "4.0.0-alpha.10",
-      "newVersion": "4.0.0-alpha.11",
+      "oldVersion": "4.0.0-alpha.11",
+      "newVersion": "4.0.0-alpha.12",
       "tagName": "alpha",
       "constraints": [
         {
@@ -56,5 +56,5 @@
       "oldVersion": "1.0.0-alpha.11"
     }
   },
-  "description": "## Release (2025-03-14)\n\n* @embroider/compat 4.0.0-alpha.11 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`\n  * [#2333](https://github.com/embroider-build/embroider/pull/2333) Add Vite support for Ember 5.4 ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-03-18)\n\n* @embroider/compat 4.0.0-alpha.12 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`\n  * [#2385](https://github.com/embroider-build/embroider/pull/2385) Add Vite support for Ember 4.12 ([@mansona](https://github.com/mansona))\n\n#### :memo: Documentation\n* [#2378](https://github.com/embroider-build/embroider/pull/2378) Update README.md with link to packages/router/README.md ([@johanrd](https://github.com/johanrd))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- [@johanrd](https://github.com/johanrd)\n"
 }

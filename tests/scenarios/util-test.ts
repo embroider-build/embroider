@@ -11,6 +11,11 @@ Scenarios.fromDir(dirname(require.resolve('@embroider/util/package.json')))
     lts_3_28,
   })
   .map('util', project => {
+    // all vite tests need the app to have at least ember-cli@4.12 but we need
+    // to reset it for this test to work in old node
+    project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-3.28' });
+    project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: 'ember-test-helpers-2' });
+
     // the oldest ember-data we're able to test does not work on the old node
     // we're trying to verify here
     project.removeDependency('ember-data');

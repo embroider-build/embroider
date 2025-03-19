@@ -268,6 +268,58 @@ tsAppScenarios
         });
       });
 
+      test('loose-mode registry augmentation', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `Hello world`,
+            'app/components/example.ts': `
+              import Component from '@glimmer/component';
+
+              interface FooSignature {
+                Args: {
+                  value?: string;
+                };
+              }
+
+              export default class Foo extends Component<FooSignature> {
+                get value() {
+                  return this.args.value ?? '';
+                }
+              }
+
+              declare module '@glint/environment-ember-loose/registry' {
+                export default interface Registry {
+                  Foo: typeof Foo;
+                }
+              }
+            `,
+          },
+          to: {
+            'app/components/example.gts': `
+              import Component from '@glimmer/component';
+
+              interface FooSignature {
+                Args: {
+                  value?: string;
+                };
+              }
+
+              export default class Foo extends Component<FooSignature> {<template>Hello world</template>
+                get value() {
+                  return this.args.value ?? '';
+                }
+              }
+
+              declare module '@glint/environment-ember-loose/registry' {
+                export default interface Registry {
+                  Foo: typeof Foo;
+                }
+              }            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
       test('name collision between original js and added import', async function (assert) {
         await assert.codeMod({
           from: {

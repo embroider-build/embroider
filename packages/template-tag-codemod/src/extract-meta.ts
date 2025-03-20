@@ -127,13 +127,6 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
   return {
     visitor: {
       ExportDefaultDeclaration(path, state) {
-        if (path.parentPath.node.type !== 'Program') {
-          // Not at the top level of the program, so likely an export from a
-          // TypeScript module declaration such as a GLint loose-mode Registry
-          // augmentation, rather than the actual default export of the module.
-          return;
-        }
-
         let dec: types.Node = path.node.declaration;
 
         if (dec.type === 'Identifier') {
@@ -164,6 +157,9 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
               };
               return;
             }
+          case 'TSInterfaceDeclaration':
+            // ignoring type-only export
+            return;
           default:
             state.opts.componentBody = {
               problem: `The default export from this JS file is not something we understand. Found ${dec.type}`,

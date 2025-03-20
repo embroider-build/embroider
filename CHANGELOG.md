@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## Release (2025-03-20)
+
+@embroider/compat 3.8.5 (patch)
+@embroider/core 3.5.5 (patch)
+@embroider/macros 1.16.12 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2404](https://github.com/embroider-build/embroider/pull/2404) Allow macros to see through sequence expressions ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-03-12)
 
 @embroider/compat 3.8.4 (patch)

@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## Release (2025-03-20)
+
+* @embroider/compat 4.0.0-alpha.14 (minor)
+
+#### :rocket: Enhancement
+* Other
+  * [#2400](https://github.com/embroider-build/embroider/pull/2400) Add support for Ember 3.28 ([@mansona](https://github.com/mansona))
+* `@embroider/compat`
+  * [#2388](https://github.com/embroider-build/embroider/pull/2388) Add support for Ember 4.4 ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-03-18)
 
 * @embroider/compat 4.0.0-alpha.13 (minor)

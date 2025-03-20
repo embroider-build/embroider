@@ -3,10 +3,9 @@ import { dirname } from 'path';
 
 export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.28' });
-  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli' });
-  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
-  project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: 'ember-test-helpers-2' });
-  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-6' });
+  // ember-cli 4.12 is the earliest version that can have an async function
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
 }
 
 async function lts_4_4(project: Project) {
@@ -96,24 +95,18 @@ export function supportMatrix(scenarios: Scenarios) {
 }
 
 export function fullSupportMatrix(scenarios: Scenarios) {
-  return (
-    scenarios
-      .expand({
-        lts_3_28,
-        lts_4_4,
-        lts_4_8,
-        lts_4_12,
-        lts_5_4,
-        lts_5_8,
-        lts_5_12,
-        release,
-        beta,
-        canary,
-      })
-      // we are skipping these scenarios for now and will likely add them back in one-by one once the
-      // new vite based system is working as we like
-      .skip('lts_3_28')
-  );
+  return scenarios.expand({
+    lts_3_28,
+    lts_4_4,
+    lts_4_8,
+    lts_4_12,
+    lts_5_4,
+    lts_5_8,
+    lts_5_12,
+    release,
+    beta,
+    canary,
+  });
 }
 
 export function baseAddon(as: 'dummy-app' | 'dependency' = 'dependency') {

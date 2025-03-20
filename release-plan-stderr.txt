@@ -1,0 +1,7 @@
+# Unlabeled Changes
+
+* `@embroider/template-tag-codemod`
+  * [#2401](https://github.com/embroider-build/embroider/pull/2401) Handle a couple more common use cases in template tag codemod ([@bendemboski](https://github.com/bendemboski))
+
+
+*Cannot plan release until the above changes are labeled*.

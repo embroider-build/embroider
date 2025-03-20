@@ -340,6 +340,16 @@ export class Evaluator {
       return { confident: true, value: this.locals[path.node.name], hasRuntimeImplementation: false };
     }
 
+    if (path.isSequenceExpression()) {
+      let expressions = path.get('expressions');
+      let lastExpression = expressions[expressions.length - 1];
+      if (lastExpression) {
+        // The value of a sequence expression is only the value of the last
+        // expression it contains, all the rest are ignored.
+        return this.evaluate(lastExpression);
+      }
+    }
+
     return { confident: false };
   }
 

@@ -271,6 +271,19 @@ describe('macroCondition', function () {
         }).toThrow(/the first argument to macroCondition must be statically known/);
       });
 
+      test('can find static predicate through comma operator', () => {
+        let code = transform(`
+        import { macroCondition } from '@embroider/macros';
+        import other from 'other';
+        export default function() {
+          return macroCondition((other,true)) ? 'alpha' : 'beta';
+        }
+        `);
+
+        expect(code).toMatch(/alpha/);
+        expect(code).not.toMatch(/beta/);
+      });
+
       test('wrong arity refuses to build', () => {
         expect(() => {
           transform(`

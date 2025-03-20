@@ -2,6 +2,7 @@ import { baseV2Addon, tsAppScenarios } from './scenarios';
 import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import { codeModAssertions } from '@embroider/test-support/codemod-assertions';
+import { dirname, join } from 'path';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -74,12 +75,13 @@ tsAppScenarios
       });
 
       codeModAssertions(hooks, () => app);
+      const templateTagPath = join(dirname(require.resolve('@embroider/template-tag-codemod')), 'cli.js');
 
       test('hbs only component to gjs', async function (assert) {
         await assert.codeMod({
           from: { 'app/components/example.hbs': 'Hello world' },
           to: { 'app/components/example.gjs': '<template>Hello world</template>' },
-          via: 'npx template-tag-codemod --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -91,7 +93,7 @@ tsAppScenarios
             import Example from "./nested/example.js";
             <template><Example /></template>`,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -103,7 +105,7 @@ tsAppScenarios
             import Widget from "my-addon/components/widget";
             <template>{{component Widget}}</template>`,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -115,7 +117,7 @@ tsAppScenarios
             import div_ from "../helpers/div.js";
             <template><div>The answer is {{div_ 4 2}}</div></template>`,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -127,7 +129,7 @@ tsAppScenarios
             import MessageBox from "./message-box.js";
             <template>{{component MessageBox}}</template>`,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -139,7 +141,7 @@ tsAppScenarios
             import CustomRenamedMessageBox from "./message-box.js";
             <template><CustomRenamedMessageBox /></template>`,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --renamingRules "./lib/custom-renaming.mjs"',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --renamingRules "./lib/custom-renaming.mjs"`,
         });
       });
 
@@ -151,7 +153,7 @@ tsAppScenarios
             import ReexportedWidget from "my-addon/components/widget";
             <template><ReexportedWidget /></template>`,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -163,7 +165,7 @@ tsAppScenarios
               import type { TemplateOnlyComponent } from '@ember/component/template-only';
               export default <template>Hello world</template> satisfies TemplateOnlyComponent<{ Args: {} }>`,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts`,
         });
       });
 
@@ -176,7 +178,7 @@ tsAppScenarios
               const Example = <template>Hello world</template> satisfies TemplateOnlyComponent<{ Args: {} }>;
               export default Example;`,
           },
-          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts',
+          via: `node ${templateTagPath} --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs --defaultFormat gts`,
         });
       });
 
@@ -189,7 +191,7 @@ tsAppScenarios
               <template><div data-test={{t "hello"}}>{{t "hello"}}</div></template>
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -202,7 +204,7 @@ tsAppScenarios
               export default ExampleFooBar;
             `,
           },
-          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example-foo-bar.hbs',
+          via: `node ${templateTagPath} --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example-foo-bar.hbs`,
         });
       });
 
@@ -245,7 +247,7 @@ tsAppScenarios
               }
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -264,7 +266,7 @@ tsAppScenarios
           },
           matches:
             /This codemod does not support old styles Component\.extend\(\) syntax\. Convert to a native class first\./,
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -294,7 +296,7 @@ tsAppScenarios
               }
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -309,7 +311,7 @@ tsAppScenarios
               <template><div>{{t "hello"}}</div></template>
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false`,
         });
       });
 
@@ -325,7 +327,7 @@ tsAppScenarios
               export default <template><div>{{t "hello"}}</div></template> satisfies TemplateOnlyComponent<{ Args: { model: unknown, controller: unknown } }>
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --defaultFormat gts',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --defaultFormat gts`,
         });
       });
 
@@ -341,7 +343,7 @@ tsAppScenarios
               export default RouteTemplate(<template><div>{{t "hello"}}</div></template>)
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false`,
         });
       });
 
@@ -357,7 +359,7 @@ tsAppScenarios
               export default RouteTemplate<{ Args: { model: unknown, controller: unknown } }>(<template><div>{{t "hello"}}</div></template>)
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false --defaultFormat gts',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false --nativeRouteTemplates false --defaultFormat gts`,
         });
       });
 
@@ -372,7 +374,7 @@ tsAppScenarios
               <template><div>{{t @controller.message}}</div></template>
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false`,
         });
       });
 
@@ -412,7 +414,7 @@ tsAppScenarios
               });
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false ',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false `,
         });
       });
 
@@ -431,7 +433,7 @@ tsAppScenarios
               render(<template><div></div></template>);
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false`,
         });
       });
 
@@ -452,7 +454,7 @@ tsAppScenarios
               render(template);
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false`,
         });
       });
 
@@ -469,7 +471,7 @@ tsAppScenarios
           },
           matches:
             /unsupported syntax in rendering test: local variable "template" is a template but it's used in multiple places/,
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false`,
         });
       });
 
@@ -519,7 +521,7 @@ tsAppScenarios
               });
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false --nativeLexicalThis false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false --nativeLexicalThis false`,
         });
       });
 
@@ -549,7 +551,7 @@ tsAppScenarios
               });
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false`,
         });
       });
 
@@ -579,7 +581,7 @@ tsAppScenarios
               });
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false --nativeLexicalThis false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false --nativeLexicalThis false`,
         });
       });
 
@@ -610,7 +612,7 @@ tsAppScenarios
               });
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false`,
         });
       });
 
@@ -642,7 +644,7 @@ tsAppScenarios
               });
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false`,
         });
       });
     });

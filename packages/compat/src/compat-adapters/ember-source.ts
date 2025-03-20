@@ -270,6 +270,13 @@ class ReplaceRequire extends Plugin {
 
     replaceFile(
       this,
+      '@ember/test/adapter.js',
+      `import { Adapter } from 'ember-testing';
+      export default Adapter;`
+    );
+
+    replaceFile(
+      this,
       '@ember/test/index.js',
       `export let registerAsyncHelper;
 export let registerHelper;

@@ -14,24 +14,24 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.8.3",
-      "newVersion": "3.8.4",
+      "oldVersion": "3.8.4",
+      "newVersion": "3.8.5",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.5.3",
-      "newVersion": "3.5.4",
+      "oldVersion": "3.5.4",
+      "newVersion": "3.5.5",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
@@ -40,7 +40,16 @@
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.11"
+      "impact": "patch",
+      "oldVersion": "1.16.11",
+      "newVersion": "1.16.12",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -64,5 +73,5 @@
       "oldVersion": "4.1.0"
     }
   },
-  "description": "## Release (2025-03-12)\n\n@embroider/compat 3.8.4 (patch)\n@embroider/core 3.5.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/core`\n  * [#2368](https://github.com/embroider-build/embroider/pull/2368) Optimize reverseSearchAppTree ([@ef4](https://github.com/ef4))\n* `@embroider/compat`, `@embroider/core`\n  * [#2344](https://github.com/embroider-build/embroider/pull/2344) move most of the implementation of staticInvokables to core ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-03-20)\n\n@embroider/compat 3.8.5 (patch)\n@embroider/core 3.5.5 (patch)\n@embroider/macros 1.16.12 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2404](https://github.com/embroider-build/embroider/pull/2404) Allow macros to see through sequence expressions ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

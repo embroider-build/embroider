@@ -134,7 +134,19 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
           return;
         }
 
-        let dec = path.node.declaration;
+        let dec: types.Node = path.node.declaration;
+
+        if (dec.type === 'Identifier') {
+          // This is an export of an identifier, not the value, e.g.
+          // `class Foo {}; export default Foo;`. So find the
+          // underlying declaration
+          let binding = path.scope.getBinding(dec.name);
+          if (!binding) {
+            throw new Error(`bug: unable to get binding for identifier: ${dec.name}`);
+          }
+          dec = binding.path.node;
+        }
+
         switch (dec.type) {
           case 'ClassDeclaration':
           case 'ClassExpression':

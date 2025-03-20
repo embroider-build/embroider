@@ -268,6 +268,37 @@ tsAppScenarios
         });
       });
 
+      test('js backing component with separate export statement', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `<button {{on "click" this.clicked}}>Click me</button>`,
+            'app/components/example.js': `
+              import Component from "@ember/component";
+              class Foo extends Component {
+
+                clicked() {
+                  alert('i got clicked');
+                }
+              }
+              export default Foo;
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+              import Component from "@ember/component";
+              import { on } from "@ember/modifier";
+              class Foo extends Component {<template><button {{on "click" this.clicked}}>Click me</button></template>
+                clicked() {
+                  alert('i got clicked');
+                }
+              }
+              export default Foo;
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
       test('loose-mode registry augmentation', async function (assert) {
         await assert.codeMod({
           from: {

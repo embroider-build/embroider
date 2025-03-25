@@ -1,5 +1,40 @@
 # Embroider Changelog
 
+## Release (2025-03-25)
+
+* @embroider/addon-dev 8.0.0-alpha.6 (patch)
+* @embroider/compat 4.0.0-alpha.15 (patch)
+* @embroider/core 4.0.0-alpha.10 (patch)
+* @embroider/macros 1.17.0-alpha.8 (patch)
+* @embroider/template-tag-codemod 1.1.0 (minor)
+* @embroider/vite 1.0.0-alpha.12 (patch)
+
+#### :boom: Breaking Change
+* [#2413](https://github.com/embroider-build/embroider/pull/2413) Deprecate @embroider/util ([@ef4](https://github.com/ef4))
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2320](https://github.com/embroider-build/embroider/pull/2320) convert from yargs to commander ([@mansona](https://github.com/mansona))
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2411](https://github.com/embroider-build/embroider/pull/2411) esbuild backchannel fix ([@ef4](https://github.com/ef4))
+* `@embroider/template-tag-codemod`
+  * [#2401](https://github.com/embroider-build/embroider/pull/2401) Handle a couple more common use cases in template tag codemod ([@bendemboski](https://github.com/bendemboski))
+
+#### :house: Internal
+* Other
+  * [#2414](https://github.com/embroider-build/embroider/pull/2414) update remaining template tag codemod tests ([@ef4](https://github.com/ef4))
+* `@embroider/addon-dev`, `@embroider/compat`, `@embroider/core`, `@embroider/template-tag-codemod`
+  * [#2412](https://github.com/embroider-build/embroider/pull/2412) Update @glimmer/syntax types ([@ef4](https://github.com/ef4))
+* `@embroider/macros`
+  * [#2406](https://github.com/embroider-build/embroider/pull/2406) Merge stable into main ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-03-20)
 
 * @embroider/compat 4.0.0-alpha.14 (minor)

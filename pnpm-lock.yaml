@@ -830,6 +830,9 @@ importers:
       '@babel/plugin-syntax-typescript':
         specifier: ^7.25.9
         version: 7.25.9(@babel/core@7.26.10)
+      '@commander-js/extra-typings':
+        specifier: ^13.1.0
+        version: 13.1.0(commander@13.1.0)
       '@embroider/compat':
         specifier: workspace:^*
         version: link:../compat
@@ -845,9 +848,6 @@ importers:
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
-      '@types/yargs':
-        specifier: ^17.0.3
-        version: 17.0.33
       babel-import-util:
         specifier: ^3.0.1
         version: 3.0.1
@@ -860,6 +860,9 @@ importers:
       chalk:
         specifier: ^5.4.1
         version: 5.4.1
+      commander:
+        specifier: ^13.1.0
+        version: 13.1.0
       console-ui:
         specifier: ^3.1.2
         version: 3.1.2
@@ -872,9 +875,6 @@ importers:
       html-tag-names:
         specifier: ^2.1.0
         version: 2.1.0
-      yargs:
-        specifier: ^17.0.1
-        version: 17.7.2
     devDependencies:
       '@glimmer/syntax':
         specifier: ^0.94.9
@@ -4256,6 +4256,14 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@commander-js/extra-typings@13.1.0(commander@13.1.0):
+    resolution: {integrity: sha512-q5P52BYb1hwVWE6dtID7VvuJWrlfbCv4klj7BjUUOqMz4jbSZD4C9fJ9lRjL2jnBGTg+gDDlaXN51rkWcLk4fg==}
+    peerDependencies:
+      commander: ~13.1.0
+    dependencies:
+      commander: 13.1.0
+    dev: false
 
   /@cspotcode/source-map-support@0.8.1:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -12347,6 +12355,11 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
+
+  /commander@13.1.0:
+    resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
+    engines: {node: '>=18'}
+    dev: false
 
   /commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}

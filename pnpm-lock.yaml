@@ -241,8 +241,8 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2(@babel/core@7.26.10)
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       babel-plugin-syntax-dynamic-import:
         specifier: ^6.18.0
         version: 6.18.0
@@ -428,8 +428,8 @@ importers:
         specifier: ^1.2.1
         version: 1.4.0
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       broccoli-node-api:
         specifier: ^1.7.0
         version: 1.7.0
@@ -631,8 +631,8 @@ importers:
         specifier: ^7.3.6
         version: 7.5.8
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       code-equality-assertions:
         specifier: ^1.0.1
         version: 1.0.1(@types/jest@29.5.14)(qunit@2.24.1)
@@ -852,8 +852,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       broccoli:
         specifier: ^3.5.2
         version: 3.5.2
@@ -1656,8 +1656,8 @@ importers:
         specifier: ^5.3.1
         version: 5.3.1(@babel/core@7.26.10)(rollup@3.29.5)
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       concurrently:
         specifier: ^8.2.0
         version: 8.2.2
@@ -1797,8 +1797,8 @@ importers:
         specifier: ^5.3.1
         version: 5.3.1(@babel/core@7.26.10)(rollup@3.29.5)
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       decorator-transforms:
         specifier: ^2.0.0
         version: 2.3.0(@babel/core@7.26.10)
@@ -1977,8 +1977,8 @@ importers:
         specifier: ^7.3.6
         version: 7.5.8
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       bootstrap:
         specifier: ^4.3.1
         version: 4.6.2(popper.js@1.16.1)
@@ -2217,8 +2217,8 @@ importers:
         specifier: ^4.0.4
         version: 4.0.9
       babel-plugin-ember-template-compilation:
-        specifier: ^2.3.0
-        version: 2.4.0
+        specifier: 3.0.0-alpha.0
+        version: 3.0.0-alpha.0
       broccoli-asset-rev:
         specifier: ^3.0.0
         version: 3.0.0
@@ -10503,6 +10503,14 @@ packages:
     dependencies:
       '@glimmer/syntax': 0.94.9
       babel-import-util: 3.0.1
+
+  /babel-plugin-ember-template-compilation@3.0.0-alpha.0:
+    resolution: {integrity: sha512-aiOan9X6UP5kyr35NUMWCcGdoeyxWHCV+wpScS3gzfWM+FzVuO5oKB7fC0vdhOVLaXXpVylXFByCM9gPoCxdPQ==}
+    engines: {node: '>= 18.*'}
+    dependencies:
+      '@glimmer/syntax': 0.94.9
+      babel-import-util: 3.0.1
+      import-meta-resolve: 4.1.0
 
   /babel-plugin-filter-imports@4.0.0:
     resolution: {integrity: sha512-jDLlxI8QnfKd7PtieH6pl4tZJzymzfCDCPGdTq/grgbiYAikwDPp/oL0IlFJn0HQjLpcLkyYhPKkUVneRESw5w==}
@@ -20002,6 +20010,9 @@ packages:
       pkg-dir: 4.2.0
       resolve-cwd: 3.0.0
     dev: true
+
+  /import-meta-resolve@4.1.0:
+    resolution: {integrity: sha512-I6fiaX09Xivtk+THaMfAwnA3MVA5Big1WHF1Dfx9hFuvNIWpXnorlkzhcQf6ehrqQiiZECRt1poOAkPmer3ruw==}
 
   /imurmurhash@0.1.4:
     resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}

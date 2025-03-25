@@ -1,5 +1,13 @@
 # @embroider/util
 
+## 🚨 Deprecation notice 🚨
+
+This package is deprecated. It provided the `ensureSafeComponent` utility function and the `ensure-safe-component` template helper. Both of these do nothing at runtime on Ember versions >= 3.25.
+
+Any code that's using `@embroider/util` should switch to directly using Template Tag (also known as "Template Imports"). Template Tag works in all Ember versions all the way back to 3.27.o
+
+## Intro
+
 Utilities to help apps and addons with Embroider support.
 
 ## Compatibility

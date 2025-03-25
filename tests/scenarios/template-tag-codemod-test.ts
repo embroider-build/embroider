@@ -208,6 +208,20 @@ tsAppScenarios
         });
       });
 
+      test('adding named const to a template-only component with a name collision', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<Nested::Example />' },
+          to: {
+            'app/components/example.gjs': `
+              import Example from "./nested/example.js";
+              const Example0 = <template><Example /></template>;
+              export default Example0;
+            `,
+          },
+          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
       test('basic js backing component', async function (assert) {
         await assert.codeMod({
           from: {
@@ -253,6 +267,89 @@ tsAppScenarios
           matches:
             /This codemod does not support old styles Component\.extend\(\) syntax\. Convert to a native class first\./,
           via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
+      test('js backing component with separate export statement', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `<button {{on "click" this.clicked}}>Click me</button>`,
+            'app/components/example.js': `
+              import Component from "@ember/component";
+              class Foo extends Component {
+
+                clicked() {
+                  alert('i got clicked');
+                }
+              }
+              export default Foo;
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+              import Component from "@ember/component";
+              import { on } from "@ember/modifier";
+              class Foo extends Component {<template><button {{on "click" this.clicked}}>Click me</button></template>
+                clicked() {
+                  alert('i got clicked');
+                }
+              }
+              export default Foo;
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('loose-mode registry augmentation', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `Hello world`,
+            'app/components/example.ts': `
+              import Component from '@glimmer/component';
+
+              interface FooSignature {
+                Args: {
+                  value?: string;
+                };
+              }
+
+              export default class Foo extends Component<FooSignature> {
+                get value() {
+                  return this.args.value ?? '';
+                }
+              }
+
+              declare module '@glint/environment-ember-loose/registry' {
+                export default interface Registry {
+                  Foo: typeof Foo;
+                }
+              }
+            `,
+          },
+          to: {
+            'app/components/example.gts': `
+              import Component from '@glimmer/component';
+
+              interface FooSignature {
+                Args: {
+                  value?: string;
+                };
+              }
+
+              export default class Foo extends Component<FooSignature> {<template>Hello world</template>
+                get value() {
+                  return this.args.value ?? '';
+                }
+              }
+
+              declare module '@glint/environment-ember-loose/registry' {
+                export default interface Registry {
+                  Foo: typeof Foo;
+                }
+              }            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });
       });
 

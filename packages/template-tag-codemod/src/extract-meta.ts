@@ -127,7 +127,19 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
   return {
     visitor: {
       ExportDefaultDeclaration(path, state) {
-        let dec = path.node.declaration;
+        let dec: types.Node = path.node.declaration;
+
+        if (dec.type === 'Identifier') {
+          // This is an export of an identifier, not the value, e.g.
+          // `class Foo {}; export default Foo;`. So find the
+          // underlying declaration
+          let binding = path.scope.getBinding(dec.name);
+          if (!binding) {
+            throw new Error(`bug: unable to get binding for identifier: ${dec.name}`);
+          }
+          dec = binding.path.node;
+        }
+
         switch (dec.type) {
           case 'ClassDeclaration':
           case 'ClassExpression':
@@ -145,6 +157,9 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
               };
               return;
             }
+          case 'TSInterfaceDeclaration':
+            // ignoring type-only export
+            return;
           default:
             state.opts.componentBody = {
               problem: `The default export from this JS file is not something we understand. Found ${dec.type}`,

@@ -33,6 +33,22 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
               </template>
             }
         `,
+        'special-message': {
+          'index.ts': `
+            import Component from '@glimmer/component';
+
+            interface Signature {
+              Element: HTMLDivElement;
+              Args: {
+                message: string;
+              };
+            }
+
+            export default class SpecialMessage extends Component<Signature> {
+              get specialMessage() { return "Special Message: " + this.args.message }
+            }`,
+          'index.hbs': `<div>{{this.specialMessage}}</div>`,
+        },
         'incrementer.ts': `
             import Component from '@glimmer/component';
             import { tracked } from '@glimmer/tracking';
@@ -104,6 +120,24 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
 
                 await click('button');
                 assert.dom('out').hasText('1');
+              });
+            });
+          `,
+        'special-message-test.ts': `
+            import { module, test } from 'qunit';
+            import { setupRenderingTest } from 'ember-qunit';
+            import { render, click } from '@ember/test-helpers';
+            import { hbs } from 'ember-cli-htmlbars';
+
+            module('Rendering', function (hooks) {
+              setupRenderingTest(hooks);
+
+              test('special-message', async function (assert) {
+                await render(hbs\`
+                  <SpecialMessage @message="hello" />
+                \`);
+
+                assert.dom().hasText('Special Message: hello');
               });
             });
           `,

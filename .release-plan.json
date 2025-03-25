@@ -1,142 +1,60 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "8.0.0-alpha.2",
-      "newVersion": "8.0.0-alpha.3",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "8.0.0-alpha.5"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "2.0.0-alpha.1"
+      "oldVersion": "2.0.0-alpha.2"
     },
     "@embroider/babel-loader-9": {
-      "oldVersion": "4.0.0-alpha.1"
+      "oldVersion": "4.0.0-alpha.2"
     },
     "@embroider/broccoli-side-watch": {
-      "oldVersion": "1.1.0-alpha.1"
+      "oldVersion": "1.1.0-alpha.2"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.0.0-alpha.7",
-      "newVersion": "4.0.0-alpha.8",
+      "impact": "minor",
+      "oldVersion": "4.0.0-alpha.13",
+      "newVersion": "4.0.0-alpha.14",
+      "tagName": "alpha",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
-      "impact": "patch",
-      "oldVersion": "1.0.0-alpha.1",
-      "newVersion": "1.0.0-alpha.2",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/config-meta-loader/package.json"
+      "oldVersion": "1.0.0-alpha.3"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.0.0-alpha.6",
-      "newVersion": "4.0.0-alpha.7",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.0.0-alpha.9"
     },
     "@embroider/hbs-loader": {
-      "oldVersion": "4.0.0-alpha.1"
+      "oldVersion": "4.0.0-alpha.2"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.17.0-alpha.5",
-      "newVersion": "1.17.0-alpha.6",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.17.0-alpha.7"
     },
     "@embroider/reverse-exports": {
-      "oldVersion": "0.1.1-alpha.1"
+      "oldVersion": "0.1.1-alpha.2"
     },
     "@embroider/router": {
-      "oldVersion": "3.0.0-alpha.1"
+      "oldVersion": "3.0.0-alpha.2"
     },
     "@embroider/shared-internals": {
-      "impact": "patch",
-      "oldVersion": "3.0.0-alpha.3",
-      "newVersion": "3.0.0-alpha.4",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "3.0.0-alpha.5"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "minor",
-      "oldVersion": "0.5.0-alpha.7",
-      "newVersion": "0.5.0-alpha.8",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "1.0.0"
     },
     "@embroider/util": {
-      "oldVersion": "1.14.0-alpha.1"
+      "oldVersion": "1.14.0-alpha.2"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.0-alpha.7",
-      "newVersion": "1.0.0-alpha.8",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.0.0-alpha.11"
     }
   },
-  "description": "## Release (2025-03-11)\n\n@embroider/addon-dev 8.0.0-alpha.3 (patch)\n@embroider/compat 4.0.0-alpha.8 (patch)\n@embroider/config-meta-loader 1.0.0-alpha.2 (patch)\n@embroider/core 4.0.0-alpha.7 (patch)\n@embroider/macros 1.17.0-alpha.6 (patch)\n@embroider/shared-internals 3.0.0-alpha.4 (patch)\n@embroider/template-tag-codemod 0.5.0-alpha.8 (minor)\n@embroider/vite 1.0.0-alpha.8 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2348](https://github.com/embroider-build/embroider/pull/2348) Support named const exports in template-tag-codemod ([@CvX](https://github.com/CvX))\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/test-scenarios`\n  * [#2352](https://github.com/embroider-build/embroider/pull/2352) Babel import util updates ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/config-meta-loader`\n  * [#2356](https://github.com/embroider-build/embroider/pull/2356) build config-meta-loader into dist folder ([@mansona](https://github.com/mansona))\n* `@embroider/addon-dev`, `@embroider/compat`, `@embroider/webpack`, `@embroider/test-scenarios`\n  * [#2351](https://github.com/embroider-build/embroider/pull/2351) Merge stable into main ([@mansona](https://github.com/mansona))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Jarek Radosz ([@CvX](https://github.com/CvX))\n"
+  "description": "## Release (2025-03-20)\n\n* @embroider/compat 4.0.0-alpha.14 (minor)\n\n#### :rocket: Enhancement\n* Other\n  * [#2400](https://github.com/embroider-build/embroider/pull/2400) Add support for Ember 3.28 ([@mansona](https://github.com/mansona))\n* `@embroider/compat`\n  * [#2388](https://github.com/embroider-build/embroider/pull/2388) Add support for Ember 4.4 ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

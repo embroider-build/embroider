@@ -1,5 +1,142 @@
 # Embroider Changelog
 
+## Release (2025-03-20)
+
+* @embroider/compat 4.0.0-alpha.14 (minor)
+
+#### :rocket: Enhancement
+* Other
+  * [#2400](https://github.com/embroider-build/embroider/pull/2400) Add support for Ember 3.28 ([@mansona](https://github.com/mansona))
+* `@embroider/compat`
+  * [#2388](https://github.com/embroider-build/embroider/pull/2388) Add support for Ember 4.4 ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-18)
+
+* @embroider/compat 4.0.0-alpha.13 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2397](https://github.com/embroider-build/embroider/pull/2397) Add support for Ember 4.8 ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-18)
+
+* @embroider/compat 4.0.0-alpha.12 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2385](https://github.com/embroider-build/embroider/pull/2385) Add Vite support for Ember 4.12 ([@mansona](https://github.com/mansona))
+
+#### :memo: Documentation
+* [#2378](https://github.com/embroider-build/embroider/pull/2378) Update README.md with link to packages/router/README.md ([@johanrd](https://github.com/johanrd))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@johanrd](https://github.com/johanrd)
+
+## Release (2025-03-14)
+
+* @embroider/compat 4.0.0-alpha.11 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2333](https://github.com/embroider-build/embroider/pull/2333) Add Vite support for Ember 5.4 ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-14)
+
+* @embroider/compat 4.0.0-alpha.10 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2379](https://github.com/embroider-build/embroider/pull/2379) fix @ember/object module cycles for ember 5.8 (and potentially older) ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-14)
+
+* @embroider/vite 1.0.0-alpha.11 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2372](https://github.com/embroider-build/embroider/pull/2372) always use source maps for gjs in vite ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-03-14)
+
+* @embroider/addon-dev 8.0.0-alpha.5 (patch)
+* @embroider/addon-shim 2.0.0-alpha.2 (patch)
+* @embroider/babel-loader-9 4.0.0-alpha.2 (patch)
+* @embroider/broccoli-side-watch 1.1.0-alpha.2 (patch)
+* @embroider/compat 4.0.0-alpha.9 (patch)
+* @embroider/config-meta-loader 1.0.0-alpha.3 (patch)
+* @embroider/core 4.0.0-alpha.9 (patch)
+* @embroider/hbs-loader 4.0.0-alpha.2 (patch)
+* @embroider/macros 1.17.0-alpha.7 (patch)
+* @embroider/reverse-exports 0.1.1-alpha.2 (patch)
+* @embroider/router 3.0.0-alpha.2 (patch)
+* @embroider/shared-internals 3.0.0-alpha.5 (patch)
+* @embroider/template-tag-codemod 1.0.0 (major)
+* @embroider/util 1.14.0-alpha.2 (patch)
+* @embroider/vite 1.0.0-alpha.10 (patch)
+
+#### :boom: Breaking Change
+* `@embroider/template-tag-codemod`
+  * [#2380](https://github.com/embroider-build/embroider/pull/2380) mark template-codemod as a stable 1.0.0 release ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/addon-dev`, `@embroider/addon-shim`, `@embroider/babel-loader-9`, `@embroider/broccoli-side-watch`, `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/core`, `@embroider/hbs-loader`, `@embroider/macros`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/util`, `@embroider/vite`
+  * [#2375](https://github.com/embroider-build/embroider/pull/2375) tag template-tag-codemod as latest ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-13)
+
+@embroider/template-tag-codemod 0.5.0-alpha.10 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`, `@embroider/test-scenarios`
+  * [#2370](https://github.com/embroider-build/embroider/pull/2370) Handle name collisions when using `--addNameToTemplateOnly` ([@CvX](https://github.com/CvX))
+
+#### Committers: 1
+- Jarek Radosz ([@CvX](https://github.com/CvX))
+
+## Release (2025-03-13)
+
+@embroider/addon-dev 8.0.0-alpha.4 (patch)
+@embroider/core 4.0.0-alpha.8 (patch)
+@embroider/template-tag-codemod 0.5.0-alpha.9 (minor)
+@embroider/vite 1.0.0-alpha.9 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2363](https://github.com/embroider-build/embroider/pull/2363) Add "merge-history" subcommand to codemod ([@ef4](https://github.com/ef4))
+
+#### :memo: Documentation
+* `@embroider/template-tag-codemod`
+  * [#2367](https://github.com/embroider-build/embroider/pull/2367) Adding more detail in template-tag readme ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* Other
+  * [#2371](https://github.com/embroider-build/embroider/pull/2371) Merge stable into main ([@mansona](https://github.com/mansona))
+* `@embroider/addon-dev`, `@embroider/core`, `@embroider/template-tag-codemod`, `@embroider/vite`, `@embroider/test-scenarios`
+  * [#2369](https://github.com/embroider-build/embroider/pull/2369) Merge stable into main ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-03-11)
 
 @embroider/addon-dev 8.0.0-alpha.3 (patch)
@@ -79,6 +216,21 @@
 - Chris Manson ([@mansona](https://github.com/mansona))
 - Edward Faulkner ([@ef4](https://github.com/ef4))
 
+## Release (2025-03-12)
+
+@embroider/compat 3.8.4 (patch)
+@embroider/core 3.5.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2368](https://github.com/embroider-build/embroider/pull/2368) Optimize reverseSearchAppTree ([@ef4](https://github.com/ef4))
+* `@embroider/compat`, `@embroider/core`
+  * [#2344](https://github.com/embroider-build/embroider/pull/2344) move most of the implementation of staticInvokables to core ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-02-25)
 
 @embroider/template-tag-codemod 0.5.0-alpha.5 (patch)
@@ -147,6 +299,33 @@
   * [#2294](https://github.com/embroider-build/embroider/pull/2294) Merge stable into main ([@ef4](https://github.com/ef4))
 * Other
   * [#2290](https://github.com/embroider-build/embroider/pull/2290) Add docs for EMBROIDER_WORKING_DIRECTORY ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2025-03-10)
+
+@embroider/core 3.5.3 (patch)
+@embroider/vite 0.2.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`, `@embroider/test-scenarios`
+  * [#2357](https://github.com/embroider-build/embroider/pull/2357) fix index.ts component resolving ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2358](https://github.com/embroider-build/embroider/pull/2358) fix gitignore for switching between stable and main ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-08)
+
+@embroider/addon-dev 7.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2354](https://github.com/embroider-build/embroider/pull/2354) Fix addon-dev's declarations plugin when glint fails ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
 
 ## Release (2025-03-07)
 

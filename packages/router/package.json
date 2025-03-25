@@ -1,6 +1,6 @@
 {
   "name": "@embroider/router",
-  "version": "3.0.0-alpha.1",
+  "version": "3.0.0-alpha.2",
   "description": "Lazy loading router",
   "keywords": [
     "ember-addon"
@@ -35,7 +35,8 @@
       "minor": "prerelease",
       "patch": "prerelease"
     },
-    "semverIncrementTag": "alpha"
+    "semverIncrementTag": "alpha",
+    "publishTag": "alpha"
   },
   "dependencies": {
     "@ember/test-waiters": "^3.0.2",

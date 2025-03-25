@@ -1,13 +1,13 @@
 # Replacing the Component Helper
 
-Using the `{{component}}` helper can prevent your app or addon from being
+Using the `{{component}}` helper in traditional loose handlebars template can prevent your app or addon from being
 statically analyzed, which will prevent you from taking advantage of
 `staticComponents` and `splitAtRoutes`.
 
 The exact rules for `{{component}}` are:
 
+- it's always OK to use `{{component}}` in Template Tag (GJS) format because that format follows the [strict handlebars](https://github.com/emberjs/rfcs/blob/7d2ff960370faa7e70f39c6a13e43536f40e3048/text/0496-handlebars-strict-mode.md) rules, which forbid the component helper from dynamically converting strings into component definitions.
 - it's OK to pass a string literal component name like `{{component "my-title-bar"}}`
-- it's OK to pass a value wrapped in the ensure-safe-component helper from `@embroider/util`, like `{{component (ensure-safe-component this.titleBar) }}`. But make sure you understand what ensure-safe-component itself is doing. Sprinkling existing code with ensure-safe-component without paying attention to the deprecation messages it emits will _not_ make your app work in Embroider.
 - any other syntax in the first argument to `{{component ...}}` is NOT OK
 
 The following sections explain what to do in the common scenarios where you might have unsafe usage of the `{{component}}` helper.
@@ -30,57 +30,22 @@ export default class extends Component {
 {{component this.titleBar}}
 ```
 
-The first step is to switch to angle bracket invocation:
+The solution is to combine the JS and HBS files into a single GJS file:
 
-```hbs
-<this.titleBar />
-```
-
-Now we eliminated the `{{component}}` helper. And this actually works, but with two big caveats:
-
-- it only works reliably on Ember versions before 3.23, because we might get passed a string, and invoking a string via angle brackets was an accidental behavior that was never intended, and it's fixed in that release.
-- and we haven't really solved the underlying problem, which is that we can sneakily convert strings into components in a way that lets them escape Embroider's analysis.
-
-So we need another step. Add `@embroider/util` to your project, and use `ensureSafeComponent`:
-
-```js
+```gjs
 import Component from '@glimmer/component';
-import { ensureSafeComponent } from '@embroider/util';
-
-export default class extends Component {
-  get titleBar() {
-    return ensureSafeComponent(this.args.titleBar || 'default-title-bar', this);
-  }
-}
-```
-
-```hbs
-<this.titleBar />
-```
-
-This now works even on newer Ember versions. If the user passes a string, it emits a deprecation warning while converting the value to an actual component definition so the angle bracket invocation works. This will help your users migrate away from passing strings to your component.
-
-Notice also that if the user doesn't provide a component, we will trigger the deprecation warning by passing our own string `"default-title-bar"` into `ensureSafeComponent`. So we need one more step to clear this deprecation (and make our code truly understandable by embroider). Import the component class instead:
-
-```js
-import Component from '@glimmer/component';
-import { ensureSafeComponent } from '@embroider/util';
 import DefaultTitleBar from './default-title-bar';
 
 export default class extends Component {
+  <template>
+    <this.titleBar />
+  </template>
+  
   get titleBar() {
-    return ensureSafeComponent(this.args.titleBar || DefaultTitleBar, this);
+    return this.args.titleBar || DefaultTitleBar;
   }
 }
 ```
-
-```hbs
-<this.titleBar />
-```
-
-On old Ember versions (< 3.25), when `ensureSafeComponent` sees a component class, it converts it into a component definition so it can be safely invoked. On newer Ember versions, it does nothing because component classes are directly invokable.
-
-**Caution**: old-style components that have their template in `app/templates/components` instead of co-located next to their Javascript in `app/components` can't work correctly when discovered via their component class, because there's no way to locate the template. They should either port to being co-located (which is a simple mechanical transformation and highly recommended) or should import their own template and set it as `layout` as was traditional in addons before co-location was available.
 
 ## When you're passing a component to someone else
 
@@ -90,53 +55,16 @@ Here's an example `<Menu/>` component that accepts a `@titleBar=`. When the auth
 <Menu @titleBar='fancy-title-bar' />
 ```
 
-we'll get a deprecation message like
+it will no longer work, because `<Menu />` no longer accepts a string.
 
-> You're trying to invoke the component "fancy-title-bar" by passing its name as a string...
+We should import the FancyTitleBar component directly and pass it:
 
-The simplest fix is to add the `{{component}}` helper:
-
-```hbs
-<Menu @titleBar={{component 'fancy-title-bar'}} />
-```
-
-This is one of the two safe ways to use `{{component}}`, because we're passing it a **string literal**. String literals are safe because they are statically analyzable, so Embroider can tell exactly what component you're talking about.
-
-But if instead you need anything other than a string literal, you'll need a different solution. For example, this is not OK:
-
-```hbs
-<Menu @titleBar={{component (if this.fancy 'fancy-title-bar' 'plain-title-bar')}} />
-```
-
-You can refactor this example into two uses with only string literals inside `{{component}}`, and that makes it OK:
-
-```hbs
-<Menu @titleBar={{if this.fancy (component 'fancy-title-bar') (component 'plain-title-bar')}} />
-```
-
-But if your template is getting complicated, you can always move to Javascript and import the components directly:
-
-```js
-import Component from '@glimmer/component';
+```gjs
 import FancyTitleBar from './fancy-title-bar';
-import PlainTitleBar from './plain-title-bar';
-
-export default class extends Component {
-  get whichComponent() {
-    return this.fancy ? FancyTitleBar : PlainTitleBar;
-  }
-}
+<template>
+  <Menu @titleBar={{FancyTitleBar}} />
+</template>
 ```
-
-```hbs
-<Menu @titleBar={{this.whichComponent}} />
-```
-
-Note that we didn't use `ensureSafeComponent` here because we already stipulated
-that `<Menu/>` is itself using `ensureSafeComponent`, and so `<Menu/>`'s public
-API accepts component classes _or_ component definitions. But if you were unsure
-whether `<Menu/>` accepts classes, it's always safe to run them through
-`ensureSafeComponent` yourself first (`ensureSafeComponent` is idempotent).
 
 ## When you need to curry arguments onto a component
 
@@ -154,13 +82,14 @@ But what if you need to curry arguments onto a component somebody else has passe
 {{yield (component this.args.header mode=this.mode)}}
 ```
 
-Because we're only adding a `mode=` argument to this component and not invoking it, we can't switch to angle bracket invocation. Instead, we can wrap our component in the `ensure-safe-component` helper from the `@embroider/util` package:
+In this case, you should convert your component to Template Tag:
 
-```hbs
-{{yield (component (ensure-safe-component this.args.header) mode=this.mode)}}
+```gjs
+<template>{{yield (component this.args.header mode=this.mode)}}</template>
 ```
 
-This works the same as the Javascript `ensureSafeComponent` function, and by appearing **directly** as the argument of the `{{component}}` helper, Embroider will trust that this spot can't unsafely resolve a string into a component.
+That makes it safe because Template Tag is always safe, because it follows the strict handlebars rules.
+
 
 ## When you're matching a large set of possible components
 
@@ -190,21 +119,20 @@ subset of dynamic import syntax" in the Embroider V2 Package RFC</a>.
 In this case, we're refactoring existing synchronous code so we can use
 `importSync`:
 
-```js
+```gjs
 import Component from '@glimmer/component';
 import { importSync } from '@embroider/macros';
-import { ensureSafeComponent } from '@embroider/util';
 
 export default class extends Component {
   get whichComponent() {
     let module = importSync(`./feed-items/${this.args.model.type}`);
-    return ensureSafeComponent(module.default, this);
+    return module.default;
   }
-}
-```
 
-```hbs
-<this.whichComponent @feedItem={{@model}} />
+  <template>
+    <this.whichComponent @feedItem={{@model}} />
+  </template>
+}
 ```
 
 This code will cause every module under the `./feed-items/` directory to be eagerly included in your build.
@@ -232,21 +160,19 @@ test('my test', async function (assert) {
 });
 ```
 
-This will fail, as `test-component`cannot be statically found. Instead, you can directly reference the component class:
+This will fail, as `test-component`cannot be statically found. Instead, you can directly reference the component class using Template Tag:
 
 ```js
 import { setComponentTemplate } from '@ember/component';
 import Component from '@glimmer/component';
 
 test('my test', async function (assert) {
-  class TestComponent extends Component {}
+  class TestComponent extends Component {
+    <template>Test content: {{@message}}</template>
+  }
 
-  setComponentTemplate(hbs`Test content: {{@message}}`, TestComponent);
-
-  this.testComponent = TestComponent;
-
-  await render(hbs`
-    <MyComponent @display={{this.testComponent}} />
-  `);
+  await render(<template>
+    <MyComponent @display={{TestComponent}} />
+  </template>);
 });
 ```

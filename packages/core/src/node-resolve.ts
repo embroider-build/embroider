@@ -118,6 +118,10 @@ function* candidates(specifier: string, extensions: string[]) {
   for (let ext of extensions) {
     yield `${specifier}${ext}`;
   }
+
+  for (let ext of extensions) {
+    yield `${specifier}/index${ext}`;
+  }
 }
 
 type NodeResolution = { type: 'virtual'; filename: string; content: string } | { type: 'real'; filename: string };

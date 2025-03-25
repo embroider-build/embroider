@@ -98,7 +98,7 @@ The recommended steps when introducing Embroider into an existing app are:
 1. First make it work with no options. This is the mode that supports maximum backward compatibility. If you're hitting errors, first look at the "Compatibility with Classic Builds" section below.
 2. Enable `staticAddonTestSupportTrees` and `staticAddonTrees` and test your application. This is usually safe, because most code in these trees gets consumed via `import` statements that we can analyze. But you might find exceptional cases where some code is doing a more dynamic thing.
 3. Enable `staticInvokables` and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
-4. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work. See the packages/router/README.md for details and limitations.
+4. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work. See [packages/router/README.md](https://github.com/embroider-build/embroider/blob/main/packages/router/README.md) for details and limitations.
 
 ## Environment variables
 

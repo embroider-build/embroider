@@ -243,6 +243,9 @@ importers:
       babel-plugin-ember-template-compilation:
         specifier: 3.0.0-alpha.0
         version: 3.0.0-alpha.0
+      babel-plugin-ember-template-compilation-2:
+        specifier: npm:babel-plugin-ember-template-compilation@^2.4.0
+        version: /babel-plugin-ember-template-compilation@2.4.0
       babel-plugin-syntax-dynamic-import:
         specifier: ^6.18.0
         version: 6.18.0

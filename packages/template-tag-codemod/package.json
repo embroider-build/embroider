@@ -47,7 +47,7 @@
     "yargs": "^17.0.1"
   },
   "devDependencies": {
-    "@glimmer/syntax": "^0.84.3",
+    "@glimmer/syntax": "^0.94.9",
     "@types/babel__code-frame": "^7.0.6",
     "@types/babel__generator": "^7.6.8",
     "@types/glob": "^8.1.0",

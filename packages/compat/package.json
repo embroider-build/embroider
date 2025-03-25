@@ -78,7 +78,7 @@
     "@embroider/core": "workspace:^",
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
-    "@glimmer/syntax": "^0.84.3",
+    "@glimmer/syntax": "^0.94.9",
     "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
     "@types/babel__generator": "^7.6.2",

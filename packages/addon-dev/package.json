@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@embroider/test-support": "workspace:*",
-    "@glimmer/syntax": "^0.84.2",
+    "@glimmer/syntax": "^0.94.9",
     "@glint/core": "^1.5.0",
     "@glint/template": "^1.5.0",
     "@glint/environment-ember-loose": "^1.5.0",

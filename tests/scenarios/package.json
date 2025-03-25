@@ -49,7 +49,6 @@
     "@embroider/addon-shim": "workspace:*",
     "@embroider/macros": "workspace:*",
     "@embroider/router": "workspace:*",
-    "@embroider/util": "workspace:*",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-typescript": "^11.1.2",
     "@tsconfig/ember": "1.0.1",

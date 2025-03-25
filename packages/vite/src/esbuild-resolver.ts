@@ -9,6 +9,7 @@ import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 import { extname } from 'path';
+import { BackChannel } from './backchannel.js';
 
 export function esBuildResolver(): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
@@ -56,6 +57,16 @@ export function esBuildResolver(): EsBuildPlugin {
     setup(build) {
       const phase = detectPhase(build);
 
+      let backChannel: BackChannel | undefined;
+      if (phase === 'scanning') {
+        // this is created here because of the lifetime it should have. When we
+        // catch vite lying to esbuild about missing deps actually being
+        // "external", we need to remember that fact for the remainder of the
+        // depscan, because if esbuild asks again it will hit a cache and we
+        // won't get to observe it again.
+        backChannel = new BackChannel();
+      }
+
       // Embroider Resolver
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
         let request = ModuleRequest.create(EsBuildRequestAdapter.create, {
@@ -66,6 +77,7 @@ export function esBuildResolver(): EsBuildPlugin {
           path,
           importer,
           pluginData,
+          backChannel,
         });
         if (!request) {
           return null;
@@ -130,10 +142,12 @@ export function esBuildResolver(): EsBuildPlugin {
   };
 }
 
-function detectPhase(build: PluginBuild): 'bundling' | 'other' {
+function detectPhase(build: PluginBuild): 'bundling' | 'scanning' | 'other' {
   let plugins = (build.initialOptions.plugins ?? []).map(p => p.name);
   if (plugins.includes('vite:dep-pre-bundle')) {
     return 'bundling';
+  } else if (plugins.includes('vite:dep-scan')) {
+    return 'scanning';
   } else {
     return 'other';
   }

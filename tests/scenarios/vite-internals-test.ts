@@ -144,6 +144,17 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
             message = "delta";
          }
         `,
+        'multi-loose-example': {
+          'targeted.gjs': `
+            <template>hi</template>
+          `,
+          'first.hbs': `
+            <MultiLooseExample::Targeted />
+          `,
+          'second.hbs': `
+            <MultiLooseExample::Targeted />
+          `,
+        },
       },
       templates: {
         'application.hbs': `
@@ -240,6 +251,21 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
                 assert.strictEqual(globalThis.appLibTwoLoaded, 1, 'app lib two loaded once');
               });
             });
+          `,
+          'multi-loose-test.gjs': `
+            import { module, test } from 'qunit';
+            import { setupRenderingTest } from 'ts-app-template/tests/helpers';
+            import { render } from '@ember/test-helpers';
+            import First from 'ts-app-template/components/multi-loose-example/first';
+            import Second from 'ts-app-template/components/multi-loose-example/second';
+
+            module('Integration | multi-loose-example', function (hooks) {
+              setupRenderingTest(hooks);
+              test('Two different loose mode components that both target the same gjs component both work', async function (assert) {
+                await render(<template><div class="here"><First /><Second /></div></template>);
+                assert.dom('.here').hasText('hi hi');
+              })
+            })
           `,
         },
       },

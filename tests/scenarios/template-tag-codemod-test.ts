@@ -218,7 +218,7 @@ tsAppScenarios
               export default Example0;
             `,
           },
-          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -297,7 +297,7 @@ tsAppScenarios
               export default Foo;
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -349,7 +349,7 @@ tsAppScenarios
                 }
               }            `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 

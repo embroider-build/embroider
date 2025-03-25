@@ -5,7 +5,7 @@ import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
 import { join, resolve } from 'path';
-import { writeStatus } from './esbuild-request.js';
+import { writeStatus } from './backchannel.js';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
 import fs from 'fs-extra';
@@ -179,7 +179,7 @@ async function observeDepScan(context: PluginContext, source: string, importer: 
     ...options,
     skipSelf: true,
   });
-  writeStatus(source, result ? { type: 'found', filename: result.id } : { type: 'not_found' });
+  writeStatus(source, importer ?? '', result ? { type: 'found', filename: result.id } : { type: 'not_found' });
   return result;
 }
 

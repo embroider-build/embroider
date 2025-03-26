@@ -347,7 +347,7 @@ function editBabelConfig(src: string): string {
   return src.replace(/babelCompatSupport\(\),/, `babelCompatSupport\(\), 'babel-plugin-is-a-module',`);
 }
 
-function runViteInternalsTest(scenario: Scenario) {
+function runViteInternalsTest(scenario: Scenario, useViteBeta = false) {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
     let server: CommandWatcher;
@@ -355,6 +355,9 @@ function runViteInternalsTest(scenario: Scenario) {
 
     hooks.before(async () => {
       app = await scenario.prepare();
+      if (useViteBeta) {
+        await app.execute('pnpm install vite@beta');
+      }
     });
 
     Qmodule('vite dev', function (hooks) {
@@ -485,7 +488,10 @@ viteMatrix(tsAppScenarios.only('lts_5_12'))
   .map('vite-internals', app => {
     buildViteInternalsTest(true, app);
   })
-  .forEachScenario(runViteInternalsTest);
+  .forEachScenario((scenario: Scenario) => {
+    runViteInternalsTest(scenario);
+    runViteInternalsTest(scenario, true);
+  });
 
 // After 5.12, there is no non-colocated templates in ember.
 viteMatrix(tsAppScenarios.skip('lts_5_12'))

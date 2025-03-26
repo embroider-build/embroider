@@ -55,7 +55,7 @@
     "@types/htmlbars-inline-precompile": "^3.0.0",
     "@types/qunit": "2.19.10",
     "@types/rsvp": "^4.0.4",
-    "babel-plugin-ember-template-compilation": "3.0.0-alpha.0",
+    "babel-plugin-ember-template-compilation": "3.0.0-alpha.1",
     "broccoli-asset-rev": "^3.0.0",
     "concurrently": "^8.2.1",
     "decorator-transforms": "^2.0.0",

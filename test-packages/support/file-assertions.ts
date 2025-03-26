@@ -128,40 +128,39 @@ export class BoundExpectFile {
       propertyPath
     );
   }
-  transform(fn: (contents: string, file: BoundExpectFile) => string) {
+  async transform(fn: (contents: string, file: BoundExpectFile) => Promise<string>) {
     this.consumed = true;
-    return new TransformedFileExpect(this.basePath, this.path, this.adapter, fn);
+
+    let transformed: ContentsResult;
+
+    let raw = this.contents;
+    if (!raw.result) {
+      transformed = raw;
+    } else {
+      try {
+        transformed = { result: true, data: await fn(raw.data, this) };
+      } catch (err) {
+        transformed = {
+          result: false,
+          actual: err,
+          expected: 'transformer to run',
+          message: err.stack,
+        };
+      }
+    }
+
+    return new TransformedFileExpect(this.basePath, this.path, this.adapter, transformed);
   }
 }
 
 export class TransformedFileExpect extends BoundExpectFile {
-  constructor(
-    basePath: string,
-    path: string,
-    adapter: AssertionAdapter,
-    private transformer: (contents: string, file: BoundExpectFile) => string
-  ) {
+  constructor(basePath: string, path: string, adapter: AssertionAdapter, private transformed: ContentsResult) {
     super(basePath, path, adapter);
   }
+
   @Memoize()
   protected get contents(): ContentsResult {
-    let raw = super.contents;
-    if (!raw.result) {
-      return raw;
-    }
-    try {
-      return {
-        result: true,
-        data: this.transformer(raw.data, this),
-      };
-    } catch (err) {
-      return {
-        result: false,
-        actual: err,
-        expected: 'transformer to run',
-        message: err.stack,
-      };
-    }
+    return this.transformed;
   }
   failsToTransform(message: string) {
     if (this.contents.result) {

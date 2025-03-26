@@ -44,7 +44,7 @@
     "@embroider/reverse-exports": "workspace:*",
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
-    "babel-plugin-ember-template-compilation": "3.0.0-alpha.0",
+    "babel-plugin-ember-template-compilation": "3.0.0-alpha.1",
     "broccoli-node-api": "^1.7.0",
     "broccoli-persistent-filter": "^3.1.2",
     "broccoli-plugin": "^4.0.7",

@@ -1,7 +1,7 @@
 import { readJSONSync, existsSync } from 'fs-extra';
 import { join } from 'path';
 import type { TransformOptions } from '@babel/core';
-import { transform } from '@babel/core';
+import { transformAsync } from '@babel/core';
 import type { BoundExpectFile } from './file-assertions';
 import { hbsToJS, locateEmbroiderWorkingDir, RewrittenPackageCache } from '../../packages/core/src/index';
 import { Memoize } from 'typescript-memoize';
@@ -16,17 +16,18 @@ export class Transpiler {
     this.shouldTranspile = this.shouldTranspile.bind(this);
   }
 
-  transpile(contents: string, fileAssert: BoundExpectFile): string {
+  async transpile(contents: string, fileAssert: BoundExpectFile): Promise<string> {
     if (fileAssert.path.endsWith('.hbs')) {
-      return transform(
+      return (await transformAsync(
         hbsToJS(contents, {
           filename: fileAssert.fullPath,
           compatModuleNaming: { rootDir: this.appOutputPath, modulePrefix: this.pkgJSON.name },
         }),
         Object.assign({ filename: fileAssert.fullPath }, this.babelConfig)
-      )!.code!;
+      ))!.code!;
     } else if (fileAssert.path.endsWith('.js')) {
-      return transform(contents, Object.assign({ filename: fileAssert.fullPath }, this.babelConfig))!.code!;
+      return (await transformAsync(contents, Object.assign({ filename: fileAssert.fullPath }, this.babelConfig)))!
+        .code!;
     } else {
       return contents;
     }

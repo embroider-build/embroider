@@ -65,7 +65,7 @@ function setupWorkDir(opts: MergeHistoryOptions, endpoints: Endpoints): string {
       execSync(`git branch -D ${opts.outputBranch}`);
     } else {
       console.error(
-        `Output branch "${opts.outputBranch}" already exists. If you really want to overwrite it, pass --allowOverwite`
+        `Output branch "${opts.outputBranch}" already exists. If you really want to overwrite it, pass --allowOverwrite`
       );
       process.exit(-1);
     }

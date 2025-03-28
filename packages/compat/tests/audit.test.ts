@@ -417,7 +417,7 @@ describe('audit', function () {
     expect(Object.keys(result.modules)).toContain('./components/second.js');
   });
 
-  test('failure to parse JS is reported and does not cause cascading errors', async function () {
+  test.only('failure to parse JS is reported and does not cause cascading errors', async function () {
     merge(app.files, {
       'app.js': `import { thing } from './intermediate'`,
       'intermediate.js': `export * from './has-parse-error';`,

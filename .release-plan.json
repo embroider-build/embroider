@@ -1,17 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "8.0.0-alpha.5",
-      "newVersion": "8.0.0-alpha.6",
-      "tagName": "alpha",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "8.0.0-alpha.6"
     },
     "@embroider/addon-shim": {
       "oldVersion": "2.0.0-alpha.2"
@@ -23,57 +13,19 @@
       "oldVersion": "1.1.0-alpha.2"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.0.0-alpha.14",
-      "newVersion": "4.0.0-alpha.15",
-      "tagName": "alpha",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.0.0-alpha.15"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0-alpha.3"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.0.0-alpha.9",
-      "newVersion": "4.0.0-alpha.10",
-      "tagName": "alpha",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.0.0-alpha.10"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0-alpha.2"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.17.0-alpha.7",
-      "newVersion": "1.17.0-alpha.8",
-      "tagName": "alpha",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.17.0-alpha.8"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.1-alpha.2"
@@ -85,43 +37,21 @@
       "oldVersion": "3.0.0-alpha.5"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "minor",
-      "oldVersion": "1.0.0",
-      "newVersion": "1.1.0",
+      "impact": "patch",
+      "oldVersion": "1.1.0",
+      "newVersion": "1.1.1",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/template-tag-codemod/package.json"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.0-alpha.11",
-      "newVersion": "1.0.0-alpha.12",
-      "tagName": "alpha",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.0.0-alpha.12"
     }
   },
-  "description": "## Release (2025-03-25)\n\n* @embroider/addon-dev 8.0.0-alpha.6 (patch)\n* @embroider/compat 4.0.0-alpha.15 (patch)\n* @embroider/core 4.0.0-alpha.10 (patch)\n* @embroider/macros 1.17.0-alpha.8 (patch)\n* @embroider/template-tag-codemod 1.1.0 (minor)\n* @embroider/vite 1.0.0-alpha.12 (patch)\n\n#### :boom: Breaking Change\n* [#2413](https://github.com/embroider-build/embroider/pull/2413) Deprecate @embroider/util ([@ef4](https://github.com/ef4))\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`\n  * [#2320](https://github.com/embroider-build/embroider/pull/2320) convert from yargs to commander ([@mansona](https://github.com/mansona))\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2411](https://github.com/embroider-build/embroider/pull/2411) esbuild backchannel fix ([@ef4](https://github.com/ef4))\n* `@embroider/template-tag-codemod`\n  * [#2401](https://github.com/embroider-build/embroider/pull/2401) Handle a couple more common use cases in template tag codemod ([@bendemboski](https://github.com/bendemboski))\n\n#### :house: Internal\n* Other\n  * [#2414](https://github.com/embroider-build/embroider/pull/2414) update remaining template tag codemod tests ([@ef4](https://github.com/ef4))\n* `@embroider/addon-dev`, `@embroider/compat`, `@embroider/core`, `@embroider/template-tag-codemod`\n  * [#2412](https://github.com/embroider-build/embroider/pull/2412) Update @glimmer/syntax types ([@ef4](https://github.com/ef4))\n* `@embroider/macros`\n  * [#2406](https://github.com/embroider-build/embroider/pull/2406) Merge stable into main ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Ben Demboski ([@bendemboski](https://github.com/bendemboski))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-03-28)\n\n* @embroider/template-tag-codemod 1.1.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2416](https://github.com/embroider-build/embroider/pull/2416) Fix a small typo spotted yesterday during Ember Europe ([@bartocc](https://github.com/bartocc))\n\n#### Committers: 1\n- Julien Palmas ([@bartocc](https://github.com/bartocc))\n"
 }

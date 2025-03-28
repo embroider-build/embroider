@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-03-28)
+
+* @embroider/template-tag-codemod 1.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`
+  * [#2416](https://github.com/embroider-build/embroider/pull/2416) Fix a small typo spotted yesterday during Ember Europe ([@bartocc](https://github.com/bartocc))
+
+#### Committers: 1
+- Julien Palmas ([@bartocc](https://github.com/bartocc))
+
 ## Release (2025-03-25)
 
 * @embroider/addon-dev 8.0.0-alpha.6 (patch)

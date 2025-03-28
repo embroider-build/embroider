@@ -7,16 +7,21 @@ type ContentsResult = { result: true; data: string } | { result: false; actual: 
 type JSONResult = { result: true; data: any } | { result: false; actual: any; expected: any; message: string };
 
 export class BoundExpectFile {
-  private consumed = false;
+  protected consumed = false;
 
   constructor(readonly basePath: string, readonly path: string, readonly adapter: AssertionAdapter) {
-    Promise.resolve().then(() => {
+    (async () => {
+      // we wait two microtasks because callers may legitimately need to wait
+      // one microtask before consuming a TransformedExpectFile. They need to
+      // consume it there.
+      await Promise.resolve();
+      await Promise.resolve();
       if (!this.consumed) {
         this.adapter.fail(
-          "expectFile() was not consumed by another operation. You need to chain another call onto expectFile(), by itself it doesn't assert anything"
+          `expectFile() was not consumed by another operation. You need to chain another call onto expectFile(), by itself it doesn't assert anything`
         );
       }
-    });
+    })();
   }
 
   @Memoize()
@@ -160,6 +165,7 @@ export class TransformedFileExpect extends BoundExpectFile {
 
   @Memoize()
   protected get contents(): ContentsResult {
+    this.consumed = true;
     return this.transformed;
   }
   failsToTransform(message: string) {

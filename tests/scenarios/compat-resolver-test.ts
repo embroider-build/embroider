@@ -1264,7 +1264,7 @@ Scenarios.fromProject(() => new Project())
             staticInvokables: true,
           },
           {
-            astPlugins: ['@embroider/test-support/example-template-namespacing-plugin'],
+            astPlugins: ['@embroider/test-support/example-template-namespacing-plugin.js'],
           }
         );
         (await expectTranspiled('templates/application.hbs')).equalsCode(`
@@ -1288,7 +1288,7 @@ Scenarios.fromProject(() => new Project())
             staticInvokables: true,
           },
           {
-            astPlugins: ['@embroider/test-support/example-template-namespacing-plugin'],
+            astPlugins: ['@embroider/test-support/example-template-namespacing-plugin.js'],
           }
         );
         (await expectTranspiled('templates/application.hbs')).equalsCode(`

@@ -1769,9 +1769,6 @@ importers:
       '@babel/runtime':
         specifier: ^7.25.6
         version: 7.27.0
-      '@ember/optional-features':
-        specifier: ^2.0.0
-        version: 2.2.0
       '@ember/test-helpers':
         specifier: ^5.0.0
         version: 5.1.0(@babel/core@7.26.10)(ember-source@6.3.0-alpha.3)
@@ -1790,9 +1787,6 @@ importers:
       '@glimmer/component':
         specifier: ^2.0.0
         version: 2.0.0
-      '@glimmer/tracking':
-        specifier: ^1.1.2
-        version: 1.1.2
       '@rollup/plugin-babel':
         specifier: ^5.3.1
         version: 5.3.1(@babel/core@7.26.10)(rollup@3.29.5)

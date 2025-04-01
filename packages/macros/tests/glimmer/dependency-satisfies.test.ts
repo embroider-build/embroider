@@ -47,15 +47,15 @@ describe('dependency satisfies', () => {
     });
 
     test('args length error', async () => {
-      expect(() => {
-        transform(`{{macroDependencySatisfies 'not-a-real-dep'}}`, { filename });
-      }).toThrow(/macroDependencySatisfies requires two arguments, you passed 1/);
+      await expect(async () => {
+        await transform(`{{macroDependencySatisfies 'not-a-real-dep'}}`, { filename });
+      }).rejects.toThrow(/macroDependencySatisfies requires two arguments, you passed 1/);
     });
 
     test('non literal arg error', async () => {
-      expect(() => {
-        transform(`{{macroDependencySatisfies someDep "*"}}`, { filename });
-      }).toThrow(/all arguments to macroDependencySatisfies must be string literals/);
+      await expect(async () => {
+        await transform(`{{macroDependencySatisfies someDep "*"}}`, { filename });
+      }).rejects.toThrow(/all arguments to macroDependencySatisfies must be string literals/);
     });
 
     test('it considers prereleases (otherwise within the range) as allowed', async () => {

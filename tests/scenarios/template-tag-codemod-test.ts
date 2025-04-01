@@ -34,6 +34,13 @@ tsAppScenarios
             return result;
           }
         `,
+        'custom-resolver.mjs': `
+          export default async function customResolver(path) {
+            if (path === '@embroider/virtual/components/fancy-ice-cream') {
+              return 'bar/really-exists/foo';
+            }
+          }
+        `,
       },
     });
 
@@ -142,6 +149,18 @@ tsAppScenarios
             <template><CustomRenamedMessageBox /></template>`,
           },
           via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --renamingRules "./lib/custom-renaming.mjs"`,
+        });
+      });
+
+      test('custom resolver', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<FancyIceCream />' },
+          to: {
+            'app/components/example.gjs': `
+            import FancyIceCream from "bar/really-exists/foo";
+            <template><FancyIceCream /></template>`,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --customResolver "./lib/custom-resolver.mjs"`,
         });
       });
 

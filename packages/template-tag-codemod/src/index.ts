@@ -81,6 +81,16 @@ export interface Options {
   renamingRules?: string;
 
   /**
+   * Path to an ES module whose default export implements a function like
+   *
+   *    (path: string, filename: string) => string;
+   *
+   * Return a string to provide a resolvable import path (based on the original import `path`, and optionally
+   * the `filename` where the import appears) Return undefined to fall back to default behavior.
+   */
+  customResolver?: string;
+
+  /**
    * This allows you to reuse the ember-prebuild if you are running the codemod multiple times.
    *
    * You should only set this setting if you know that any changes you're making will not influence
@@ -118,7 +128,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
   );
 }
 
-type OptionsWithDefaults = Required<Options>;
+type OptionsWithDefaults = Omit<Required<Options>, 'customResolver'> & Pick<Options, 'customResolver'>;
 
 type Result =
   | { context: string; status: 'success' }
@@ -248,6 +258,15 @@ async function locateInvokables(
 }
 
 async function resolveVirtualImport(filename: string, request: string, opts: OptionsWithDefaults): Promise<string> {
+  if (opts.customResolver) {
+    let customResolver = (await new ModuleImporter().import(opts.customResolver)).default;
+    let customResult = await customResolver(request, filename);
+
+    if (customResult) {
+      return customResult;
+    }
+  }
+
   let resolution = await resolverLoader.resolver.nodeResolve(request, filename, {
     extensions: opts.extensions,
   });

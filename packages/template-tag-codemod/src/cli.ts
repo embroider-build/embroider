@@ -84,6 +84,11 @@ program
     defaults.renamingRules
   )
   .option(
+    '--customResolver <value>',
+    `The name of a module that will provide a way to supply custom resolving rules`,
+    defaults.customResolver
+  )
+  .option(
     '--reusePrebuild',
     `Allows you to reuse prebuild between runs of this codemod. While this speeds things up it is not what most people should be doing, use with caution.`,
     defaults.reusePrebuild

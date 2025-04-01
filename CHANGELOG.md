@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-04-01)
+
+@embroider/addon-dev 7.1.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2237](https://github.com/embroider-build/embroider/pull/2237) Pass along options to resolve ([@abeforgit](https://github.com/abeforgit))
+
+#### Committers: 1
+- Arne Bertrand ([@abeforgit](https://github.com/abeforgit))
+
 ## Release (2025-03-20)
 
 @embroider/compat 3.8.5 (patch)

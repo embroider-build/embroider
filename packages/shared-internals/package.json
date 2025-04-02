@@ -26,15 +26,6 @@
   "scripts": {
     "test": "jest"
   },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
     "babel-import-util": "^3.0.1",
     "debug": "^4.3.2",

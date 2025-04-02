@@ -4,7 +4,21 @@
       "oldVersion": "8.0.0-alpha.6"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "2.0.0-alpha.2"
+      "impact": "minor",
+      "oldVersion": "1.9.0",
+      "newVersion": "1.10.0-alpha.0",
+      "tagName": "alpha",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-shim/package.json"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "4.0.0-alpha.2"
@@ -37,21 +51,11 @@
       "oldVersion": "3.0.0-alpha.5"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "patch",
-      "oldVersion": "1.1.0",
-      "newVersion": "1.1.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "1.1.1"
     },
     "@embroider/vite": {
       "oldVersion": "1.0.0-alpha.12"
     }
   },
-  "description": "## Release (2025-03-28)\n\n* @embroider/template-tag-codemod 1.1.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2416](https://github.com/embroider-build/embroider/pull/2416) Fix a small typo spotted yesterday during Ember Europe ([@bartocc](https://github.com/bartocc))\n\n#### Committers: 1\n- Julien Palmas ([@bartocc](https://github.com/bartocc))\n"
+  "description": "## Release (2025-04-02)\n\n* @embroider/addon-shim 1.10.0-alpha.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-shim`\n  * [#2420](https://github.com/embroider-build/embroider/pull/2420) reset addon-shim to have the same version as stable ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* `@embroider/addon-shim`\n  * [#2422](https://github.com/embroider-build/embroider/pull/2422) set addon-shim to release a pre-minor ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

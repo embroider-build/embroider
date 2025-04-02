@@ -19,7 +19,7 @@
   "release-plan": {
     "semverIncrementAs": {
       "major": "prerelease",
-      "minor": "prerelease",
+      "minor": "preminor",
       "patch": "prerelease"
     },
     "semverIncrementTag": "alpha",

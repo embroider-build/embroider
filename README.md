@@ -57,21 +57,6 @@ For optional features, Embroider supports the following environment variables:
 
 Requires Ember 3.28.11 or greater
 
-### With Classic Builds
-
-While we have a strong emphasis on backward compatibility with classic builds, there are a few places where you may need to make changes to your code:
-
-#### Lazy Engines
-
-If you're using lazy loaded engines, you need to use `@embroider/router`, which is a drop-in replacement for `@ember/routing/router`:
-
-```diff
--import EmberRouter from '@ember/routing/router';
-+import EmberRouter from '@embroider/router';
-```
-
-See [@embroider/router README](./packages/router/README.md) for more details.
-
 ## Contributing
 
 see [`CONTRIBUTING.md`](CONTRIBUTING.md)

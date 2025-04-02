@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2025-04-02)
+
+* @embroider/addon-shim 1.10.0-alpha.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-shim`
+  * [#2420](https://github.com/embroider-build/embroider/pull/2420) reset addon-shim to have the same version as stable ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/addon-shim`
+  * [#2422](https://github.com/embroider-build/embroider/pull/2422) set addon-shim to release a pre-minor ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-03-28)
 
 * @embroider/template-tag-codemod 1.1.1 (patch)

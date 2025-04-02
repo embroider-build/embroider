@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "7.1.3",
+  "version": "7.1.4",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",

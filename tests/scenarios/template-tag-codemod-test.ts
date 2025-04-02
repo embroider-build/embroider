@@ -41,6 +41,14 @@ tsAppScenarios
             }
           }
         `,
+        'another-resolver.mjs': `
+          export default async function(path, filename, resolve) {
+            if (path === '@embroider/virtual/components/phone-booth') {
+              path = '@embroider/virtual/components/message-box';
+            }
+            return await resolve(path, filename);
+          }
+        `,
       },
     });
 
@@ -161,6 +169,18 @@ tsAppScenarios
             <template><FancyIceCream /></template>`,
           },
           via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --customResolver "./lib/custom-resolver.mjs"`,
+        });
+      });
+
+      test('custom resolver using the default implementation', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<PhoneBooth />' },
+          to: {
+            'app/components/example.gjs': `
+            import PhoneBooth from "./message-box.js";
+            <template><PhoneBooth /></template>`,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --customResolver "./lib/another-resolver.mjs"`,
         });
       });
 

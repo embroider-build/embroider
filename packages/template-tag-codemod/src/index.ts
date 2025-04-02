@@ -83,10 +83,11 @@ export interface Options {
   /**
    * Path to an ES module whose default export implements a function like
    *
-   *    (path: string, filename: string) => string;
+   *    (path: string, filename: string, resolve: (path: string, filename: string) => string) => string;
    *
-   * Return a string to provide a resolvable import path (based on the original import `path`, and optionally
-   * the `filename` where the import appears) Return undefined to fall back to default behavior.
+   * Return a string to provide a resolvable import path, based on the original import `path` and optionally
+   * the `filename` where the import appears. Return `undefined` to fall back to the default behavior or call
+   * `resolve` to use that default implementation.
    */
   customResolver?: string;
 
@@ -258,23 +259,31 @@ async function locateInvokables(
 }
 
 async function resolveVirtualImport(filename: string, request: string, opts: OptionsWithDefaults): Promise<string> {
+  let resolve = async (path: string, filename: string) => {
+    let resolution = await resolverLoader.resolver.nodeResolve(path, filename, {
+      extensions: opts.extensions,
+    });
+    if (resolution.type !== 'not_found') {
+      return await chooseImport(filename, resolution, path, 'default', opts);
+    }
+  };
+
   if (opts.customResolver) {
     let customResolver = (await new ModuleImporter().import(opts.customResolver)).default;
-    let customResult = await customResolver(request, filename);
+    let customResult = await customResolver(request, filename, resolve);
 
     if (customResult) {
       return customResult;
     }
   }
 
-  let resolution = await resolverLoader.resolver.nodeResolve(request, filename, {
-    extensions: opts.extensions,
-  });
-  if (resolution.type === 'not_found') {
+  let resolvedImport = await resolve(request, filename);
+
+  if (!resolvedImport) {
     throw new Error(`Unable to resolve ${request} from ${filename}`);
-  } else {
-    return await chooseImport(filename, resolution, request, 'default', opts);
   }
+
+  return resolvedImport;
 }
 
 export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<Result> {

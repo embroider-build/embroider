@@ -14,15 +14,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
     "resolve.exports": "^2.0.2"
   }

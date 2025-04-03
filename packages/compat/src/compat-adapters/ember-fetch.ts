@@ -19,6 +19,10 @@ export default class extends V1Addon {
     return new AddToTree(super.v2Tree, (outputPath: string) => {
       let vendorFile = resolve(outputPath, 'vendor/ember-fetch.js');
       let src = readFileSync(vendorFile, 'utf8');
+      // the addon has already done "app.import('vendor/ember-fetch.js')", which
+      // pushes it onto a list down inside the guts of ember-cli. If we delete
+      // the file, we'll get a crash when ember-cli goes looking for it.
+      // Instead, we just make it empty.
       writeFileSync(vendorFile, '');
       writeFileSync(
         resolve(outputPath, 'index.js'),

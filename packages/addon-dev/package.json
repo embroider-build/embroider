@@ -33,6 +33,9 @@
       "optional": true
     }
   },
+  "release-plan": {
+    "publishTag": "7.x"
+  },
   "dependencies": {
     "@embroider/core": "workspace:^",
     "@rollup/pluginutils": "^4.1.1",

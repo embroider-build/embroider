@@ -18,6 +18,9 @@
   "peerDependencies": {
     "@embroider/core": "workspace:^"
   },
+  "release-plan": {
+    "publishTag": "3.x"
+  },
   "engines": {
     "node": "12.* || 14.* || >= 16"
   }

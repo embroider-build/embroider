@@ -27,6 +27,9 @@
   "scripts": {
     "test": "jest"
   },
+  "release-plan": {
+    "publishTag": "2.x"
+  },
   "dependencies": {
     "babel-import-util": "^2.0.0",
     "debug": "^4.3.2",

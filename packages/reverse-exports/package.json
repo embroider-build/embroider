@@ -1,6 +1,7 @@
 {
   "name": "@embroider/reverse-exports",
   "version": "0.1.0",
+  "private": true,
   "description": "",
   "main": "src/index.js",
   "scripts": {

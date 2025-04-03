@@ -1,6 +1,7 @@
 {
   "name": "@embroider/vite",
   "version": "0.2.2",
+  "private": true,
   "main": "index.mjs",
   "peerDependencies": {
     "@embroider/core": "workspace:^",

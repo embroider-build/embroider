@@ -1,6 +1,7 @@
 {
   "name": "@embroider/broccoli-side-watch",
   "version": "1.0.1",
+  "private": "true",
   "description": "Watch changes in other folders to rebuild Ember app",
   "keywords": [
     "ember"

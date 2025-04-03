@@ -2,6 +2,20 @@
 
 ## Release (2025-04-03)
 
+* @embroider/compat 4.0.1 (patch)
+* @embroider/core 4.0.1 (patch)
+* @embroider/macros 1.17.1 (patch)
+* @embroider/vite 1.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2433](https://github.com/embroider-build/embroider/pull/2433) Fix issue occuring when some consumers of @embroider/macros specify extensions for macros' content via require/import ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-04-03)
+
 * @embroider/addon-dev 8.0.0 (patch)
 * @embroider/addon-shim 1.10.0 (patch)
 * @embroider/babel-loader-9 4.0.0 (patch)

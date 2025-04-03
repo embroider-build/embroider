@@ -17,7 +17,8 @@
   "exports": {
     ".": "./src/index.js",
     "./babel": "./src/babel.js",
-    "./src/*": "./src/*.js"
+    "./src/*": "./src/*.js",
+    "./src/*.js": "./src/*.js"
   },
   "files": [
     "src/**/*.js",

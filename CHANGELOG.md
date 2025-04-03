@@ -1,5 +1,46 @@
 # Embroider Changelog
 
+## Release (2025-04-03)
+
+@embroider/compat 3.9.0 (minor)
+@embroider/core 3.5.6 (patch)
+@embroider/macros 1.16.13 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2425](https://github.com/embroider-build/embroider/pull/2425) Adding  a compat adapter for ember-fetch ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/test-scenarios`
+  * [#2426](https://github.com/embroider-build/embroider/pull/2426) fix types on stable ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-04-01)
+
+@embroider/addon-dev 7.1.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2237](https://github.com/embroider-build/embroider/pull/2237) Pass along options to resolve ([@abeforgit](https://github.com/abeforgit))
+
+#### Committers: 1
+- Arne Bertrand ([@abeforgit](https://github.com/abeforgit))
+
+## Release (2025-03-20)
+
+@embroider/compat 3.8.5 (patch)
+@embroider/core 3.5.5 (patch)
+@embroider/macros 1.16.12 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2404](https://github.com/embroider-build/embroider/pull/2404) Allow macros to see through sequence expressions ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-04-02)
 
 * @embroider/addon-shim 1.10.0-alpha.0 (minor)

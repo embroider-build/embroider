@@ -324,15 +324,15 @@ dummyAppScenarios
         build = new Transpiler(resolve(app.dir, 'tests/dummy'));
       });
 
-      test('dummy app sees that its being developed', function () {
-        let assertFile = expectFile('../../tmp/rewritten-app/app/components/inside-dummy-app.js').transform(
+      test('dummy app sees that its being developed', async function () {
+        let assertFile = await expectFile('../../tmp/rewritten-app/app/components/inside-dummy-app.js').transform(
           build.transpile
         );
         assertFile.matches(/console\.log\(true\)/);
       });
 
-      test('addon within dummy app sees that its being developed', function () {
-        let assertFile = expectFile('../../components/hello-world.js').transform(build.transpile);
+      test('addon within dummy app sees that its being developed', async function () {
+        let assertFile = await expectFile('../../components/hello-world.js').transform(build.transpile);
         assertFile.matches(/console\.log\(true\)/);
       });
     });

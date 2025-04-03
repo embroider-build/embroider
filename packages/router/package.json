@@ -29,6 +29,9 @@
     "test": "echo 'A v2 addon does not have tests, run tests in test-app'",
     "prepack": "rollup --config"
   },
+  "release-plan": {
+    "publishTag": "2.x"
+  },
   "dependencies": {
     "@ember/test-waiters": "^3.0.2",
     "@embroider/addon-shim": "workspace:^"

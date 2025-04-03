@@ -22,6 +22,9 @@
   "scripts": {
     "test": "jest"
   },
+  "release-plan": {
+    "publishTag": "3.x"
+  },
   "dependencies": {
     "@babel/code-frame": "^7.14.5",
     "@babel/core": "^7.14.5",

@@ -17,6 +17,9 @@
     "src/**/*.js.map"
   ],
   "scripts": {},
+  "release-plan": {
+    "publishTag": "3.x"
+  },
   "dependencies": {},
   "devDependencies": {
     "@embroider/core": "workspace:^",

@@ -1,16 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "7.1.3",
-      "newVersion": "7.1.4",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "7.1.4"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.9.0"
@@ -22,16 +13,55 @@
       "oldVersion": "1.0.1"
     },
     "@embroider/compat": {
-      "oldVersion": "3.8.5"
+      "impact": "minor",
+      "oldVersion": "3.8.5",
+      "newVersion": "3.9.0",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
-      "oldVersion": "3.5.5"
+      "impact": "patch",
+      "oldVersion": "3.5.5",
+      "newVersion": "3.5.6",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "3.0.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.16.12"
+      "impact": "patch",
+      "oldVersion": "1.16.12",
+      "newVersion": "1.16.13",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.0"
@@ -55,5 +85,5 @@
       "oldVersion": "4.1.0"
     }
   },
-  "description": "## Release (2025-04-01)\n\n@embroider/addon-dev 7.1.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2237](https://github.com/embroider-build/embroider/pull/2237) Pass along options to resolve ([@abeforgit](https://github.com/abeforgit))\n\n#### Committers: 1\n- Arne Bertrand ([@abeforgit](https://github.com/abeforgit))\n"
+  "description": "## Release (2025-04-03)\n\n@embroider/compat 3.9.0 (minor)\n@embroider/core 3.5.6 (patch)\n@embroider/macros 1.16.13 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/compat`\n  * [#2425](https://github.com/embroider-build/embroider/pull/2425) Adding  a compat adapter for ember-fetch ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/test-scenarios`\n  * [#2426](https://github.com/embroider-build/embroider/pull/2426) fix types on stable ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2025-04-03)
+
+@embroider/compat 3.9.0 (minor)
+@embroider/core 3.5.6 (patch)
+@embroider/macros 1.16.13 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2425](https://github.com/embroider-build/embroider/pull/2425) Adding  a compat adapter for ember-fetch ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/test-scenarios`
+  * [#2426](https://github.com/embroider-build/embroider/pull/2426) fix types on stable ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-04-01)
 
 @embroider/addon-dev 7.1.4 (patch)

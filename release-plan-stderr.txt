@@ -1,0 +1,19 @@
+release prepare
+
+Edits the package.json and changelog files to prepare for release.
+
+Options:
+  --version        Show version number                                 [boolean]
+  --help           Show help                                           [boolean]
+  --fromStdin      Read the summary of changes from stdin instead of building
+                   them from scratch.                                  [boolean]
+  --singlePackage  Allows you to run this command in a non monorepo and define
+                   the package name                                     [string]
+
+Error: broken "workspace:" reference to @embroider/macros in @embroider/compat
+    at publishedInterPackageDeps (file:///home/runner/work/embroider/embroider/node_modules/.pnpm/release-plan@0.13.1/node_modules/release-plan/dist/interdep.js:39:35)
+    at new Plan (file:///home/runner/work/embroider/embroider/node_modules/.pnpm/release-plan@0.13.1/node_modules/release-plan/dist/plan.js:14:22)
+    at planVersionBumps (file:///home/runner/work/embroider/embroider/node_modules/.pnpm/release-plan@0.13.1/node_modules/release-plan/dist/plan.js:168:18)
+    at prepare (file:///home/runner/work/embroider/embroider/node_modules/.pnpm/release-plan@0.13.1/node_modules/release-plan/dist/prepare.js:49:22)
+    at Object.handler (file:///home/runner/work/embroider/embroider/node_modules/.pnpm/release-plan@0.13.1/node_modules/release-plan/dist/cli.js:14:28)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)

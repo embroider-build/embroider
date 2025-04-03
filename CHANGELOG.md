@@ -2,6 +2,34 @@
 
 ## Release (2025-04-03)
 
+* @embroider/addon-dev 8.0.0 (patch)
+* @embroider/addon-shim 1.10.0 (patch)
+* @embroider/babel-loader-9 4.0.0 (patch)
+* @embroider/broccoli-side-watch 1.1.0 (patch)
+* @embroider/compat 4.0.0 (patch)
+* @embroider/config-meta-loader 1.0.0 (patch)
+* @embroider/core 4.0.0 (patch)
+* @embroider/hbs-loader 4.0.0 (patch)
+* @embroider/macros 1.17.0 (patch)
+* @embroider/reverse-exports 0.1.1 (patch)
+* @embroider/router 3.0.0 (patch)
+* @embroider/shared-internals 3.0.0 (patch)
+* @embroider/vite 1.0.0 (patch)
+
+#### :memo: Documentation
+* [#2423](https://github.com/embroider-build/embroider/pull/2423) update the readme to more accurately reflect the current system ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/addon-dev`, `@embroider/addon-shim`, `@embroider/babel-loader-9`, `@embroider/broccoli-side-watch`, `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/core`, `@embroider/hbs-loader`, `@embroider/macros`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/vite`
+  * [#2427](https://github.com/embroider-build/embroider/pull/2427) release main as stable ([@mansona](https://github.com/mansona))
+* `@embroider/addon-dev`, `@embroider/compat`
+  * [#2429](https://github.com/embroider-build/embroider/pull/2429) Merge stable into main ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-04-03)
+
 @embroider/compat 3.9.0 (minor)
 @embroider/core 3.5.6 (patch)
 @embroider/macros 1.16.13 (patch)

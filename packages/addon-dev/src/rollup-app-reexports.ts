@@ -46,7 +46,7 @@ export default function appReexports(opts: {
           });
         }
       }
-      let originalAppJS = pkg['ember-addon']?.['app-js'];
+      let originalAppJS = pkg['ember-addon']?.['app-js'] ?? {};
 
       let hasChanges = !!symmetricDifference(
         Object.keys(originalAppJS),

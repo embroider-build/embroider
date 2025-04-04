@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2025-04-04)
+
+* @embroider/addon-dev 8.0.1 (patch)
+* @embroider/vite 1.0.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2435](https://github.com/embroider-build/embroider/pull/2435) Fix issue when your library has no prior app-js entry in package.json ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/vite`
+  * [#2436](https://github.com/embroider-build/embroider/pull/2436) Fix resolving EmberCLI in vite prebuild ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 2
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-04-03)
 
 * @embroider/compat 4.0.1 (patch)

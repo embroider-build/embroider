@@ -81,6 +81,17 @@ export interface Options {
   renamingRules?: string;
 
   /**
+   * Path to an ES module whose default export implements a function like
+   *
+   *    (path: string, filename: string, resolve: (path: string, filename: string) => string) => string;
+   *
+   * Return a string to provide a resolvable import path, based on the original import `path` and optionally
+   * the `filename` where the import appears. Return `undefined` to fall back to the default behavior or call
+   * `resolve` to use that default implementation.
+   */
+  customResolver?: string;
+
+  /**
    * This allows you to reuse the ember-prebuild if you are running the codemod multiple times.
    *
    * You should only set this setting if you know that any changes you're making will not influence
@@ -118,7 +129,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
   );
 }
 
-type OptionsWithDefaults = Required<Options>;
+type OptionsWithDefaults = Omit<Required<Options>, 'customResolver'> & Pick<Options, 'customResolver'>;
 
 type Result =
   | { context: string; status: 'success' }
@@ -248,14 +259,31 @@ async function locateInvokables(
 }
 
 async function resolveVirtualImport(filename: string, request: string, opts: OptionsWithDefaults): Promise<string> {
-  let resolution = await resolverLoader.resolver.nodeResolve(request, filename, {
-    extensions: opts.extensions,
-  });
-  if (resolution.type === 'not_found') {
-    throw new Error(`Unable to resolve ${request} from ${filename}`);
-  } else {
-    return await chooseImport(filename, resolution, request, 'default', opts);
+  let resolve = async (path: string, filename: string) => {
+    let resolution = await resolverLoader.resolver.nodeResolve(path, filename, {
+      extensions: opts.extensions,
+    });
+    if (resolution.type !== 'not_found') {
+      return await chooseImport(filename, resolution, path, 'default', opts);
+    }
+  };
+
+  if (opts.customResolver) {
+    let customResolver = (await new ModuleImporter().import(opts.customResolver)).default;
+    let customResult = await customResolver(request, filename, resolve);
+
+    if (customResult) {
+      return customResult;
+    }
   }
+
+  let resolvedImport = await resolve(request, filename);
+
+  if (!resolvedImport) {
+    throw new Error(`Unable to resolve ${request} from ${filename}`);
+  }
+
+  return resolvedImport;
 }
 
 export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<Result> {

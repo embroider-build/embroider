@@ -1,6 +1,7 @@
 import { fork } from 'child_process';
 import type { Plugin } from 'vite';
 import { createRequire } from 'node:module';
+import { join, dirname } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
@@ -9,7 +10,12 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
     ...process.env,
     EMBROIDER_PREBUILD: 'true',
   };
-  let emberCLI = require.resolve('ember-cli');
+
+  let emberCLIMain = require.resolve('ember-cli');
+  if (!emberCLIMain) {
+    throw new Error('Could not resolve ember-cli');
+  }
+  let emberCLI = join(dirname(emberCLIMain), '../../bin/ember');
 
   if (resolvableExtensions) {
     env['EMBROIDER_RESOLVABLE_EXTENSIONS'] = resolvableExtensions?.join(',');

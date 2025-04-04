@@ -1,17 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "8.0.0",
-      "newVersion": "8.0.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "8.0.1"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.10.0"
@@ -47,21 +37,21 @@
       "oldVersion": "3.0.0"
     },
     "@embroider/template-tag-codemod": {
-      "oldVersion": "1.1.1"
-    },
-    "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.1",
-      "newVersion": "1.0.2",
+      "impact": "minor",
+      "oldVersion": "1.1.1",
+      "newVersion": "1.2.0",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+    },
+    "@embroider/vite": {
+      "oldVersion": "1.0.2"
     }
   },
-  "description": "## Release (2025-04-04)\n\n* @embroider/addon-dev 8.0.1 (patch)\n* @embroider/vite 1.0.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2435](https://github.com/embroider-build/embroider/pull/2435) Fix issue when your library has no prior app-js entry in package.json ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/vite`\n  * [#2436](https://github.com/embroider-build/embroider/pull/2436) Fix resolving EmberCLI in vite prebuild ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-04-04)\n\n* @embroider/template-tag-codemod 1.2.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`\n  * [#2419](https://github.com/embroider-build/embroider/pull/2419) Add `--custom-resolver` option to template-tag-codemod ([@CvX](https://github.com/CvX))\n  * [#2408](https://github.com/embroider-build/embroider/pull/2408) Support `templateOnlyComponent()` usages in template tag codemod ([@bendemboski](https://github.com/bendemboski))\n\n#### Committers: 2\n- Ben Demboski ([@bendemboski](https://github.com/bendemboski))\n- Jarek Radosz ([@CvX](https://github.com/CvX))\n"
 }

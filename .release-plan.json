@@ -1,7 +1,17 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.0.0"
+      "impact": "patch",
+      "oldVersion": "8.0.0",
+      "newVersion": "8.0.1",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.10.0"
@@ -13,49 +23,19 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.0.0",
-      "newVersion": "4.0.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.0.1"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.0.0",
-      "newVersion": "4.0.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.0.1"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.17.0",
-      "newVersion": "1.17.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.17.1"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.1"
@@ -71,17 +51,17 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.0.0",
-      "newVersion": "1.0.1",
+      "oldVersion": "1.0.1",
+      "newVersion": "1.0.2",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-04-03)\n\n* @embroider/compat 4.0.1 (patch)\n* @embroider/core 4.0.1 (patch)\n* @embroider/macros 1.17.1 (patch)\n* @embroider/vite 1.0.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2433](https://github.com/embroider-build/embroider/pull/2433) Fix issue occuring when some consumers of @embroider/macros specify extensions for macros' content via require/import ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-04-04)\n\n* @embroider/addon-dev 8.0.1 (patch)\n* @embroider/vite 1.0.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2435](https://github.com/embroider-build/embroider/pull/2435) Fix issue when your library has no prior app-js entry in package.json ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/vite`\n  * [#2436](https://github.com/embroider-build/embroider/pull/2436) Fix resolving EmberCLI in vite prebuild ([@simonihmig](https://github.com/simonihmig))\n\n#### Committers: 2\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

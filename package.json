@@ -34,8 +34,7 @@
       "browserslist": "^4.14.0",
       "graceful-fs": "^4.0.0",
       "@types/eslint": "^8.37.0",
-      "babel-plugin-module-resolver@5.0.1": "5.0.0",
-      "@embroider/shared-internals": "workspace:*"
+      "babel-plugin-module-resolver@5.0.1": "5.0.0"
     }
   },
   "devDependencies": {

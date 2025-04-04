@@ -1,11 +1,15 @@
 import { fork } from 'child_process';
 import type { Plugin } from 'vite';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 export function emberBuild(command: string, mode: string, resolvableExtensions: string[] | undefined): Promise<void> {
   let env: Record<string, string> = {
     ...process.env,
     EMBROIDER_PREBUILD: 'true',
   };
+  let emberCLI = require.resolve('ember-cli');
 
   if (resolvableExtensions) {
     env['EMBROIDER_RESOLVABLE_EXTENSIONS'] = resolvableExtensions?.join(',');
@@ -13,17 +17,15 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
 
   if (command === 'build') {
     return new Promise((resolve, reject) => {
-      const child = fork(
-        './node_modules/ember-cli/bin/ember',
-        ['build', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
-        { env }
-      );
+      const child = fork(emberCLI, ['build', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'], {
+        env,
+      });
       child.on('exit', code => (code === 0 ? resolve() : reject()));
     });
   }
   return new Promise((resolve, reject) => {
     const child = fork(
-      './node_modules/ember-cli/bin/ember',
+      emberCLI,
       ['build', '--watch', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
       {
         silent: true,

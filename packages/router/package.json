@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@ember/test-waiters": "^3.0.2",
-    "@embroider/addon-shim": "workspace:^"
+    "@embroider/addon-shim": "^1.10.0"
   },
   "devDependencies": {
     "@babel/core": "^7.17.0",

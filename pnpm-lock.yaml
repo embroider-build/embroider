@@ -641,8 +641,8 @@ importers:
         specifier: ^3.0.2
         version: 3.1.0
       '@embroider/addon-shim':
-        specifier: workspace:^
-        version: link:../addon-shim
+        specifier: ^1.10.0
+        version: 1.10.0
     devDependencies:
       '@babel/core':
         specifier: ^7.17.0
@@ -1677,8 +1677,8 @@ importers:
         specifier: ^3.0.2
         version: 3.1.0
       '@embroider/addon-shim':
-        specifier: workspace:*
-        version: link:../../packages/addon-shim
+        specifier: ^1.10.0
+        version: 1.10.0
       '@embroider/macros':
         specifier: ^1.17.1
         version: 1.17.1(@glint/template@1.5.2)
@@ -2004,8 +2004,8 @@ importers:
   tests/v2-addon-template:
     dependencies:
       '@embroider/addon-shim':
-        specifier: workspace:*
-        version: link:../../packages/addon-shim
+        specifier: ^1.10.0
+        version: 1.10.0
 
   tests/vite-app:
     devDependencies:
@@ -5676,8 +5676,8 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /@embroider/addon-shim@1.9.0:
-    resolution: {integrity: sha512-fMzayl/licUL8VRAy4qXROKcYvHwUbV8aTh4m97L5/MRuVpxbcAy92DGGTqx5OBKCSQN3gMg+sUKeE6AviefpQ==}
+  /@embroider/addon-shim@1.10.0:
+    resolution: {integrity: sha512-gcJuHiXgnrzaU8NyU+2bMbtS6PNOr5v5B8OXBqaBvTCsMpXLvKo8OBOQFCoUN0rPX2J6VaFqrbi/371sMvzZug==}
     engines: {node: 12.* || 14.* || >= 16}
     dependencies:
       '@embroider/shared-internals': link:packages/shared-internals
@@ -5686,7 +5686,6 @@ packages:
       semver: 7.7.1
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /@embroider/macros@1.17.1(@glint/template@1.5.2):
     resolution: {integrity: sha512-pi039RDy2CvgM+RwJ9NMFU4wYMKlSp9p+WyHFfQpZ2e/HL78O1KM1+MEaKnIve6MrXvo7QD7/Kn6MpMTzV1MSQ==}
@@ -15751,7 +15750,7 @@ packages:
     peerDependencies:
       ember-source: '>= 4.0.0'
     dependencies:
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       ember-source: 3.28.12(@babel/core@7.26.9)
       focus-trap: 6.9.4
     transitivePeerDependencies:
@@ -15882,7 +15881,7 @@ packages:
       ember-source:
         optional: true
     dependencies:
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       decorator-transforms: 2.3.0(@babel/core@7.26.9)
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
@@ -15900,7 +15899,7 @@ packages:
       ember-source:
         optional: true
     dependencies:
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       decorator-transforms: 2.3.0(@babel/core@7.26.9)
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
@@ -15918,7 +15917,7 @@ packages:
       ember-source:
         optional: true
     dependencies:
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       decorator-transforms: 2.3.0(@babel/core@7.26.9)
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
@@ -15962,7 +15961,7 @@ packages:
     peerDependencies:
       ember-source: '>= 3.28.0'
     dependencies:
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       '@simple-dom/document': 1.4.0
       ember-source: 5.3.0(@babel/core@7.26.9)(@glimmer/component@1.1.2)(@glint/template@1.5.2)(webpack@5.98.0)
     transitivePeerDependencies:
@@ -16097,7 +16096,7 @@ packages:
       qunit: ^2.13.0
     dependencies:
       '@ember/test-helpers': 3.3.1(@babel/core@7.26.9)(@glint/template@1.5.2)(ember-source@5.3.0)(webpack@5.98.0)
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       '@embroider/macros': 1.17.1(@glint/template@1.5.2)
       ember-cli-test-loader: 3.1.0
       ember-source: 5.3.0(@babel/core@7.26.9)(@glimmer/component@1.1.2)(@glint/template@1.5.2)(webpack@5.98.0)
@@ -16744,7 +16743,7 @@ packages:
     dependencies:
       '@babel/core': 7.26.9
       '@ember/edition-utils': 1.2.0
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       '@glimmer/compiler': 0.92.4
       '@glimmer/destroyable': 0.92.3
       '@glimmer/env': 0.1.7
@@ -16799,7 +16798,7 @@ packages:
     dependencies:
       '@babel/core': 7.26.9
       '@ember/edition-utils': 1.2.0
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       '@glimmer/compiler': 0.92.4
       '@glimmer/destroyable': 0.92.3
       '@glimmer/env': 0.1.7
@@ -17057,7 +17056,7 @@ packages:
     resolution: {integrity: sha512-TyaKxFIRXhODW5BTbqD/by0Gu8Z9B9AA1ki3Bzzm6fOj2b30Qlprtt+XUG52kS0zVNmxYj/WWoT0TsKiU61VOw==}
     engines: {node: 14.* || 16.* || >= 18}
     dependencies:
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -25143,7 +25142,7 @@ packages:
   /tracked-built-ins@3.4.0(@babel/core@7.26.9):
     resolution: {integrity: sha512-aRwWQXC3VkY50oYxS7wKZiavkjf3uaN+UYUH30D5gxUqbxDN2LnNsfWyDfckmxHUGw4gJDH5lpRS0jX/tim0vw==}
     dependencies:
-      '@embroider/addon-shim': 1.9.0
+      '@embroider/addon-shim': 1.10.0
       decorator-transforms: 2.3.0(@babel/core@7.26.9)
       ember-tracked-storage-polyfill: 1.0.0
     transitivePeerDependencies:

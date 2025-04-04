@@ -2,6 +2,19 @@
 
 ## Release (2025-04-04)
 
+* @embroider/template-tag-codemod 1.2.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2419](https://github.com/embroider-build/embroider/pull/2419) Add `--custom-resolver` option to template-tag-codemod ([@CvX](https://github.com/CvX))
+  * [#2408](https://github.com/embroider-build/embroider/pull/2408) Support `templateOnlyComponent()` usages in template tag codemod ([@bendemboski](https://github.com/bendemboski))
+
+#### Committers: 2
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+- Jarek Radosz ([@CvX](https://github.com/CvX))
+
+## Release (2025-04-04)
+
 * @embroider/addon-dev 8.0.1 (patch)
 * @embroider/vite 1.0.2 (patch)
 

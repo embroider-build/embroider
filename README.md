@@ -9,6 +9,10 @@ This repo implements the Embroider translation layer and resolver that is used t
 
 You can read more about the motivation and key ideas in the [intro to the SPEC](docs/spec.md).
 
+Quick Links:
+- current [template repo](https://github.com/embroider-build/app-blueprint) for apps: `npx ember-cli new my-app --blueprint @embroider/app-blueprint`
+- current [template repo](https://github.com/ember-cli/ember-addon-blueprint/) for libraries: `npx ember-cli addon my-library --blueprint @ember/addon-blueprint`
+
 ## Status / Should I Use It?
 
 There is an accepted RFC that will [make the Embroider build system the default for all newly generated Ember apps](https://rfcs.emberjs.com/id/0977-v2-app-format) i.e. when you run `ember new my-app` it will generate an Ember app that is built with [Vite](https://vite.dev) with this Embroider resolver installed as a plugin.

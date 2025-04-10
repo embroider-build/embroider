@@ -5,19 +5,19 @@
 <!-- toc -->
 
 - [Authoring](#authoring)
-  - [How can I use template tag components?](#how-can-i-use-template-tag-components)
-  - [How do I import my addon's own modules?](#how-do-i-import-my-addons-own-modules)
-  - [How can I lazy-load my addon's code?](#how-can-i-lazy-load-my-addons-code)
-  - [How can I write code depending on the context of the app or its dependencies?](#how-can-i-write-code-depending-on-the-context-of-the-app-or-its-dependencies)
+  * [How can I use template tag components?](#how-can-i-use-template-tag-components)
+  * [How do I import my addon's own modules?](#how-do-i-import-my-addons-own-modules)
+  * [How can I lazy-load my addon's code?](#how-can-i-lazy-load-my-addons-code)
+  * [How can I write code depending on the context of the app or its dependencies?](#how-can-i-write-code-depending-on-the-context-of-the-app-or-its-dependencies)
 - [Asset handling](#asset-handling)
-  - [How can I ship CSS with my addon?](#how-can-i-ship-css-with-my-addon)
-  - [How can I ship other static assets with my addon?](#how-can-i-ship-other-static-assets-with-my-addon)
-  - [How can I "push" static assets into the app?](#how-can-i-push-static-assets-into-the-app)
+  * [How can I ship CSS with my addon?](#how-can-i-ship-css-with-my-addon)
+  * [How can I ship other static assets with my addon?](#how-can-i-ship-other-static-assets-with-my-addon)
+  * [How can I "push" static assets into the app?](#how-can-i-push-static-assets-into-the-app)
 - [Build setup](#build-setup)
-  - [Why do v2 addons need a build step?](#why-do-v2-addons-need-a-build-step)
-  - [How can I integrate with the app's build?](#how-can-i-integrate-with-the-apps-build)
-  - [How can I define the public exports of my addon?](#how-can-i-define-the-public-exports-of-my-addon)
-  - [How can I provide route templates with my v2 addon?](#how-can-i-provide-route-templates-with-my-v2-addon)
+  * [Why do v2 addons need a build step?](#why-do-v2-addons-need-a-build-step)
+  * [How can I integrate with the app's build?](#how-can-i-integrate-with-the-apps-build)
+  * [How can I define the public exports of my addon?](#how-can-i-define-the-public-exports-of-my-addon)
+  * [How can I provide route templates with my v2 addon?](#how-can-i-provide-route-templates-with-my-v2-addon)
 
 <!-- tocstop -->
 

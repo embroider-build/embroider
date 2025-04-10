@@ -2,7 +2,7 @@ import { externalName, _findPathRecursively, _stringToRegex } from '../src';
 
 describe('reverse exports', function () {
   it('exports is missing', function () {
-    expect(externalName({ name: 'best-addon' }, './dist/_app_/components/face.js')).toBe(
+    expect(externalName({ name: 'best-addon', version: '1.0.0' }, './dist/_app_/components/face.js')).toBe(
       'best-addon/dist/_app_/components/face.js'
     );
   });
@@ -11,6 +11,7 @@ describe('reverse exports', function () {
     const actual = externalName(
       {
         name: 'my-addon',
+        version: '1.0.0',
         exports: './foo.js',
       },
       './foo.js'
@@ -22,6 +23,7 @@ describe('reverse exports', function () {
     const actual = externalName(
       {
         name: 'my-addon',
+        version: '1.1.0',
         exports: {
           '.': './foo.js',
         },
@@ -34,6 +36,7 @@ describe('reverse exports', function () {
   it('subpath exports', function () {
     const packageJson = {
       name: 'my-addon',
+      version: '1.2.0',
       exports: {
         '.': './main.js',
         './sub/path': './secondary.js',
@@ -54,6 +57,7 @@ describe('reverse exports', function () {
   it('alternative exports', function () {
     const packageJson = {
       name: 'my-addon',
+      version: '1.3.0',
       exports: {
         './things/*': ['./good-things/*', './bad-things/*'],
       },
@@ -65,6 +69,7 @@ describe('reverse exports', function () {
   it('conditional exports - simple abbreviated', function () {
     const packageJson = {
       name: 'my-addon',
+      version: '1.4.0',
       exports: {
         import: './index-module.js',
         require: './index-require.cjs',
@@ -79,6 +84,7 @@ describe('reverse exports', function () {
   it('conditional exports - simple non-abbreviated', function () {
     const packageJson = {
       name: 'my-addon',
+      version: '1.5.0',
       exports: {
         '.': {
           import: './index-module.js',
@@ -95,6 +101,7 @@ describe('reverse exports', function () {
   it('conditional subpath exports', function () {
     const packageJson = {
       name: 'my-addon',
+      version: '1.6.0',
       exports: {
         '.': './index.js',
         './feature.js': {
@@ -111,6 +118,7 @@ describe('reverse exports', function () {
   it('nested conditional exports', function () {
     const packageJson = {
       name: 'my-addon',
+      version: '1.7.0',
       exports: {
         node: {
           import: './feature-node.mjs',
@@ -127,6 +135,7 @@ describe('reverse exports', function () {
   it('should return undefined when no exports entry is matching', function () {
     const packageJson = {
       name: 'my-addon',
+      version: '1.8.0',
       exports: {
         node: {
           import: './feature-node.mjs',
@@ -142,6 +151,7 @@ describe('reverse exports', function () {
   it('conditional exports: using a single asterisk as glob for nested path', function () {
     const packageJson = {
       name: 'my-v2-addon',
+      version: '1.9.0',
       exports: {
         '.': './dist/index.js',
         './*': {

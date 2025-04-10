@@ -2,7 +2,7 @@ import { posix } from 'path';
 import { exports as resolveExports } from 'resolve.exports';
 import memoize from 'mem';
 
-type PkgJSON = { name: string; exports?: Exports };
+type PkgJSON = { name: string; version: string; exports?: Exports };
 type Exports = string | string[] | { [key: string]: Exports };
 
 /**
@@ -81,7 +81,7 @@ export function _findPathRecursively(
   Returns undefined for a relativePath that is forbidden to be accessed from the
   outside.
 */
-export function externalName(pkg: PkgJSON, relativePath: string): string | undefined {
+function _externalName(pkg: PkgJSON, relativePath: string): string | undefined {
   let { exports } = pkg;
   if (!exports) {
     return posix.join(pkg.name, relativePath);
@@ -111,6 +111,10 @@ export function externalName(pkg: PkgJSON, relativePath: string): string | undef
 
   return posix.join(pkg.name, resolvedPath);
 }
+
+export const externalName = memoize(_externalName, {
+  cacheKey: ([pkg, relativePath]) => `${pkg.name}::${pkg.version}::${relativePath}`,
+});
 
 function regexEscape(input: string): string {
   return input.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');

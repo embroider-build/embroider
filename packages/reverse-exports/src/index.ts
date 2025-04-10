@@ -86,11 +86,7 @@ export function externalName(pkg: PkgJSON, relativePath: string): string | undef
     return posix.join(pkg.name, relativePath);
   }
 
-  const maybeKeyValuePair = _findPathRecursively(exports, candidate => {
-    const regex = new RegExp(_prepareStringForRegex(candidate));
-
-    return regex.test(relativePath);
-  });
+  const maybeKeyValuePair = _findPathRecursively(exports, candidate => _stringToRegex(candidate).test(relativePath));
 
   if (!maybeKeyValuePair) {
     return undefined;
@@ -119,12 +115,14 @@ function regexEscape(input: string): string {
   return input.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
-export function _prepareStringForRegex(input: string): string {
+export function _stringToRegex(input: string): RegExp {
   let wildCardIndex = input.indexOf('*');
 
   if (~wildCardIndex) {
-    return `^${regexEscape(input.substring(0, wildCardIndex))}.*${regexEscape(input.substring(wildCardIndex + 1))}$`;
+    return new RegExp(
+      `^${regexEscape(input.substring(0, wildCardIndex))}.*${regexEscape(input.substring(wildCardIndex + 1))}$`
+    );
   } else {
-    return `^${regexEscape(input)}$`;
+    return new RegExp(`^${regexEscape(input)}$`);
   }
 }

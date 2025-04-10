@@ -1,4 +1,4 @@
-import { externalName, _findPathRecursively, _prepareStringForRegex } from '../src';
+import { externalName, _findPathRecursively, _stringToRegex } from '../src';
 
 describe('reverse exports', function () {
   it('exports is missing', function () {
@@ -277,14 +277,14 @@ describe('_findKeyRecursively', function () {
   });
 });
 
-describe('_prepareStringForRegex', function () {
+describe('_stringToRegex', function () {
   [
-    { input: './foo', expected: '^\\.\\/foo$' },
-    { input: './foo.js', expected: '^\\.\\/foo\\.js$' },
-    { input: './foo/*.js', expected: '^\\.\\/foo\\/.*\\.js$' },
+    { input: './foo', expected: '/^\\.\\/foo$/' },
+    { input: './foo.js', expected: '/^\\.\\/foo\\.js$/' },
+    { input: './foo/*.js', expected: '/^\\.\\/foo\\/.*\\.js$/' },
   ].forEach(({ input, expected }) => {
     it(input, function () {
-      expect(_prepareStringForRegex(input)).toStrictEqual(expected);
+      expect(_stringToRegex(input).toString()).toStrictEqual(expected);
     });
   });
 });

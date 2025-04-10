@@ -1,5 +1,6 @@
 import { posix } from 'path';
 import { exports as resolveExports } from 'resolve.exports';
+import memoize from 'mem';
 
 type PkgJSON = { name: string; exports?: Exports };
 type Exports = string | string[] | { [key: string]: Exports };
@@ -86,7 +87,7 @@ export function externalName(pkg: PkgJSON, relativePath: string): string | undef
     return posix.join(pkg.name, relativePath);
   }
 
-  const maybeKeyValuePair = _findPathRecursively(exports, candidate => _stringToRegex(candidate).test(relativePath));
+  const maybeKeyValuePair = _findPathRecursively(exports, candidate => stringToRegex(candidate).test(relativePath));
 
   if (!maybeKeyValuePair) {
     return undefined;
@@ -126,3 +127,5 @@ export function _stringToRegex(input: string): RegExp {
     return new RegExp(`^${regexEscape(input)}$`);
   }
 }
+
+const stringToRegex = memoize(_stringToRegex);

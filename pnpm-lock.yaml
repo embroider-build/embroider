@@ -645,6 +645,9 @@ importers:
 
   packages/reverse-exports:
     dependencies:
+      mem:
+        specifier: ^8.0.0
+        version: 8.1.1
       resolve.exports:
         specifier: ^2.0.2
         version: 2.0.3
@@ -3776,7 +3779,7 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/core': 7.26.10(supports-color@8.1.1)
+      '@babel/core': 7.26.10
       '@babel/helper-plugin-utils': 7.26.5
 
   /@babel/plugin-transform-private-methods@7.25.9(@babel/core@7.26.10):

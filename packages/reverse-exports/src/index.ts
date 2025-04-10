@@ -115,15 +115,16 @@ export function externalName(pkg: PkgJSON, relativePath: string): string | undef
   return posix.join(pkg.name, resolvedPath);
 }
 
+function regexEscape(input: string): string {
+  return input.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
 export function _prepareStringForRegex(input: string): string {
-  let result = input
-    .split('*')
-    .map(substr => substr.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&'))
-    .join('.*');
+  let wildCardIndex = input.indexOf('*');
 
-  if (result.endsWith('/')) {
-    result += '.*';
+  if (~wildCardIndex) {
+    return `^${regexEscape(input.substring(0, wildCardIndex))}.*${regexEscape(input.substring(wildCardIndex + 1))}$`;
+  } else {
+    return `^${regexEscape(input)}$`;
   }
-
-  return `^${result}$`;
 }

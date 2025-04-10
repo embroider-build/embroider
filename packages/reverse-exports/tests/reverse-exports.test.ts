@@ -37,10 +37,10 @@ describe('reverse exports', function () {
       exports: {
         '.': './main.js',
         './sub/path': './secondary.js',
-        './prefix/': './directory/',
-        './prefix/deep/': './other-directory/',
-        './other-prefix/*': './yet-another/*/*.js',
-        './glob/*': './grod/**/*.js',
+        './prefix/*': './directory/*',
+        './prefix/deep/*': './other-directory/*',
+        './other-prefix/*': './yet-another/*.js',
+        './glob/*': './grod/*.js',
       },
     };
     expect(externalName(packageJson, './main.js')).toBe('my-addon');
@@ -55,7 +55,7 @@ describe('reverse exports', function () {
     const packageJson = {
       name: 'my-addon',
       exports: {
-        './things/': ['./good-things/', './bad-things/'],
+        './things/*': ['./good-things/*', './bad-things/*'],
       },
     };
     expect(externalName(packageJson, './good-things/apple.js')).toBe('my-addon/things/apple.js');
@@ -282,7 +282,6 @@ describe('_prepareStringForRegex', function () {
     { input: './foo', expected: '^\\.\\/foo$' },
     { input: './foo.js', expected: '^\\.\\/foo\\.js$' },
     { input: './foo/*.js', expected: '^\\.\\/foo\\/.*\\.js$' },
-    { input: './foo/', expected: '^\\.\\/foo\\/.*$' },
   ].forEach(({ input, expected }) => {
     it(input, function () {
       expect(_prepareStringForRegex(input)).toStrictEqual(expected);

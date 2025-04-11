@@ -24,6 +24,9 @@
       "types": "./dist/src/index.d.ts"
     },
     "./package.json": "./package.json",
+    "./virtual": {
+      "types": "./types/virtual/index.d.ts"
+    },
     "./src/*": {
       "default": "./dist/src/*.js",
       "types": "./dist/src/*.d.ts"

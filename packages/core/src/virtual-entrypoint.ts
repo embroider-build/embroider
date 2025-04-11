@@ -8,7 +8,6 @@ import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
-import type { Options } from './module-resolver-options';
 
 export interface EntrypointResponse {
   type: 'entrypoint';
@@ -59,10 +58,12 @@ export function renderEntrypoint(
   );
 
   /**
-   * we are adding staticInvoables to the options type here because we used to be casting it as a CompatOptions
-   * doing it this way prevents the need for a cyclic depedency on @embroider/compat
+   * we are only reading staticInvokables off this type so I'm setting the type manually here. I don't know why
+   * resolver.options is reporting an incorrect type here, but I have verified this programatically that this
+   * is the right shape here and tests fail if it is wrong anyway
    */
-  let options = (resolver.options as Options & { staticInvokables: boolean }) ?? optionsWithDefaults();
+  let options =
+    (resolver.options as unknown as { options: { staticInvokables: boolean } }).options ?? optionsWithDefaults();
 
   let requiredAppFiles = [appFiles.otherAppFiles];
   if (!options.staticInvokables) {

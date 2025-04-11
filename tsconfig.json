@@ -19,9 +19,11 @@
     "packages/router/src",
     "packages/vite",
     "packages/template-tag-codemod",
-    "packages/compat"
+    "packages/compat",
+    "packages/core"
   ],
   "references": [
+    { "path": "packages/core" },
     { "path": "packages/compat" },
     { "path": "packages/config-meta-loader" },
     { "path": "packages/vite" },

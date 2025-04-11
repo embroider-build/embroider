@@ -12,6 +12,10 @@ import { Memoize } from 'typescript-memoize';
 
 export { Import };
 
+// @ts-expect-error we can't import the NestedHooks from qunit here
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type qunit from 'qunit';
+
 /*
   The audit tool in @embroider/compat can be used directly to tell you about
   potential problems in an app that is trying to adopt embroider. But we also

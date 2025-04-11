@@ -1,7 +1,7 @@
 import { maybeNodeModuleVersion } from '../src/portable';
 import { readJSONSync } from 'fs-extra';
 
-const EMBROIDER_CORE_VERSION = readJSONSync(`${__dirname}/../package.json`).version;
+const EMBROIDER_CORE_VERSION = readJSONSync(`${__dirname}/../../package.json`).version;
 
 describe('maybeNodeModuleVersion', () => {
   test('it', () => {

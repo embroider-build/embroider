@@ -18,10 +18,23 @@
       ]
     }
   },
+  "exports": {
+    ".": {
+      "default": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./package.json": "./package.json",
+    "./virtual": {
+      "types": "./types/virtual/index.d.ts"
+    },
+    "./src/*": {
+      "default": "./dist/src/*.js",
+      "types": "./dist/src/*.d.ts"
+    },
+    "./*": "./dist/src/*.js"
+  },
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map",
+    "dist",
     "types"
   ],
   "scripts": {

@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2025-04-11)
+
+* @embroider/compat 4.0.2 (patch)
+* @embroider/router 3.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2443](https://github.com/embroider-build/embroider/pull/2443) Widen Range for @ember/test-waiters ([@jrjohnson](https://github.com/jrjohnson))
+
+#### :house: Internal
+* `@embroider/compat`
+  * [#2324](https://github.com/embroider-build/embroider/pull/2324) move embroider compat to a tsconfig reference project ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Jon Johnson ([@jrjohnson](https://github.com/jrjohnson))
+
 ## Release (2025-04-04)
 
 * @embroider/template-tag-codemod 1.2.0 (minor)

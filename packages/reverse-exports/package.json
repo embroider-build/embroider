@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "mem": "^8.0.0",
     "resolve.exports": "^2.0.2"
   }
 }

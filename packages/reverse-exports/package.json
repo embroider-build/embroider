@@ -7,14 +7,17 @@
     "url": "https://github.com/embroider-build/embroider.git",
     "directory": "packages/reverse-exports"
   },
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "resolve.exports": "^2.0.2"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.1"
   }
 }

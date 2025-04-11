@@ -6,7 +6,9 @@ describe(`moduleExists`, function () {
       let code = transform(`
       import { moduleExists } from '@embroider/macros';
       export default function() {
-        return moduleExists('@embroider/core/src/index');
+        // TODO this should support reading package.json exports
+        // return moduleExists('@embroider/core/src/index');
+        return moduleExists('@embroider/core/dist/src/index');
       }
       `);
       expect(runDefault(code)).toBe(true);

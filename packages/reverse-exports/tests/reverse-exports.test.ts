@@ -1,4 +1,7 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import { externalName, _findPathRecursively, _prepareStringForRegex } from '../src';
+
+import { describe, it, expect } from 'vitest';
 
 describe('reverse exports', function () {
   it('exports is missing', function () {

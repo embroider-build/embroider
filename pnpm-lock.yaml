@@ -488,9 +488,6 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
     devDependencies:
-      '@embroider/compat':
-        specifier: workspace:*
-        version: link:../compat
       '@embroider/sample-transforms':
         specifier: workspace:*
         version: link:../../test-packages/sample-transforms

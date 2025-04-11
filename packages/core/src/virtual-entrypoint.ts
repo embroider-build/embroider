@@ -1,7 +1,6 @@
 import { AppFiles, type RouteFiles } from './app-files';
 import { compile } from './js-handlebars';
 import type { Resolver } from './module-resolver';
-import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
 import { join } from 'path';
 import { extensionsPattern } from '@embroider/shared-internals';
@@ -9,6 +8,7 @@ import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
+import type { Options } from './module-resolver-options';
 
 export interface EntrypointResponse {
   type: 'entrypoint';
@@ -58,7 +58,11 @@ export function renderEntrypoint(
     resolver.options.podModulePrefix
   );
 
-  let options = (resolver.options as unknown as CompatResolverOptions).options ?? optionsWithDefaults();
+  /**
+   * we are adding staticInvoables to the options type here because we used to be casting it as a CompatOptions
+   * doing it this way prevents the need for a cyclic depedency on @embroider/compat
+   */
+  let options = (resolver.options as Options & { staticInvokables: boolean }) ?? optionsWithDefaults();
 
   let requiredAppFiles = [appFiles.otherAppFiles];
   if (!options.staticInvokables) {

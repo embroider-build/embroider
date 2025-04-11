@@ -1,6 +1,6 @@
 import { externalName, _findPathRecursively, _matches } from '../src';
 
-describe('reverse exports', function () {
+describe('externaöName', function () {
   it('exports is missing', function () {
     expect(externalName({ name: 'best-addon', version: '1.0.0' }, './dist/_app_/components/face.js')).toBe(
       'best-addon/dist/_app_/components/face.js'
@@ -165,6 +165,79 @@ describe('reverse exports', function () {
     expect(externalName(packageJson, './dist/_app_/components/welcome-page.js')).toBe(
       'my-v2-addon/_app_/components/welcome-page'
     );
+  });
+
+  describe('memoization', function () {
+    it('call with same package and version is memoized', function () {
+      const packageJson = {
+        name: 'my-addon',
+        version: '2.0.0',
+        exports: {
+          './*': './dist/*.js',
+        },
+      };
+
+      expect(externalName(packageJson, './dist/foo.js')).toBe('my-addon/foo');
+
+      const packageJson2 = {
+        name: 'my-addon',
+        version: '2.0.0',
+        exports: {
+          './*': './output/*.js',
+        },
+      };
+
+      // The expected result here is deliberatley the wrong one, because we expect the one from the call above with the same arguments to get returned from the cache
+      expect(externalName(packageJson2, './dist/foo.js')).toBe('my-addon/foo');
+    });
+
+    it('different package name invalidates the cache', function () {
+      const packageJson = {
+        name: 'my-addon',
+        version: '2.0.0',
+        exports: {
+          './*': './dist/*.js',
+        },
+      };
+
+      expect(externalName(packageJson, './dist/foo.js')).toBe('my-addon/foo');
+
+      const packageJson2 = {
+        name: 'my-addon2',
+        version: '2.0.0',
+        exports: {
+          './*': './output/*.js',
+        },
+      };
+
+      // The package name has changed, so we should receive correct results here
+      expect(externalName(packageJson2, './dist/foo.js')).toBeUndefined();
+      expect(externalName(packageJson2, './output/foo.js')).toBe('my-addon2/foo');
+    });
+
+    it('different package version invalidates the cache', function () {
+      const packageJson = {
+        name: 'my-addon',
+        version: '2.0.0',
+        exports: {
+          './*': './dist/*.js',
+        },
+      };
+
+      expect(externalName(packageJson, './dist/foo.js')).toBe('my-addon/foo');
+
+      const packageJson2 = {
+        name: 'my-addon',
+        version: '2.0.1',
+        exports: {
+          './*': './output/*.js',
+        },
+      };
+
+      // The package version has changed, so we should receive correct results here
+      expect(externalName(packageJson2, './dist/foo.js')).toBeUndefined();
+      expect(externalName(packageJson2, './output/foo.js')).toBe('my-addon/foo');
+    });
   });
 });
 

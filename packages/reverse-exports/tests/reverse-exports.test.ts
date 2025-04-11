@@ -1,4 +1,4 @@
-import { externalName, _findPathRecursively, _stringToRegex } from '../src';
+import { externalName, _findPathRecursively, _matches } from '../src';
 
 describe('reverse exports', function () {
   it('exports is missing', function () {
@@ -287,14 +287,16 @@ describe('_findKeyRecursively', function () {
   });
 });
 
-describe('_stringToRegex', function () {
-  [
-    { input: './foo', expected: '/^\\.\\/foo$/' },
-    { input: './foo.js', expected: '/^\\.\\/foo\\.js$/' },
-    { input: './foo/*.js', expected: '/^\\.\\/foo\\/.*\\.js$/' },
-  ].forEach(({ input, expected }) => {
-    it(input, function () {
-      expect(_stringToRegex(input).toString()).toStrictEqual(expected);
-    });
+describe('_matches', function () {
+  it('matches for non-wildcards entries', function () {
+    expect(_matches('./foo.js', './foo.js')).toBe(true);
+    expect(_matches('./foo.js', './bar.js')).toBe(false);
+  });
+
+  it('matches for wildcards entries', function () {
+    expect(_matches('./foo/*.js', './foo/index.js')).toBe(true);
+    expect(_matches('./foo/*.js', './foo/bar.js')).toBe(true);
+    expect(_matches('./foo/*.js', './foo/bar/index.js')).toBe(true);
+    expect(_matches('./foo/*.js', './bar/index.js')).toBe(false);
   });
 });

@@ -87,7 +87,7 @@ function _externalName(pkg: PkgJSON, relativePath: string): string | undefined {
     return posix.join(pkg.name, relativePath);
   }
 
-  const maybeKeyValuePair = _findPathRecursively(exports, candidate => stringToRegex(candidate).test(relativePath));
+  const maybeKeyValuePair = _findPathRecursively(exports, candidate => _matches(candidate, relativePath));
 
   if (!maybeKeyValuePair) {
     return undefined;
@@ -116,20 +116,19 @@ export const externalName = memoize(_externalName, {
   cacheKey: ([pkg, relativePath]) => `${pkg.name}::${pkg.version}::${relativePath}`,
 });
 
-function regexEscape(input: string): string {
+function _regexEscape(input: string): string {
   return input.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
 }
+const regexEscape = memoize(_regexEscape);
 
-export function _stringToRegex(input: string): RegExp {
-  let wildCardIndex = input.indexOf('*');
+export function _matches(candidate: string, relativePath: string): boolean {
+  let wildCardIndex = candidate.indexOf('*');
 
   if (~wildCardIndex) {
     return new RegExp(
-      `^${regexEscape(input.substring(0, wildCardIndex))}.*${regexEscape(input.substring(wildCardIndex + 1))}$`
-    );
+      `^${regexEscape(candidate.substring(0, wildCardIndex))}.*${regexEscape(candidate.substring(wildCardIndex + 1))}$`
+    ).test(relativePath);
   } else {
-    return new RegExp(`^${regexEscape(input)}$`);
+    return candidate === relativePath;
   }
 }
-
-const stringToRegex = memoize(_stringToRegex);

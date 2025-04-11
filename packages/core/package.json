@@ -18,10 +18,19 @@
       ]
     }
   },
+  "exports": {
+    ".": {
+      "default": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./src/*": {
+      "default": "./dist/src/*.js",
+      "types": "./dist/src/*.d.ts"
+    },
+    "./*": "./dist/src/*.js"
+  },
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map",
+    "dist",
     "types"
   ],
   "scripts": {
@@ -59,6 +68,7 @@
   "devDependencies": {
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
+    "@embroider/compat": "workspace:*",
     "@glimmer/syntax": "^0.94.9",
     "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",

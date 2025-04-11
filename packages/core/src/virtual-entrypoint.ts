@@ -1,7 +1,7 @@
 import { AppFiles, type RouteFiles } from './app-files';
 import { compile } from './js-handlebars';
 import type { Resolver } from './module-resolver';
-import type { CompatResolverOptions } from '../../compat/src/resolver-transform';
+import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import { flatten, partition } from 'lodash';
 import { join } from 'path';
 import { extensionsPattern } from '@embroider/shared-internals';
@@ -58,7 +58,7 @@ export function renderEntrypoint(
     resolver.options.podModulePrefix
   );
 
-  let options = (resolver.options as CompatResolverOptions).options ?? optionsWithDefaults();
+  let options = (resolver.options as unknown as CompatResolverOptions).options ?? optionsWithDefaults();
 
   let requiredAppFiles = [appFiles.otherAppFiles];
   if (!options.staticInvokables) {

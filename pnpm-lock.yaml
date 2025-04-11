@@ -488,6 +488,9 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
     devDependencies:
+      '@embroider/compat':
+        specifier: workspace:*
+        version: link:../compat
       '@embroider/sample-transforms':
         specifier: workspace:*
         version: link:../../test-packages/sample-transforms
@@ -3776,7 +3779,7 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
     dependencies:
-      '@babel/core': 7.26.10(supports-color@8.1.1)
+      '@babel/core': 7.26.10
       '@babel/helper-plugin-utils': 7.26.5
 
   /@babel/plugin-transform-private-methods@7.25.9(@babel/core@7.26.10):

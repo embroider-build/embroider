@@ -7,7 +7,7 @@
     "url": "https://github.com/embroider-build/embroider.git",
     "directory": "packages/reverse-exports"
   },
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "jest"
   },

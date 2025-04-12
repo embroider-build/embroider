@@ -20,9 +20,11 @@
     "packages/vite",
     "packages/template-tag-codemod",
     "packages/compat",
-    "packages/core"
+    "packages/core",
+    "packages/reverse-exports"
   ],
   "references": [
+    { "path": "packages/reverse-exports" },
     { "path": "packages/core" },
     { "path": "packages/compat" },
     { "path": "packages/config-meta-loader" },

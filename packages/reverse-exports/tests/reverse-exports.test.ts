@@ -1,4 +1,4 @@
-import { externalName, _findPathRecursively, _prepareStringForRegex } from '../src';
+import { externalName, _findPathRecursively, _prepareStringForRegex } from '../src/index.js';
 
 describe('reverse exports', function () {
   it('exports is missing', function () {

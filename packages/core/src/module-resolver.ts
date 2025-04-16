@@ -13,7 +13,7 @@ import type { Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
-import { externalName } from '@embroider/reverse-exports';
+import type { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
@@ -107,6 +107,8 @@ const compatPattern = /@embroider\/virtual\/(?<type>[^\/]+)\/(?<rest>.*)/;
 export class Resolver {
   constructor(readonly options: Options) {}
 
+  private externalName!: typeof externalName;
+
   private async beforeResolve<R extends ModuleRequest>(request: R): Promise<R> {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
@@ -115,6 +117,9 @@ export class Resolver {
       // why we need to know about it.
       return logTransition('early exit', request);
     }
+
+    // we need to dynamically import this as that package is ESM only while core is still compiled to CJS
+    this.externalName = (await import('@embroider/reverse-exports')).externalName;
 
     request = this.handleFastbootSwitch(request);
     request = await this.handleGlobalsCompat(request);
@@ -757,7 +762,7 @@ export class Resolver {
                 `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            let specifier = externalName(addon.packageJSON, inAddonName);
+            let specifier = this.externalName(addon.packageJSON, inAddonName);
             if (!specifier) {
               throw new Error(
                 `${addon.name}'s package.json app-js refers to ${inAddonName}, but that module is not accessible from outside the package`
@@ -808,7 +813,7 @@ export class Resolver {
                 `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            let specifier = externalName(addon.packageJSON, inAddonName);
+            let specifier = this.externalName(addon.packageJSON, inAddonName);
             if (!specifier) {
               throw new Error(
                 `${addon.name}'s package.json fastboot-js refers to ${inAddonName}, but that module is not accessible from outside the package`
@@ -1291,7 +1296,11 @@ export class Resolver {
       // it's a relative import inside an engine (which also means app), which
       // means we may need to satisfy the request via app tree merging.
 
-      let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
+      let logicalName = engineRelativeName(
+        pkg,
+        resolve(dirname(request.fromFile), request.specifier),
+        this.externalName
+      );
       if (!logicalName) {
         return logTransition(
           'fallbackResolve: relative failure because this file is not externally accessible',
@@ -1396,7 +1405,7 @@ export class Resolver {
     if (engineConfig) {
       // we're directly inside an engine, so we're potentially resolvable as a
       // global component
-      let inAppName = engineRelativeName(owningPackage, filename);
+      let inAppName = engineRelativeName(owningPackage, filename, this.externalName);
       if (inAppName) {
         return this.tryReverseComponent(engineConfig.packageName, inAppName);
       }
@@ -1448,8 +1457,8 @@ function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, impor
   return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
 }
 
-function engineRelativeName(pkg: Package, filename: string): string | undefined {
-  let outsideName = externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
+function engineRelativeName(pkg: Package, filename: string, _externalName: typeof externalName): string | undefined {
+  let outsideName = _externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
   if (outsideName) {
     return '.' + outsideName.slice(pkg.name.length);
   }

@@ -6,7 +6,7 @@ import * as babel from '@babel/core';
 import templateCompilation, { type Options as EtcOptions } from 'babel-plugin-ember-template-compilation';
 import { createRequire } from 'module';
 import { extractTemplates, locateTemplates } from './extract-meta.js';
-import reverseExports from '@embroider/reverse-exports';
+import { externalName } from '@embroider/reverse-exports';
 import { basename, dirname, relative, resolve } from 'path';
 import type { ResolverTransformOptions } from '@embroider/compat';
 import { identifyRenderTests } from './identify-render-tests.js';
@@ -18,7 +18,6 @@ import { allHBSModules, allLegacyModules } from './detect-inline-hbs.js';
 import chalk from 'chalk';
 
 const { explicitRelative, hbsToJS, ResolverLoader } = core;
-const { externalName } = reverseExports;
 const require = createRequire(import.meta.url);
 const { default: generate } = require('@babel/generator');
 

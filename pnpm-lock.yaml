@@ -645,6 +645,9 @@ importers:
 
   packages/reverse-exports:
     dependencies:
+      mem:
+        specifier: ^8.0.0
+        version: 8.1.1
       resolve.exports:
         specifier: ^2.0.2
         version: 2.0.3

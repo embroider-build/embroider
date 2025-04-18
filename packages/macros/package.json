@@ -1,6 +1,6 @@
 {
   "name": "@embroider/macros",
-  "version": "1.17.1",
+  "version": "1.17.2",
   "private": false,
   "description": "Standardized build-time macros for ember apps.",
   "keywords": [

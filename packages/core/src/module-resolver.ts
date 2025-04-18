@@ -126,6 +126,7 @@ export class Resolver {
     request = this.handleRouteEntrypoint(request);
     request = this.handleRenaming(request);
     request = this.handleVendor(request);
+    request = this.handleInspectorSupport(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
     request = this.preHandleExternal(request);
@@ -1043,6 +1044,28 @@ export class Resolver {
       'vendor',
       request,
       request.virtualize({ type: 'vendor-js', specifier: resolve(pkg.root, '-embroider-vendor.js') })
+    );
+  }
+
+  private handleInspectorSupport<R extends ModuleRequest>(request: R): R {
+    if (request.specifier !== '@ember/debug/inspector-support') {
+      return request;
+    }
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (pkg?.root !== this.options.engines[0].root) {
+      throw new Error(
+        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @ember/debug/inspector-support. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+      );
+    }
+
+    return logTransition(
+      'inspector-support',
+      request,
+      request.virtualize({
+        type: 'inspector-support',
+        specifier: resolve(pkg.root, '-ember-debug-inspector-support.js'),
+      })
     );
   }
 

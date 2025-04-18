@@ -2,6 +2,7 @@ import { posix, sep, join } from 'path';
 import type { Resolver, AddonPackage, Package } from '.';
 import { extensionsPattern, syntheticJStoHBS, templateOnlyComponentSource } from '.';
 import { compile } from './js-handlebars';
+import { renderInspectorSupport, type VirtualInspectorSupportResponse } from './virtual-inspector-support';
 import { renderImplicitTestScripts, type TestSupportResponse } from './virtual-test-support';
 import { renderTestSupportStyles, type TestSupportStylesResponse } from './virtual-test-support-styles';
 import { renderVendor, type VirtualVendorResponse } from './virtual-vendor';
@@ -18,6 +19,7 @@ export type VirtualResponse = { specifier: string } & (
   | RouteEntrypointResponse
   | TestSupportResponse
   | TestSupportStylesResponse
+  | VirtualInspectorSupportResponse
   | VirtualVendorResponse
   | VirtualVendorStylesResponse
   | VirtualPairResponse
@@ -37,6 +39,8 @@ export function virtualContent(response: VirtualResponse, resolver: Resolver): V
   switch (response.type) {
     case 'entrypoint':
       return renderEntrypoint(resolver, response);
+    case 'inspector-support':
+      return renderInspectorSupport(response, resolver);
     case 'vendor-js':
       return renderVendor(response, resolver);
     case 'vendor-css':

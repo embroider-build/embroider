@@ -1,5 +1,33 @@
 # Embroider Changelog
 
+## Release (2025-04-18)
+
+* @embroider/compat 4.0.2 (patch)
+* @embroider/core 4.0.2 (patch)
+* @embroider/macros 1.17.2 (patch)
+* @embroider/reverse-exports 0.1.2 (patch)
+* @embroider/router 3.0.1 (patch)
+* @embroider/vite 1.0.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/reverse-exports`
+  * [#2449](https://github.com/embroider-build/embroider/pull/2449) Major speedup of reverse-exports ([@simonihmig](https://github.com/simonihmig))
+* `@embroider/router`
+  * [#2443](https://github.com/embroider-build/embroider/pull/2443) Widen Range for @ember/test-waiters ([@jrjohnson](https://github.com/jrjohnson))
+
+#### :house: Internal
+* `@embroider/reverse-exports`
+  * [#2450](https://github.com/embroider-build/embroider/pull/2450) convert reverse-exports to a tsconfig project ([@mansona](https://github.com/mansona))
+* `@embroider/core`, `@embroider/macros`
+  * [#2451](https://github.com/embroider-build/embroider/pull/2451) move core to a tsconfig project ([@mansona](https://github.com/mansona))
+* `@embroider/compat`
+  * [#2324](https://github.com/embroider-build/embroider/pull/2324) move embroider compat to a tsconfig reference project ([@mansona](https://github.com/mansona))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Jon Johnson ([@jrjohnson](https://github.com/jrjohnson))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2025-04-04)
 
 * @embroider/template-tag-codemod 1.2.0 (minor)

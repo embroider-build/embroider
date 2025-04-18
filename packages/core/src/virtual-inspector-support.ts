@@ -19,8 +19,8 @@ export function renderInspectorSupport(
 
 function getInspectorSupport(): string {
   return `
-// eslint-disable-next-line no-var, @typescript-eslint/no-unused-vars
-var emberInspectorLoader: any;
+// eslint-disable-next-line no-var
+var emberInspectorLoader;
 
 globalThis.emberInspectorLoader = {
   // eslint-disable-next-line disable-features/disable-async-await

@@ -539,6 +539,8 @@ export class Resolver {
         return this.resolveModifier(rest, engine, request);
       case 'ambiguous':
         return this.resolveHelperOrComponent(rest, engine, request);
+      case 'compat-modules':
+        return request;
       default:
         throw new Error(`bug: unexepected @embroider/virtual specifier: ${request.specifier}`);
     }

@@ -985,7 +985,7 @@ export class Resolver {
 
     if (pkg.name === packageName) {
       // we found a self-import
-      if (pkg.meta?.['auto-upgraded']) {
+      if (pkg.meta?.['auto-upgraded'] && !pkg.isEngine()) {
         // auto-upgraded packages always get automatically adjusted. They never
         // supported fancy package.json exports features so this direct mapping
         // to the root is always right.
@@ -1022,19 +1022,15 @@ export class Resolver {
             request,
             request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
           );
-        } else if (pkg.isEngine()) {
-          let targetingEngine = this.engineConfig(packageName);
-          if (targetingEngine) {
-            let appJSMatch = await this.searchAppTree(
-              request,
-              targetingEngine,
-              request.specifier.replace(packageName, '.')
-            );
-            if (appJSMatch) {
-              console.log('fallbackResolve: non-relative appJsMatch', request.specifier);
-              return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
-            }
-          }
+        }
+      } else if (pkg.isEngine()) {
+        let appJSMatch = await this.searchAppTree(
+          request,
+          pkg as unknown as EngineConfig, // this is safe because pkg.isEngine() is true in this case
+          request.specifier.replace(packageName, '.')
+        );
+        if (appJSMatch) {
+          return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
         }
       }
     }

@@ -6,6 +6,8 @@ import { join } from 'path';
 import type { FSWatcher } from 'fs';
 import { watch as fsWatch } from 'fs';
 
+type SplitRouteConfigType = { type: 'string'; value: string } | { type: 'regex'; value: string };
+
 export class ResolverLoader {
   #resolver: Resolver | undefined;
   #configFile: string;
@@ -28,7 +30,21 @@ export class ResolverLoader {
     if (!this.#resolver) {
       let config: Options;
       if (existsSync(this.#configFile)) {
-        config = readJSONSync(this.#configFile);
+        let rawConfig = readJSONSync(this.#configFile);
+
+        rawConfig.splitAtRoutes = rawConfig.splitAtRoutes?.map((splitRouteConfig: SplitRouteConfigType) => {
+          if (splitRouteConfig.type === 'regex') {
+            const fragments = splitRouteConfig.value.match(/^\/(.*)\/([gimsuy]*)$/);
+            if (!fragments) {
+              throw new Error(`Unable to parse splitAtRoutes pattern ${splitRouteConfig.value}`);
+            }
+            const [, parsedPattern, parsedFlags] = fragments;
+            return new RegExp(parsedPattern, parsedFlags);
+          }
+          return splitRouteConfig.value;
+        });
+
+        config = rawConfig;
       } else {
         config = buildResolverOptions({});
       }

@@ -143,7 +143,26 @@ export class CompatAppBuilder {
   }
 
   private addResolverConfig(config: CompatResolverOptions) {
-    outputJSONSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'), config, { spaces: 2 });
+    outputJSONSync(
+      join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'),
+      {
+        ...config,
+        splitAtRoutes: config.splitAtRoutes?.map(s => {
+          if (typeof s === 'string') {
+            return {
+              type: 'string',
+              value: s,
+            };
+          } else {
+            return {
+              type: 'regex',
+              value: s.toString(),
+            };
+          }
+        }),
+      },
+      { spaces: 2 }
+    );
   }
 
   private addContentForConfig(contentForConfig: any) {

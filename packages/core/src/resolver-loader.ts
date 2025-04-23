@@ -28,7 +28,21 @@ export class ResolverLoader {
     if (!this.#resolver) {
       let config: Options;
       if (existsSync(this.#configFile)) {
-        config = readJSONSync(this.#configFile);
+        let rawConfig = readJSONSync(this.#configFile);
+
+        rawConfig.splitAtRoutes = rawConfig.splitAtRoutes?.map((pattern: string) => {
+          if (/^\/.*\/[gimsuy]*$/.test(pattern)) {
+            const fragments = pattern.match(/^\/(.*)\/([gimsuy]*)$/);
+            if (!fragments) {
+              throw new Error(`Unable to parse splitAtRoutes pattern ${pattern}`);
+            }
+            const [, parsedPattern, parsedFlags] = fragments;
+            return new RegExp(parsedPattern, parsedFlags);
+          }
+          return pattern;
+        });
+
+        config = rawConfig;
       } else {
         config = buildResolverOptions({});
       }

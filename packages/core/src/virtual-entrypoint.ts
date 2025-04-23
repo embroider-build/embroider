@@ -312,9 +312,18 @@ function shouldSplitRoute(routeName: string, splitAtRoutes: (RegExp | string)[] 
   }
   return splitAtRoutes.find(pattern => {
     if (typeof pattern === 'string') {
+      if (pattern.startsWith('/') && pattern.endsWith('/')) {
+        let fragments = pattern.match(/\/(.*?)\/([a-z]*)?$/i);
+
+        if (!fragments) {
+          throw new Error(`Unable to parse splitAtRoutes pattern ${pattern}`);
+        }
+        let regex = new RegExp(fragments[1], fragments[2] || '');
+        return regex.test(routeName);
+      }
       return pattern === routeName;
     } else {
-      return pattern.test(routeName);
+      throw new Error('Invalid splitAtRoutes type found');
     }
   });
 }

@@ -118,6 +118,7 @@ export default class extends V1Addon {
     // As long as the inspector support is not implemented in an actual
     // ember-source release, we can't set a range. This fix should be
     // included for any version that has Vite support starting 3.28.
+    // This instruction can be conditioned by a range as soon as
     if (satisfies(this.packageJSON.version, '>=3.28')) {
       trees.push(new FixInspectorSupport([packages]));
     }

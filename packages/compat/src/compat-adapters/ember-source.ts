@@ -115,6 +115,13 @@ export default class extends V1Addon {
       trees.push(new FixCycleImports([packages]));
     }
 
+    // As long as the inspector support is not implemented in an actual
+    // ember-source release, we can't set a range. This fix should be
+    // included for any version that has Vite support starting 3.28.
+    if (satisfies(this.packageJSON.version, '>=3.28')) {
+      trees.push(new FixInspectorSupport([packages]));
+    }
+
     return mergeTrees(trees, { overwrite: true });
   }
 
@@ -582,4 +589,51 @@ function fixStringLoc(babel: typeof Babel) {
       },
     },
   };
+}
+
+// Creates a file @ember/debug/inspector-support.js that
+// provides Ember Inspector support for Ember Vite apps.
+class FixInspectorSupport extends Plugin {
+  build() {
+    replaceFile(
+      this,
+      '@ember/debug/inspector-support.js',
+      `// eslint-disable-next-line no-var
+var emberInspectorLoader;
+
+globalThis.emberInspectorLoader = {
+  // eslint-disable-next-line disable-features/disable-async-await
+  async load() {
+    // TODO we probably want to be more careful about what we expose here
+    return {
+      Application: await import('@ember/application'),
+      ApplicationNamespace: await import('@ember/application/namespace'),
+      Array: await import('@ember/array'),
+      ArrayMutable: await import('@ember/array/mutable'),
+      ArrayProxy: await import('@ember/array/proxy'),
+      Component: await import('@ember/component'),
+      Controller: await import('@ember/controller'),
+      Debug: await import('@ember/debug'),
+      EmberObject: await import('@ember/object'),
+      EnumerableMutable: await import('@ember/enumerable/mutable'),
+      InternalsEnvironment: await import('@ember/-internals/environment'),
+      InternalsMeta: await import('@ember/-internals/meta'),
+      InternalsMetal: await import('@ember/-internals/metal'),
+      InternalsUtils: await import('@ember/-internals/utils'),
+      Instrumentation: await import('@ember/instrumentation'),
+      Object: await import('@ember/object'),
+      ObjectCore: await import('@ember/object/core'),
+      ObjectInternals: await import('@ember/object/internals'),
+      ObjectEvented: await import('@ember/object/evented'),
+      ObjectObservable: await import('@ember/object/observable'),
+      ObjectPromiseProxyMixin: await import('@ember/object/promise-proxy-mixin'),
+      ObjectProxy: await import('@ember/object/proxy'),
+      Service: await import('@ember/service'),
+      VERSION: await import('ember/version'),
+      RSVP: await import('rsvp'),
+    };
+  },
+};`
+    );
+  }
 }

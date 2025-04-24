@@ -1,6 +1,7 @@
 {
   "include": [
     "./src/**/*.ts",
+    "./src/**/*.mts",
     "./tests/**/*.ts",
   ],
   "extends": "../../tsconfig-base.json",

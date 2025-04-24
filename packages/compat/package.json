@@ -14,7 +14,8 @@
   "exports": {
     ".": "./dist/src/index.js",
     "./src/*": "./dist/src/*.js",
-    "./*": "./dist/src/*.js"
+    "./*": "./dist/src/*.js",
+    "./inspector-support": "./dist/src/inspector-support.mjs"
   },
   "files": [
     "babel.js",

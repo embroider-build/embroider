@@ -3,6 +3,7 @@ import compatModules from '@embroider/virtual/compat-modules';
 import Resolver from 'ember-resolver';
 import loadInitializers from 'ember-load-initializers';
 import config from './config/environment';
+import '@embroider/compat/inspector-support';
 
 export default class App extends Application {
   modulePrefix = config.modulePrefix;

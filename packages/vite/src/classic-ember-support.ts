@@ -16,6 +16,7 @@ export function classicEmberSupport() {
     compatPrebuild(),
     assets(),
     contentFor(),
+    inspectorSupport(),
     {
       name: 'vite-plugin-ember-browser-targets',
       async config() {
@@ -32,6 +33,5 @@ export function classicEmberSupport() {
         }
       },
     },
-    inspectorSupport(),
   ];
 }

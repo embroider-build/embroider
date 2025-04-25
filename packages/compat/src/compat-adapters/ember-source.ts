@@ -107,6 +107,13 @@ export default class extends V1Addon {
       trees.push(new ReplaceRequire([packages]));
     }
 
+    if (satisfies(this.packageJSON.version, '<4.8.0')) {
+      // Fix for inspector support is handled by a Vite plugin,
+      // but Ember < 4.8 and older need to be a bit different,
+      // @ember/enumerable/mutable didn't exist yet.
+      trees.push(new FixInspectorSupport([packages]));
+    }
+
     if (satisfies(this.packageJSON.version, '<5.12.0')) {
       trees.push(new FixDeprecateFunction([packages]));
     }
@@ -114,12 +121,6 @@ export default class extends V1Addon {
     if (satisfies(this.packageJSON.version, '<5.11.1')) {
       trees.push(new FixCycleImports([packages]));
     }
-
-    // This fix for inspector support should be included for any version
-    // that has Vite support, starting 3.28. This instruction can't be
-    // conditioned by a range for now because there's no release of ember-source
-    // including the change. The range should be added here once available.
-    trees.push(new FixInspectorSupport([packages]));
 
     return mergeTrees(trees, { overwrite: true });
   }
@@ -614,7 +615,7 @@ globalThis.emberInspectorLoader = {
       Controller: await import('@ember/controller'),
       Debug: await import('@ember/debug'),
       EmberObject: await import('@ember/object'),
-      EnumerableMutable: await import('@ember/enumerable/mutable'),
+      EnumerableMutable: await import('@ember/-internals/runtime/lib/mixins/mutable_enumerable'),
       InternalsEnvironment: await import('@ember/-internals/environment'),
       InternalsMeta: await import('@ember/-internals/meta'),
       InternalsMetal: await import('@ember/-internals/metal'),

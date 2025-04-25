@@ -2,6 +2,7 @@ import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
 import { type UserConfig, type ConfigEnv } from 'vite';
 import { esBuildResolver } from './esbuild-resolver.js';
+import { inspectorSupport } from './inspector-support.js';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
@@ -9,6 +10,7 @@ export function ember() {
   return [
     templateTag(),
     resolver(),
+    inspectorSupport(),
     {
       name: 'vite-plugin-ember-config',
       async config(config: UserConfig, env: ConfigEnv) {

@@ -115,13 +115,11 @@ export default class extends V1Addon {
       trees.push(new FixCycleImports([packages]));
     }
 
-    // As long as the inspector support is not implemented in an actual
-    // ember-source release, we can't set a range. This fix should be
-    // included for any version that has Vite support starting 3.28.
-    // This instruction can be conditioned by a range as soon as
-    if (satisfies(this.packageJSON.version, '>=3.28')) {
-      trees.push(new FixInspectorSupport([packages]));
-    }
+    // This fix for inspector support should be included for any version
+    // that has Vite support, starting 3.28. This instruction can't be
+    // conditioned by a range for now because there's no release of ember-source
+    // including the change. The range should be added here once available.
+    trees.push(new FixInspectorSupport([packages]));
 
     return mergeTrees(trees, { overwrite: true });
   }

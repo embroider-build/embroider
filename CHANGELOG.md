@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-04-30)
+
+* @embroider/vite 1.1.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2462](https://github.com/embroider-build/embroider/pull/2462) Terser by default in prod ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-04-18)
 
 * @embroider/compat 4.0.2 (patch)

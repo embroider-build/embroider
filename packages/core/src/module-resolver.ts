@@ -539,6 +539,8 @@ export class Resolver {
         return this.resolveModifier(rest, engine, request);
       case 'ambiguous':
         return this.resolveHelperOrComponent(rest, engine, request);
+      case 'compat-modules':
+        return request;
       default:
         throw new Error(`bug: unexepected @embroider/virtual specifier: ${request.specifier}`);
     }
@@ -996,6 +998,14 @@ export class Resolver {
         if (addonConfig) {
           // auto-upgraded addons get special support for self-resolving here.
           return logTransition(`v1 addon self-import`, request, request.rehome(addonConfig.canResolveFromFile));
+        } else if (owningEngine.root === pkg.root) {
+          for (let engineConfig of this.options.engines) {
+            for (let activeAddon of engineConfig.activeAddons) {
+              if (activeAddon.root === pkg.root) {
+                return logTransition(`v1 engine self-import`, request, request.rehome(activeAddon.canResolveFromFile));
+              }
+            }
+          }
         } else {
           // auto-upgraded apps will necessarily have packageJSON.exports
           // because we insert them, so for that support we can fall through to
@@ -1198,11 +1208,8 @@ export class Resolver {
       return request;
     }
 
+    request = this.restoreRehomedRequest(request);
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
-
-    if (pkg) {
-      ({ pkg, request } = this.restoreRehomedRequest(pkg, request));
-    }
 
     if (!pkg?.isV2Ember()) {
       // this request is coming from a file that appears to be owned by no ember
@@ -1269,20 +1276,15 @@ export class Resolver {
     return logTransition('fallbackResolve final exit', request);
   }
 
-  private restoreRehomedRequest<R extends ModuleRequest>(pkg: Package, request: R): { pkg: Package; request: R } {
+  private restoreRehomedRequest<R extends ModuleRequest>(request: R): R {
     // meta.originalFromFile gets set when we want to try to rehome a request
     // but then come back to the original location here in the fallback when the
     // rehomed request fails
-    let movedPkg = this.packageCache.maybeMoved(pkg);
-    if (movedPkg !== pkg) {
-      let originalFromFile = request.meta?.originalFromFile;
-      if (typeof originalFromFile !== 'string') {
-        throw new Error(`bug: embroider resolver's meta is not propagating`);
-      }
-      request = request.rehome(originalFromFile);
-      pkg = movedPkg;
+    let originalFromFile = request.meta?.originalFromFile;
+    if (typeof originalFromFile === 'string') {
+      return request.rehome(originalFromFile);
     }
-    return { pkg, request };
+    return request;
   }
 
   private async relativeFallbackResolve<R extends ModuleRequest>(pkg: Package, request: R): Promise<R> {

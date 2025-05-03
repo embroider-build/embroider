@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite';
 import type { EmittedFile } from 'rollup';
-import { JSDOM } from 'jsdom';
+import { HTMLRewriter } from 'htmlrewriter';
 import fs from 'fs-extra';
 const { readFileSync, readJSONSync, existsSync } = fs;
 import { dirname, posix, resolve } from 'path';
@@ -46,23 +46,22 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
       }
     },
 
-    transformIndexHtml(htmlIn, context) {
+    async transformIndexHtml(htmlIn, context) {
       // we don't do anything in `vite dev`, we only need to work in `vite
       // build`
       if (!context.server) {
-        return optimizer.transformHTML(htmlIn, config.base);
+        return await optimizer.transformHTML(htmlIn, config.base);
       }
     },
   };
 }
 
-class ScriptOptimizer {
+export class ScriptOptimizer {
   private emitted = new Map<string, string>();
   private transformState:
     | {
         htmlIn: string;
         htmlOut: string;
-        parsed: JSDOM;
       }
     | undefined;
 
@@ -126,30 +125,40 @@ class ScriptOptimizer {
     return fileParts.join('.');
   }
 
-  transformHTML(htmlIn: string, baseUrl: string) {
+  async transformHTML(htmlIn: string, baseUrl: string) {
     if (this.transformState?.htmlIn !== htmlIn) {
-      let parsed = new JSDOM(htmlIn);
-      let linkTags = [...parsed.window.document.querySelectorAll('link')] as HTMLLinkElement[];
-      for (const linkTag of linkTags) {
-        if (linkTag.href.startsWith('/@embroider/virtual')) {
-          linkTag.href = baseUrl + linkTag.href.slice(1);
-        }
-      }
-      let scriptTags = [...parsed.window.document.querySelectorAll('script')] as HTMLScriptElement[];
-      for (let scriptTag of scriptTags) {
-        if (scriptTag.type !== 'module') {
-          let fingerprinted = this.emitted.get(scriptTag.src);
-          if (fingerprinted) {
-            scriptTag.src = fingerprinted;
+      const rewriter = new HTMLRewriter();
+      const emitted = this.emitted;
+
+      rewriter.on('link', {
+        element(element: Element) {
+          if (element.getAttribute('href')?.startsWith('/@embroider/virtual')) {
+            element.setAttribute('href', baseUrl + element.getAttribute('href')!.slice(1));
           }
-          if (scriptTag.src.startsWith('/@embroider/virtual')) {
-            scriptTag.src = baseUrl + scriptTag.src.slice(1);
+        },
+      });
+
+      rewriter.on('script', {
+        element(element: Element) {
+          if (element.getAttribute('type') !== 'module') {
+            let fingerprinted = emitted.get(element.getAttribute('src')!);
+            if (fingerprinted) {
+              element.setAttribute('src', fingerprinted);
+            }
+            if (element.getAttribute('src')?.startsWith('/@embroider/virtual')) {
+              element.setAttribute('src', baseUrl + element.getAttribute('src')!.slice(1));
+            }
           }
-        }
-      }
-      let htmlOut = parsed.serialize();
-      this.transformState = { htmlIn, parsed, htmlOut };
+        },
+      });
+
+      const res = rewriter.transform(new Response(htmlIn));
+
+      const htmlOut = await res.text();
+
+      this.transformState = { htmlIn, htmlOut };
     }
+
     return this.transformState.htmlOut;
   }
 }

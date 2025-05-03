@@ -1,0 +1,75 @@
+import { expect, test } from 'vitest';
+import { ScriptOptimizer } from '../src/scripts.js';
+
+const inputHTML = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title><%= namespace %> Tests</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {{content-for "head"}} {{content-for "test-head"}}
+
+    <link rel="stylesheet" href="/@embroider/virtual/vendor.css">
+    <link rel="stylesheet" href="/@embroider/virtual/app.css">
+    <link rel="stylesheet" href="/@embroider/virtual/test-support.css">
+
+    {{content-for "head-footer"}} {{content-for "test-head-footer"}}
+  </head>
+  <body>
+    {{content-for "body"}} {{content-for "test-body"}}
+
+    <div id="qunit"></div>
+    <div id="qunit-fixture">
+      <div id="ember-testing-container">
+        <div id="ember-testing"></div>
+      </div>
+    </div>
+
+    <script src="/testem.js" integrity="" data-embroider-ignore></script>
+    <script src="/@embroider/virtual/vendor.js"></script>
+    <script src="/@embroider/virtual/test-support.js"></script>
+    <script type="module">import "ember-testing";</script>
+
+    <script type="module">
+      import { start } from './test-helper';
+      import.meta.glob("./**/*.{js,ts,gjs,gts}", { eager: true });
+      start();
+    </script>
+
+    {{content-for "body-footer"}}
+  </body>
+</html> `;
+
+test('Prefixes link and script tags', async () => {
+  const optimizer = new ScriptOptimizer('/root/');
+
+  const transformedHTML = await optimizer.transformHTML(inputHTML, '/root/');
+
+  expect(transformedHTML).toContain('<script src="/root/@embroider');
+  expect(transformedHTML).toContain('<link rel="stylesheet" href="/root/@embroider');
+});
+
+test('Does not cause head items to be moved to the body', async () => {
+  const optimizer = new ScriptOptimizer('/root/');
+
+  const transformedHTML = await optimizer.transformHTML(inputHTML, '/root/');
+
+  expect(transformedHTML).toContain(`<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title><%= namespace %> Tests</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {{content-for "head"}} {{content-for "test-head"}}
+
+    <link rel="stylesheet" href="/root/@embroider/virtual/vendor.css">
+    <link rel="stylesheet" href="/root/@embroider/virtual/app.css">
+    <link rel="stylesheet" href="/root/@embroider/virtual/test-support.css">
+
+    {{content-for "head-footer"}} {{content-for "test-head-footer"}}
+  </head>`);
+});

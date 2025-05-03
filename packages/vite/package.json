@@ -32,7 +32,7 @@
     "debug": "^4.3.2",
     "fast-glob": "^3.3.2",
     "fs-extra": "^10.0.0",
-    "jsdom": "^25.0.0",
+    "htmlrewriter": "^0.0.12",
     "send": "^0.18.0",
     "source-map-url": "^0.4.1",
     "terser": "^5.7.0"

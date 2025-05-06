@@ -1,29 +1,21 @@
 {
   "name": "@embroider/reverse-exports",
-  "version": "0.1.1-alpha.2",
+  "version": "0.1.2",
   "description": "",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
     "directory": "packages/reverse-exports"
   },
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
+    "mem": "^8.0.0",
     "resolve.exports": "^2.0.2"
   }
 }

@@ -27,15 +27,6 @@
     "test:classic": "cross-env EMBROIDER_TEST_SETUP_FORCE=classic ember test --test-port=0",
     "test:ember-compatibility": "ember try:each"
   },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
     "@embroider/macros": "workspace:^",
     "broccoli-funnel": "^3.0.5",

@@ -1,60 +1,57 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.0.0-alpha.5"
+      "oldVersion": "8.0.1"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "2.0.0-alpha.2"
+      "oldVersion": "1.10.0"
     },
     "@embroider/babel-loader-9": {
-      "oldVersion": "4.0.0-alpha.2"
+      "oldVersion": "4.0.0"
     },
     "@embroider/broccoli-side-watch": {
-      "oldVersion": "1.1.0-alpha.2"
+      "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
+      "oldVersion": "4.0.2"
+    },
+    "@embroider/config-meta-loader": {
+      "oldVersion": "1.0.0"
+    },
+    "@embroider/core": {
+      "oldVersion": "4.0.2"
+    },
+    "@embroider/hbs-loader": {
+      "oldVersion": "4.0.0"
+    },
+    "@embroider/macros": {
+      "oldVersion": "1.17.2"
+    },
+    "@embroider/reverse-exports": {
+      "oldVersion": "0.1.2"
+    },
+    "@embroider/router": {
+      "oldVersion": "3.0.1"
+    },
+    "@embroider/shared-internals": {
+      "oldVersion": "3.0.0"
+    },
+    "@embroider/template-tag-codemod": {
+      "oldVersion": "1.2.0"
+    },
+    "@embroider/vite": {
       "impact": "minor",
-      "oldVersion": "4.0.0-alpha.13",
-      "newVersion": "4.0.0-alpha.14",
-      "tagName": "alpha",
+      "oldVersion": "1.0.3",
+      "newVersion": "1.1.0",
+      "tagName": "latest",
       "constraints": [
         {
           "impact": "minor",
           "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
-      "pkgJSONPath": "./packages/compat/package.json"
-    },
-    "@embroider/config-meta-loader": {
-      "oldVersion": "1.0.0-alpha.3"
-    },
-    "@embroider/core": {
-      "oldVersion": "4.0.0-alpha.9"
-    },
-    "@embroider/hbs-loader": {
-      "oldVersion": "4.0.0-alpha.2"
-    },
-    "@embroider/macros": {
-      "oldVersion": "1.17.0-alpha.7"
-    },
-    "@embroider/reverse-exports": {
-      "oldVersion": "0.1.1-alpha.2"
-    },
-    "@embroider/router": {
-      "oldVersion": "3.0.0-alpha.2"
-    },
-    "@embroider/shared-internals": {
-      "oldVersion": "3.0.0-alpha.5"
-    },
-    "@embroider/template-tag-codemod": {
-      "oldVersion": "1.0.0"
-    },
-    "@embroider/util": {
-      "oldVersion": "1.14.0-alpha.2"
-    },
-    "@embroider/vite": {
-      "oldVersion": "1.0.0-alpha.11"
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-03-20)\n\n* @embroider/compat 4.0.0-alpha.14 (minor)\n\n#### :rocket: Enhancement\n* Other\n  * [#2400](https://github.com/embroider-build/embroider/pull/2400) Add support for Ember 3.28 ([@mansona](https://github.com/mansona))\n* `@embroider/compat`\n  * [#2388](https://github.com/embroider-build/embroider/pull/2388) Add support for Ember 4.4 ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-04-30)\n\n* @embroider/vite 1.1.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2462](https://github.com/embroider-build/embroider/pull/2462) Terser by default in prod ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

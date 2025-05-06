@@ -3,7 +3,7 @@ import { join } from 'path';
 import type { TransformOptions } from '@babel/core';
 import { transformAsync } from '@babel/core';
 import type { BoundExpectFile } from './file-assertions';
-import { hbsToJS, locateEmbroiderWorkingDir, RewrittenPackageCache } from '../../packages/core/src/index';
+import { hbsToJS, locateEmbroiderWorkingDir, RewrittenPackageCache } from '@embroider/core/src/index';
 import { Memoize } from 'typescript-memoize';
 import { getRewrittenLocation } from './rewritten-path';
 

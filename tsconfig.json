@@ -18,12 +18,18 @@
     "packages/config-meta-loader/src",
     "packages/router/src",
     "packages/vite",
-    "packages/template-tag-codemod"
+    "packages/template-tag-codemod",
+    "packages/compat",
+    "packages/core",
+    "packages/reverse-exports"
   ],
   "references": [
+    { "path": "packages/reverse-exports" },
+    { "path": "packages/core" },
+    { "path": "packages/compat" },
     { "path": "packages/config-meta-loader" },
     { "path": "packages/vite" },
     { "path": "packages/template-tag-codemod" },
-    { "path": "tests/scenarios" }
+    { "path": "tests/scenarios" },
   ]
 }

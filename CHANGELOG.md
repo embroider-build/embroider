@@ -1,5 +1,216 @@
 # Embroider Changelog
 
+## Release (2025-04-30)
+
+* @embroider/vite 1.1.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2462](https://github.com/embroider-build/embroider/pull/2462) Terser by default in prod ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-04-18)
+
+* @embroider/compat 4.0.2 (patch)
+* @embroider/core 4.0.2 (patch)
+* @embroider/macros 1.17.2 (patch)
+* @embroider/reverse-exports 0.1.2 (patch)
+* @embroider/router 3.0.1 (patch)
+* @embroider/vite 1.0.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/reverse-exports`
+  * [#2449](https://github.com/embroider-build/embroider/pull/2449) Major speedup of reverse-exports ([@simonihmig](https://github.com/simonihmig))
+* `@embroider/router`
+  * [#2443](https://github.com/embroider-build/embroider/pull/2443) Widen Range for @ember/test-waiters ([@jrjohnson](https://github.com/jrjohnson))
+
+#### :house: Internal
+* `@embroider/reverse-exports`
+  * [#2450](https://github.com/embroider-build/embroider/pull/2450) convert reverse-exports to a tsconfig project ([@mansona](https://github.com/mansona))
+* `@embroider/core`, `@embroider/macros`
+  * [#2451](https://github.com/embroider-build/embroider/pull/2451) move core to a tsconfig project ([@mansona](https://github.com/mansona))
+* `@embroider/compat`
+  * [#2324](https://github.com/embroider-build/embroider/pull/2324) move embroider compat to a tsconfig reference project ([@mansona](https://github.com/mansona))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Jon Johnson ([@jrjohnson](https://github.com/jrjohnson))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2025-04-04)
+
+* @embroider/template-tag-codemod 1.2.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2419](https://github.com/embroider-build/embroider/pull/2419) Add `--custom-resolver` option to template-tag-codemod ([@CvX](https://github.com/CvX))
+  * [#2408](https://github.com/embroider-build/embroider/pull/2408) Support `templateOnlyComponent()` usages in template tag codemod ([@bendemboski](https://github.com/bendemboski))
+
+#### Committers: 2
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+- Jarek Radosz ([@CvX](https://github.com/CvX))
+
+## Release (2025-04-04)
+
+* @embroider/addon-dev 8.0.1 (patch)
+* @embroider/vite 1.0.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2435](https://github.com/embroider-build/embroider/pull/2435) Fix issue when your library has no prior app-js entry in package.json ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/vite`
+  * [#2436](https://github.com/embroider-build/embroider/pull/2436) Fix resolving EmberCLI in vite prebuild ([@simonihmig](https://github.com/simonihmig))
+
+#### Committers: 2
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-04-03)
+
+* @embroider/compat 4.0.1 (patch)
+* @embroider/core 4.0.1 (patch)
+* @embroider/macros 1.17.1 (patch)
+* @embroider/vite 1.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2433](https://github.com/embroider-build/embroider/pull/2433) Fix issue occuring when some consumers of @embroider/macros specify extensions for macros' content via require/import ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-04-03)
+
+* @embroider/addon-dev 8.0.0 (patch)
+* @embroider/addon-shim 1.10.0 (patch)
+* @embroider/babel-loader-9 4.0.0 (patch)
+* @embroider/broccoli-side-watch 1.1.0 (patch)
+* @embroider/compat 4.0.0 (patch)
+* @embroider/config-meta-loader 1.0.0 (patch)
+* @embroider/core 4.0.0 (patch)
+* @embroider/hbs-loader 4.0.0 (patch)
+* @embroider/macros 1.17.0 (patch)
+* @embroider/reverse-exports 0.1.1 (patch)
+* @embroider/router 3.0.0 (patch)
+* @embroider/shared-internals 3.0.0 (patch)
+* @embroider/vite 1.0.0 (patch)
+
+#### :memo: Documentation
+* [#2423](https://github.com/embroider-build/embroider/pull/2423) update the readme to more accurately reflect the current system ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/addon-dev`, `@embroider/addon-shim`, `@embroider/babel-loader-9`, `@embroider/broccoli-side-watch`, `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/core`, `@embroider/hbs-loader`, `@embroider/macros`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/vite`
+  * [#2427](https://github.com/embroider-build/embroider/pull/2427) release main as stable ([@mansona](https://github.com/mansona))
+* `@embroider/addon-dev`, `@embroider/compat`
+  * [#2429](https://github.com/embroider-build/embroider/pull/2429) Merge stable into main ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-04-03)
+
+@embroider/compat 3.9.0 (minor)
+@embroider/core 3.5.6 (patch)
+@embroider/macros 1.16.13 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`
+  * [#2425](https://github.com/embroider-build/embroider/pull/2425) Adding  a compat adapter for ember-fetch ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/test-scenarios`
+  * [#2426](https://github.com/embroider-build/embroider/pull/2426) fix types on stable ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-04-01)
+
+@embroider/addon-dev 7.1.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2237](https://github.com/embroider-build/embroider/pull/2237) Pass along options to resolve ([@abeforgit](https://github.com/abeforgit))
+
+#### Committers: 1
+- Arne Bertrand ([@abeforgit](https://github.com/abeforgit))
+
+## Release (2025-03-20)
+
+@embroider/compat 3.8.5 (patch)
+@embroider/core 3.5.5 (patch)
+@embroider/macros 1.16.12 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2404](https://github.com/embroider-build/embroider/pull/2404) Allow macros to see through sequence expressions ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-04-02)
+
+* @embroider/addon-shim 1.10.0-alpha.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-shim`
+  * [#2420](https://github.com/embroider-build/embroider/pull/2420) reset addon-shim to have the same version as stable ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/addon-shim`
+  * [#2422](https://github.com/embroider-build/embroider/pull/2422) set addon-shim to release a pre-minor ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-03-28)
+
+* @embroider/template-tag-codemod 1.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`
+  * [#2416](https://github.com/embroider-build/embroider/pull/2416) Fix a small typo spotted yesterday during Ember Europe ([@bartocc](https://github.com/bartocc))
+
+#### Committers: 1
+- Julien Palmas ([@bartocc](https://github.com/bartocc))
+
+## Release (2025-03-25)
+
+* @embroider/addon-dev 8.0.0-alpha.6 (patch)
+* @embroider/compat 4.0.0-alpha.15 (patch)
+* @embroider/core 4.0.0-alpha.10 (patch)
+* @embroider/macros 1.17.0-alpha.8 (patch)
+* @embroider/template-tag-codemod 1.1.0 (minor)
+* @embroider/vite 1.0.0-alpha.12 (patch)
+
+#### :boom: Breaking Change
+* [#2413](https://github.com/embroider-build/embroider/pull/2413) Deprecate @embroider/util ([@ef4](https://github.com/ef4))
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2320](https://github.com/embroider-build/embroider/pull/2320) convert from yargs to commander ([@mansona](https://github.com/mansona))
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2411](https://github.com/embroider-build/embroider/pull/2411) esbuild backchannel fix ([@ef4](https://github.com/ef4))
+* `@embroider/template-tag-codemod`
+  * [#2401](https://github.com/embroider-build/embroider/pull/2401) Handle a couple more common use cases in template tag codemod ([@bendemboski](https://github.com/bendemboski))
+
+#### :house: Internal
+* Other
+  * [#2414](https://github.com/embroider-build/embroider/pull/2414) update remaining template tag codemod tests ([@ef4](https://github.com/ef4))
+* `@embroider/addon-dev`, `@embroider/compat`, `@embroider/core`, `@embroider/template-tag-codemod`
+  * [#2412](https://github.com/embroider-build/embroider/pull/2412) Update @glimmer/syntax types ([@ef4](https://github.com/ef4))
+* `@embroider/macros`
+  * [#2406](https://github.com/embroider-build/embroider/pull/2406) Merge stable into main ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-03-20)
 
 * @embroider/compat 4.0.0-alpha.14 (minor)

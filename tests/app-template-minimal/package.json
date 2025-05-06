@@ -47,6 +47,7 @@
     "ember-source": "6.3.0-alpha.3",
     "qunit": "^2.19.4",
     "qunit-dom": "^3.4.0",
+    "terser": "^5.7.0",
     "vite": "^5.0.9"
   },
   "engines": {

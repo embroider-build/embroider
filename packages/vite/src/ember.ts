@@ -55,6 +55,7 @@ export function ember() {
         if (!config.build) {
           config.build = {};
         }
+
         if (!config.build.rollupOptions) {
           config.build.rollupOptions = {};
         }
@@ -83,6 +84,25 @@ export function ember() {
         // by babel, because we don't want esbuild's decorator implementation.
         if (config.esbuild == null) {
           config.esbuild = false;
+        }
+
+        /**
+         * These settings are only used when mode === production
+         */
+        if (!config.build.minify) {
+          config.build.minify = 'terser';
+        }
+
+        if (config.build.minify === 'terser' && !config.build.terserOptions) {
+          config.build.terserOptions = {
+            module: true,
+            compress: {
+              passes: 3,
+              keep_fargs: false,
+              keep_fnames: false,
+              toplevel: true,
+            },
+          };
         }
       },
     },

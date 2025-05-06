@@ -34,6 +34,21 @@ tsAppScenarios
             return result;
           }
         `,
+        'custom-resolver.mjs': `
+          export default async function customResolver(path) {
+            if (path === '@embroider/virtual/components/fancy-ice-cream') {
+              return 'bar/really-exists/foo';
+            }
+          }
+        `,
+        'another-resolver.mjs': `
+          export default async function(path, filename, resolve) {
+            if (path === '@embroider/virtual/components/phone-booth') {
+              path = '@embroider/virtual/components/message-box';
+            }
+            return await resolve(path, filename);
+          }
+        `,
       },
     });
 
@@ -145,6 +160,30 @@ tsAppScenarios
         });
       });
 
+      test('custom resolver', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<FancyIceCream />' },
+          to: {
+            'app/components/example.gjs': `
+            import FancyIceCream from "bar/really-exists/foo";
+            <template><FancyIceCream /></template>`,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --customResolver "./lib/custom-resolver.mjs"`,
+        });
+      });
+
+      test('custom resolver using the default implementation', async function (assert) {
+        await assert.codeMod({
+          from: { 'app/components/example.hbs': '<PhoneBooth />' },
+          to: {
+            'app/components/example.gjs': `
+            import PhoneBooth from "./message-box.js";
+            <template><PhoneBooth /></template>`,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs --customResolver "./lib/another-resolver.mjs"`,
+        });
+      });
+
       test('traverses through app reexports', async function (assert) {
         await assert.codeMod({
           from: { 'app/components/example.hbs': '<ReexportedWidget />' },
@@ -218,7 +257,7 @@ tsAppScenarios
               export default Example0;
             `,
           },
-          via: 'npx template-tag-codemod --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --addNameToTemplateOnly --reusePrebuild --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -297,7 +336,7 @@ tsAppScenarios
               export default Foo;
             `,
           },
-          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });
       });
 
@@ -348,6 +387,84 @@ tsAppScenarios
                   Foo: typeof Foo;
                 }
               }            `,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
+      test('template-only ts component', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `Hello world`,
+            'app/components/example.ts': `
+              import templateOnlyComponent from '@ember/component/template-only';
+              interface FooSignature {
+                Args: {
+                  value: string;
+                };
+              }
+              export default templateOnlyComponent<FooSignature>();
+            `,
+          },
+          to: {
+            'app/components/example.gts': `
+              import type { TemplateOnlyComponent } from '@ember/component/template-only';
+              interface FooSignature {
+                Args: {
+                  value: string;
+                };
+              }
+              export default <template>Hello world</template> satisfies TemplateOnlyComponent<FooSignature>;
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('template-only ts component with separate export statement', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `Hello world`,
+            'app/components/example.ts': `
+              import templateOnlyComponent from '@ember/component/template-only';
+              interface FooSignature {
+                Args: {
+                  value: string;
+                };
+              }
+              const Foo = templateOnlyComponent<FooSignature>();
+              export default Foo;
+            `,
+          },
+          to: {
+            'app/components/example.gts': `
+              import type { TemplateOnlyComponent } from '@ember/component/template-only';
+              interface FooSignature {
+                Args: {
+                  value: string;
+                };
+              }
+              const Foo = <template>Hello world</template> satisfies TemplateOnlyComponent<FooSignature>;
+              export default Foo;
+            `,
+          },
+          via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
+
+      test('template-only ts component without signature', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `Hello world`,
+            'app/components/example.ts': `
+              import templateOnlyComponent from '@ember/component/template-only';
+              export default templateOnlyComponent();
+            `,
+          },
+          to: {
+            'app/components/example.gts': `
+              export default <template>Hello world</template>;
+            `,
           },
           via: 'npx template-tag-codemod --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
         });

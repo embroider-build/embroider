@@ -1,6 +1,6 @@
 {
   "name": "@embroider/vite",
-  "version": "1.0.0-alpha.11",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -19,15 +19,6 @@
   },
   "scripts": {
     "test": "jest"
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "@babel/core": "^7.22.9",

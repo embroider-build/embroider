@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "8.0.0-alpha.5",
+  "version": "8.0.1",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",
@@ -32,15 +32,6 @@
     "rollup": {
       "optional": true
     }
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "@embroider/core": "workspace:^",

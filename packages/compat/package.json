@@ -1,6 +1,6 @@
 {
   "name": "@embroider/compat",
-  "version": "4.0.0-alpha.14",
+  "version": "4.0.2",
   "private": false,
   "description": "Backward compatibility layer for the Embroider build system.",
   "repository": {
@@ -10,24 +10,18 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./src/*": "./dist/src/*.js",
+    "./*": "./dist/src/*.js"
+  },
   "files": [
     "babel.js",
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist/src/"
   ],
   "scripts": {
     "test": "jest"
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "@babel/code-frame": "^7.14.5",

@@ -1,5 +1,24 @@
 # Embroider Changelog
 
+## Release (2025-05-06)
+
+* @embroider/compat 4.0.3 (patch)
+* @embroider/core 4.0.3 (patch)
+* @embroider/macros 1.17.3 (patch)
+* @embroider/vite 1.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2464](https://github.com/embroider-build/embroider/pull/2464) Don't run terser when --mode=test ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/macros`
+  * [#2467](https://github.com/embroider-build/embroider/pull/2467) upstream changed generated identifiers and this test is fragile ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-04-30)
 
 * @embroider/vite 1.1.0 (minor)

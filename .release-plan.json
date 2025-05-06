@@ -13,19 +13,49 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.0.2"
+      "impact": "patch",
+      "oldVersion": "4.0.2",
+      "newVersion": "4.0.3",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.0.2"
+      "impact": "patch",
+      "oldVersion": "4.0.2",
+      "newVersion": "4.0.3",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
     },
     "@embroider/macros": {
-      "oldVersion": "1.17.2"
+      "impact": "patch",
+      "oldVersion": "1.17.2",
+      "newVersion": "1.17.3",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.2"
@@ -40,18 +70,22 @@
       "oldVersion": "1.2.0"
     },
     "@embroider/vite": {
-      "impact": "minor",
-      "oldVersion": "1.0.3",
-      "newVersion": "1.1.0",
+      "impact": "patch",
+      "oldVersion": "1.1.0",
+      "newVersion": "1.1.1",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-04-30)\n\n* @embroider/vite 1.1.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2462](https://github.com/embroider-build/embroider/pull/2462) Terser by default in prod ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-05-06)\n\n* @embroider/compat 4.0.3 (patch)\n* @embroider/core 4.0.3 (patch)\n* @embroider/macros 1.17.3 (patch)\n* @embroider/vite 1.1.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2464](https://github.com/embroider-build/embroider/pull/2464) Don't run terser when --mode=test ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :house: Internal\n* `@embroider/macros`\n  * [#2467](https://github.com/embroider-build/embroider/pull/2467) upstream changed generated identifiers and this test is fragile ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

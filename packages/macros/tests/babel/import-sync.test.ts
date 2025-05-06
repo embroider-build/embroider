@@ -65,16 +65,16 @@ import * as _importSync20 from "../../README";
 import * as _importSync40 from "../../jest.config";
 import * as _importSync60 from "../../node_modules";
 import * as _importSync80 from "../../package";
-import * as _importSync100 from "../../src";
-import * as _importSync120 from "../../tests";
+import * as _importSync00 from "../../src";
+import * as _importSync100 from "../../tests";
 function getFile(file) {
   return {
     "README": esc(_importSync20),
     "jest.config": esc(_importSync40),
     "node_modules": esc(_importSync60),
     "package": esc(_importSync80),
-    "src": esc(_importSync100),
-    "tests": esc(_importSync120)
+    "src": esc(_importSync00),
+    "tests": esc(_importSync100)
   }[file].default;
 }`);
     });

@@ -86,7 +86,7 @@ export function ember() {
           config.esbuild = false;
         }
 
-        minification(config);
+        minification(config, env.mode);
       },
     },
   ];
@@ -96,8 +96,8 @@ function shouldBuildTests(mode: string) {
   return mode !== 'production' || process.env.FORCE_BUILD_TESTS;
 }
 
-function minification(config: UserConfig) {
-  if (config.mode === 'test') {
+function minification(config: UserConfig, mode: string) {
+  if (mode !== 'production') {
     return;
   }
 

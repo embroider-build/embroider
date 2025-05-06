@@ -86,24 +86,7 @@ export function ember() {
           config.esbuild = false;
         }
 
-        /**
-         * These settings are only used when mode === production
-         */
-        if (!config.build.minify) {
-          config.build.minify = 'terser';
-        }
-
-        if (config.build.minify === 'terser' && !config.build.terserOptions) {
-          config.build.terserOptions = {
-            module: true,
-            compress: {
-              passes: 3,
-              keep_fargs: false,
-              keep_fnames: false,
-              toplevel: true,
-            },
-          };
-        }
+        minification(config, env.mode);
       },
     },
   ];
@@ -111,4 +94,32 @@ export function ember() {
 
 function shouldBuildTests(mode: string) {
   return mode !== 'production' || process.env.FORCE_BUILD_TESTS;
+}
+
+function minification(config: UserConfig, mode: string) {
+  if (mode !== 'production') {
+    return;
+  }
+
+  /**
+   * Outside of test, the only other time "build" is used,
+   * is production
+   */
+  config.build ||= {};
+
+  if (!config.build.minify) {
+    config.build.minify = 'terser';
+  }
+
+  if (config.build.minify === 'terser' && !config.build.terserOptions) {
+    config.build.terserOptions = {
+      module: true,
+      compress: {
+        passes: 3,
+        keep_fargs: false,
+        keep_fnames: false,
+        toplevel: true,
+      },
+    };
+  }
 }

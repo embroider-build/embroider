@@ -68,6 +68,10 @@ export function babelMacros() {
 
 export function oldDebugMacros(): PluginItem[] {
   let debugMacros = require.resolve('babel-plugin-debug-macros');
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isDebug = !isProduction;
+
   return [
     [
       debugMacros,
@@ -76,13 +80,13 @@ export function oldDebugMacros(): PluginItem[] {
           {
             source: '@glimmer/env',
             flags: {
-              DEBUG: true,
-              CI: false,
+              DEBUG: isDebug,
+              CI: !!process.env.CI,
             },
           },
         ],
         debugTools: {
-          isDebug: true,
+          isDebug,
           source: '@ember/debug',
           assertPredicateIndex: 1,
         },
@@ -99,7 +103,7 @@ export function oldDebugMacros(): PluginItem[] {
           module: '@ember/application/deprecations',
         },
         debugTools: {
-          isDebug: true,
+          isDebug,
           source: '@ember/application/deprecations',
           assertPredicateIndex: 1,
         },

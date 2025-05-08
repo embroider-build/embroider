@@ -2054,12 +2054,9 @@ importers:
       ember-data-5.3:
         specifier: npm:ember-data@~5.3.0
         version: /ember-data@5.3.13(@ember/string@3.1.1)(@ember/test-helpers@2.9.6)(@ember/test-waiters@3.1.0)(ember-source@6.6.0-alpha.1)(qunit@2.24.1)
-      ember-data-beta:
-        specifier: npm:ember-data@beta
-        version: /ember-data@5.4.1-beta.1(@ember/string@3.1.1)(@ember/test-helpers@2.9.6)(@ember/test-waiters@3.1.0)(ember-source@6.6.0-alpha.1)(qunit@2.24.1)
       ember-data-latest:
-        specifier: npm:ember-data@~5.3.0
-        version: /ember-data@5.3.13(@ember/string@3.1.1)(@ember/test-helpers@2.9.6)(@ember/test-waiters@3.1.0)(ember-source@6.6.0-alpha.1)(qunit@2.24.1)
+        specifier: npm:ember-data@~5.4.0
+        version: /ember-data@5.4.1(@ember/string@3.1.1)(@ember/test-helpers@2.9.6)(@ember/test-waiters@3.1.0)(ember-source@6.6.0-alpha.1)(qunit@2.24.1)
       ember-engines:
         specifier: ^0.8.23
         version: 0.8.23(@ember/legacy-built-in-components@0.4.2)(ember-source@6.6.0-alpha.1)
@@ -4468,23 +4465,23 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/adapter@5.4.1-beta.1(@ember-data/legacy-compat@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-eTWQtJ+HIPCcd7732o5MMOZFi8tPUAtc8egHfGQSPFK+XzAfQcygAnyR/5tx89SaN1dlIpgIUf3puKdD79bxOw==}
+  /@ember-data/adapter@5.4.1(@ember-data/legacy-compat@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-kUzr2KJ3frjDmixaoqT1YadLkKdRP70cYLIpw5Vq21I8hEe4vEUAc7+/eCAo/62ws9B6MsMMWGzONSKubKrJxQ==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/legacy-compat': 5.4.1-beta.1
-      '@ember-data/request-utils': 5.4.1-beta.1
-      '@ember-data/store': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@ember-data/legacy-compat': 5.4.1
+      '@ember-data/request-utils': 5.4.1
+      '@ember-data/store': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     dependencies:
-      '@ember-data/legacy-compat': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/legacy-compat': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/store@5.4.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@ember/edition-utils': 1.2.0
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-cli-path-utils: 1.0.0
       ember-cli-string-utils: 1.1.0
       ember-cli-test-info: 1.0.0
@@ -4619,23 +4616,23 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/debug@5.4.1-beta.1(@ember-data/model@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-UOnbZ4qCdfHXJYSsy3fN8qXf2mGoRDtIrM9kCVSka1mGZYPxXd5ImqpKmkKoU+01uhUd3FcNZoeI8F4/9xJnRA==}
+  /@ember-data/debug@5.4.1(@ember-data/model@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-j0mYT4WGmdlLDCBxoLKAqj6m03al276sMKySF6fyWe9kSaTpkAFup1GxC8tvNiD/mpdDjYxPvCVJeLJIdnlAYw==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/model': 5.4.1-beta.1
-      '@ember-data/request-utils': 5.4.1-beta.1
-      '@ember-data/store': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@ember-data/model': 5.4.1
+      '@ember-data/request-utils': 5.4.1
+      '@ember-data/store': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     dependencies:
-      '@ember-data/model': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/legacy-compat@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/model': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/legacy-compat@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@ember/edition-utils': 1.2.0
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 6.6.0-alpha.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -4676,18 +4673,18 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/graph@5.4.1-beta.1(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-pwU2fNjIqn75EqwkmqO8lUuzDj5BjcrpKHaMV+dbpAGR9ZgxLK34PKCQqNoUk6XlUZVDYBTsnkrXMicFM2iWOA==}
+  /@ember-data/graph@5.4.1(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-nmnfUUZPHKmRLtTeI2ldfifpktsU3o4mwk5rUvW4oXgWOkA26vm56mig3H9PsVWlwK3BOXFQVJUXLQ+YsIj13w==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/store': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@ember-data/store': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     dependencies:
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 6.6.0-alpha.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -4734,21 +4731,21 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/json-api@5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1):
-    resolution: {integrity: sha512-3fxlFo9ZdzTNR3ZeR2RCeHlxClQDUd1/TP60u0PHM9535ctiMwopJ3oHHsJmwkc3B4SzaXanBc71YhxQwlg5Iw==}
+  /@ember-data/json-api@5.4.1(@ember-data/graph@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1):
+    resolution: {integrity: sha512-327ZPfnKPp3FjDAyDDEcwjb6Pa+aKeVbWtWQ/OC/gYKKYcPKa7bj5XpNkcM9KC+KjeSTXE2qCOan9nCbL1kAVQ==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/graph': 5.4.1-beta.1
-      '@ember-data/request-utils': 5.4.1-beta.1
-      '@ember-data/store': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@ember-data/graph': 5.4.1
+      '@ember-data/request-utils': 5.4.1
+      '@ember-data/store': 5.4.1
+      '@warp-drive/core-types': 5.4.1
     dependencies:
-      '@ember-data/graph': 5.4.1-beta.1(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/graph': 5.4.1(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       fuse.js: 7.1.0
       json-to-ast: 2.1.0
     transitivePeerDependencies:
@@ -4813,17 +4810,17 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/legacy-compat@5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-z1XITCQuQ4uTlmKYpfGzV9i8xRL678AlOzaHK/+Cq4dWmWNV858NnfHZsnDLAoUdRG5LlvNVmu7aA5cGeElB8A==}
+  /@ember-data/legacy-compat@5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/store@5.4.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-oOjdPRLrY9FwdBwlBZuTMP7rXqZLURHC83zcyIegpllE6oXYcqCaXp9fYNvRSqI7jVF7lvvjldHnCRMw3IOj9w==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/graph': 5.4.1-beta.1
-      '@ember-data/json-api': 5.4.1-beta.1
-      '@ember-data/request': 5.4.1-beta.1
-      '@ember-data/request-utils': 5.4.1-beta.1
-      '@ember-data/store': 5.4.1-beta.1
+      '@ember-data/graph': 5.4.1
+      '@ember-data/json-api': 5.4.1
+      '@ember-data/request': 5.4.1
+      '@ember-data/request-utils': 5.4.1
+      '@ember-data/store': 5.4.1
       '@ember/test-waiters': ^3.1.0 || >= 4.0.0
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     peerDependenciesMeta:
       '@ember-data/graph':
@@ -4831,15 +4828,15 @@ packages:
       '@ember-data/json-api':
         optional: true
     dependencies:
-      '@ember-data/graph': 5.4.1-beta.1(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/json-api': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)
-      '@ember-data/request': 5.4.1-beta.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/graph': 5.4.1(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/json-api': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)
+      '@ember-data/request': 5.4.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@ember/test-waiters': 3.1.0
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 6.6.0-alpha.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -5008,17 +5005,17 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/model@5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/legacy-compat@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-9IZeek2LUU5cnAOkq8/cTwbNaa/Zjjmwy/WYBptEBvPhDURLGOM6ZUX1hEJ7UcpUjF11c0Os60zLnQnZj8EMRQ==}
+  /@ember-data/model@5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/legacy-compat@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-dD+ocxXIUxNpcmTTcpXc4+PVkIasZ3xWIOdX3xkT2drgwYZM6Qhb0aRvO5Jwuk1BNZ9bCASqw6N+Ed+osDo7lw==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/graph': 5.4.1-beta.1
-      '@ember-data/json-api': 5.4.1-beta.1
-      '@ember-data/legacy-compat': 5.4.1-beta.1
-      '@ember-data/request-utils': 5.4.1-beta.1
-      '@ember-data/store': 5.4.1-beta.1
-      '@ember-data/tracking': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@ember-data/graph': 5.4.1
+      '@ember-data/json-api': 5.4.1
+      '@ember-data/legacy-compat': 5.4.1
+      '@ember-data/request-utils': 5.4.1
+      '@ember-data/store': 5.4.1
+      '@ember-data/tracking': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     peerDependenciesMeta:
       '@ember-data/graph':
@@ -5026,16 +5023,16 @@ packages:
       '@ember-data/json-api':
         optional: true
     dependencies:
-      '@ember-data/graph': 5.4.1-beta.1(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/json-api': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)
-      '@ember-data/legacy-compat': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/tracking': 5.4.1-beta.1(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/graph': 5.4.1(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/json-api': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)
+      '@ember-data/legacy-compat': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/store@5.4.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/tracking': 5.4.1(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@ember/edition-utils': 1.2.0
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-cli-string-utils: 1.1.0
       ember-cli-test-info: 1.0.0
       ember-source: 6.6.0-alpha.1
@@ -5264,12 +5261,12 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/request-utils@5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-UUI1K/ySZUlpKo7FTyhCm/h8DKboh5ZB9pnATxIpgqv6v4zUWcKrVtjSVY90f5hdpdEvhf+iM1Vsx34mah6Zlw==}
+  /@ember-data/request-utils@5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-EJ/cgRqMETH0LHW3yC0N8q5uit42yQtAIWM3PU6rTcAkYgGLWaMoXPzBsuDV2njTdacWa+p9p13mX8GYbwVtbA==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
       '@ember/string': ^3.1.1 || ^4.0.0
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/core-types': 5.4.1
       ember-inflector: ^4.0.2 || ^5.0.0 || ^6.0.0
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     peerDependenciesMeta:
@@ -5280,8 +5277,8 @@ packages:
     dependencies:
       '@ember/string': 3.1.1
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 6.6.0-alpha.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -5317,17 +5314,17 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/request@5.4.1-beta.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1):
-    resolution: {integrity: sha512-ILo0FhjjREPb3Qe0KYMkBlRPA8fl3CI1us7bv9j4/bwkZcaQghif62ErZHO5hg10Bxg9CSfxlCqUY8rx1hRDNg==}
+  /@ember-data/request@5.4.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1):
+    resolution: {integrity: sha512-/DN/lkMkNaT1CoDBhdgV3I/VZVzZvhTDGvWn/HnxUo994jDK4fhTwbPzshnfecsRhU1ONoek/Y4/dKDmq/abwg==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
       '@ember/test-waiters': ^3.1.0 || ^4.0.0
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/core-types': 5.4.1
     dependencies:
       '@ember/test-waiters': 3.1.0
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
     transitivePeerDependencies:
       - '@glint/template'
       - supports-color
@@ -5435,23 +5432,23 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/serializer@5.4.1-beta.1(@ember-data/legacy-compat@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-Ai5FmfC9afodkHyZbDRIbQiRC66zuAOIGMLt12+ytL8CQ8eINSMJUQA5AbrrAk7dXei1KU8aVUfGm1mIcNw99Q==}
+  /@ember-data/serializer@5.4.1(@ember-data/legacy-compat@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-oNkBlRAo5/OE5SfrSglGb+bFnFDGpE51oEINtl5tnrdg5skDlir93AI2GkRFaCVlv4+GB8oIzkJxtbSAAr9PuQ==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/legacy-compat': 5.4.1-beta.1
-      '@ember-data/request-utils': 5.4.1-beta.1
-      '@ember-data/store': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@ember-data/legacy-compat': 5.4.1
+      '@ember-data/request-utils': 5.4.1
+      '@ember-data/store': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     dependencies:
-      '@ember-data/legacy-compat': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/legacy-compat': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/store@5.4.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@ember/edition-utils': 1.2.0
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-cli-path-utils: 1.0.0
       ember-cli-string-utils: 1.1.0
       ember-cli-test-info: 1.0.0
@@ -5591,22 +5588,22 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/store@5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-ENvoC+dZqbiZaYEUEAzOawfUr+3EIk82OHNt2ktJPL5wiFPsWNRni/nKP466w2irmZpPhLPZfHadXwq2qSpu/Q==}
+  /@ember-data/store@5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-bNtTXN+oDJN0zomV/0AoWW3R2QpHExFTyLKRWfp3wjJBCSMup0DZNXwFI/DRONpcZi3gZqZOscYhhPN3YlCwWw==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@ember-data/request': 5.4.1-beta.1
-      '@ember-data/request-utils': 5.4.1-beta.1
-      '@ember-data/tracking': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@ember-data/request': 5.4.1
+      '@ember-data/request-utils': 5.4.1
+      '@ember-data/tracking': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     dependencies:
-      '@ember-data/request': 5.4.1-beta.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/tracking': 5.4.1-beta.1(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/request': 5.4.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/tracking': 5.4.1(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 6.6.0-alpha.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -5651,16 +5648,16 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-data/tracking@5.4.1-beta.1(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1):
-    resolution: {integrity: sha512-KiFQUSZD3XwwFifBRCLb1dXl+GA2b+M2mxwD0J/jcvSCshnLwxClTVHa8zNcQPelKoQP5TzQHNKPRIUgp8K7Lw==}
+  /@ember-data/tracking@5.4.1(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1):
+    resolution: {integrity: sha512-J8Kyv4qBfvdUO18go2pvG/rOmrTH/aiuUDMJtJniuboZzNTBzvrXxDugks5sqfPdpMBiMmC2sI5MqCmnwW3rQA==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 3.28.12 || ^4.0.4 || ^5.0.0 || ^6.0.0
     dependencies:
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 6.6.0-alpha.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -7530,7 +7527,7 @@ packages:
       '@glimmer/component': 1.1.2(@babel/core@7.27.1)
       '@glint/template': 1.5.2
       ember-cli-htmlbars: 6.3.0
-      ember-modifier: 4.2.0(@babel/core@7.27.1)(ember-source@5.3.0)
+      ember-modifier: 4.2.0(@babel/core@7.27.1)(ember-source@5.12.0)
     dev: true
 
   /@glint/environment-ember-template-imports@1.5.2(@glint/environment-ember-loose@1.5.2)(@glint/template@1.5.2):
@@ -9466,8 +9463,8 @@ packages:
       - supports-color
     dev: true
 
-  /@warp-drive/build-config@5.4.1-beta.1:
-    resolution: {integrity: sha512-CDrwc9lmk0wr1NvgngXHTMjkvvjIo0Lh289QQ/QgysIDng7xr4Y7P6yYIcRB4yk6kxltkDietBJWnumYP/Zovw==}
+  /@warp-drive/build-config@5.4.1:
+    resolution: {integrity: sha512-qGwZOlLKJ2DECR8WwfFdS3zVVkXaDga/sa7+LtsArGQr9QgRJZ9xWWGDyi4xUTeD+faUwX2Ki2Kd4Dpy39foew==}
     engines: {node: '>= 18.20.8'}
     dependencies:
       '@embroider/addon-shim': 1.10.0
@@ -9490,12 +9487,12 @@ packages:
       - supports-color
     dev: true
 
-  /@warp-drive/core-types@5.4.1-beta.1:
-    resolution: {integrity: sha512-6j60enwFvyRTI1rF42aBeBar0+ezSSbpZVtVaYrA9QOPf5vqnmqKgbaNwFzI9nYrHhpj4ZB9Gcz9miK9yk9Slg==}
+  /@warp-drive/core-types@5.4.1:
+    resolution: {integrity: sha512-JQw+SJPMhKm0FcOkuGT1V12ID2iOE0tMIasMdyqxgj0Sjy3g1QMWi72JA9bqT3yNSQDTq/NyAthADk2kxaVx/Q==}
     engines: {node: '>= 18.20.8'}
     dependencies:
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
     transitivePeerDependencies:
       - '@glint/template'
       - supports-color
@@ -15624,8 +15621,8 @@ packages:
       - supports-color
     dev: true
 
-  /ember-data@5.4.1-beta.1(@ember/string@3.1.1)(@ember/test-helpers@2.9.6)(@ember/test-waiters@3.1.0)(ember-source@6.6.0-alpha.1)(qunit@2.24.1):
-    resolution: {integrity: sha512-p9w3y/BqvZ65c2VqWUWK4j8QA2uuGUvhVsmhjjdIpAugoHjExmud1izH16BfYoVbEgto0LAFYWwKS2h6/YGaKw==}
+  /ember-data@5.4.1(@ember/string@3.1.1)(@ember/test-helpers@2.9.6)(@ember/test-waiters@3.1.0)(ember-source@6.6.0-alpha.1)(qunit@2.24.1):
+    resolution: {integrity: sha512-2OEtZh7asrXwLs7zZvKYN7+5nMF0ntZ4U0lXKQMzPZyuF64n1Sjeltcmw4bjlgXWL9t1Fb6DMRH0Nda6szQYnw==}
     engines: {node: '>= 18.20.8'}
     peerDependencies:
       '@ember/test-helpers': ^3.3.0 || ^4.0.4 || ^5.1.0
@@ -15640,23 +15637,23 @@ packages:
       qunit:
         optional: true
     dependencies:
-      '@ember-data/adapter': 5.4.1-beta.1(@ember-data/legacy-compat@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/debug': 5.4.1-beta.1(@ember-data/model@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/graph': 5.4.1-beta.1(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/json-api': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)
-      '@ember-data/legacy-compat': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/model': 5.4.1-beta.1(@ember-data/graph@5.4.1-beta.1)(@ember-data/json-api@5.4.1-beta.1)(@ember-data/legacy-compat@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/request': 5.4.1-beta.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1-beta.1)
-      '@ember-data/request-utils': 5.4.1-beta.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/serializer': 5.4.1-beta.1(@ember-data/legacy-compat@5.4.1-beta.1)(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/store@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/store': 5.4.1-beta.1(@ember-data/request-utils@5.4.1-beta.1)(@ember-data/request@5.4.1-beta.1)(@ember-data/tracking@5.4.1-beta.1)(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
-      '@ember-data/tracking': 5.4.1-beta.1(@warp-drive/core-types@5.4.1-beta.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/adapter': 5.4.1(@ember-data/legacy-compat@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/debug': 5.4.1(@ember-data/model@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/graph': 5.4.1(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/json-api': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)
+      '@ember-data/legacy-compat': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/store@5.4.1)(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/model': 5.4.1(@ember-data/graph@5.4.1)(@ember-data/json-api@5.4.1)(@ember-data/legacy-compat@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/request': 5.4.1(@ember/test-waiters@3.1.0)(@warp-drive/core-types@5.4.1)
+      '@ember-data/request-utils': 5.4.1(@ember/string@3.1.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/serializer': 5.4.1(@ember-data/legacy-compat@5.4.1)(@ember-data/request-utils@5.4.1)(@ember-data/store@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/store': 5.4.1(@ember-data/request-utils@5.4.1)(@ember-data/request@5.4.1)(@ember-data/tracking@5.4.1)(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
+      '@ember-data/tracking': 5.4.1(@warp-drive/core-types@5.4.1)(ember-source@6.6.0-alpha.1)
       '@ember/edition-utils': 1.2.0
       '@ember/test-helpers': 2.9.6(@babel/core@7.27.1)(ember-source@6.6.0-alpha.1)
       '@ember/test-waiters': 3.1.0
       '@embroider/macros': 1.17.2(@glint/template@1.5.2)
-      '@warp-drive/build-config': 5.4.1-beta.1
-      '@warp-drive/core-types': 5.4.1-beta.1
+      '@warp-drive/build-config': 5.4.1
+      '@warp-drive/core-types': 5.4.1
       ember-source: 6.6.0-alpha.1
       qunit: 2.24.1
     transitivePeerDependencies:

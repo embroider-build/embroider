@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-05-08)
+
+* @embroider/vite 1.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2469](https://github.com/embroider-build/embroider/pull/2469) fix: ensure minify can be disabled ([@Techn1x](https://github.com/Techn1x))
+
+#### Committers: 1
+- Brad Overton ([@Techn1x](https://github.com/Techn1x))
+
 ## Release (2025-05-06)
 
 * @embroider/compat 4.0.3 (patch)

@@ -107,7 +107,7 @@ function minification(config: UserConfig, mode: string) {
    */
   config.build ||= {};
 
-  if (!config.build.minify) {
+  if (config.build.minify === undefined || config.build.minify === true) {
     config.build.minify = 'terser';
   }
 

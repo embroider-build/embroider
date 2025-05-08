@@ -28,6 +28,12 @@ async function lts_4_12(project: Project) {
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
 }
 
+async function lts_4_12_data_4_13(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-4.12' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-4.13' });
+}
+
 async function lts_5_4(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-5.4' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-5.4' });
@@ -100,6 +106,7 @@ export function fullSupportMatrix(scenarios: Scenarios) {
     lts_4_4,
     lts_4_8,
     lts_4_12,
+    lts_4_12_data_4_13, // Vite-compatible Ember Data v4
     lts_5_4,
     lts_5_8,
     lts_5_12,

@@ -5,7 +5,8 @@ import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 
 export default function rollupDeclarationsPlugin(
-  declarationsDir: string
+  declarationsDir: string,
+  command = 'glint --declaration'
 ): Plugin {
   let glintPromise: Promise<void>;
 
@@ -13,20 +14,16 @@ export default function rollupDeclarationsPlugin(
     name: 'declarations',
     buildStart() {
       const runGlint = async () => {
-        let { exitCode, escapedCommand } = await execa(
-          'glint',
-          ['--declaration'],
-          {
-            // using stdio: inherit is the only way to retain color output from the
-            // underlying tsc process.
-            // However, the viewer of the error will not know which plugin it comes from.
-            // So that's why we have the additional logging below
-            stdio: 'inherit',
-            preferLocal: true,
-            // Without reject, execa would throw a hard exception
-            reject: false,
-          }
-        );
+        let { exitCode, escapedCommand } = await execa.command(command, {
+          // using stdio: inherit is the only way to retain color output from the
+          // underlying tsc process.
+          // However, the viewer of the error will not know which plugin it comes from.
+          // So that's why we have the additional logging below
+          stdio: 'inherit',
+          preferLocal: true,
+          // Without reject, execa would throw a hard exception
+          reject: false,
+        });
 
         if (exitCode > 0) {
           let msg = `Failed to generate declarations via \`${escapedCommand}\``;

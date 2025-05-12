@@ -274,6 +274,26 @@ tsAppScenarios
         });
       });
 
+      test('let printer multiline reprint', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `
+                {{#let "class-outline-pressed-touch
+                longer-class-than-expected even-more-classes
+                prettier-with-is-too-low" as |class|}}
+                  <div class={{if @overrideStyles @overrideStyles class}}>Hello world</div>
+                {{/let}}
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `<template>{{#let "class-outline-pressed-touch longer-class-than-expected even-more-classes prettier-with-is-too-low" as |class|}}
+                  <div class={{if @overrideStyles @overrideStyles class}}>Hello world</div>
+                {{/let}}</template>`,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
       test('adding named const to a template-only component', async function (assert) {
         await assert.codeMod({
           from: { 'app/components/example-foo-bar.hbs': 'Hello world' },

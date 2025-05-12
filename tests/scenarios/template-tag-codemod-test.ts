@@ -234,6 +234,46 @@ tsAppScenarios
         });
       });
 
+      test('modifier keyword shadowing', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `
+                {{#let (modifier resize 'foo') as |curried|}}
+                  <div {{this.inline}} {{curried}}>Modifier applied</div>
+                {{/let}}
+            `,
+            'app/modifiers/resize.js': `
+              import Modifier from 'ember-modifier';
+              class resize extends Modifier {
+                modify(el, [x]){
+                  console.log('class modifier', x)
+                }
+              }
+            `,
+            'app/components/example.js': `
+              import { modifier } from 'ember-modifier';
+              import Component from "@ember/component";
+              export default class extends Component {
+                inline = modifier((element)=>{console.log('inline modifier')}, {eager:false});
+              }
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+              import Modifier, { modifier as emberModifier } from 'ember-modifier';
+              import Component from "@ember/component";
+              import resize from './modifiers/resize.js'
+              export default class extends Component {<template>{{#let (modifier resize 'foo') as |curried|}}
+                  <div {{this.inline}} {{curried}}>Modifier applied</div>
+                {{/let}}</template>
+                inline = emberModifier((element)=>{console.log('inline modifier')}, {eager:false});
+              }
+            `,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
       test('adding named const to a template-only component', async function (assert) {
         await assert.codeMod({
           from: { 'app/components/example-foo-bar.hbs': 'Hello world' },

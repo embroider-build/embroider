@@ -111,7 +111,7 @@ export class Addon {
     return publicAssets(path, opts);
   }
 
-  declarations(path: string) {
-    return declarations(path);
+  declarations(path: string, command?: string) {
+    return declarations(path, command);
   }
 }

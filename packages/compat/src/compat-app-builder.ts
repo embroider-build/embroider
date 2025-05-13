@@ -638,6 +638,8 @@ export class CompatAppBuilder {
   // ordering of the addons.
   private findActiveAddons(pkg: Package, engine: Engine, isChild = false): void {
     for (let child of this.activeAddonChildren(pkg)) {
+      if (engine.addons.has(child)) continue;
+
       if (!child.isEngine()) {
         this.findActiveAddons(child, engine, true);
       }

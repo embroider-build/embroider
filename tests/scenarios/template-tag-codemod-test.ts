@@ -297,9 +297,9 @@ tsAppScenarios
         await assert.codeMod({
           from: {
             'app/components/example.hbs': `
-                {{#let "class-outline-pressed-touch
-                longer-class-than-expected even-more-classes
-                prettier-with-is-too-low" as |class|}}
+                {{#let "class-outline-pressed-touch do-not-change-white-space-chars-for-next-two-lines
+								they-are-part-of-the-test longer-class-than-expected even-more-classes
+								prettier-width-is-too-low" as |class|}}
                   <div class={{if @overrideStyles @overrideStyles class}}>Hello world</div>
                 {{/let}}
             `,

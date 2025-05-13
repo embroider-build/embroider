@@ -18,6 +18,7 @@ tsAppScenarios
         },
         components: {
           'message-box.hbs': `<div></div>`,
+          'if.hbs': '<div></div>',
           nested: {
             'example.js': 'export default class {}',
           },
@@ -269,6 +270,24 @@ tsAppScenarios
                 inline = emberModifier((element)=>{console.log('inline modifier')}, {eager:false});
               }
             `,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
+      test('component name similar to keyword', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `
+              <If />
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+            import If from "./if.js";
+            <template>
+              <If />
+            </template>`,
           },
           via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });

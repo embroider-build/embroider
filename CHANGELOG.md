@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2025-05-13)
+
+* @embroider/addon-dev 8.1.0 (minor)
+* @embroider/vite 1.1.2 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`
+  * [#2474](https://github.com/embroider-build/embroider/pull/2474) Allow declarations plugin to have its command customized ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2469](https://github.com/embroider-build/embroider/pull/2469) fix: ensure minify can be disabled ([@Techn1x](https://github.com/Techn1x))
+
+#### Committers: 2
+- Brad Overton ([@Techn1x](https://github.com/Techn1x))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-05-06)
 
 * @embroider/compat 4.0.3 (patch)

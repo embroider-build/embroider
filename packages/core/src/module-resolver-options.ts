@@ -144,6 +144,9 @@ function partitionEngines(
 // ordering of the addons.
 function findActiveAddons(pkg: Package, engine: Engine, extraDeps: Map<string, AddonPackage[]>, isChild = false): void {
   for (let child of activeAddonChildren(pkg, extraDeps)) {
+    if (engine.addons.has(child)) {
+      continue;
+    }
     if (!child.isEngine()) {
       findActiveAddons(child, engine, extraDeps, true);
     }

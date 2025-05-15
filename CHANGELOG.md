@@ -1,5 +1,17 @@
 # Embroider Changelog
 
+## Release (2025-05-15)
+
+* @embroider/vite 1.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2482](https://github.com/embroider-build/embroider/pull/2482) Propagate other plugin's custom metadata ([@ef4](https://github.com/ef4))
+  * [#2481](https://github.com/embroider-build/embroider/pull/2481) Vite build should resolve ember-cli from working dir ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-05-13)
 
 * @embroider/addon-dev 8.1.0 (minor)

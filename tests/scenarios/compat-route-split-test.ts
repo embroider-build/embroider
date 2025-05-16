@@ -21,7 +21,9 @@ let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
         let app = new EmberApp(defaults, {});
         return maybeEmbroider(app, {
           staticInvokables: true,
-          splitAtRoutes: ['people'],
+          // this is quite complicated because we don't want to match 'people.show' just 'people' to
+          // keep the behaviou to what it was before
+          splitAtRoutes: [/peo([^.\s])+$/],
         });
       };
     `,

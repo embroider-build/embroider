@@ -208,7 +208,10 @@ async function maybeCaptureNewOptimizedDep(
   if (!foundFile) {
     return result;
   }
-  if (foundFile.includes('.vite') && normalize(foundFile).startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))) {
+  if (
+    foundFile.includes('.vite') &&
+    normalize(foundFile).startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))
+  ) {
     debug('maybeCaptureNewOptimizedDep: %s already in vite deps', foundFile);
     return result;
   }

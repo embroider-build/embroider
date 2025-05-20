@@ -2,6 +2,21 @@
 
 ## Release (2025-05-20)
 
+* @embroider/compat 4.1.0 (minor)
+* @embroider/core 4.1.0 (minor)
+* @embroider/macros 1.18.0 (minor)
+* @embroider/template-tag-codemod 1.3.0 (minor)
+* @embroider/vite 1.1.4 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/template-tag-codemod`
+  * [#2415](https://github.com/embroider-build/embroider/pull/2415) Use babel-plugin-ember-template-compilation 3.x ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-05-20)
+
 * @embroider/compat 4.0.4 (patch)
 * @embroider/core 4.0.4 (patch)
 

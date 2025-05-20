@@ -133,7 +133,13 @@ export default class V1Addon {
         ],
         transforms: plugins,
       };
-      return [require.resolve('babel-plugin-ember-template-compilation'), opts];
+
+      let babelVersion = this.addonInstance.addons.find(a => a.name === 'ember-cli-babel')?.pkg.version;
+      if (babelVersion && semver.satisfies(babelVersion, '< 8.0.0')) {
+        return [require.resolve('babel-plugin-ember-template-compilation-2'), opts];
+      } else {
+        return [require.resolve('babel-plugin-ember-template-compilation'), opts];
+      }
     }
   }
 

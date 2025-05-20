@@ -290,7 +290,7 @@ class ModuleVisitor {
   ): Promise<ParsedInternalModule['parsed'] | Finding[]> {
     let rawSource = content.toString('utf8');
     try {
-      let result = auditJS(rawSource, filename, this.params.babelConfig, this.params.frames);
+      let result = await auditJS(rawSource, filename, this.params.babelConfig, this.params.frames);
 
       for (let problem of result.problems) {
         this.params.findings.push({

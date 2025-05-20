@@ -1,5 +1,17 @@
 # Embroider Changelog
 
+## Release (2025-05-20)
+
+* @embroider/compat 4.0.4 (patch)
+* @embroider/core 4.0.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`
+  * [#2458](https://github.com/embroider-build/embroider/pull/2458) Fix splitAtRoutes when they are defined as a regex ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-05-15)
 
 * @embroider/vite 1.1.3 (patch)

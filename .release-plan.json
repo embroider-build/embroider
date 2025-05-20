@@ -13,57 +13,19 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "4.0.4",
-      "newVersion": "4.1.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.0"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "minor",
-      "oldVersion": "4.0.4",
-      "newVersion": "4.1.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.1.0"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.17.3",
-      "newVersion": "1.18.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.18.0"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.2"
@@ -75,31 +37,21 @@
       "oldVersion": "3.0.0"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "minor",
-      "oldVersion": "1.2.0",
-      "newVersion": "1.3.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "1.3.0"
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.1.3",
-      "newVersion": "1.1.4",
+      "oldVersion": "1.1.4",
+      "newVersion": "1.1.5",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-05-20)\n\n* @embroider/compat 4.1.0 (minor)\n* @embroider/core 4.1.0 (minor)\n* @embroider/macros 1.18.0 (minor)\n* @embroider/template-tag-codemod 1.3.0 (minor)\n* @embroider/vite 1.1.4 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/template-tag-codemod`\n  * [#2415](https://github.com/embroider-build/embroider/pull/2415) Use babel-plugin-ember-template-compilation 3.x ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-05-20)\n\n* @embroider/vite 1.1.5 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2473](https://github.com/embroider-build/embroider/pull/2473) Update scenarios to supported versions of Ember Data as v2 addon ([@robbytx](https://github.com/robbytx))\n\n#### Committers: 1\n- Robby Morgan ([@robbytx](https://github.com/robbytx))\n"
 }

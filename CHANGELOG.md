@@ -2,6 +2,17 @@
 
 ## Release (2025-05-20)
 
+* @embroider/vite 1.1.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2473](https://github.com/embroider-build/embroider/pull/2473) Update scenarios to supported versions of Ember Data as v2 addon ([@robbytx](https://github.com/robbytx))
+
+#### Committers: 1
+- Robby Morgan ([@robbytx](https://github.com/robbytx))
+
+## Release (2025-05-20)
+
 * @embroider/compat 4.1.0 (minor)
 * @embroider/core 4.1.0 (minor)
 * @embroider/macros 1.18.0 (minor)

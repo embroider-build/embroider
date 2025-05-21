@@ -36,7 +36,7 @@ program
   )
   .option(
     '--nativeLexicalThis <value>',
-    `When true, assume that Ember supports accessing the lexically-scoped "this" from template-tags that are used as expressions (requires ember-source >= TODO). When false, introduce a new local variable to make "this" accessible.`,
+    `When true, assume that Ember supports accessing the lexically-scoped "this" from template-tags that are used as expressions (requires ember-source >= 6.4.0). When false, introduce a new local variable to make "this" accessible.`,
     trueFalseOnly,
     defaults.nativeLexicalThis
   )

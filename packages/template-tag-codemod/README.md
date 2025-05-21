@@ -61,7 +61,7 @@ export default RouteTemplate(
 ```
 ### --nativeLexicalThis
 
-This flag is a workaround for a bug in Ember < 6.4.0 (still unreleased at the time of writing). These versions have a bug that prevents you from accessing lexically scoped `this` in template tags that are used as expressions. The typical use case for this is in rendering tests:
+This flag is a workaround for a bug in Ember < 6.4.0. These versions have a bug that prevents you from accessing lexically scoped `this` in template tags that are used as expressions. The typical use case for this is in rendering tests:
 
 ```js
 // Input example:

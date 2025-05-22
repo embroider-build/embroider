@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-05-21)
+
+* @embroider/template-tag-codemod 1.3.1 (patch)
+
+#### :memo: Documentation
+* `@embroider/template-tag-codemod`
+  * [#2489](https://github.com/embroider-build/embroider/pull/2489) [template-tag-codemod] Add version to `--nativeLexicalThis` & update ReadMe ([@mkszepp](https://github.com/mkszepp))
+
+#### Committers: 1
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
 ## Release (2025-05-20)
 
 * @embroider/vite 1.1.5 (patch)

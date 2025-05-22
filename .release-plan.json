@@ -37,21 +37,21 @@
       "oldVersion": "3.0.0"
     },
     "@embroider/template-tag-codemod": {
-      "oldVersion": "1.3.0"
-    },
-    "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.1.4",
-      "newVersion": "1.1.5",
+      "oldVersion": "1.3.0",
+      "newVersion": "1.3.1",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Appears in changelog section :memo: Documentation"
         }
       ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+    },
+    "@embroider/vite": {
+      "oldVersion": "1.1.5"
     }
   },
-  "description": "## Release (2025-05-20)\n\n* @embroider/vite 1.1.5 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2473](https://github.com/embroider-build/embroider/pull/2473) Update scenarios to supported versions of Ember Data as v2 addon ([@robbytx](https://github.com/robbytx))\n\n#### Committers: 1\n- Robby Morgan ([@robbytx](https://github.com/robbytx))\n"
+  "description": "## Release (2025-05-21)\n\n* @embroider/template-tag-codemod 1.3.1 (patch)\n\n#### :memo: Documentation\n* `@embroider/template-tag-codemod`\n  * [#2489](https://github.com/embroider-build/embroider/pull/2489) [template-tag-codemod] Add version to `--nativeLexicalThis` & update ReadMe ([@mkszepp](https://github.com/mkszepp))\n\n#### Committers: 1\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
 }

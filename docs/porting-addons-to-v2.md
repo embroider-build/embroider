@@ -241,15 +241,16 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
    - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using the `babel-plugin-ember-template-compilation`. View how to use this in the [example babel.config.js](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.js)
 7. Grab the [example rollup config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-rollup.config.js) and save it as `addon/rollup.config.js`.
 8. Identify your **app reexports**. This is the list of modules from your addon that get reexported by files in the `addon/app` directory.
-9. Delete the `addon/app` directory. You aren't going to need it anymore.
-10. Edit `addon/rollup.config.js`. Customize the `publicEntrypoints` so it includes
+9. Edit `addon/rollup.config.js`. Customize the `publicEntrypoints` so it includes
 
 - every module that users should be allowed to import from your addon
 - every module in the **app reexports** you identified in the previous step
 
+10. Delete the `addon/app` directory. You aren't going to need it anymore.
 11. Still editing `addon/rollup.config.js`, customize the `appReexports` to match all your **app reexports** as identified above.
-12. Delete your `addon/index.js` file.
-13. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
+12. If your addon contains `.gjs` files, add `addon.gjs()`  to `addon/rollup.config.js`.
+13. Delete your `addon/index.js` file.
+14. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
 
 ```js
 const { addonV1Shim } = require('@embroider/addon-shim');

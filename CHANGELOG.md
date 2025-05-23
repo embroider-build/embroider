@@ -1,5 +1,15 @@
 # Embroider Changelog
 
+## Release (2025-05-23)
+
+
+
+#### :memo: Documentation
+* [#2492](https://github.com/embroider-build/embroider/pull/2492) Update porting-addons-to-v2.md ([@x-m-el](https://github.com/x-m-el))
+
+#### Committers: 1
+- [@x-m-el](https://github.com/x-m-el)
+
 ## Release (2025-05-21)
 
 * @embroider/template-tag-codemod 1.3.1 (patch)

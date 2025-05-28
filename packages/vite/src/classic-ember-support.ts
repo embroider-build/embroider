@@ -3,6 +3,7 @@ import { scripts } from './scripts.js';
 import { compatPrebuild } from './build.js';
 import { assets } from './assets.js';
 import { contentFor } from './content-for.js';
+import { inspectorSupport } from './inspector-support.js';
 import browserslistToEsbuild from 'browserslist-to-esbuild';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -15,6 +16,7 @@ export function classicEmberSupport() {
     compatPrebuild(),
     assets(),
     contentFor(),
+    inspectorSupport(),
     {
       name: 'vite-plugin-ember-browser-targets',
       async config() {

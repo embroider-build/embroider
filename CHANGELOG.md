@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2025-05-29)
+
+* @embroider/template-tag-codemod 1.3.2 (patch)
+
+#### :memo: Documentation
+* `@embroider/template-tag-codemod`
+  * [#2495](https://github.com/embroider-build/embroider/pull/2495) Fix merge-history commands (remove `) ([@mkszepp](https://github.com/mkszepp))
+* Other
+  * [#2492](https://github.com/embroider-build/embroider/pull/2492) Update porting-addons-to-v2.md ([@x-m-el](https://github.com/x-m-el))
+
+#### Committers: 2
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+- [@x-m-el](https://github.com/x-m-el)
+
 ## Release (2025-05-21)
 
 * @embroider/template-tag-codemod 1.3.1 (patch)

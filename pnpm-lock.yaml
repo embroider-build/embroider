@@ -1126,6 +1126,9 @@ importers:
       send:
         specifier: ^0.18.0
         version: 0.18.0
+      simple-dom:
+        specifier: ^1.4.0
+        version: 1.4.0
       source-map-url:
         specifier: ^0.4.1
         version: 0.4.1
@@ -1763,9 +1766,6 @@ importers:
       qunit-dom:
         specifier: ^2.0.0
         version: 2.0.0
-      simple-dom:
-        specifier: ^1.4.0
-        version: 1.4.0
       stylelint:
         specifier: ^15.7.0
         version: 15.11.0(typescript@5.8.3)

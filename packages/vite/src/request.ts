@@ -49,7 +49,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
 
       return {
         initialState: { specifier: cleanSource, fromFile, meta: custom?.embroider?.meta },
-        adapter: new RollupRequestAdapter(context, queryParams, importerQueryParams),
+        adapter: new RollupRequestAdapter(context, queryParams, importerQueryParams, custom),
       };
     }
   };
@@ -57,7 +57,8 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
   private constructor(
     private context: PluginContext,
     private queryParams: string,
-    private importerQueryParams: string
+    private importerQueryParams: string,
+    private custom: Record<string, unknown> | undefined
   ) {}
 
   get debugType() {
@@ -106,6 +107,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
       {
         skipSelf: true,
         custom: {
+          ...this.custom,
           embroider: {
             enableCustomResolver: false,
             meta: request.meta,

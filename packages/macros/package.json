@@ -1,6 +1,6 @@
 {
   "name": "@embroider/macros",
-  "version": "1.17.0-alpha.7",
+  "version": "1.18.0",
   "private": false,
   "description": "Standardized build-time macros for ember apps.",
   "keywords": [
@@ -17,7 +17,8 @@
   "exports": {
     ".": "./src/index.js",
     "./babel": "./src/babel.js",
-    "./src/*": "./src/*.js"
+    "./src/*": "./src/*.js",
+    "./src/*.js": "./src/*.js"
   },
   "files": [
     "src/**/*.js",
@@ -26,15 +27,6 @@
   ],
   "scripts": {
     "test": "jest"
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",
@@ -61,7 +53,7 @@
     "@types/node": "^22.9.3",
     "@types/resolve": "^1.20.0",
     "@types/semver": "^7.3.6",
-    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "babel-plugin-ember-template-compilation": "^3.0.0",
     "code-equality-assertions": "^1.0.1",
     "scenario-tester": "^3.0.1",
     "typescript": "^5.4.5"

@@ -102,7 +102,9 @@ export default class extends V1Addon {
       // top-level `ember` package tries to import it until 4.10. A
       // spec-compliant ES modules implementation will treat this as a parse
       // error.
-      trees.push(new FixStringLoc([packages]));
+      trees.push(new ReplaceRequire([new FixStringLoc([packages])]));
+    } else if (satisfies(this.packageJSON.version, '<5.7.0')) {
+      trees.push(new ReplaceRequire([packages]));
     }
 
     if (satisfies(this.packageJSON.version, '<5.12.0')) {
@@ -162,6 +164,173 @@ class FixStringLoc extends Plugin {
       configFile: false,
     })!.code!;
     outputFileSync(resolve(this.outputPath, 'ember', 'index.js'), outSource, 'utf8');
+  }
+}
+
+class ReplaceRequire extends Plugin {
+  build() {
+    updateFileWithTransform(this, 'ember/index.js', function (babel: typeof Babel) {
+      const { types: t } = babel;
+
+      function createLoader() {
+        return t.objectExpression([
+          t.objectMethod(
+            'get',
+            t.identifier('require'),
+            [],
+            t.blockStatement([
+              t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('require'))),
+            ])
+          ),
+          t.objectMethod(
+            'get',
+            t.identifier('define'),
+            [],
+            t.blockStatement([
+              t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('define'))),
+            ])
+          ),
+          t.objectMethod(
+            'get',
+            t.identifier('registry'),
+            [],
+
+            t.blockStatement([
+              t.returnStatement(
+                t.logicalExpression(
+                  '??',
+                  t.optionalMemberExpression(
+                    t.memberExpression(t.identifier('globalThis'), t.identifier('requirejs')),
+                    t.identifier('entries'),
+                    false,
+                    true
+                  ),
+                  t.optionalMemberExpression(
+                    t.memberExpression(t.identifier('globalThis'), t.identifier('require')),
+                    t.identifier('entries'),
+                    false,
+                    true
+                  )
+                )
+              ),
+            ])
+          ),
+        ]);
+      }
+
+      return {
+        visitor: {
+          CallExpression(path: NodePath<Babel.types.CallExpression>) {
+            if (
+              path.node.callee.type === 'Identifier' &&
+              (path.node.callee.name === 'has' || path.node.callee.name === 'require') &&
+              path.node.arguments[0].type === 'StringLiteral' &&
+              path.node.arguments[0].value === 'ember-testing'
+            ) {
+              path.replaceWith(t.identifier('EmberTestingImpl'));
+            }
+          },
+          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
+            if (path.node.source.value === 'require') {
+              path.replaceWith(
+                t.importDeclaration(
+                  [t.importSpecifier(t.identifier('EmberTestingImpl'), t.identifier('_impl'))],
+                  t.stringLiteral('@ember/test')
+                )
+              );
+            }
+          },
+          VariableDeclaration(path: NodePath<Babel.types.VariableDeclaration>) {
+            if (
+              path.node.declarations[0].id.type === 'Identifier' &&
+              path.node.declarations[0].id.name === 'PartialEmber' &&
+              path.node.declarations[0].init!.type === 'ObjectExpression'
+            ) {
+              const declaration = path.node.declarations[0];
+              const loader = (declaration.init! as Babel.types.ObjectExpression).properties.find(
+                p => (p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name) === '__loader'
+              );
+              (loader as Babel.types.ObjectProperty).value = createLoader();
+            }
+          },
+          AssignmentExpression(path: NodePath<Babel.types.AssignmentExpression>) {
+            if (
+              path.node.left.type === 'MemberExpression' &&
+              path.node.left.object.type === 'Identifier' &&
+              path.node.left.object.name === 'Ember' &&
+              path.node.left.property.type === 'Identifier' &&
+              path.node.left.property.name === '__loader'
+            ) {
+              path.node.right = createLoader();
+            }
+          },
+        },
+      };
+    });
+
+    replaceFile(
+      this,
+      '@ember/test/adapter.js',
+      `import { Adapter } from 'ember-testing';
+      export default Adapter;`
+    );
+
+    replaceFile(
+      this,
+      '@ember/test/index.js',
+      `export let registerAsyncHelper;
+export let registerHelper;
+export let registerWaiter;
+export let unregisterHelper;
+export let unregisterWaiter;
+export let _impl;
+
+let testingNotAvailableMessage = () => {
+  throw new Error('Attempted to use test utilities, but \`ember-testing\` was not included');
+};
+
+registerAsyncHelper = testingNotAvailableMessage;
+registerHelper = testingNotAvailableMessage;
+registerWaiter = testingNotAvailableMessage;
+unregisterHelper = testingNotAvailableMessage;
+unregisterWaiter = testingNotAvailableMessage;
+
+export function registerTestImplementaiton(impl) {
+  let { Test } = impl;
+  registerAsyncHelper = Test.registerAsyncHelper;
+  registerHelper = Test.registerHelper;
+  registerWaiter = Test.registerWaiter;
+  unregisterHelper = Test.unregisterHelper;
+  unregisterWaiter = Test.unregisterWaiter;
+  _impl = impl;
+}`
+    );
+
+    replaceFile(
+      this,
+      'ember-testing/index.js',
+      `export * from './lib/public-api';
+import * as EmberTesting from './lib/public-api';
+import { registerTestImplementaiton } from '@ember/test';
+
+
+registerTestImplementaiton(EmberTesting);`
+    );
+
+    replaceFile(
+      this,
+      'ember-testing/lib/public-api.js',
+      `
+export { default as Test } from './test';
+export { default as Adapter } from './adapters/adapter';
+export { default as setupForTesting } from './setup_for_testing';
+export { default as QUnitAdapter } from './adapters/qunit';
+
+import './ext/application';
+import './ext/rsvp'; // setup RSVP + run loop integration
+import './helpers'; // adds helpers to helpers object in Test
+import './initializers'; // to setup initializer`
+    );
   }
 }
 
@@ -242,6 +411,10 @@ function updateFileWithTransform(
   file: string,
   transformFunction: Babel.PluginItem | Babel.PluginItem[]
 ) {
+  // only update the file if it exists - this helps the codemods to work across many different versions
+  if (!existsSync(resolve(context.inputPaths[0], file))) {
+    return;
+  }
   let inSource = readFileSync(resolve(context.inputPaths[0], file), 'utf8');
 
   let plugins = Array.isArray(transformFunction) ? transformFunction : [transformFunction];
@@ -250,6 +423,10 @@ function updateFileWithTransform(
     configFile: false,
   })!.code!;
   outputFileSync(resolve(context.outputPath, file), outSource, 'utf8');
+}
+
+function replaceFile(context: Plugin, file: string, content: string) {
+  outputFileSync(resolve(context.outputPath, file), content, 'utf8');
 }
 
 class FixCycleImports extends Plugin {
@@ -297,6 +474,15 @@ class FixCycleImports extends Plugin {
             if (path.node.source.value === '@ember/array') {
               path.node.source = t.stringLiteral('@ember/array/make');
               path.node.specifiers = [t.importDefaultSpecifier(t.identifier('makeArray'))];
+            }
+
+            if (path.node.source.value === '@ember/-internals/runtime') {
+              path.replaceWith(
+                t.importDeclaration(
+                  [t.importSpecifier(t.identifier('ActionHandler'), t.identifier('default'))],
+                  t.stringLiteral('@ember/-internals/runtime/lib/mixins/action_handler')
+                )
+              );
             }
           },
         },

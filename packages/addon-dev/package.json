@@ -1,6 +1,6 @@
 {
   "name": "@embroider/addon-dev",
-  "version": "8.0.0-alpha.5",
+  "version": "8.1.0",
   "description": "Utilities for addon authors",
   "repository": {
     "type": "git",
@@ -33,15 +33,6 @@
       "optional": true
     }
   },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
     "@embroider/core": "workspace:^",
     "@rollup/pluginutils": "^5.1.0",
@@ -55,7 +46,7 @@
   },
   "devDependencies": {
     "@embroider/test-support": "workspace:*",
-    "@glimmer/syntax": "^0.84.2",
+    "@glimmer/syntax": "^0.94.9",
     "@glint/core": "^1.5.0",
     "@glint/template": "^1.5.0",
     "@glint/environment-ember-loose": "^1.5.0",

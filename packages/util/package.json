@@ -1,6 +1,7 @@
 {
   "name": "@embroider/util",
   "version": "1.14.0-alpha.2",
+  "private": true,
   "description": "Utilities for app and addon authors.",
   "keywords": [
     "ember-addon"
@@ -25,15 +26,6 @@
     "test:ember": "cross-env EMBROIDER_TEST_SETUP_FORCE=embroider EMBROIDER_TEST_SETUP_OPTIONS=optimized ember test --test-port=0",
     "test:classic": "cross-env EMBROIDER_TEST_SETUP_FORCE=classic ember test --test-port=0",
     "test:ember-compatibility": "ember try:each"
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "@embroider/macros": "workspace:^",

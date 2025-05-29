@@ -1,6 +1,6 @@
 {
   "name": "@embroider/babel-loader-9",
-  "version": "4.0.0-alpha.2",
+  "version": "4.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -8,15 +8,6 @@
   },
   "license": "MIT",
   "main": "index.js",
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
     "@babel/core": "^7.14.5",
     "babel-loader": "^9.0.0"

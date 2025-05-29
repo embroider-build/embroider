@@ -1,6 +1,6 @@
 {
   "name": "@embroider/core",
-  "version": "4.0.0-alpha.9",
+  "version": "4.1.0",
   "private": false,
   "description": "A build system for EmberJS applications.",
   "repository": {
@@ -18,23 +18,27 @@
       ]
     }
   },
+  "exports": {
+    ".": {
+      "default": "./dist/src/index.js",
+      "types": "./dist/src/index.d.ts"
+    },
+    "./package.json": "./package.json",
+    "./virtual": {
+      "types": "./types/virtual/index.d.ts"
+    },
+    "./src/*": {
+      "default": "./dist/src/*.js",
+      "types": "./dist/src/*.d.ts"
+    },
+    "./*": "./dist/src/*.js"
+  },
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map",
+    "dist",
     "types"
   ],
   "scripts": {
     "test": "jest"
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "@babel/core": "^7.14.5",
@@ -44,7 +48,7 @@
     "@embroider/reverse-exports": "workspace:*",
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
-    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "babel-plugin-ember-template-compilation": "^3.0.0",
     "broccoli-node-api": "^1.7.0",
     "broccoli-persistent-filter": "^3.1.2",
     "broccoli-plugin": "^4.0.7",
@@ -68,7 +72,7 @@
   "devDependencies": {
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
-    "@glimmer/syntax": "^0.84.2",
+    "@glimmer/syntax": "^0.94.9",
     "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
     "@types/babel__traverse": "^7.18.5",

@@ -5,173 +5,57 @@
 [github-actions-badge]: https://github.com/embroider-build/embroider/workflows/CI/badge.svg
 [github-actions-ci-url]: https://github.com/embroider-build/embroider/actions?query=workflow%3ACI
 
-This repo implements a new three-stage build system for Ember apps:
-
-1. The first stage achieves backward compatibility by building each classic
-   Ember Addon package into a new **v2 package format**. This makes each package
-   much more static and analyzable. The eventual goal is to do less and less
-   work in this stage, as addons publish to NPM natively in v2 format.
-
-2. The second stage takes a collection of v2-formatted addons plus an
-   application and "compiles out" all Ember-specific conventions, such that the
-   output can be understood by any tool that can handle standards-compliant
-   Javascript. This stage is setup with good inputs and outputs that make it
-   much easier to benefit from incremental improvements to our dependency
-   analysis. The immediate goal is not to implement every possible optimization,
-   but rather to make a good place for those optimizations to happen.
-
-3. The third stage ("final packaging") can be handled by existing tools like
-   Webpack, Rollup, or Parcel with only a small amount of configuration. Not
-   because we want to force every Ember developer to choose and configure one of
-   these tools! But because a stable, standards-compliant API between stage 2
-   and 3 improves our ability to innovate and experiment with taking the best
-   parts of wider JS ecosystem tooling.
+This repo implements the Embroider translation layer and resolver that is used to allow modern build tooling with Ember Apps.
 
 You can read more about the motivation and key ideas in the [intro to the SPEC](docs/spec.md).
 
 ## Status / Should I Use It?
 
-Several large, heavily-tested Ember apps are shipping to production with Embroider. So if you are excited to adopt Embroider, it is a reasonable choice. The main risks to be aware of if you choose to use Embroider in production are:
+There is an accepted RFC that will [make the Embroider build system the default for all newly generated Ember apps](https://rfcs.emberjs.com/id/0977-v2-app-format) i.e. when you run `ember new my-app` it will generate an Ember app that is built with [Vite](https://vite.dev) with this Embroider resolver installed as a plugin.
 
-- you're likely to discover some Ember addons don't work or break your build
-- Embroider's own configuration options are subject to change, so you'll need
-  to read the CHANGELOG.md when updating the Embroider packages.
+If you don't want to wait until that RFC has been fully implemented you can try out the [ember-vite-codemod](https://github.com/mainmatter/ember-vite-codemod) which will guide you through updating your existing applications or you can try the current [draft blueprint for an Embroider based Ember ember app](https://github.com/embroider-build/app-blueprint) and follow the instructions on that README.
 
-Alternatively, it is totally safe to stick with the traditional build pipeline and wait for the official cutover point when EmberCLI starts generating new apps with Embroider by default.
+Embroider with Vite is considered production ready so you should try it out and let us know if you discover any issues with your Applications
 
 ## For Addon Authors
 
-Addon authors should see [ADDON-AUTHOR-GUIDE.md](docs/addon-author-guide.md) for advice on how to get their existig addons ready for Embroider. 
+Addon authors should see [ADDON-AUTHOR-GUIDE.md](docs/addon-author-guide.md) for advice on how to get their existing addons ready for Embroider. 
 
 The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the official spec for the packages that Embroider natively handles. Common patterns and best practices for authoring these have been collected in the [v2 addon FAQs](./docs/v2-faq.md). For creating a new v2 addon from scratch, we recommend using our [v2 addon blueprint](https://github.com/embroider-build/addon-blueprint). For porting existing v1 addons, we refer to the [v2 porting guide](./docs/porting-addons-to-v2.md).
-
-## How to try it
-
-1. Add dependencies:
-
-   ```
-   yarn add --dev @embroider/core @embroider/compat @embroider/webpack webpack
-   ```
-
-2. Edit `ember-cli-build.js`:
-
-   ```diff
-   -return app.toTree();
-   +const { Webpack } = require('@embroider/webpack');
-   +return require('@embroider/compat').compatBuild(app, Webpack);
-   ```
-
-   Alternatively, if you are passing optional extra broccoli trees into
-   `app.toTree()`, you can rewrite like:
-
-   ```diff
-   -return app.toTree(extraTreeHere);
-   +const { Webpack } = require('@embroider/webpack');
-   +return require('@embroider/compat').compatBuild(app, Webpack, {
-   +  extraPublicTrees: [extraTreeHere]
-   +});
-   ```
-
-3. Use `ember serve`, `ember test`, and `ember build` as usual.
 
 ## Options
 
 You can pass options into Embroider by passing them into the `compatBuild` function like:
 
 ```js
-return require('@embroider/compat').compatBuild(app, Webpack, {
-  // staticAddonTestSupportTrees: true,
-  // staticAddonTrees: true,
-  // staticInvokables: true,
-  // staticEmberSource: true,
-  // splitAtRoutes: ['route.name'], // can also be a RegExp
-  // packagerOptions: {
-  //    webpackConfig: { }
-  // }
-});
+// ember-cli-build.js
+const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const { compatBuild } = require('@embroider/compat');
+
+module.exports = async function (defaults) {
+  const { buildOnce } = await import('@embroider/vite');
+  let app = new EmberApp(defaults, {});
+
+  return compatBuild(app, buildOnce, {
+    staticInvokables: true, // this is the default so you don't need to set it
+    splitAtRoutes: ['route.name'], // can also be a RegExp
+  );
+};
 ```
 
-The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/main/packages/core/src/options.ts), [Compat Options](https://github.com/embroider-build/embroider/blob/main/packages/compat/src/options.ts), and [Webpack Options](https://github.com/embroider-build/embroider/blob/main/packages/webpack/src/options.ts).
-
-The recommended steps when introducing Embroider into an existing app are:
-
-1. First make it work with no options. This is the mode that supports maximum backward compatibility. If you're hitting errors, first look at the "Compatibility with Classic Builds" section below.
-2. Enable `staticAddonTestSupportTrees` and `staticAddonTrees` and test your application. This is usually safe, because most code in these trees gets consumed via `import` statements that we can analyze. But you might find exceptional cases where some code is doing a more dynamic thing.
-3. Enable `staticInvokables` and work to eliminate any resulting build warnings about dynamic component invocation. You may need to add `packageRules` that declare where invocations like `{{component someComponent}}` are getting `someComponent` from.
-4. Once your app is working with all of the above, you can enable `splitAtRoutes` and add the `@embroider/router` and code splitting should work. See the packages/router/README.md for details and limitations.
+The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/main/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/main/packages/compat/src/options.ts)
 
 ## Environment variables
 
 For optional features, Embroider supports the following environment variables:
 
-- `EMBROIDER_WORKING_DIRECTORY`: by default Embroider writes internal build-time artifacts like rewritten packages to `node_modules/.embroider`. In the case of running multiple builds concurrently (e.g. building for production and test in parallel) this would cause conflicts when concurrent processes try to write into the same directory. For this case you can point each Embroider process to a different directory using this environment variable. It can be an absolute file path, or relative to the application root directory. 
-
-
-## Configuring asset URLs
-
-If you are serving your assets from a different origin (like a CDN) from where your index.html content will
-be served from, you can use the publicAssetURL option to specify the base URL. In pre-Embroider Ember apps,
-this was accomplished by configuring the `fingerprint: { prepend: ... }` option handled by broccoli-asset-rev.
-
-```js
-return require('@embroider/compat').compatBuild(app, Webpack, {
-  packagerOptions: {
-    publicAssetURL: EmberApp.env() === 'production' ? 'https://your-cdn-here.com/' : '/', // This should be a URL ending in "/"
-  },
-});
-```
-
-## Template Tag Codemod
-
-Edit `ember-cli-build.js`:
-```js
-return require('@embroider/compat').templateTagCodemod(app, {
-  shouldTransformPath: (path) => { return true; },
-  nameHint: (path) => { 
-    // example path: shared/my-button
-    return path; 
-  },
-  dryRun: true,
-});
-```
-Run a normal ember build to transform your hbs templates into template tag single file components.
-Requires optimized build (static* flags to be turned on)
-
-### Options
-
-* `shouldTransformPath` - allows users to filter the templates that the code mod would run on
-* `nameHint` - optional function control the import name and template replacement values - valid JS identifier required or it will be coerced into one
-* `dryRun` - option can be used to obtain a summary of the changed the build would perform and which files it would act upon
-
-### Limitations
-
-* App templates only
-* `@embroider/compat` >= 3.6.0
+- `EMBROIDER_WORKING_DIRECTORY`: by default Embroider writes internal build-time artifacts like rewritten packages to `node_modules/.embroider`. In the case of running multiple builds concurrently (e.g. building for production and test in parallel) this would cause conflicts when concurrent processes try to write into the same directory. For this case you can point each Embroider process to a different directory using this environment variable. It can be an absolute file path, or relative to the application root directory.
 
 ## Compatibility
 
 ### Ember version
 
 Requires Ember 3.28.11 or greater
-
-### With Classic Builds
-
-While we have a strong emphasis on backward compatibility with classic builds, there are a few places where you may need to make changes to your code:
-
-#### Lazy Engines
-
-If you're using lazy loaded engines, you need to use `@embroider/router`, which is a drop-in replacement for `@ember/routing/router`:
-
-```diff
--import EmberRouter from '@ember/routing/router';
-+import EmberRouter from '@embroider/router';
-```
-
-See [@embroider/router README](./packages/router/README.md) for more details.
-
-## Analyzing Bundles
-
-see [`ANALYZING.md`](docs/analyzing.md)
 
 ## Contributing
 

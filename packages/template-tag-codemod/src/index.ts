@@ -78,7 +78,18 @@ export interface Options {
   // which is public API that you may choose to call directly (remember you may
   // need to install `@embroider/template-tag-codemod` as a dependency to access
   // it in this way)
-  renamingRules?: 'string';
+  renamingRules?: string;
+
+  /**
+   * Path to an ES module whose default export implements a function like
+   *
+   *    (path: string, filename: string, resolve: (path: string, filename: string) => string) => string;
+   *
+   * Return a string to provide a resolvable import path, based on the original import `path` and optionally
+   * the `filename` where the import appears. Return `undefined` to fall back to the default behavior or call
+   * `resolve` to use that default implementation.
+   */
+  customResolver?: string;
 
   /**
    * This allows you to reuse the ember-prebuild if you are running the codemod multiple times.
@@ -118,7 +129,7 @@ export function optionsWithDefaults(options?: Options): OptionsWithDefaults {
   );
 }
 
-type OptionsWithDefaults = Required<Options>;
+type OptionsWithDefaults = Omit<Required<Options>, 'customResolver'> & Pick<Options, 'customResolver'>;
 
 type Result =
   | { context: string; status: 'success' }
@@ -248,14 +259,31 @@ async function locateInvokables(
 }
 
 async function resolveVirtualImport(filename: string, request: string, opts: OptionsWithDefaults): Promise<string> {
-  let resolution = await resolverLoader.resolver.nodeResolve(request, filename, {
-    extensions: opts.extensions,
-  });
-  if (resolution.type === 'not_found') {
-    throw new Error(`Unable to resolve ${request} from ${filename}`);
-  } else {
-    return await chooseImport(filename, resolution, request, 'default', opts);
+  let resolve = async (path: string, filename: string) => {
+    let resolution = await resolverLoader.resolver.nodeResolve(path, filename, {
+      extensions: opts.extensions,
+    });
+    if (resolution.type !== 'not_found') {
+      return await chooseImport(filename, resolution, path, 'default', opts);
+    }
+  };
+
+  if (opts.customResolver) {
+    let customResolver = (await new ModuleImporter().import(opts.customResolver)).default;
+    let customResult = await customResolver(request, filename, resolve);
+
+    if (customResult) {
+      return customResult;
+    }
   }
+
+  let resolvedImport = await resolve(request, filename);
+
+  if (!resolvedImport) {
+    throw new Error(`Unable to resolve ${request} from ${filename}`);
+  }
+
+  return resolvedImport;
 }
 
 export async function processRouteTemplate(filename: string, opts: OptionsWithDefaults): Promise<Result> {
@@ -367,7 +395,7 @@ export async function processComponent(
     let jsSource = readFileSync(jsPath, 'utf8');
     let ast = await parseJS(jsPath, jsSource);
     let edits = deleteImports(ast);
-    let { componentBody, templates } = await locateTemplates(ast, jsPath);
+    let { component, templates } = await locateTemplates(ast, jsPath);
     if (templates.length > 0) {
       return {
         context: `component: ${hbsPath}`,
@@ -375,29 +403,63 @@ export async function processComponent(
         messages: [`unimplemented: component JS that already has some other templates in it`],
       };
     }
-    if (!componentBody) {
+    if (!component) {
       return {
         context: `component: ${hbsPath}`,
         status: 'failure',
         messages: [`could not locate where to insert template into ${jsPath}`],
       };
     }
-    if ('problem' in componentBody) {
-      return { context: `component: ${hbsPath}`, status: 'failure', messages: [componentBody.problem] };
+    if ('problem' in component) {
+      return { context: `component: ${hbsPath}`, status: 'failure', messages: [component.problem] };
     }
-    ast = await insertComponentTemplate(ast, componentBody.loc, hbsSource);
+
+    if ('bodyNode' in component) {
+      ast = await insertTemplateIntoComponentClass(ast, component.loc, hbsSource);
+    } else {
+      ast = await replaceTemplateOnlyCallWithTemplate(ast, component.loc, hbsSource);
+    }
+
     let invokables = await locateInvokables(jsPath, ast, opts);
     ast = await runResolverTransform(ast, jsPath, invokables, undefined, opts);
     let finalTemplates = await extractTemplates(ast, jsPath);
     if (finalTemplates.length !== 1) {
       throw new Error(`bug: should see one templates, not ${finalTemplates.length}`);
     }
-    let index = opts.templateInsertion === 'beginning' ? componentBody.loc.start + 1 : componentBody.loc.end - 1;
-    edits.push({ start: index, end: index, replacement: `<template>${finalTemplates[0].templateSource}</template>` });
+
+    const templateReplacement = `<template>${finalTemplates[0].templateSource}</template>`;
+    if ('bodyNode' in component) {
+      // Inserting into a component class body
+      let index = opts.templateInsertion === 'beginning' ? component.loc.start + 1 : component.loc.end - 1;
+      edits.push({ start: index, end: index, replacement: templateReplacement });
+    } else {
+      // Replacing a templateOnlyComponent() call, so replace the call itself
+      // with the template replacement
+      let replacement = templateReplacement;
+
+      let signatureType = component.tocNode.typeParameters?.params[0];
+      if (signatureType) {
+        // The templateOnlyComponent() call has a signature type argument, so we
+        // must be in Typescript-land. So, add an import of
+        // `TemplateOnlyComponent` and include a satisfies expression in the
+        // template replacement
+        edits.unshift({
+          start: 0,
+          end: 0,
+          replacement: `import type { TemplateOnlyComponent } from '@ember/component/template-only';`,
+        });
+        replacement = [replacement, 'satisfies', `TemplateOnlyComponent<${generate(signatureType).code}>`].join(' ');
+      }
+      edits.push({ start: component.loc.start, end: component.loc.end, replacement });
+    }
+
     edits.unshift({
       start: 0,
       end: 0,
-      replacement: extractImports(ast, path => path !== '@ember/template-compilation'),
+      replacement: extractImports(
+        ast,
+        path => path !== '@ember/template-compilation' && path !== '@ember/component/template-only'
+      ),
     });
     let newSrc = applyEdits(jsSource, edits);
     writeFileSync(jsPath.replace(/\.js$/, '.gjs').replace(/\.ts$/, '.gts'), newSrc);
@@ -445,7 +507,7 @@ async function parseJS(filename: string, src: string): Promise<types.File> {
 // syntax. This is not how we produce our final output. Rather, we're setting
 // things up so embroider's resolver transform can see the template within the
 // correct scope.
-async function insertComponentTemplate(
+async function insertTemplateIntoComponentClass(
   ast: types.File,
   loc: { start: number },
   hbsSource: string
@@ -469,6 +531,48 @@ async function insertComponentTemplate(
               ),
             ]);
             path.node.body.unshift(block);
+            didInsert = true;
+          }
+        },
+      },
+    };
+  }
+  let result = await transformFromAstAsync(ast, undefined, {
+    code: false,
+    ast: true,
+    configFile: false,
+    plugins: [inserter],
+  });
+  if (!didInsert) {
+    throw new Error(`bug: failed to insert component template`);
+  }
+  return result!.ast!;
+}
+
+// replace the `templateOnlyComponent()` expression with the template using
+// `precompileTemplate` syntax. This is not how we produce our final output.
+// Rather, we're setting things up so embroider's resolver transform can see the
+// template within the correct scope.
+async function replaceTemplateOnlyCallWithTemplate(
+  ast: types.File,
+  loc: { start: number },
+  hbsSource: string
+): Promise<types.File> {
+  let importUtil: ImportUtil;
+  let didInsert = false;
+
+  function inserter({ types: t }: typeof babel): babel.PluginObj {
+    return {
+      visitor: {
+        Program(path) {
+          importUtil = new ImportUtil(babel, path);
+        },
+        CallExpression(path) {
+          if (path.node.loc?.start.index === loc.start) {
+            let block = t.callExpression(importUtil.import(path, '@ember/template-compilation', 'precompileTemplate'), [
+              t.stringLiteral(hbsSource),
+            ]);
+            path.replaceWith(block);
             didInsert = true;
           }
         },

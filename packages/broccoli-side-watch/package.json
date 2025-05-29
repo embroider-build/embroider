@@ -1,6 +1,6 @@
 {
   "name": "@embroider/broccoli-side-watch",
-  "version": "1.1.0-alpha.2",
+  "version": "1.1.0",
   "description": "Watch changes in other folders to rebuild Ember app",
   "keywords": [
     "ember"
@@ -21,15 +21,6 @@
   },
   "author": "Balint Erdi",
   "license": "MIT",
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
     "@embroider/shared-internals": "workspace:^",
     "broccoli-merge-trees": "^4.2.0",

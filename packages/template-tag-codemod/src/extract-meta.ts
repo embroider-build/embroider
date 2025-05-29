@@ -118,38 +118,110 @@ export async function extractTemplates(ast: types.File, filename: string) {
   return meta.result;
 }
 
+interface ComponentClassLocation {
+  loc: { start: number; end: number };
+  bodyNode: types.ClassBody;
+}
+
+interface TemplateOnlyComponentLocation {
+  loc: { start: number; end: number };
+  tocNode: types.CallExpression;
+}
+
 interface LocatePluginOpts {
   templates: { start: number; end: number }[];
-  componentBody: { loc: { start: number; end: number }; node: types.ClassBody } | { problem: string } | undefined;
+  component: ComponentClassLocation | TemplateOnlyComponentLocation | { problem: string } | undefined;
 }
 
 function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePluginOpts }> {
   return {
     visitor: {
       ExportDefaultDeclaration(path, state) {
-        let dec = path.node.declaration;
-        switch (dec.type) {
-          case 'ClassDeclaration':
-          case 'ClassExpression':
-            state.opts.componentBody = { loc: extractLoc(dec.body), node: dec.body };
-            return;
-          case 'CallExpression':
-            let callee = dec.callee;
-            if (
-              callee.type === 'MemberExpression' &&
-              callee.property.type === 'Identifier' &&
-              callee.property.name === 'extend'
-            ) {
-              state.opts.componentBody = {
-                problem: `This codemod does not support old styles Component.extend() syntax. Convert to a native class first.`,
-              };
-              return;
+        // We need to resolve the path to the exported value, so start with the
+        // export declaration, which might be the value in simple cases like
+        //
+        // ```js
+        // export default class Foo {};
+        // ```
+        //
+        // or
+        //
+        // ```ts
+        // export default templateOnlyComponent<FooSignature>();
+        // ```
+        let valuePath: Babel.NodePath<unknown> = path.get('declaration');
+
+        if (valuePath.isIdentifier()) {
+          // This is an export of an identifier, not the value, e.g.
+          //
+          // ```js
+          // class Foo {};
+          // export default Foo;
+          // ```
+          //
+          // or
+          //
+          // ```ts
+          // const Foo = templateOnlyComponent<FooSignature>();
+          // export default Foo;
+          // ```
+          let binding = path.scope.getBinding(valuePath.node.name);
+          if (!binding) {
+            throw new Error(`bug: unable to get binding for identifier: ${valuePath.node.name}`);
+          }
+
+          if (binding.path.isVariableDeclarator()) {
+            // It's a variable declarator, e.g.
+            //
+            // ```ts
+            // const Foo = templateOnlyComponent<FooSignature>();
+            // export default Foo;
+            // ```
+            valuePath = binding.path.get('init');
+            if (!valuePath) {
+              throw new Error(`bug: unable to get init for variable declarator: ${binding.path}`);
             }
-          default:
-            state.opts.componentBody = {
-              problem: `The default export from this JS file is not something we understand. Found ${dec.type}`,
-            };
+          } else {
+            // It's something else, e.g.
+            //
+            // ```js
+            // class Foo {};
+            // export default Foo;
+            // ```
+            //
+            // (we'll handle the possible cases below)
+            valuePath = binding.path;
+          }
         }
+
+        if (valuePath.isClassDeclaration() || valuePath.isClassExpression()) {
+          state.opts.component = { loc: extractLoc(valuePath.node.body), bodyNode: valuePath.node.body };
+          return;
+        } else if (valuePath.isCallExpression()) {
+          let callee = valuePath.get('callee');
+          if (
+            callee.node.type === 'MemberExpression' &&
+            callee.node.property.type === 'Identifier' &&
+            callee.node.property.name === 'extend'
+          ) {
+            state.opts.component = {
+              problem: `This codemod does not support old styles Component.extend() syntax. Convert to a native class first.`,
+            };
+            return;
+          }
+
+          if (callee.referencesImport('@ember/component/template-only', 'default')) {
+            state.opts.component = { loc: extractLoc(valuePath.node), tocNode: valuePath.node };
+            return;
+          }
+        } else if (valuePath.isTSInterfaceDeclaration()) {
+          // ignoring type-only export
+          return;
+        }
+
+        state.opts.component = {
+          problem: `The default export from this JS file is not something we understand. Found ${valuePath.type}`,
+        };
       },
       CallExpression(path, state) {
         if (path.get('callee').referencesImport('@ember/template-compilation', 'precompileTemplate')) {
@@ -161,13 +233,13 @@ function locatePlugin(_babel: typeof Babel): Babel.PluginObj<{ opts: LocatePlugi
 }
 
 export async function locateTemplates(ast: types.File, filename: string): Promise<LocatePluginOpts> {
-  const meta: LocatePluginOpts = { componentBody: undefined, templates: [] };
+  const meta: LocatePluginOpts = { component: undefined, templates: [] };
   await transformFromAstAsync(ast, undefined, {
     configFile: false,
     filename,
     plugins: [[locatePlugin, meta]],
   });
-  if (!meta.componentBody) {
+  if (!meta.component) {
     throw new Error(`failed to locate component template insertion point in ${filename}`);
   }
   return meta;

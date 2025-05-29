@@ -24,11 +24,13 @@ export default function rollupHbsPlugin({
       }
 
       let resolution = await this.resolve(source, importer, {
+        ...options,
         skipSelf: true,
       });
 
       if (!resolution && extname(source) === '') {
         resolution = await this.resolve(source + '.hbs', importer, {
+          ...options,
           skipSelf: true,
         });
       }
@@ -37,6 +39,7 @@ export default function rollupHbsPlugin({
         let hbsSource = syntheticJStoHBS(source);
         if (hbsSource) {
           resolution = await this.resolve(hbsSource, importer, {
+            ...options,
             skipSelf: true,
             custom: {
               embroider: {

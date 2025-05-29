@@ -1,60 +1,57 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.0.0-alpha.5"
+      "oldVersion": "8.1.0"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "2.0.0-alpha.2"
+      "oldVersion": "1.10.0"
     },
     "@embroider/babel-loader-9": {
-      "oldVersion": "4.0.0-alpha.2"
+      "oldVersion": "4.0.0"
     },
     "@embroider/broccoli-side-watch": {
-      "oldVersion": "1.1.0-alpha.2"
+      "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "minor",
-      "oldVersion": "4.0.0-alpha.9",
-      "newVersion": "4.0.0-alpha.10",
-      "tagName": "alpha",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.0"
     },
     "@embroider/config-meta-loader": {
-      "oldVersion": "1.0.0-alpha.3"
-    },
-    "@embroider/core": {
-      "oldVersion": "4.0.0-alpha.9"
-    },
-    "@embroider/hbs-loader": {
-      "oldVersion": "4.0.0-alpha.2"
-    },
-    "@embroider/macros": {
-      "oldVersion": "1.17.0-alpha.7"
-    },
-    "@embroider/reverse-exports": {
-      "oldVersion": "0.1.1-alpha.2"
-    },
-    "@embroider/router": {
-      "oldVersion": "3.0.0-alpha.2"
-    },
-    "@embroider/shared-internals": {
-      "oldVersion": "3.0.0-alpha.5"
-    },
-    "@embroider/template-tag-codemod": {
       "oldVersion": "1.0.0"
     },
-    "@embroider/util": {
-      "oldVersion": "1.14.0-alpha.2"
+    "@embroider/core": {
+      "oldVersion": "4.1.0"
+    },
+    "@embroider/hbs-loader": {
+      "oldVersion": "4.0.0"
+    },
+    "@embroider/macros": {
+      "oldVersion": "1.18.0"
+    },
+    "@embroider/reverse-exports": {
+      "oldVersion": "0.1.2"
+    },
+    "@embroider/router": {
+      "oldVersion": "3.0.1"
+    },
+    "@embroider/shared-internals": {
+      "oldVersion": "3.0.0"
+    },
+    "@embroider/template-tag-codemod": {
+      "impact": "patch",
+      "oldVersion": "1.3.0",
+      "newVersion": "1.3.1",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :memo: Documentation"
+        }
+      ],
+      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
     },
     "@embroider/vite": {
-      "oldVersion": "1.0.0-alpha.11"
+      "oldVersion": "1.1.5"
     }
   },
-  "description": "## Release (2025-03-14)\n\n* @embroider/compat 4.0.0-alpha.10 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/compat`\n  * [#2379](https://github.com/embroider-build/embroider/pull/2379) fix @ember/object module cycles for ember 5.8 (and potentially older) ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
+  "description": "## Release (2025-05-21)\n\n* @embroider/template-tag-codemod 1.3.1 (patch)\n\n#### :memo: Documentation\n* `@embroider/template-tag-codemod`\n  * [#2489](https://github.com/embroider-build/embroider/pull/2489) [template-tag-codemod] Add version to `--nativeLexicalThis` & update ReadMe ([@mkszepp](https://github.com/mkszepp))\n\n#### Committers: 1\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
 }

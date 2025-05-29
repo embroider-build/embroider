@@ -1,6 +1,6 @@
 {
   "name": "@embroider/router",
-  "version": "3.0.0-alpha.2",
+  "version": "3.0.1",
   "description": "Lazy loading router",
   "keywords": [
     "ember-addon"
@@ -29,17 +29,8 @@
     "test": "echo 'A v2 addon does not have tests, run tests in test-app'",
     "prepack": "rollup --config"
   },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
-  },
   "dependencies": {
-    "@ember/test-waiters": "^3.0.2",
+    "@ember/test-waiters": "^3.0.2 || ^4.0.0",
     "@embroider/addon-shim": "workspace:^"
   },
   "devDependencies": {

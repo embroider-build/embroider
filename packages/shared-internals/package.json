@@ -1,6 +1,6 @@
 {
   "name": "@embroider/shared-internals",
-  "version": "3.0.0-alpha.5",
+  "version": "3.0.0",
   "private": false,
   "description": "Utilities shared among the other embroider packages",
   "repository": {
@@ -25,15 +25,6 @@
   ],
   "scripts": {
     "test": "jest"
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "babel-import-util": "^3.0.1",

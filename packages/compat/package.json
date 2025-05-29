@@ -1,6 +1,6 @@
 {
   "name": "@embroider/compat",
-  "version": "4.0.0-alpha.10",
+  "version": "4.1.0",
   "private": false,
   "description": "Backward compatibility layer for the Embroider build system.",
   "repository": {
@@ -10,24 +10,18 @@
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./src/*": "./dist/src/*.js",
+    "./*": "./dist/src/*.js"
+  },
   "files": [
     "babel.js",
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist/src/"
   ],
   "scripts": {
     "test": "jest"
-  },
-  "release-plan": {
-    "semverIncrementAs": {
-      "major": "prerelease",
-      "minor": "prerelease",
-      "patch": "prerelease"
-    },
-    "semverIncrementTag": "alpha",
-    "publishTag": "alpha"
   },
   "dependencies": {
     "@babel/code-frame": "^7.14.5",
@@ -44,7 +38,8 @@
     "assert-never": "^1.1.0",
     "babel-import-util": "^3.0.1",
     "babel-plugin-debug-macros": "^1.0.2",
-    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "babel-plugin-ember-template-compilation-2": "npm:babel-plugin-ember-template-compilation@^2.4.0",
+    "babel-plugin-ember-template-compilation": "^3.0.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "babylon": "^6.18.0",
     "bind-decorator": "^1.0.11",
@@ -78,7 +73,7 @@
     "@embroider/core": "workspace:^",
     "@embroider/sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
-    "@glimmer/syntax": "^0.84.3",
+    "@glimmer/syntax": "^0.94.9",
     "@glint/template": "^1.0.0",
     "@types/babel__core": "^7.1.14",
     "@types/babel__generator": "^7.6.2",

@@ -38,8 +38,8 @@
     },
     "@embroider/template-tag-codemod": {
       "impact": "patch",
-      "oldVersion": "1.3.0",
-      "newVersion": "1.3.1",
+      "oldVersion": "1.3.1",
+      "newVersion": "1.3.2",
       "tagName": "latest",
       "constraints": [
         {
@@ -53,5 +53,5 @@
       "oldVersion": "1.1.5"
     }
   },
-  "description": "## Release (2025-05-21)\n\n* @embroider/template-tag-codemod 1.3.1 (patch)\n\n#### :memo: Documentation\n* `@embroider/template-tag-codemod`\n  * [#2489](https://github.com/embroider-build/embroider/pull/2489) [template-tag-codemod] Add version to `--nativeLexicalThis` & update ReadMe ([@mkszepp](https://github.com/mkszepp))\n\n#### Committers: 1\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
+  "description": "## Release (2025-05-29)\n\n* @embroider/template-tag-codemod 1.3.2 (patch)\n\n#### :memo: Documentation\n* `@embroider/template-tag-codemod`\n  * [#2495](https://github.com/embroider-build/embroider/pull/2495) Fix merge-history commands (remove `) ([@mkszepp](https://github.com/mkszepp))\n* Other\n  * [#2492](https://github.com/embroider-build/embroider/pull/2492) Update porting-addons-to-v2.md ([@x-m-el](https://github.com/x-m-el))\n\n#### Committers: 2\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n- [@x-m-el](https://github.com/x-m-el)\n"
 }

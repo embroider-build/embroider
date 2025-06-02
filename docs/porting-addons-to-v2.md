@@ -283,5 +283,6 @@ module.exports = addonV1Shim(__dirname);
     ```
 16. In the `addon` directory, run `pnpm start` to start building the addon.
 17. In a separate shell, you should be able to go into the `test-app` directory and run `pnpm start` or `pnpm test` and see your tests passing.
+18. when running the `addon` and `test-app` together, the addon will automatically rebuild for changes. if using vite, the new build is automatically picked up by the test-app too. However, if using non-embroider, you need to configure [autoImport.watchDependencies]([embroider-build/ember-auto-import#customizing-build-behavior](https://github.com/embroider-build/ember-auto-import#customizing-build-behavior)). If using embroider-webpack, you need to configure the [broccoli-side-watch](https://www.npmjs.com/package/@embroider/broccoli-side-watch) tool.
 
 When all tests are passing, you have a fully-working V2 addon and you're ready to release it. To publish, you will run `npm publish` in the `addon` directory.

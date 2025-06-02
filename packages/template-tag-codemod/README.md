@@ -98,6 +98,12 @@ In these cases, the codemod's output is controlled by `--defaultFormat`.
 
 Pass `--defaultFormat gts` instead if you prefer to produce typescript. Also see the interactive docs for `--routeTemplateSignature` and `--templateOnlyComponentSignature` if you want to customize the default type signatures emitted by the codemod. 
 
+### --templateInsertion
+
+Determines whether the template is put at the beginning or end of the `.gjs` or `gts` file.
+
+`--templateInsertion beginning` is the default. 
+
 ## Prerequisites
 
 1. Your build must support Template Tag. 

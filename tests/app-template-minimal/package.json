@@ -8,7 +8,7 @@
   "author": "",
   "type": "module",
   "imports": {
-    "#/*": "./src/*",
+    "#src/*": "./src/*",
     "#config": "./src/config.js",
     "#components/*": "./src/components/*"
   },
@@ -28,14 +28,12 @@
     "@babel/core": "^7.19.3",
     "@babel/plugin-transform-runtime": "^7.25.4",
     "@babel/runtime": "^7.25.6",
-    "@ember/optional-features": "^2.0.0",
     "@ember/test-helpers": "^5.0.0",
     "@embroider/core": "workspace:*",
     "@embroider/macros": "workspace:*",
     "@embroider/router": "workspace:*",
     "@embroider/vite": "workspace:*",
     "@glimmer/component": "^2.0.0",
-    "@glimmer/tracking": "^1.1.2",
     "@rollup/plugin-babel": "^5.3.1",
     "babel-plugin-ember-template-compilation": "^3.0.0",
     "decorator-transforms": "^2.0.0",
@@ -55,9 +53,5 @@
   },
   "ember": {
     "edition": "octane"
-  },
-  "ember-addon": {
-    "type": "app",
-    "version": 2
   }
 }

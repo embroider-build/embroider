@@ -145,6 +145,24 @@ wideAppScenarios
             export default class extends JSONAPISerializer {};
           `,
         },
+        services: {
+          'debug.js': `
+            import Service from '@ember/service';
+            import { assert, deprecate, runInDebug } from '@ember/debug';
+
+            export default class extends Service {
+              assert(desc, test) {
+                assert(desc, test);
+              }
+              deprecate(message, test, { id, until, since, for: source }) {
+                deprecate(message, test, { id, until, since, for: source });
+              }
+              runInDebug(func) {
+                runInDebug(func);
+              }
+            };
+          `,
+        },
         templates: {
           'components-example.hbs': `
             {{! this uses a component from ember-bootstrap }}
@@ -293,6 +311,62 @@ wideAppScenarios
                   assert.dom('[data-target]').hasAttribute('data-it-worked');
                 });
               });`,
+          },
+        },
+        unit: {
+          services: {
+            'debug-test.js': `
+              import { module, test } from 'qunit';
+              import { setupTest } from '../../helpers';
+              import { registerDeprecationHandler } from '@ember/debug';
+
+              // https://vite.dev/guide/env-and-mode.html#built-in-constants
+              const isProduction = 'production' === import.meta.env.MODE;
+
+              module('Unit | Service | debug', function(hooks) {
+                setupTest(hooks);
+
+                test('asserts only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  const doAssert = () => service.assert('debug-test assertion', false);
+                  if (isProduction) {
+                    doAssert();
+                    assert.ok(true, 'assert ignored');
+                  } else {
+                    assert.throws(doAssert, /Assertion Failed: debug-test assertion/, 'service.assert throws');
+                  }
+                });
+
+                test('runInDebug only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  const DID_NOT_RUN = 'runInDebug did NOT run';
+                  const DID_RUN = 'runInDebug DID run';
+
+                  let result = DID_NOT_RUN;
+                  service.runInDebug(() => result = DID_RUN);
+                  assert.strictEqual(result, isProduction ? DID_NOT_RUN : DID_RUN, 'service.runInDebug');
+                });
+
+                test('deprecate only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  const DEPRECATION_FOR = 'unit/services/debug-test';
+
+                  const deprecations = [];
+                  registerDeprecationHandler((message, options, next) => {
+                    if (options.for === DEPRECATION_FOR) {
+                      deprecations.push(message, options);
+                    } else {
+                      next(message, options);
+                    }
+                  });
+
+                  const message = 'debug-test deprecation';
+                  const options = { id: 'debug-test-deprecation', until: '999999.0.0', since: '3.28', for: DEPRECATION_FOR };
+                  service.deprecate(message, false, options);
+                  assert.deepEqual(deprecations, isProduction ? [] : [ message, options ], 'service.deprecate')
+                });
+              });
+            `
           },
         },
         helpers: {

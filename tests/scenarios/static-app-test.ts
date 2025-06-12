@@ -334,6 +334,7 @@ wideAppScenarios
                     assert.ok(true, 'assert ignored');
                   } else {
                     assert.throws(doAssert, /Assertion Failed: debug-test assertion/, 'service.assert throws');
+                    assert.strictEqual(isProduction, service.assert.toString().endsWith('){}'), 'service.assert is empty');
                   }
                 });
 
@@ -345,6 +346,7 @@ wideAppScenarios
                   let result = DID_NOT_RUN;
                   service.runInDebug(() => result = DID_RUN);
                   assert.strictEqual(result, isProduction ? DID_NOT_RUN : DID_RUN, 'service.runInDebug');
+                  assert.strictEqual(isProduction, service.runInDebug.toString().endsWith('){}'), 'service.runInDebug is empty');
                 });
 
                 test('deprecate only in development', function(assert) {
@@ -363,7 +365,8 @@ wideAppScenarios
                   const message = 'debug-test deprecation';
                   const options = { id: 'debug-test-deprecation', until: '999999.0.0', since: '3.28', for: DEPRECATION_FOR };
                   service.deprecate(message, false, options);
-                  assert.deepEqual(deprecations, isProduction ? [] : [ message, options ], 'service.deprecate')
+                  assert.deepEqual(deprecations, isProduction ? [] : [ message, options ], 'service.deprecate');
+                  assert.strictEqual(isProduction, service.deprecate.toString().endsWith('){}'), 'service.deprecate is empty');
                 });
               });
             `,

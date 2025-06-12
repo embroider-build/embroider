@@ -366,7 +366,7 @@ wideAppScenarios
                   assert.deepEqual(deprecations, isProduction ? [] : [ message, options ], 'service.deprecate')
                 });
               });
-            `
+            `,
           },
         },
         helpers: {

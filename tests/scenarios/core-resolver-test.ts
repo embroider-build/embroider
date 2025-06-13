@@ -203,12 +203,12 @@ Scenarios.fromProject(() => new Project())
             'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
           });
 
-          expectAudit = await assert.audit({
+          expectAudit = await withDevelopingApp(() => assert.audit({
             app: app.dir,
             'reuse-build': true,
             entrypoints: ['index.html'],
             rootURL: '/',
-          });
+          }));
         };
       });
 
@@ -1016,4 +1016,14 @@ function normalizePath(s: string): string {
 
 function esc(s: string): string {
   return s.replace(/\\/g, '\\\\');
+}
+
+async function withDevelopingApp<T>(callback: () => T): Promise<T> {
+  let originalValue = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'development'; // read by buildMacros() in packages/macros/src/babel.ts
+  try {
+    return await callback();
+  } finally {
+    process.env.NODE_ENV = originalValue;
+  }
 }

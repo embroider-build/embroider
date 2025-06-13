@@ -203,12 +203,14 @@ Scenarios.fromProject(() => new Project())
             'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
           });
 
-          expectAudit = await withDevelopingApp(() => assert.audit({
-            app: app.dir,
-            'reuse-build': true,
-            entrypoints: ['index.html'],
-            rootURL: '/',
-          }));
+          expectAudit = await withDevelopingApp(() =>
+            assert.audit({
+              app: app.dir,
+              'reuse-build': true,
+              entrypoints: ['index.html'],
+              rootURL: '/',
+            })
+          );
         };
       });
 

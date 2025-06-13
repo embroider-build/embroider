@@ -238,8 +238,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       babel-plugin-debug-macros:
-        specifier: ^1.0.2
-        version: 1.0.2(@babel/core@7.26.10)
+        specifier: github:robbytx/babel-plugin-debug-macros#829e0030b03972c1bab6fa6167d89c9ed5fcf7e7
+        version: github.com/robbytx/babel-plugin-debug-macros/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7(@babel/core@7.26.10)
       babel-plugin-ember-template-compilation:
         specifier: ^3.0.0
         version: 3.0.0
@@ -5072,7 +5072,7 @@ packages:
       npm-git-info: 1.0.3
       rimraf: 3.0.2
       rsvp: 4.8.5
-      semver: 7.7.1
+      semver: 7.7.2
       silent-error: 1.1.1
     transitivePeerDependencies:
       - '@babel/core'
@@ -5106,7 +5106,7 @@ packages:
       git-repo-info: 2.1.1
       glob: 9.3.5
       npm-git-info: 1.0.3
-      semver: 7.7.1
+      semver: 7.7.2
       silent-error: 1.1.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -5141,7 +5141,7 @@ packages:
       npm-git-info: 1.0.3
       rimraf: 3.0.2
       rsvp: 4.8.5
-      semver: 7.7.1
+      semver: 7.7.2
       silent-error: 1.1.1
     transitivePeerDependencies:
       - '@babel/core'
@@ -5178,7 +5178,7 @@ packages:
       npm-git-info: 1.0.3
       rimraf: 3.0.2
       rsvp: 4.8.5
-      semver: 7.7.1
+      semver: 7.7.2
       silent-error: 1.1.1
     transitivePeerDependencies:
       - '@glint/template'
@@ -5962,7 +5962,7 @@ packages:
       '@embroider/shared-internals': 3.0.0
       broccoli-funnel: 3.0.8
       common-ancestor-path: 1.0.1
-      semver: 7.7.1
+      semver: 7.7.2
     transitivePeerDependencies:
       - supports-color
 
@@ -5983,7 +5983,7 @@ packages:
       find-up: 5.0.0
       lodash: 4.17.21
       resolve: 1.22.10
-      semver: 7.7.1
+      semver: 7.7.2
     transitivePeerDependencies:
       - supports-color
 
@@ -6001,7 +6001,7 @@ packages:
       minimatch: 3.1.2
       pkg-entry-points: 1.1.1
       resolve-package-path: 4.0.3
-      semver: 7.7.1
+      semver: 7.7.2
       typescript-memoize: 1.1.1
     transitivePeerDependencies:
       - supports-color
@@ -6021,7 +6021,7 @@ packages:
       pkg-entry-points: 1.1.1
       resolve-package-path: 4.0.3
       resolve.exports: 2.0.3
-      semver: 7.7.1
+      semver: 7.7.2
       typescript-memoize: 1.1.1
     transitivePeerDependencies:
       - supports-color
@@ -7959,7 +7959,7 @@ packages:
     resolution: {integrity: sha512-8KG5RD0GVP4ydEzRn/I4BNDuxDtqVbOdm8675T49OIG/NGhaK0pjPX7ZcDlvKYbA+ulvVK3ztfcF4uBdOxuJbQ==}
     dependencies:
       '@gar/promisify': 1.1.3
-      semver: 7.7.1
+      semver: 7.7.2
     dev: true
 
   /@npmcli/git@6.0.3:
@@ -7972,7 +7972,7 @@ packages:
       npm-pick-manifest: 10.0.0
       proc-log: 5.0.0
       promise-retry: 2.0.1
-      semver: 7.7.1
+      semver: 7.7.2
       which: 5.0.0
     dev: true
 
@@ -7994,7 +7994,7 @@ packages:
       hosted-git-info: 8.0.2
       json-parse-even-better-errors: 4.0.0
       proc-log: 5.0.0
-      semver: 7.7.1
+      semver: 7.7.2
       validate-npm-package-license: 3.0.4
     dev: true
 
@@ -8244,7 +8244,7 @@ packages:
       pretty-ms: 7.0.1
       ramda: /@pnpm/ramda@0.28.1
       rxjs: 7.8.2
-      semver: 7.7.1
+      semver: 7.7.2
       stacktracey: 2.1.8
       string-length: 4.0.2
 
@@ -8405,7 +8405,7 @@ packages:
       detect-libc: 2.0.3
       execa: /safe-execa@0.1.2
       mem: 8.1.1
-      semver: 7.7.1
+      semver: 7.7.2
 
   /@pnpm/parse-overrides@5.0.1:
     resolution: {integrity: sha512-KD/cE0ovH2JkH5qeAuAo9TyU23Nqk0smlNf6O1t72zdIAOygvjAh5AzThGbYioBNWQP7h1MA7cAzrrDZRcrxgw==}
@@ -8470,7 +8470,7 @@ packages:
       archy: 1.0.0
       chalk: 4.1.2
       cli-columns: 4.0.0
-      semver: 7.7.1
+      semver: 7.7.2
 
   /@pnpm/resolver-base@12.0.1:
     resolution: {integrity: sha512-EobGNigWvWSPNIZaA5GZFzq2ENutyVYmyTobz2vg6KPH2RLvVo3hO2VYTZ8ARPKOfsFLLFei90ncrm7k+Z5U1g==}
@@ -9454,7 +9454,7 @@ packages:
       '@embroider/addon-shim': 1.10.0
       '@embroider/macros': 1.18.0(@glint/template@1.5.2)
       babel-import-util: 2.1.1
-      semver: 7.7.1
+      semver: 7.7.2
     transitivePeerDependencies:
       - '@glint/template'
       - supports-color
@@ -9467,7 +9467,7 @@ packages:
       '@embroider/addon-shim': 1.10.0
       '@embroider/macros': 1.18.0(@glint/template@1.5.2)
       babel-import-util: 2.1.1
-      semver: 7.7.1
+      semver: 7.7.2
     transitivePeerDependencies:
       - '@glint/template'
       - supports-color
@@ -10407,17 +10407,6 @@ packages:
     dependencies:
       '@babel/core': 7.26.10
       semver: 5.7.2
-
-  /babel-plugin-debug-macros@1.0.2(@babel/core@7.26.10):
-    resolution: {integrity: sha512-ADkMh1LL45678c+4iGn3Fp8hdI9qvxGBkH5x9HNiIlgYJGdQWmYNcA2cS3XAr76N85kDCg4VpqsTN1hFX2jbEA==}
-    engines: {node: '>=16'}
-    peerDependencies:
-      '@babel/core': ^7.0.0
-    dependencies:
-      '@babel/core': 7.26.10
-      babel-import-util: 2.1.1
-      semver: 7.7.1
-    dev: false
 
   /babel-plugin-ember-data-packages-polyfill@0.1.2:
     resolution: {integrity: sha512-kTHnOwoOXfPXi00Z8yAgyD64+jdSXk3pknnS7NlqnCKAU6YDkXZ4Y7irl66kaZjZn0FBBt0P4YOZFZk85jYOww==}
@@ -11826,7 +11815,7 @@ packages:
   /builtins@5.1.0:
     resolution: {integrity: sha512-SW9lzGTLvWTP1AY8xeAMZimqDrIaSdLQUcVr9DMef51niJ022Ri87SwRRKYm4A6iHfkPaiVUu/Duw2Wc4J7kKg==}
     dependencies:
-      semver: 7.7.1
+      semver: 7.7.2
 
   /bytes@1.0.0:
     resolution: {integrity: sha512-/x68VkHLeTl3/Ll8IvxdwzhrT+IyKc52e/oyHhA2RwqPqswSnjVbSddfPRwAsJtbilMAPSRWwAlpxdYsSWOTKQ==}
@@ -13738,7 +13727,7 @@ packages:
       hash-for-dep: 1.5.1
       heimdalljs-logger: 0.1.10
       json-stable-stringify: 1.2.1
-      semver: 7.7.1
+      semver: 7.7.2
       silent-error: 1.1.1
       strip-bom: 4.0.0
       walk-sync: 2.2.0
@@ -13915,7 +13904,7 @@ packages:
       fs-extra: 9.1.0
       resolve: 1.22.10
       rsvp: 4.8.5
-      semver: 7.7.1
+      semver: 7.7.2
       stagehand: 1.0.1
       walk-sync: 2.2.0
     transitivePeerDependencies:
@@ -13933,7 +13922,7 @@ packages:
       fs-extra: 9.1.0
       resolve: 1.22.10
       rsvp: 4.8.5
-      semver: 7.7.1
+      semver: 7.7.2
       stagehand: 1.0.1
       walk-sync: 2.2.0
     transitivePeerDependencies:
@@ -13981,7 +13970,7 @@ packages:
     engines: {node: 10.* || >= 12.*}
     dependencies:
       resolve-package-path: 3.1.0
-      semver: 7.7.1
+      semver: 7.7.2
       silent-error: 1.1.1
     transitivePeerDependencies:
       - supports-color
@@ -17392,7 +17381,7 @@ packages:
       lodash: 4.17.21
       package-json: 6.5.0
       remote-git-tags: 3.0.0
-      semver: 7.7.1
+      semver: 7.7.2
     transitivePeerDependencies:
       - encoding
     dev: true
@@ -17738,7 +17727,7 @@ packages:
       eslint: '>=6.0.0'
     dependencies:
       eslint: 8.57.1
-      semver: 7.7.1
+      semver: 7.7.2
     dev: true
 
   /eslint-config-prettier@8.10.0(eslint@7.32.0):
@@ -20601,7 +20590,7 @@ packages:
       '@babel/parser': 7.27.0
       '@istanbuljs/schema': 0.1.3
       istanbul-lib-coverage: 3.2.2
-      semver: 7.7.1
+      semver: 7.7.2
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -21005,7 +20994,7 @@ packages:
       jest-util: 29.7.0
       natural-compare: 1.4.0
       pretty-format: 29.7.0
-      semver: 7.7.1
+      semver: 7.7.2
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -22377,7 +22366,7 @@ packages:
     dependencies:
       growly: 1.3.0
       is-wsl: 2.2.0
-      semver: 7.7.1
+      semver: 7.7.2
       shellwords: 0.1.1
       uuid: 8.3.2
       which: 2.0.2
@@ -22410,7 +22399,7 @@ packages:
     dependencies:
       hosted-git-info: 4.1.0
       is-core-module: 2.16.1
-      semver: 7.7.1
+      semver: 7.7.2
       validate-npm-package-license: 3.0.4
     dev: true
 
@@ -22455,7 +22444,7 @@ packages:
     resolution: {integrity: sha512-u6DCwbow5ynAX5BdiHQ9qvexme4U3qHW3MWe5NqH+NeBm0LbiH6zvGjNNew1fY+AZZUtVHbOPF3j7mJxbUzpXg==}
     engines: {node: ^18.17.0 || >=20.5.0}
     dependencies:
-      semver: 7.7.1
+      semver: 7.7.2
     dev: true
 
   /npm-normalize-package-bin@2.0.0:
@@ -22482,7 +22471,7 @@ packages:
     dependencies:
       hosted-git-info: 8.0.2
       proc-log: 5.0.0
-      semver: 7.7.1
+      semver: 7.7.2
       validate-npm-package-name: 6.0.0
     dev: true
 
@@ -22491,7 +22480,7 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       hosted-git-info: 4.1.0
-      semver: 7.7.1
+      semver: 7.7.2
       validate-npm-package-name: 3.0.0
 
   /npm-package-arg@9.1.2:
@@ -22521,7 +22510,7 @@ packages:
       npm-install-checks: 7.1.1
       npm-normalize-package-bin: 4.0.0
       npm-package-arg: 12.0.2
-      semver: 7.7.1
+      semver: 7.7.2
     dev: true
 
   /npm-run-all@4.1.5:
@@ -22927,7 +22916,7 @@ packages:
       ky: 1.8.0
       registry-auth-token: 5.1.0
       registry-url: 6.0.1
-      semver: 7.7.1
+      semver: 7.7.2
     dev: true
 
   /package-json@6.5.0:
@@ -24340,7 +24329,6 @@ packages:
     resolution: {integrity: sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==}
     engines: {node: '>=10'}
     hasBin: true
-    dev: true
 
   /send@0.18.0:
     resolution: {integrity: sha512-qqWzuOjSFOuqPjFe4NOsMLafToQQwBSOEpS+FwEt3A2V3vKubTquT3vmLTQpFgMXp8AlFWFuP1qKaJZOtPpVXg==}
@@ -24701,7 +24689,7 @@ packages:
       get-stdin: 9.0.0
       git-hooks-list: 3.2.0
       is-plain-obj: 4.1.0
-      semver: 7.7.1
+      semver: 7.7.2
       sort-object-keys: 1.1.3
       tinyglobby: 0.2.12
     dev: true
@@ -26127,7 +26115,7 @@ packages:
     resolution: {integrity: sha512-nd2HUpKc6RWblPZQ2GDuI65sxJ2n/UqZwSBVtj64xlWjMx0m7ZB2m9b2JS3v1f+n9VWH/dd1CMhkHfP6pIdckA==}
     dependencies:
       resolve-package-path: 3.1.0
-      semver: 7.7.1
+      semver: 7.7.2
     dev: true
 
   /validate-peer-dependencies@2.2.0:
@@ -26761,3 +26749,19 @@ packages:
     resolution: {integrity: sha512-GQHQqAopRhwU8Kt1DDM8NjibDXHC8eoh1erhGAJPEyveY9qqVeXvVikNKrDz69sHowPMorbPUrH/mx8c50eiBQ==}
     engines: {node: '>=18'}
     dev: true
+
+  github.com/robbytx/babel-plugin-debug-macros/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7(@babel/core@7.26.10):
+    resolution: {tarball: https://codeload.github.com/robbytx/babel-plugin-debug-macros/tar.gz/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7}
+    id: github.com/robbytx/babel-plugin-debug-macros/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7
+    name: babel-plugin-debug-macros
+    version: 1.0.2
+    engines: {node: '>=16'}
+    prepare: true
+    requiresBuild: true
+    peerDependencies:
+      '@babel/core': ^7.0.0
+    dependencies:
+      '@babel/core': 7.26.10
+      babel-import-util: 2.1.1
+      semver: 7.7.2
+    dev: false

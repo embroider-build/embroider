@@ -68,6 +68,10 @@ export function babelMacros() {
 
 export function oldDebugMacros(): PluginItem[] {
   let debugMacros = require.resolve('babel-plugin-debug-macros');
+
+  // Translate debug flag/calls to macroCondition(isDevelopingApp()) for consistency with @ember packages from ember-source
+  const isDebug = '@embroider/macros';
+
   return [
     [
       debugMacros,
@@ -76,13 +80,13 @@ export function oldDebugMacros(): PluginItem[] {
           {
             source: '@glimmer/env',
             flags: {
-              DEBUG: true,
-              CI: false,
+              DEBUG: isDebug,
+              CI: !!process.env.CI,
             },
           },
         ],
         debugTools: {
-          isDebug: true,
+          isDebug,
           source: '@ember/debug',
           assertPredicateIndex: 1,
         },
@@ -99,7 +103,7 @@ export function oldDebugMacros(): PluginItem[] {
           module: '@ember/application/deprecations',
         },
         debugTools: {
-          isDebug: true,
+          isDebug,
           source: '@ember/application/deprecations',
           assertPredicateIndex: 1,
         },
@@ -146,7 +150,7 @@ export function templateColocation(): PluginItem {
 }
 
 export function babelCompatSupport(): PluginItem[] {
-  return [...babelMacros(), ...oldDebugMacros(), templateColocation(), ...pluginsFromV1Addons()];
+  return [...oldDebugMacros(), ...babelMacros(), templateColocation(), ...pluginsFromV1Addons()];
 }
 
 export function templateCompatSupport(): Transform[] {

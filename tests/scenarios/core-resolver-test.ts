@@ -858,12 +858,15 @@ Scenarios.fromProject(() => new Project())
 
           let switcherModule = expectAudit.module('./app.js').resolves('my-app/hello-world').toModule();
           switcherModule.codeEquals(`
-            import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+            import { macroCondition as macroCondition0, getGlobalConfig as getGlobalConfig0 } from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/runtime";
+            import esc from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
+            import * as _importSync20 from "./fastboot";
+            import * as _importSync40 from "./browser";
             let mod;
-            if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-              mod = importSync("./fastboot");
+            if (macroCondition0(getGlobalConfig0().fastboot?.isRunning)) {
+              mod = esc(_importSync20);
             } else {
-              mod = importSync("./browser");
+              mod = esc(_importSync40);
             }
             export default mod.default;
             export const hello = mod.hello;
@@ -908,12 +911,15 @@ Scenarios.fromProject(() => new Project())
 
           let switcherModule = expectAudit.module('./app.js').resolves('my-app/hello-world').toModule();
           switcherModule.codeEquals(`
-            import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+            import { macroCondition as macroCondition0, getGlobalConfig as getGlobalConfig0 } from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/runtime";
+            import esc from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
+            import * as _importSync20 from "./fastboot";
+            import * as _importSync40 from "./browser";
             let mod;
-            if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-              mod = importSync("./fastboot");
+            if (macroCondition0(getGlobalConfig0().fastboot?.isRunning)) {
+              mod = esc(_importSync20);
             } else {
-              mod = importSync("./browser");
+              mod = esc(_importSync40);
             }
             export default mod.default;
             export const hello = mod.hello;

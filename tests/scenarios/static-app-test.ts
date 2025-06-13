@@ -149,8 +149,12 @@ wideAppScenarios
           'debug.js': `
             import Service from '@ember/service';
             import { assert, deprecate, runInDebug } from '@ember/debug';
+            import { DEBUG } from '@glimmer/env';
 
             export default class extends Service {
+              isDebug() {
+                return DEBUG;
+              }
               assert(desc, test) {
                 assert(desc, test);
               }
@@ -325,6 +329,12 @@ wideAppScenarios
 
               module('Unit | Service | debug', function(hooks) {
                 setupTest(hooks);
+
+                test('DEBUG only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  assert.strictEqual(!isProduction, service.isDebug(), 'service.isDebug');
+                  assert.strictEqual(isProduction, service.isDebug.toString().endsWith('){return!1}'), 'service.isDebug is optimized');
+                });
 
                 test('asserts only in development', function(assert) {
                   const service = this.owner.lookup('service:debug');

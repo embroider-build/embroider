@@ -172,6 +172,17 @@ Scenarios.fromProject(() => new Project())
                 babelCompatSupport,
                 templateCompatSupport,
               } = require("@embroider/compat/babel");
+
+              const babel = require('@babel/core');
+              const babelCompatPlugins = babelCompatSupport().map(plugin => {
+                if (plugin[0].endsWith('${normalizePath('/@embroider/macros/src/babel/macros-babel-plugin.js')}')) {
+                  // ESM plugin must be resolved manually when using Babel directly from CJS config
+                  return babel.createConfigItem([ require(plugin[0]).default, plugin[1] ]);
+                } else {
+                  return plugin;
+                }
+              });
+
               module.exports = {
                 plugins: [
                   ['babel-plugin-ember-template-compilation', {
@@ -183,7 +194,7 @@ Scenarios.fromProject(() => new Project())
                       'ember-cli-htmlbars'
                     ]
                   }],
-                  ...babelCompatSupport()
+                  ...babelCompatPlugins
                 ]
               }
             `,

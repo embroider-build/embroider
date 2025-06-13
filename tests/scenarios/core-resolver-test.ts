@@ -175,7 +175,7 @@ Scenarios.fromProject(() => new Project())
 
               const babel = require('@babel/core');
               const babelCompatPlugins = babelCompatSupport().map(plugin => {
-                if (plugin[0].endsWith('${normalizePath('/@embroider/macros/src/babel/macros-babel-plugin.js')}')) {
+                if (plugin[0].endsWith('/@embroider/macros/src/babel/macros-babel-plugin.js')) {
                   // ESM plugin must be resolved manually when using Babel directly from CJS config
                   return babel.createConfigItem([ require(plugin[0]).default, plugin[1] ]);
                 } else {

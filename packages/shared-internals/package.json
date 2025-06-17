@@ -13,6 +13,7 @@
       "browser": "./src/browser-index.js",
       "default": "./src/index.js"
     },
+    "./src/babel-plugin-cache-busting": "./src/babel-plugin-cache-busting.js",
     "./src/babel-plugin-cache-busting.js": "./src/babel-plugin-cache-busting.js",
     "./src/template-colocation-plugin": "./src/template-colocation-plugin.js"
   },

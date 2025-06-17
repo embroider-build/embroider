@@ -5,7 +5,7 @@
     "ember-addon"
   ],
   "dependencies": {
-    "@embroider/addon-shim": "workspace:*"
+    "@embroider/addon-shim": "^1.10.0"
   },
   "private": true,
   "ember-addon": {

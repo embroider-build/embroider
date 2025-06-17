@@ -27,7 +27,7 @@
     "test:ember-compatibility": "ember try:each"
   },
   "dependencies": {
-    "@embroider/macros": "workspace:^",
+    "@embroider/macros": "~1.16.0",
     "broccoli-funnel": "^3.0.5",
     "ember-cli-babel": "^7.26.11"
   },

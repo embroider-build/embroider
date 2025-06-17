@@ -27,8 +27,6 @@ export function renderEntrypoint(
 ): { src: string; watches: string[] } {
   const owner = resolver.packageCache.ownerOfFile(fromDir);
 
-  let eagerModules: string[] = [];
-
   if (!owner) {
     throw new Error('Owner expected'); // ToDo: Really bad error, update message
   }
@@ -36,6 +34,7 @@ export function renderEntrypoint(
   let engine = resolver.owningEngine(owner);
   let isApp = owner?.root === resolver.options.engines[0]!.root;
   let hasFastboot = Boolean(resolver.options.engines[0]!.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
+  let defineModulesFrom = ['./-embroider-implicit-modules.js'];
 
   let appFiles = new AppFiles(
     {
@@ -95,7 +94,7 @@ export function renderEntrypoint(
           path: target,
         });
       } else {
-        eagerModules.push(target);
+        defineModulesFrom.push(target);
       }
     }
   }
@@ -130,10 +129,9 @@ export function renderEntrypoint(
     fastbootOnlyAmdModules,
     lazyRoutes,
     lazyEngines,
-    eagerModules,
     styles,
     // this is a backward-compatibility feature: addons can force inclusion of modules.
-    defineModulesFrom: './-embroider-implicit-modules.js',
+    defineModulesFrom,
   };
 
   return {
@@ -153,12 +151,8 @@ import { macroCondition, getGlobalConfig } from '@embroider/macros';
   }
 {{/if}}
 
-{{#if defineModulesFrom ~}}
-  import implicitModules from "{{js-string-escape defineModulesFrom}}";
-{{/if}}
-
-{{#each eagerModules as |eagerModule| ~}}
-  import "{{js-string-escape eagerModule}}";
+{{#each defineModulesFrom as |module index| ~}}
+  import defineModule{{index}} from "{{js-string-escape module}}";
 {{/each}}
 
 {{#each amdModules as |amdModule index| ~}}
@@ -212,7 +206,9 @@ window._embroiderEngineBundles_ = [
 
 export default Object.assign(
   {},
-  implicitModules,
+  {{#each defineModulesFrom as |module index| ~}}
+  defineModule{{index}},
+  {{/each}}
   {
     {{#each amdModules as |amdModule index| ~}}
       "{{js-string-escape amdModule.runtime}}": amdModule{{index}},
@@ -223,8 +219,7 @@ export default Object.assign(
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];
-  defineModulesFrom?: string;
-  eagerModules?: string[];
+  defineModulesFrom: string[];
   lazyRoutes?: { names: string[]; path: string }[];
   lazyEngines?: { names: string[]; path: string }[];
   styles?: { path: string }[];

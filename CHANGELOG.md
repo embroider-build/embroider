@@ -2,6 +2,16 @@
 
 ## Release (2025-06-18)
 
+
+
+#### :house: Internal
+* [#2504](https://github.com/embroider-build/embroider/pull/2504) Update release plan ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-06-18)
+
 @embroider/addon-dev 7.1.5 (patch)
 @embroider/babel-loader-9 3.1.2 (patch)
 @embroider/compat 3.9.1 (patch)

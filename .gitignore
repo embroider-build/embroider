@@ -75,4 +75,8 @@ tests/scenarios/output/
 # build artefacts on main branch
 packages/template-tag-codemod/dist/
 packages/config-meta-loader/dist/
+packages/compat/dist/
+packages/core/dist/
+packages/reverse-exports/dist/
+packages/config-meta-loader/tsconfig.tsbuildinfo
 tests/scenarios/dist/

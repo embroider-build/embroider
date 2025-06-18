@@ -187,7 +187,14 @@ For example, when your addon exposes a few components at the root level of `src/
 
 ```js
 // rollup.config.mjs
-addon.publicEntrypoints('index.js', 'components/*.js'),
+addon.publicEntrypoints(['index.js', 'components/*.js']),
+```
+
+If you also want those same components to be reexported into the traditional "app" tree, your `addon.appReexports()` could look like this:
+
+```js
+// rollup.config.mjs
+addon.appReexports(['components/*.js']);
 ```
 
 Additionally, there is a feature supported in node.js and modern bundlers to define an `exports` key in your `package.json` with a mapping of export paths to the actual files on disk, that lets you further tweak or constrain your public exports. This is explained in more detail here:
@@ -197,6 +204,7 @@ Additionally, there is a feature supported in node.js and modern bundlers to def
 When using `package.json#exports` make sure that:
 - the `addon.publicEntrypoints(...)` plugin in `rollup.config.mjs` includes _at least_ whatever is defined in `package.json#exports`
 - the modules that `addon.appReexports(...)` exposes must have overlap with the `package.json#exports` so that the app-tree merging may import from the addon
+- if you are reexporting modules into the "app" tree, the built reexports must also be added in `package.json#exports`. In most cases, adding `"./_app_/*": "./dist/_app_/*.js"` to `package.json#exports` will be sufficient
 
 ### How can I provide route templates with my v2 addon?
 

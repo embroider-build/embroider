@@ -1,6 +1,6 @@
 {
   "name": "@embroider/hbs-loader",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "private": false,
   "description": "Glimmer handlebars loader for webpack",
   "repository": {

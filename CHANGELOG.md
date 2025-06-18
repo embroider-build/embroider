@@ -1,5 +1,31 @@
 # Embroider Changelog
 
+## Release (2025-06-18)
+
+@embroider/addon-dev 7.1.5 (patch)
+@embroider/babel-loader-9 3.1.2 (patch)
+@embroider/compat 3.9.1 (patch)
+@embroider/core 3.5.7 (patch)
+@embroider/hbs-loader 3.0.4 (patch)
+@embroider/router 2.1.9 (patch)
+@embroider/shared-internals 2.9.1 (patch)
+@embroider/util 1.13.3 (patch)
+@embroider/webpack 4.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2477](https://github.com/embroider-build/embroider/pull/2477) Prevent excessive recursion of findActiveAddons ([@simonihmig](https://github.com/simonihmig))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/core`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/util`, `@embroider/test-scenarios`, `v2-addon-template`
+  * [#2439](https://github.com/embroider-build/embroider/pull/2439) Fix 3.x release ([@mansona](https://github.com/mansona))
+* `@embroider/addon-dev`, `@embroider/addon-shim`, `@embroider/babel-loader-9`, `@embroider/broccoli-side-watch`, `@embroider/compat`, `@embroider/core`, `@embroider/hbs-loader`, `@embroider/macros`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/vite`
+  * [#2430](https://github.com/embroider-build/embroider/pull/2430) set publish tag for all stable branch packages ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
 ## Release (2025-04-03)
 
 @embroider/compat 3.9.0 (minor)

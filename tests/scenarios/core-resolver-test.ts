@@ -172,6 +172,17 @@ Scenarios.fromProject(() => new Project())
                 babelCompatSupport,
                 templateCompatSupport,
               } = require("@embroider/compat/babel");
+
+              const babel = require('@babel/core');
+              const babelCompatPlugins = babelCompatSupport().map(plugin => {
+                if (plugin[0].endsWith('/@embroider/macros/src/babel/macros-babel-plugin.js')) {
+                  // ESM plugin must be resolved manually when using Babel directly from CJS config
+                  return babel.createConfigItem([ require(plugin[0]).default, plugin[1] ]);
+                } else {
+                  return plugin;
+                }
+              });
+
               module.exports = {
                 plugins: [
                   ['babel-plugin-ember-template-compilation', {
@@ -183,7 +194,7 @@ Scenarios.fromProject(() => new Project())
                       'ember-cli-htmlbars'
                     ]
                   }],
-                  ...babelCompatSupport()
+                  ...babelCompatPlugins
                 ]
               }
             `,
@@ -192,12 +203,14 @@ Scenarios.fromProject(() => new Project())
             'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
           });
 
-          expectAudit = await assert.audit({
-            app: app.dir,
-            'reuse-build': true,
-            entrypoints: ['index.html'],
-            rootURL: '/',
-          });
+          expectAudit = await withDevelopingApp(() =>
+            assert.audit({
+              app: app.dir,
+              'reuse-build': true,
+              entrypoints: ['index.html'],
+              rootURL: '/',
+            })
+          );
         };
       });
 
@@ -845,12 +858,15 @@ Scenarios.fromProject(() => new Project())
 
           let switcherModule = expectAudit.module('./app.js').resolves('my-app/hello-world').toModule();
           switcherModule.codeEquals(`
-            import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+            import { macroCondition as macroCondition0, getGlobalConfig as getGlobalConfig0 } from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/runtime";
+            import esc from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
+            import * as _importSync20 from "./fastboot";
+            import * as _importSync40 from "./browser";
             let mod;
-            if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-              mod = importSync("./fastboot");
+            if (macroCondition0(getGlobalConfig0().fastboot?.isRunning)) {
+              mod = esc(_importSync20);
             } else {
-              mod = importSync("./browser");
+              mod = esc(_importSync40);
             }
             export default mod.default;
             export const hello = mod.hello;
@@ -895,12 +911,15 @@ Scenarios.fromProject(() => new Project())
 
           let switcherModule = expectAudit.module('./app.js').resolves('my-app/hello-world').toModule();
           switcherModule.codeEquals(`
-            import { macroCondition, getGlobalConfig, importSync } from '@embroider/macros';
+            import { macroCondition as macroCondition0, getGlobalConfig as getGlobalConfig0 } from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/runtime";
+            import esc from "../node_modules/@embroider/compat/node_modules/@embroider/macros/src/addon/es-compat2";
+            import * as _importSync20 from "./fastboot";
+            import * as _importSync40 from "./browser";
             let mod;
-            if (macroCondition(getGlobalConfig().fastboot?.isRunning)) {
-              mod = importSync("./fastboot");
+            if (macroCondition0(getGlobalConfig0().fastboot?.isRunning)) {
+              mod = esc(_importSync20);
             } else {
-              mod = importSync("./browser");
+              mod = esc(_importSync40);
             }
             export default mod.default;
             export const hello = mod.hello;
@@ -1005,4 +1024,14 @@ function normalizePath(s: string): string {
 
 function esc(s: string): string {
   return s.replace(/\\/g, '\\\\');
+}
+
+async function withDevelopingApp<T>(callback: () => T): Promise<T> {
+  let originalValue = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'development'; // read by buildMacros() in packages/macros/src/babel.ts
+  try {
+    return await callback();
+  } finally {
+    process.env.NODE_ENV = originalValue;
+  }
 }

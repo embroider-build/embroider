@@ -178,11 +178,8 @@ Scenarios.fromProject(() => new Project())
               const babelCompatPlugins = babelCompatSupport().map(plugin => {
                 if (plugin[0].endsWith('${esc(macrosBabelPluginSubpath)}')) {
                   // ESM plugin must be resolved manually when using Babel directly from CJS config
-                  const factory = require(plugin[0]).default;
-                  console.info('Active:', plugin[0], factory, JSON.stringify(plugin[1], null, 2) );
-                  return babel.createConfigItem([ factory, plugin[1] ]);
+                  return babel.createConfigItem([ require(plugin[0]).default, plugin[1] ]);
                 } else {
-                  console.info('Not active:', plugin[0]);
                   return plugin;
                 }
               });

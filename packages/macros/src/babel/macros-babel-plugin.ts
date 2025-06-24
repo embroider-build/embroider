@@ -123,62 +123,75 @@ export default function main(context: typeof Babel): unknown {
         // For example ember-auto-import needs to do some custom transforms to enable use of dynamic template strings,
         // so its babel plugin needs to see and handle the importSync call first!
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
-          let specifier = path.node.arguments[0];
-          if (specifier?.type !== 'StringLiteral') {
-            let relativePath = '';
-            let property;
-            if (specifier.type === 'TemplateLiteral') {
-              relativePath = specifier.quasis[0].value.cooked!;
-              property = specifier.expressions[0] as t.Expression;
-            }
-            // babel might transform template form `../my-path/${id}` to '../my-path/'.concat(id)
-            if (
-              specifier.type === 'CallExpression' &&
-              specifier.callee.type === 'MemberExpression' &&
-              specifier.callee.property.type === 'Identifier' &&
-              specifier.callee.property.name === 'concat' &&
-              specifier.callee.object.type === 'StringLiteral'
-            ) {
-              relativePath = specifier.callee.object.value;
-              property = specifier.arguments[0] as t.Expression;
-            }
-            if (property && relativePath && relativePath.startsWith('.')) {
-              const resolvedPath = resolve(dirname((state as any).filename), relativePath);
-              let entries: string[] = [];
-              if (existsSync(resolvedPath)) {
-                entries = readdirSync(resolvedPath).filter(e => !e.startsWith('.'));
+          if (state.opts.importSyncImplementation === 'eager') {
+            let specifier = path.node.arguments[0];
+            if (specifier?.type !== 'StringLiteral') {
+              let relativePath = '';
+              let property;
+              if (specifier.type === 'TemplateLiteral') {
+                relativePath = specifier.quasis[0].value.cooked!;
+                property = specifier.expressions[0] as t.Expression;
               }
-              const obj = t.objectExpression(
-                entries.map(e => {
-                  let key = e.split('.')[0];
-                  const rest = e.split('.').slice(1, -1);
-                  if (rest.length) {
-                    key += `.${rest}`;
-                  }
-                  const id = t.callExpression(
-                    state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
-                    [state.importUtil.import(path, join(relativePath, key).replace(/\\/g, '/'), '*')]
-                  );
-                  return t.objectProperty(t.stringLiteral(key), id);
-                })
-              );
-              const memberExpr = t.memberExpression(obj, property, true);
-              path.replaceWith(memberExpr);
-              state.calledIdentifiers.add(callee.node);
-              return;
-            } else {
-              throw new Error(
-                `importSync eager mode only supports dynamic paths which are relative, must start with a '.', had ${specifier.type}`
-              );
+              // babel might transform template form `../my-path/${id}` to '../my-path/'.concat(id)
+              if (
+                specifier.type === 'CallExpression' &&
+                specifier.callee.type === 'MemberExpression' &&
+                specifier.callee.property.type === 'Identifier' &&
+                specifier.callee.property.name === 'concat' &&
+                specifier.callee.object.type === 'StringLiteral'
+              ) {
+                relativePath = specifier.callee.object.value;
+                property = specifier.arguments[0] as t.Expression;
+              }
+              if (property && relativePath && relativePath.startsWith('.')) {
+                const resolvedPath = resolve(dirname((state as any).filename), relativePath);
+                let entries: string[] = [];
+                if (existsSync(resolvedPath)) {
+                  entries = readdirSync(resolvedPath).filter(e => !e.startsWith('.'));
+                }
+                const obj = t.objectExpression(
+                  entries.map(e => {
+                    let key = e.split('.')[0];
+                    const rest = e.split('.').slice(1, -1);
+                    if (rest.length) {
+                      key += `.${rest}`;
+                    }
+                    const id = t.callExpression(
+                      state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
+                      [state.importUtil.import(path, join(relativePath, key).replace(/\\/g, '/'), '*')]
+                    );
+                    return t.objectProperty(t.stringLiteral(key), id);
+                  })
+                );
+                const memberExpr = t.memberExpression(obj, property, true);
+                path.replaceWith(memberExpr);
+                state.calledIdentifiers.add(callee.node);
+                return;
+              } else {
+                throw new Error(
+                  `importSync eager mode only supports dynamic paths which are relative, must start with a '.', had ${specifier.type}`
+                );
+              }
             }
+            path.replaceWith(
+              t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
+                state.importUtil.import(path, specifier.value, '*'),
+              ])
+            );
+            state.calledIdentifiers.add(callee.node);
+            return;
+          } else {
+            if (path.scope.hasBinding('require')) {
+              path.scope.rename('require');
+            }
+            let r = t.identifier('require');
+            state.generatedRequires.add(r);
+            path.replaceWith(
+              t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
+                t.callExpression(r, path.node.arguments),
+              ])
+            );
           }
-          path.replaceWith(
-            t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
-              state.importUtil.import(path, specifier.value, '*'),
-            ])
-          );
-          state.calledIdentifiers.add(callee.node);
-          return;
         }
       },
     },
@@ -225,8 +238,9 @@ export default function main(context: typeof Babel): unknown {
       }
 
       if (
-        state.opts.hideRequires &&
+        state.opts.importSyncImplementation === 'cjs' &&
         path.node.name === 'require' &&
+        !state.generatedRequires.has(path.node) &&
         !path.scope.hasBinding('require') &&
         state.owningPackage().isEmberAddon()
       ) {

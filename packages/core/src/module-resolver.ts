@@ -124,7 +124,7 @@ export class Resolver {
     request = this.handleTestSupportStyles(request);
     request = this.handleEntrypoint(request);
     request = this.handleRouteEntrypoint(request);
-    request = this.handleRenaming(request);
+    request = await this.handleRenaming(request);
     request = this.handleVendor(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -539,6 +539,8 @@ export class Resolver {
         return this.resolveModifier(rest, engine, request);
       case 'ambiguous':
         return this.resolveHelperOrComponent(rest, engine, request);
+      case 'compat-modules':
+        return request;
       default:
         throw new Error(`bug: unexepected @embroider/virtual specifier: ${request.specifier}`);
     }
@@ -937,7 +939,7 @@ export class Resolver {
     return request;
   }
 
-  private handleRenaming<R extends ModuleRequest>(request: R): R {
+  private async handleRenaming<R extends ModuleRequest>(request: R): Promise<R> {
     if (request.resolvedTo) {
       return request;
     }
@@ -983,7 +985,7 @@ export class Resolver {
 
     if (pkg.name === packageName) {
       // we found a self-import
-      if (pkg.meta?.['auto-upgraded']) {
+      if (pkg.meta?.['auto-upgraded'] && !pkg.isEngine()) {
         // auto-upgraded packages always get automatically adjusted. They never
         // supported fancy package.json exports features so this direct mapping
         // to the root is always right.
@@ -1020,6 +1022,15 @@ export class Resolver {
             request,
             request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
           );
+        }
+      } else if (pkg.isEngine()) {
+        let appJSMatch = await this.searchAppTree(
+          request,
+          pkg as unknown as EngineConfig, // this is safe because pkg.isEngine() is true in this case
+          request.specifier.replace(packageName, '.')
+        );
+        if (appJSMatch) {
+          return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
         }
       }
     }

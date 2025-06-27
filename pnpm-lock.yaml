@@ -238,8 +238,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       babel-plugin-debug-macros:
-        specifier: github:robbytx/babel-plugin-debug-macros#829e0030b03972c1bab6fa6167d89c9ed5fcf7e7
-        version: github.com/robbytx/babel-plugin-debug-macros/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7(@babel/core@7.26.10)
+        specifier: github:ember-cli/babel-plugin-debug-macros#83e6df2da700482e8e08c4771d750da5709d5e9a
+        version: github.com/ember-cli/babel-plugin-debug-macros/83e6df2da700482e8e08c4771d750da5709d5e9a(@babel/core@7.26.10)
       babel-plugin-ember-template-compilation:
         specifier: ^3.0.0
         version: 3.0.0
@@ -26750,11 +26750,11 @@ packages:
     engines: {node: '>=18'}
     dev: true
 
-  github.com/robbytx/babel-plugin-debug-macros/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7(@babel/core@7.26.10):
-    resolution: {tarball: https://codeload.github.com/robbytx/babel-plugin-debug-macros/tar.gz/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7}
-    id: github.com/robbytx/babel-plugin-debug-macros/829e0030b03972c1bab6fa6167d89c9ed5fcf7e7
+  github.com/ember-cli/babel-plugin-debug-macros/83e6df2da700482e8e08c4771d750da5709d5e9a(@babel/core@7.26.10):
+    resolution: {tarball: https://codeload.github.com/ember-cli/babel-plugin-debug-macros/tar.gz/83e6df2da700482e8e08c4771d750da5709d5e9a}
+    id: github.com/ember-cli/babel-plugin-debug-macros/83e6df2da700482e8e08c4771d750da5709d5e9a
     name: babel-plugin-debug-macros
-    version: 1.0.2
+    version: 2.0.0
     engines: {node: '>=16'}
     prepare: true
     requiresBuild: true

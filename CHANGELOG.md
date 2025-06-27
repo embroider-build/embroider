@@ -1,5 +1,29 @@
 # Embroider Changelog
 
+## Release (2025-06-24)
+
+* @embroider/core 4.1.1 (patch)
+* @embroider/template-tag-codemod 1.3.2 (patch)
+
+#### :memo: Documentation
+* Other
+  * [#2498](https://github.com/embroider-build/embroider/pull/2498) Update porting-addons-to-v2.md: add auto rebuild explanation ([@x-m-el](https://github.com/x-m-el))
+  * [#2492](https://github.com/embroider-build/embroider/pull/2492) Update porting-addons-to-v2.md ([@x-m-el](https://github.com/x-m-el))
+* `@embroider/template-tag-codemod`
+  * [#2495](https://github.com/embroider-build/embroider/pull/2495) Fix merge-history commands (remove `) ([@mkszepp](https://github.com/mkszepp))
+
+#### :house: Internal
+* Other
+  * [#2505](https://github.com/embroider-build/embroider/pull/2505) stop publishing unstable on every merge to master ([@mansona](https://github.com/mansona))
+* `@embroider/core`
+  * [#2503](https://github.com/embroider-build/embroider/pull/2503) Merge stable ([@ef4](https://github.com/ef4))
+
+#### Committers: 4
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+- [@x-m-el](https://github.com/x-m-el)
+
 ## Release (2025-05-21)
 
 * @embroider/template-tag-codemod 1.3.1 (patch)

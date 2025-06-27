@@ -104,6 +104,13 @@ function partitionEngines(
       break;
     }
     findActiveAddons(current.package, current, extraDeps);
+    // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
+    current.addons = new Map(
+      [...current.addons].sort(([a], [b]) => {
+        return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
+      })
+    );
+
     for (let addon of current.addons.keys()) {
       if (addon.isEngine() && !seenEngines.has(addon)) {
         seenEngines.add(addon);
@@ -142,21 +149,14 @@ function partitionEngines(
 // Inner engines themselves will be returned, but not those engines' children.
 // The output set's insertion order is the proper ember-cli compatible
 // ordering of the addons.
-function findActiveAddons(pkg: Package, engine: Engine, extraDeps: Map<string, AddonPackage[]>, isChild = false): void {
+function findActiveAddons(pkg: Package, engine: Engine, extraDeps: Map<string, AddonPackage[]>): void {
   for (let child of activeAddonChildren(pkg, extraDeps)) {
+    if (engine.addons.has(child)) continue;
     if (!child.isEngine()) {
-      findActiveAddons(child, engine, extraDeps, true);
+      findActiveAddons(child, engine, extraDeps);
     }
     let canResolveFrom = resolvePath(pkg.root, 'package.json');
     engine.addons.set(child, canResolveFrom);
-  }
-  // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
-  if (!isChild) {
-    engine.addons = new Map(
-      [...engine.addons].sort(([a], [b]) => {
-        return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
-      })
-    );
   }
 }
 

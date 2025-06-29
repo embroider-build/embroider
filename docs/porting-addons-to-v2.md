@@ -221,7 +221,16 @@ For an example of a complete PR that applies these steps to a real addon, see ht
 
 Now that we've separated the test-app and docs app concerns from the addon, we can focus on reorganizing the addon itself to V2 format.
 
-1. Rename the `addon/addon` directory to `addon/src`.
+0. In a separate directory, generate a new addon to see what files it is using:
+
+  ```bash
+  npx ember-cli@latest addon my-addon \
+    --blueprint @ember/addon-blueprint \
+    --pnpm \
+    --typescript
+  ```
+
+1. Back in your own addon, rename the `addon/addon` directory to `addon/src`.
 2. If you have an `addon/addon-test-support` directory, move it to `addon/src/test-support`.
 3. In `addon/package.json`, remove any of these that appear in `dependencies`:
 
@@ -237,18 +246,18 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
 
    `pnpm add --save-dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-transform-class-properties @babel/plugin-proposal-decorators`
 
-6. Grab the [example babel config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.json) and save it as `addon/babel.config.json`
-   - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using the `babel-plugin-ember-template-compilation`. View how to use this in the [example babel.config.js](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.js)
-7. Grab the [example rollup config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-rollup.config.js) and save it as `addon/rollup.config.js`.
+6. Grab the `babel.publish.config.cjs` from the new project you created in step 0 and save it as `addon/babel.config.cjs`
+   - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using `babel-plugin-ember-template-compilation`'s `transforms` array. 
+7. Grab the `rollup.config.mjs` from the new project you created in step 0 and save it as `addon/rollup.config.mjs`.
 8. Identify your **app reexports**. This is the list of modules from your addon that get reexported by files in the `addon/app` directory.
-9. Edit `addon/rollup.config.js`. Customize the `publicEntrypoints` so it includes
+9. Edit `addon/rollup.config.mjs`. Customize the `publicEntrypoints` so it includes
 
 - every module that users should be allowed to import from your addon
 - every module in the **app reexports** you identified in the previous step
 
 10. Delete the `addon/app` directory. You aren't going to need it anymore.
-11. Still editing `addon/rollup.config.js`, customize the `appReexports` to match all your **app reexports** as identified above.
-12. If your addon contains `.gjs` files, add `addon.gjs()`  to `addon/rollup.config.js`.
+11. Still editing `addon/rollup.config.mjs`, customize the `appReexports` to match all your **app reexports** as identified above.
+12. If your addon contains `.gjs` files, add `addon.gjs()`  to `addon/rollup.config.mjs`.
 13. Delete your `addon/index.js` file.
 14. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
 

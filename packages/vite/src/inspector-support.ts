@@ -41,7 +41,6 @@ export default function(appName) {
         Debug,
         EmberDestroyable,
         EmberObject,
-        EnumerableMutable,
         InternalsEnvironment,
         InternalsMeta,
         InternalsMetal,
@@ -77,7 +76,6 @@ export default function(appName) {
         import('@ember/debug'),
         import('@ember/destroyable'),
         import('@ember/object'),
-        import('@ember/enumerable/mutable'),
         import('@ember/-internals/environment'),
         import('@ember/-internals/meta'),
         import('@ember/-internals/metal'),
@@ -114,7 +112,6 @@ export default function(appName) {
         Debug,
         EmberDestroyable,
         EmberObject,
-        EnumerableMutable,
         InternalsEnvironment,
         InternalsMeta,
         InternalsMetal,
@@ -144,6 +141,11 @@ export default function(appName) {
         modules = {
           ...modules,
           EnumerableMutable: await import('@ember/-internals/runtime/lib/mixins/mutable_enumerable'),
+        };
+      } else {
+       modules = {
+          ...modules,
+          EnumerableMutable: await import('@ember/enumerable/mutable'),
         };
       }
       return modules;

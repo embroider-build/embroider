@@ -151,6 +151,7 @@ export default function(appName) {
       return modules;
     },
   });
+  window.dispatchEvent(new Event('Ember'));
 }`;
       }
     },

@@ -10,4 +10,3 @@ export * from './src/content-for.js';
 export * from './src/classic-ember-support.js';
 export * from './src/ember.js';
 export * from './src/build-once.js';
-export * from './src/inspector-support.js';

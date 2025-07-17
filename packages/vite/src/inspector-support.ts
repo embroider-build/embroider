@@ -20,14 +20,13 @@ export function inspectorSupport(): Plugin {
 // builds with Vite can be inspected.
 
 import { macroCondition, dependencySatisfies } from '@embroider/macros';
-import { TrackedMap } from 'tracked-built-ins';
 
 export default function(appName) {
   if(!globalThis.emberInspectorApps) {
-    globalThis.emberInspectorApps = new TrackedMap();
+    globalThis.emberInspectorApps = [];
   }
 
-  globalThis.emberInspectorApps.set(appName, {
+  globalThis.emberInspectorApps.push({
     name: appName,
     loadCompatInspector: async () => {
       const [

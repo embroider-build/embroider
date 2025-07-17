@@ -4,8 +4,8 @@ import Resolver from 'ember-resolver';
 import loadInitializers from 'ember-load-initializers';
 import config from './config/environment';
 
-import setupInpector from '@embroider/virtual/compat-inspector-support';
-setupInpector(config.modulePrefix);
+import setupInspector from '@embroider/virtual/compat-inspector-support';
+setupInspector();
 
 export default class App extends Application {
   modulePrefix = config.modulePrefix;

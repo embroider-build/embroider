@@ -12,146 +12,41 @@ export function inspectorSupport(): Plugin {
       if (source === '@embroider/virtual/compat-inspector-support') {
         return '-compat-inspector-support.js';
       }
+      let inspectorModulesId = '@embroider/virtual/compat-inspector-modules-';
+      if (source.includes(inspectorModulesId)) {
+        const versionIdentifier = source.substring(inspectorModulesId.length, source.length);
+        return `compat-inspector-modules-${versionIdentifier}.js`;
+      }
     },
 
-    load(id) {
+    async load(id) {
       if (id === '-compat-inspector-support.js') {
-        return `// This script exposes the modules used by Ember Inspector so an app that
-// builds with Vite can be inspected.
-
+        return `// Script to load the modules requied by Ember Inspector when the extension is turned on.
 import { macroCondition, dependencySatisfies } from '@embroider/macros';
 
-export default function(appName) {
-  if(!globalThis.emberInspectorApps) {
+ export default function (appName) {
+  if (!globalThis.emberInspectorApps) {
     globalThis.emberInspectorApps = [];
   }
 
   globalThis.emberInspectorApps.push({
-    name: appName,
+    name: appName ?? \`app-\${globalThis.emberInspectorApps.length}\`,
     loadCompatInspector: async () => {
-      const [
-        Application,
-        ApplicationNamespace,
-        Array,
-        ArrayMutable,
-        ArrayProxy,
-        Component,
-        Controller,
-        Debug,
-        EmberDestroyable,
-        EmberObject,
-        InternalsEnvironment,
-        InternalsMeta,
-        InternalsMetal,
-        InternalsRuntime,
-        InternalsUtils,
-        InternalsViews,
-        Instrumentation,
-        Object,
-        ObjectCore,
-        ObjectInternals,
-        ObjectEvented,
-        ObjectObservable,
-        ObjectPromiseProxyMixin,
-        ObjectProxy,
-        Runloop,
-        Service,
-        VERSION,
-        RSVP,
-        GlimmerComponent,
-        GlimmerManager,
-        GlimmerReference,
-        GlimmerRuntime,
-        GlimmerUtil,
-        GlimmerValidator,
-      ] = await Promise.all([
-        import('@ember/application'),
-        import('@ember/application/namespace'),
-        import('@ember/array'),
-        import('@ember/array/mutable'),
-        import('@ember/array/proxy'),
-        import('@ember/component'),
-        import('@ember/controller'),
-        import('@ember/debug'),
-        import('@ember/destroyable'),
-        import('@ember/object'),
-        import('@ember/-internals/environment'),
-        import('@ember/-internals/meta'),
-        import('@ember/-internals/metal'),
-        import('@ember/-internals/runtime'),
-        import('@ember/-internals/utils'),
-        import('@ember/-internals/views'),
-        import('@ember/instrumentation'),
-        import('@ember/object'),
-        import('@ember/object/core'),
-        import('@ember/object/internals'),
-        import('@ember/object/evented'),
-        import('@ember/object/observable'),
-        import('@ember/object/promise-proxy-mixin'),
-        import('@ember/object/proxy'),
-        import('@ember/runloop'),
-        import('@ember/service'),
-        import('ember/version'),
-        import('rsvp'),
-        import('@glimmer/component'),
-        import('@glimmer/manager'),
-        import('@glimmer/reference'),
-        import('@glimmer/runtime'),
-        import('@glimmer/util'),
-        import('@glimmer/validator'),
-      ]);
-      let modules = {
-        Application,
-        ApplicationNamespace,
-        Array,
-        ArrayMutable,
-        ArrayProxy,
-        Component,
-        Controller,
-        Debug,
-        EmberDestroyable,
-        EmberObject,
-        InternalsEnvironment,
-        InternalsMeta,
-        InternalsMetal,
-        InternalsRuntime,
-        InternalsUtils,
-        InternalsViews,
-        Instrumentation,
-        Object,
-        ObjectCore,
-        ObjectInternals,
-        ObjectEvented,
-        ObjectObservable,
-        ObjectPromiseProxyMixin,
-        ObjectProxy,
-        Runloop,
-        Service,
-        VERSION,
-        RSVP,
-        GlimmerComponent,
-        GlimmerManager,
-        GlimmerReference,
-        GlimmerRuntime,
-        GlimmerUtil,
-        GlimmerValidator,
-      };
+      let modules;
       if (macroCondition(dependencySatisfies('ember-source', '<4.8.0'))) {
-        modules = {
-          ...modules,
-          EnumerableMutable: await import('@ember/-internals/runtime/lib/mixins/mutable_enumerable'),
-        };
+        modules = await import('@embroider/virtual/compat-inspector-modules-3-28');
       } else {
-       modules = {
-          ...modules,
-          EnumerableMutable: await import('@ember/enumerable/mutable'),
-        };
+        modules = await import('@embroider/virtual/compat-inspector-modules-4-8');
       }
       return modules;
     },
   });
   window.dispatchEvent(new Event('Ember'));
 }`;
+      }
+      if (id.includes('compat-inspector-modules-')) {
+        let content = await import(`./runtime/inspector-support/${id}`);
+        return `${content.default}`;
       }
     },
   };

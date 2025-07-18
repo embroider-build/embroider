@@ -12,7 +12,8 @@ export default function (appName) {
     name: appName,
     loadCompatInspector: async () => {
       let modules;
-      if (macroCondition(dependencySatisfies('ember-source', '<4.8.0'))) {
+      // if (macroCondition(dependencySatisfies('ember-source', '<4.8.0'))) {
+      if (false) {
         modules = await import('./modules-3-16');
       } else {
         modules = await import('./modules-4-8');

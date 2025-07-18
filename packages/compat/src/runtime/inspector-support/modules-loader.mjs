@@ -9,7 +9,7 @@ export default function (appName) {
   }
 
   globalThis.emberInspectorApps.push({
-    name: appName,
+    name: appName ?? `app-${globalThis.emberInspectorApps.length}`,
     loadCompatInspector: async () => {
       let modules;
       // if (macroCondition(dependencySatisfies('ember-source', '<4.8.0'))) {

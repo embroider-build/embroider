@@ -238,7 +238,6 @@ export default function main(context: typeof Babel): unknown {
       }
 
       if (
-        state.opts.importSyncImplementation === 'cjs' &&
         path.node.name === 'require' &&
         !state.generatedRequires.has(path.node) &&
         !path.scope.hasBinding('require') &&

@@ -1,7 +1,7 @@
 // This script exposes the modules used by Ember Inspector so an app that
 // builds with Vite can be inspected.
 
-import { macroCondition, dependencySatisfies } from '@embroider/macros';
+// import { macroCondition, dependencySatisfies } from '@embroider/macros';
 
 export default function (appName) {
   if (!globalThis.emberInspectorApps) {

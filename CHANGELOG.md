@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2025-07-22)
+
+* @embroider/compat 4.1.1 (patch)
+* @embroider/core 4.1.2 (patch)
+* @embroider/macros 1.18.1 (patch)
+* @embroider/vite 1.1.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/macros`
+  * [#2511](https://github.com/embroider-build/embroider/pull/2511) Fixing lazy importSync ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-06-24)
 
 * @embroider/core 4.1.1 (patch)

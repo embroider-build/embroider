@@ -1,6 +1,8 @@
 import type { Plugin } from 'vite';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import resolvePackagePath from 'resolve-package-path';
+import semver from 'semver';
 
 import { fileURLToPath } from 'url';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -17,9 +19,13 @@ export function inspectorSupport(): Plugin {
       if (source === '@embroider/virtual/compat-inspector-support') {
         return '-compat-inspector-support.js';
       }
-      let inspectorModulesId = '@embroider/virtual/compat-inspector-modules-';
-      if (source.includes(inspectorModulesId)) {
-        const versionIdentifier = source.substring(inspectorModulesId.length, source.length);
+      if (source === '@embroider/virtual/compat-inspector-modules') {
+        const emberSourcePackage = resolvePackagePath('ember-source', process.cwd());
+        if (emberSourcePackage === null) {
+          throw new Error(`Inspector support: cannot resolve ember-source package.json`);
+        }
+        const lt48 = semver.lt(JSON.parse(readFileSync(emberSourcePackage, 'utf8')).version, '4.8.0');
+        const versionIdentifier = lt48 ? '3-28' : '4-8';
         return `-compat-inspector-modules-${versionIdentifier}.js`;
       }
     },

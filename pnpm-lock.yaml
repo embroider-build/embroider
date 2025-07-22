@@ -567,6 +567,8 @@ importers:
         specifier: ^5
         version: 5.98.0
 
+  packages/inspector-support: {}
+
   packages/macros:
     dependencies:
       '@embroider/shared-internals':
@@ -1627,6 +1629,9 @@ importers:
       '@embroider/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@embroider/inspector-support':
+        specifier: workspace:*
+        version: link:../../packages/inspector-support
       '@embroider/router':
         specifier: workspace:*
         version: link:../../packages/router

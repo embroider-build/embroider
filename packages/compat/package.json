@@ -12,7 +12,6 @@
   "author": "Edward Faulkner",
   "main": "dist/index.js",
   "exports": {
-    "./runtime/*": "./src/runtime/*.mjs",
     ".": "./dist/src/index.js",
     "./src/*": "./dist/src/*.js",
     "./*": "./dist/src/*.js"

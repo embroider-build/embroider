@@ -2,6 +2,17 @@
 
 ## Release (2025-07-22)
 
+* @embroider/router 3.0.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2524](https://github.com/embroider-build/embroider/pull/2524) Fix loading route in @embroider/router ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-07-22)
+
 * @embroider/compat 4.1.1 (patch)
 * @embroider/core 4.1.2 (patch)
 * @embroider/macros 1.18.1 (patch)

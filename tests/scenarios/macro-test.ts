@@ -1,4 +1,4 @@
-import { appScenarios, dummyAppScenarios, baseAddon } from './scenarios';
+import { appScenarios, dummyAppScenarios, baseAddon, tsAppClassicScenarios } from './scenarios';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -363,6 +363,65 @@ dummyAppScenarios
           result.output.includes(`Your app uses at least one classic addon that provides content-for 'config-module'.`),
           'the output contains the error message about migrating custom config-module code'
         );
+      });
+    });
+  });
+
+tsAppClassicScenarios
+  .only('release')
+  .expand({
+    oldMacros: project => {
+      project.linkDevDependency('@embroider/macros', { baseDir: __dirname, resolveName: '@embroider/macros-old' });
+    },
+    currentMacros: project => {
+      project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
+    },
+  })
+  .map('lazy-import-sync', project => {
+    project.addDependency('my-target-library', {
+      files: {
+        'index.js': `
+          throw new Error("I expected to be lazy, this should not run")
+        `,
+      },
+    });
+
+    project.mergeFiles({
+      tests: {
+        unit: {
+          'lazy-import-test.js': `
+            import { importSync } from '@embroider/macros';
+            import { module, test } from 'qunit';
+            module('lazy importSync', function() {
+              test('is lazy in classic builds', function(assert) {
+                if (globalThis.notAThing) {
+                  importSync('my-target-library');
+                  assert.ok(false, "not using this branch")
+                } else {
+                  assert.ok(true, "using this branch")
+                }
+              })
+            })
+        `,
+        },
+      },
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`@embroider/macros importSync is lazy when used in classic`, async function (assert) {
+        let result = await app.execute(`pnpm test:ember`, {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'classic',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

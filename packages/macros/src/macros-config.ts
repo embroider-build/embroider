@@ -139,6 +139,21 @@ export default class MacrosConfig {
     }
   }
 
+  private _importSyncImplementation: 'cjs' | 'eager' = 'cjs';
+
+  get importSyncImplementation() {
+    return this._importSyncImplementation;
+  }
+
+  set importSyncImplementation(value: 'cjs' | 'eager') {
+    if (!this._configWritable) {
+      throw new Error(
+        `[Embroider:MacrosConfig] attempted to set importSyncImplementation after configs have been finalized`
+      );
+    }
+    this._importSyncImplementation = value;
+  }
+
   private constructor(private origAppRoot: string, shared: GlobalSharedEntry) {
     this.configs = shared.configs;
     this.globalConfig = shared.globalConfigs;
@@ -337,7 +352,7 @@ export default class MacrosConfig {
         return self.mode;
       },
 
-      hideRequires: true,
+      importSyncImplementation: this.importSyncImplementation,
     };
 
     let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: self.appRoot });

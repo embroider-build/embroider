@@ -48,6 +48,7 @@
     "@ember/test-waiters": "^3.0.2",
     "@embroider/addon-shim": "workspace:*",
     "@embroider/macros": "workspace:*",
+    "@embroider/macros-old": "npm:@embroider/macros@~1.16.0",
     "@embroider/router": "workspace:*",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-typescript": "^11.1.2",

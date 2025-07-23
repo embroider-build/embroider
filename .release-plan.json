@@ -19,7 +19,17 @@
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.1.2"
+      "impact": "patch",
+      "oldVersion": "4.1.2",
+      "newVersion": "4.1.3",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -31,17 +41,7 @@
       "oldVersion": "0.1.2"
     },
     "@embroider/router": {
-      "impact": "patch",
-      "oldVersion": "3.0.1",
-      "newVersion": "3.0.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "oldVersion": "3.0.2"
     },
     "@embroider/shared-internals": {
       "oldVersion": "3.0.0"
@@ -53,5 +53,5 @@
       "oldVersion": "1.1.6"
     }
   },
-  "description": "## Release (2025-07-22)\n\n* @embroider/router 3.0.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#2524](https://github.com/embroider-build/embroider/pull/2524) Fix loading route in @embroider/router ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-07-23)\n\n* @embroider/core 4.1.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/core`\n  * [#2525](https://github.com/embroider-build/embroider/pull/2525) App tree merging should be insensitive to file extensions ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

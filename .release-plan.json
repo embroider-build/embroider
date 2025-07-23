@@ -1,132 +1,75 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "7.1.4",
-      "newVersion": "7.1.5",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "7.1.5"
     },
     "@embroider/babel-loader-9": {
-      "impact": "patch",
-      "oldVersion": "3.1.1",
-      "newVersion": "3.1.2",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/babel-loader-9/package.json"
+      "oldVersion": "3.1.2"
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "3.9.0",
-      "newVersion": "3.9.1",
+      "oldVersion": "3.9.1",
+      "newVersion": "3.9.2",
+      "tagName": "3.x",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "3.5.6",
-      "newVersion": "3.5.7",
+      "oldVersion": "3.5.7",
+      "newVersion": "3.5.8",
+      "tagName": "3.x",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
-      "impact": "patch",
-      "oldVersion": "3.0.3",
-      "newVersion": "3.0.4",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/hbs-loader/package.json"
+      "oldVersion": "3.0.4"
     },
     "@embroider/router": {
       "impact": "patch",
-      "oldVersion": "2.1.8",
-      "newVersion": "2.1.9",
+      "oldVersion": "2.1.9",
+      "newVersion": "2.1.10",
+      "tagName": "2.x",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/router/package.json"
     },
     "@embroider/shared-internals": {
-      "impact": "patch",
-      "oldVersion": "2.9.0",
-      "newVersion": "2.9.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "2.9.1"
     },
     "@embroider/test-setup": {
       "oldVersion": "4.0.0"
     },
     "@embroider/util": {
       "impact": "patch",
-      "oldVersion": "1.13.2",
-      "newVersion": "1.13.3",
+      "oldVersion": "1.13.3",
+      "newVersion": "1.13.4",
+      "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/util/package.json"
     },
     "@embroider/webpack": {
-      "impact": "patch",
-      "oldVersion": "4.1.0",
-      "newVersion": "4.1.1",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/babel-loader-9"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/hbs-loader"
-        }
-      ],
-      "pkgJSONPath": "./packages/webpack/package.json"
+      "oldVersion": "4.1.1"
     }
   },
-  "description": "## Release (2025-06-18)\n\n@embroider/addon-dev 7.1.5 (patch)\n@embroider/babel-loader-9 3.1.2 (patch)\n@embroider/compat 3.9.1 (patch)\n@embroider/core 3.5.7 (patch)\n@embroider/hbs-loader 3.0.4 (patch)\n@embroider/router 2.1.9 (patch)\n@embroider/shared-internals 2.9.1 (patch)\n@embroider/util 1.13.3 (patch)\n@embroider/webpack 4.1.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2477](https://github.com/embroider-build/embroider/pull/2477) Prevent excessive recursion of findActiveAddons ([@simonihmig](https://github.com/simonihmig))\n\n#### :house: Internal\n* `@embroider/compat`, `@embroider/core`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/util`, `@embroider/test-scenarios`, `v2-addon-template`\n  * [#2439](https://github.com/embroider-build/embroider/pull/2439) Fix 3.x release ([@mansona](https://github.com/mansona))\n* `@embroider/addon-dev`, `@embroider/addon-shim`, `@embroider/babel-loader-9`, `@embroider/broccoli-side-watch`, `@embroider/compat`, `@embroider/core`, `@embroider/hbs-loader`, `@embroider/macros`, `@embroider/reverse-exports`, `@embroider/router`, `@embroider/shared-internals`, `@embroider/vite`\n  * [#2430](https://github.com/embroider-build/embroider/pull/2430) set publish tag for all stable branch packages ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2025-07-23)\n\n* @embroider/compat 3.9.2 (patch)\n* @embroider/core 3.5.8 (patch)\n* @embroider/router 2.1.10 (patch)\n* @embroider/util 1.13.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/core`, `@embroider/router`, `@embroider/util`\n  * [#2528](https://github.com/embroider-build/embroider/pull/2528) unpin @embroider/macros now that lazy mode has been fixed ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* [#2504](https://github.com/embroider-build/embroider/pull/2504) Update release plan ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

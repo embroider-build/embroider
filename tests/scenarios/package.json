@@ -46,7 +46,7 @@
     "@ember/test-helpers-3": "npm:@ember/test-helpers@^3.2.0",
     "@ember/test-waiters": "^3.0.2",
     "@embroider/addon-shim": "^1.10.0",
-    "@embroider/macros": "~1.16.0",
+    "@embroider/macros": "^1.18.1",
     "@embroider/router": "workspace:*",
     "@embroider/util": "workspace:*",
     "@rollup/plugin-babel": "^5.3.1",

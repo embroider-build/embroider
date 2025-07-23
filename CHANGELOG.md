@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-07-23)
+
+* @embroider/core 4.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2525](https://github.com/embroider-build/embroider/pull/2525) App tree merging should be insensitive to file extensions ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-07-22)
 
 * @embroider/router 3.0.2 (patch)

@@ -1,4 +1,4 @@
-import { wideAppScenarios, baseAddon } from './scenarios';
+import { wideAppScenarios, baseAddon, baseV2Addon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
@@ -77,6 +77,23 @@ wideAppScenarios
     });
     project.addDevDependency(myHelpersAddon);
 
+    let overriddenServiceAddon = baseV2Addon();
+    overriddenServiceAddon.pkg.name = 'overridden-service';
+    overriddenServiceAddon.mergeFiles({
+      'reexport.js': `export { default } from './index.js'`,
+      'index.js': `
+         import Service from '@ember/service';
+         globalThis.addonOverriddenServiceRan = true;
+         export default class extends Service {
+           source = 'addon'
+         }
+       `,
+    });
+    overriddenServiceAddon.pkg['ember-addon']['app-js'] = {
+      './services/overridden.js': './reexport.js',
+    };
+    project.addDependency(overriddenServiceAddon);
+
     merge(project.files, {
       app: {
         adapters: {
@@ -143,6 +160,14 @@ wideAppScenarios
           'application.js': `
             import JSONAPISerializer from '@ember-data/serializer/json-api';
             export default class extends JSONAPISerializer {};
+          `,
+        },
+        services: {
+          'overridden.ts': `
+            import Service from '@ember/service';
+            export default class extends Service {
+              source = 'app'
+            }
           `,
         },
         templates: {
@@ -293,6 +318,24 @@ wideAppScenarios
                   assert.dom('[data-target]').hasAttribute('data-it-worked');
                 });
               });`,
+          },
+          services: {
+            'overridden-test.js': `
+              import { module, test } from 'qunit';
+              import { setupTest } from 'app-template/tests/helpers';
+
+              module('Integration | services | overridden', function (hooks) {
+                setupTest(hooks);
+
+                test('app wins', async function (assert) {
+                  assert.strictEqual(this.owner.lookup('service:overridden').source, 'app')
+                });
+
+                test('addon never evals', async function (assert) {
+                  assert.strictEqual(globalThis.addonOverriddenServiceRan, undefined);
+                })
+              });
+            `,
           },
         },
         helpers: {

@@ -4,6 +4,8 @@ import Resolver from 'ember-resolver';
 import loadInitializers from 'ember-load-initializers';
 import config from 'ts-app-template/config/environment';
 
+import '@embroider/virtual/compat-inspector-support';
+
 export default class App extends Application {
   modulePrefix = config.modulePrefix;
   podModulePrefix = config.podModulePrefix;

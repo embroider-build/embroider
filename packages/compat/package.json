@@ -37,7 +37,7 @@
     "@types/babel__code-frame": "^7.0.2",
     "assert-never": "^1.1.0",
     "babel-import-util": "^3.0.1",
-    "babel-plugin-debug-macros": "github:ember-cli/babel-plugin-debug-macros#83e6df2da700482e8e08c4771d750da5709d5e9a",
+    "babel-plugin-debug-macros": "^2.0.0",
     "babel-plugin-ember-template-compilation-2": "npm:babel-plugin-ember-template-compilation@^2.4.0",
     "babel-plugin-ember-template-compilation": "^3.0.0",
     "babel-plugin-syntax-dynamic-import": "^6.18.0",

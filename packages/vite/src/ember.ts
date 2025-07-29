@@ -1,7 +1,7 @@
 import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
 import { type UserConfig, type ConfigEnv } from 'vite';
-import { esBuildResolver } from './esbuild-resolver.js';
+// import { esBuildResolver } from './esbuild-resolver.js';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
@@ -47,9 +47,9 @@ export function ember() {
           config.optimizeDeps.esbuildOptions = {};
         }
         if (config.optimizeDeps.esbuildOptions.plugins) {
-          config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
+          // config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
         } else {
-          config.optimizeDeps.esbuildOptions.plugins = [esBuildResolver()];
+          // config.optimizeDeps.esbuildOptions.plugins = [esBuildResolver()];
         }
 
         if (!config.build) {
@@ -82,8 +82,8 @@ export function ember() {
         // vite will try to transpile away typescript in .ts files using
         // esbuild. But if we have any typescript, we expect it to get handled
         // by babel, because we don't want esbuild's decorator implementation.
-        if (config.esbuild == null) {
-          config.esbuild = false;
+        if (config.oxc == null) {
+          config.oxc = false;
         }
 
         minification(config, env.mode);

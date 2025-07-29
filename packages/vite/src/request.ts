@@ -85,6 +85,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
         // unix-like specifiers but Vite needs to see a real windows path in the
         // result.
         id: resolve(this.specifierWithQueryParams(virtual.specifier)),
+        // @ts-expect-error the rolldown types don't include this thing that's in the rollup types
         resolvedBy: this.fromFileWithQueryParams(request.fromFile),
         meta: {
           'embroider-resolver': { virtual } satisfies ResponseMeta,

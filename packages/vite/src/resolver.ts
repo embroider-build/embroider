@@ -30,6 +30,7 @@ export function resolver(): Plugin {
   ) {
     // vite 5 exposes `custom.depscan`, vite 6 exposes `options.scan`
     if (options.custom?.depScan || options.scan) {
+      // todo: skip on rolldown vite
       return await observeDepScan(context, source, importer, options);
     }
 

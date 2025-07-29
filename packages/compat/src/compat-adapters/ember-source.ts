@@ -400,6 +400,7 @@ function fixDeprecate(babel: typeof Babel) {
       VariableDeclarator(path: NodePath<Babel.types.VariableDeclarator>) {
         if (path.node.id.type === 'Identifier' && path.node.id.name === 'deprecate') {
           path.node.id.name = 'currentDeprecate';
+          path.node.init = null; // leave undefined for newDeprecate's (currentDeprecate ?? _deprecated) expression
         }
       },
     },

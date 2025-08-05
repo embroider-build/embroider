@@ -13,15 +13,9 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.1"
-    },
-    "@embroider/config-meta-loader": {
-      "oldVersion": "1.0.0"
-    },
-    "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.1.2",
-      "newVersion": "4.1.3",
+      "oldVersion": "4.1.1",
+      "newVersion": "4.1.2",
       "tagName": "latest",
       "constraints": [
         {
@@ -29,7 +23,13 @@
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "pkgJSONPath": "./packages/compat/package.json"
+    },
+    "@embroider/config-meta-loader": {
+      "oldVersion": "1.0.0"
+    },
+    "@embroider/core": {
+      "oldVersion": "4.1.3"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -53,5 +53,5 @@
       "oldVersion": "1.1.6"
     }
   },
-  "description": "## Release (2025-07-23)\n\n* @embroider/core 4.1.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/core`\n  * [#2525](https://github.com/embroider-build/embroider/pull/2525) App tree merging should be insensitive to file extensions ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-08-05)\n\n* @embroider/compat 4.1.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2501](https://github.com/embroider-build/embroider/pull/2501) Ensure @ember/debug methods behave correctly in development vs production builds ([@robbytx](https://github.com/robbytx))\n\n#### :house: Internal\n* [#2534](https://github.com/embroider-build/embroider/pull/2534) update pnpm to 10 ([@mansona](https://github.com/mansona))\n* [#2531](https://github.com/embroider-build/embroider/pull/2531) Upstream webpack types broke our build ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Robby Morgan ([@robbytx](https://github.com/robbytx))\n"
 }

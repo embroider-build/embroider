@@ -13,17 +13,7 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.1",
-      "newVersion": "4.1.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.2"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
@@ -53,5 +43,5 @@
       "oldVersion": "1.1.6"
     }
   },
-  "description": "## Release (2025-08-05)\n\n* @embroider/compat 4.1.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2501](https://github.com/embroider-build/embroider/pull/2501) Ensure @ember/debug methods behave correctly in development vs production builds ([@robbytx](https://github.com/robbytx))\n\n#### :house: Internal\n* [#2534](https://github.com/embroider-build/embroider/pull/2534) update pnpm to 10 ([@mansona](https://github.com/mansona))\n* [#2531](https://github.com/embroider-build/embroider/pull/2531) Upstream webpack types broke our build ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Robby Morgan ([@robbytx](https://github.com/robbytx))\n"
+  "description": "## Release (2025-08-05)\n\n\n\n#### :house: Internal\n* [#2535](https://github.com/embroider-build/embroider/pull/2535) add vite 7 to scenario tester ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

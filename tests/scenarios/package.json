@@ -110,6 +110,7 @@
     "typescript": "^5.4.5",
     "vite-5": "npm:vite@^5.0.0",
     "vite-6": "npm:vite@^6.1.0",
+    "vite-7": "npm:vite@^7.0.0",
     "webpack": "^5.90.3"
   }
 }

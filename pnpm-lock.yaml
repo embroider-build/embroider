@@ -1285,7 +1285,7 @@ importers:
         version: 3.28.6(babel-core@6.26.3)(encoding@0.1.13)(handlebars@4.7.8)(underscore@1.13.7)
       ember-cli-dependency-checker:
         specifier: ^3.1.0
-        version: 3.3.3(ember-cli@3.28.6(encoding@0.1.13))
+        version: 3.3.3(ember-cli@3.28.6)
       ember-cli-htmlbars:
         specifier: ^6.0.0
         version: 6.3.0
@@ -2125,6 +2125,9 @@ importers:
       vite-6:
         specifier: npm:vite@^6.1.0
         version: vite@6.3.5(@types/node@22.17.0)(terser@5.43.1)
+      vite-7:
+        specifier: npm:vite@^7.0.0
+        version: vite@7.0.6(@types/node@22.17.0)(terser@5.43.1)
       webpack:
         specifier: ^5.90.3
         version: 5.101.0
@@ -12953,6 +12956,46 @@ packages:
       yaml:
         optional: true
 
+  vite@7.0.6:
+    resolution: {integrity: sha512-MHFiOENNBd+Bd9uvc8GEsIzdkn1JxMmEeYX35tI3fv0sJBUTfW5tQsoaOwuY4KhBI09A3dUJ/DXf2yxPVPUceg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^20.19.0 || >=22.12.0
+      jiti: '>=1.21.0'
+      less: ^4.0.0
+      lightningcss: ^1.21.0
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+
   vscode-jsonrpc@8.1.0:
     resolution: {integrity: sha512-6TDy/abTQk+zDGYazgbIPc+4JoXdwC8NHU9Pbn4UJP1fehUyZmM4RHp5IthX7A6L5KS30PRui+j+tbbMMMafdw==}
     engines: {node: '>=14.0.0'}
@@ -21129,7 +21172,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ember-cli-dependency-checker@3.3.3(ember-cli@3.28.6(encoding@0.1.13)):
+  ember-cli-dependency-checker@3.3.3(ember-cli@3.28.6):
     dependencies:
       chalk: 2.4.2
       ember-cli: 3.28.6(babel-core@6.26.3)(encoding@0.1.13)(handlebars@4.7.8)(underscore@1.13.7)
@@ -30282,6 +30325,19 @@ snapshots:
       terser: 5.43.1
 
   vite@6.3.5(@types/node@22.17.0)(terser@5.43.1):
+    dependencies:
+      esbuild: 0.25.8
+      fdir: 6.4.6(picomatch@4.0.3)
+      picomatch: 4.0.3
+      postcss: 8.5.6
+      rollup: 4.46.2
+      tinyglobby: 0.2.14
+    optionalDependencies:
+      '@types/node': 22.17.0
+      fsevents: 2.3.3
+      terser: 5.43.1
+
+  vite@7.0.6(@types/node@22.17.0)(terser@5.43.1):
     dependencies:
       esbuild: 0.25.8
       fdir: 6.4.6(picomatch@4.0.3)

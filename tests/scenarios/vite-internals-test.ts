@@ -471,11 +471,14 @@ function runViteInternalsTest(scenario: Scenario) {
 
 function viteMatrix(scenarios: Scenarios) {
   return scenarios.expand({
-    '5.x': app => {
+    'vite-5.x': app => {
       app.linkDevDependency('vite', { resolveName: 'vite-5', baseDir: __dirname });
     },
-    '6.x': app => {
+    'vite-6.x': app => {
       app.linkDevDependency('vite', { resolveName: 'vite-6', baseDir: __dirname });
+    },
+    'vite-7.x': app => {
+      app.linkDevDependency('vite', { resolveName: 'vite-7', baseDir: __dirname });
     },
   });
 }

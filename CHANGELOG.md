@@ -2,6 +2,16 @@
 
 ## Release (2025-08-05)
 
+
+
+#### :house: Internal
+* [#2535](https://github.com/embroider-build/embroider/pull/2535) add vite 7 to scenario tester ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-08-05)
+
 * @embroider/compat 4.1.2 (patch)
 
 #### :bug: Bug Fix

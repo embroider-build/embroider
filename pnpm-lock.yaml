@@ -238,8 +238,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       babel-plugin-debug-macros:
-        specifier: ^1.0.2
-        version: 1.0.2(@babel/core@7.28.0)
+        specifier: ^2.0.0
+        version: 2.0.0(@babel/core@7.28.0)
       babel-plugin-ember-template-compilation:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1285,7 +1285,7 @@ importers:
         version: 3.28.6(babel-core@6.26.3)(encoding@0.1.13)(handlebars@4.7.8)(underscore@1.13.7)
       ember-cli-dependency-checker:
         specifier: ^3.1.0
-        version: 3.3.3(ember-cli@3.28.6(encoding@0.1.13))
+        version: 3.3.3(ember-cli@3.28.6)
       ember-cli-htmlbars:
         specifier: ^6.0.0
         version: 6.3.0
@@ -6075,8 +6075,8 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0
 
-  babel-plugin-debug-macros@1.0.2:
-    resolution: {integrity: sha512-ADkMh1LL45678c+4iGn3Fp8hdI9qvxGBkH5x9HNiIlgYJGdQWmYNcA2cS3XAr76N85kDCg4VpqsTN1hFX2jbEA==}
+  babel-plugin-debug-macros@2.0.0:
+    resolution: {integrity: sha512-7ZaLtXIY01PAPhLyjV3OACePnl+X5iQO7F4O/sOJHTfMf/36zyu14uVUxNiZmOUntYBsyT/VVplf1LrH6NcwvQ==}
     engines: {node: '>=16'}
     peerDependencies:
       '@babel/core': ^7.0.0
@@ -18914,7 +18914,7 @@ snapshots:
       '@babel/core': 7.28.0
       semver: 5.7.2
 
-  babel-plugin-debug-macros@1.0.2(@babel/core@7.28.0):
+  babel-plugin-debug-macros@2.0.0(@babel/core@7.28.0):
     dependencies:
       '@babel/core': 7.28.0
       babel-import-util: 2.1.1
@@ -21129,7 +21129,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ember-cli-dependency-checker@3.3.3(ember-cli@3.28.6(encoding@0.1.13)):
+  ember-cli-dependency-checker@3.3.3(ember-cli@3.28.6):
     dependencies:
       chalk: 2.4.2
       ember-cli: 3.28.6(babel-core@6.26.3)(encoding@0.1.13)(handlebars@4.7.8)(underscore@1.13.7)

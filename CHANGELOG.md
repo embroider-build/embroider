@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2025-07-23)
+
+* @embroider/compat 3.9.2 (patch)
+* @embroider/core 3.5.8 (patch)
+* @embroider/router 2.1.10 (patch)
+* @embroider/util 1.13.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/router`, `@embroider/util`
+  * [#2528](https://github.com/embroider-build/embroider/pull/2528) unpin @embroider/macros now that lazy mode has been fixed ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#2504](https://github.com/embroider-build/embroider/pull/2504) Update release plan ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-06-18)
 
 @embroider/addon-dev 7.1.5 (patch)

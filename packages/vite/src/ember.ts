@@ -47,7 +47,7 @@ export function ember() {
         }
 
         // @ts-expect-error the types aren't finished yet it would seem
-        if (this.meta.rolldownVersion) {
+        if (this?.meta?.rolldownVersion) {
           // configure our embroider resolver for optimize deps
           if (!config.optimizeDeps.rollupOptions) {
             config.optimizeDeps.rollupOptions = {};
@@ -109,7 +109,7 @@ export function ember() {
         // esbuild. But if we have any typescript, we expect it to get handled
         // by babel, because we don't want esbuild's decorator implementation.
         // @ts-expect-error the types aren't finished yet it would seem
-        if (this.meta.rolldownVersion) {
+        if (this?.meta?.rolldownVersion) {
           if (config.oxc == null) {
             config.oxc = false;
           }

@@ -2,6 +2,10 @@ import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
 import { type UserConfig, type ConfigEnv } from 'vite';
 import { esBuildResolver } from './esbuild-resolver.js';
+import { hbs } from './hbs.js';
+// I set this as a peer dependency, I'm not sure why eslint would have an issue finding it
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { babel } from '@rollup/plugin-babel';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
@@ -42,14 +46,36 @@ export function ember() {
           config.optimizeDeps.exclude = ['@embroider/macros'];
         }
 
-        // configure out esbuild resolver
-        if (!config.optimizeDeps.esbuildOptions) {
-          config.optimizeDeps.esbuildOptions = {};
-        }
-        if (config.optimizeDeps.esbuildOptions.plugins) {
-          config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
+        // @ts-expect-error the types aren't finished yet it would seem
+        if (this.meta.rolldownVersion) {
+          // configure our embroider resolver for optimize deps
+          if (!config.optimizeDeps.rollupOptions) {
+            config.optimizeDeps.rollupOptions = {};
+          }
+
+          // TODO we should probably split the hbs support into the classic-ember-support config
+          const emberRollupPlugins = [hbs(), templateTag(), resolver(), babel({ babelHelpers: 'runtime', extensions })];
+
+          if (config.optimizeDeps.rollupOptions.plugins) {
+            if (Array.isArray(config.optimizeDeps.rollupOptions.plugins)) {
+              config.optimizeDeps.rollupOptions.plugins.push(...emberRollupPlugins);
+            } else {
+              throw new Error('Could not automatically configure the Ember plugin for optimizeDeps');
+            }
+          } else {
+            config.optimizeDeps.rollupOptions.plugins = emberRollupPlugins;
+          }
         } else {
-          config.optimizeDeps.esbuildOptions.plugins = [esBuildResolver()];
+          // configure out esbuild resolver
+          if (!config.optimizeDeps.esbuildOptions) {
+            config.optimizeDeps.esbuildOptions = {};
+          }
+
+          if (config.optimizeDeps.esbuildOptions.plugins) {
+            config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
+          } else {
+            config.optimizeDeps.esbuildOptions.plugins = [esBuildResolver()];
+          }
         }
 
         if (!config.build) {
@@ -82,8 +108,15 @@ export function ember() {
         // vite will try to transpile away typescript in .ts files using
         // esbuild. But if we have any typescript, we expect it to get handled
         // by babel, because we don't want esbuild's decorator implementation.
-        if (config.esbuild == null) {
-          config.esbuild = false;
+        // @ts-expect-error the types aren't finished yet it would seem
+        if (this.meta.rolldownVersion) {
+          if (config.oxc == null) {
+            config.oxc = false;
+          }
+        } else {
+          if (config.esbuild == null) {
+            config.esbuild = false;
+          }
         }
 
         minification(config, env.mode);

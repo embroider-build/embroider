@@ -1,0 +1,6 @@
+# Unlabeled Changes
+
+* [#2485](https://github.com/embroider-build/embroider/pull/2485) Delete @embroider/util ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+
+*Cannot plan release until the above changes are labeled*.

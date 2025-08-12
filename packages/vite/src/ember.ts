@@ -54,7 +54,12 @@ export function ember() {
           }
 
           // TODO we should probably split the hbs support into the classic-ember-support config
-          const emberRollupPlugins = [hbs(), templateTag(), resolver(), babel({ babelHelpers: 'runtime', extensions })];
+          const emberRollupPlugins = [
+            hbs(),
+            templateTag(),
+            resolver({ rolldown: true }),
+            babel({ babelHelpers: 'runtime', extensions }),
+          ];
 
           if (config.optimizeDeps.rollupOptions.plugins) {
             if (Array.isArray(config.optimizeDeps.rollupOptions.plugins)) {
@@ -65,6 +70,11 @@ export function ember() {
           } else {
             config.optimizeDeps.rollupOptions.plugins = emberRollupPlugins;
           }
+
+          if (!config.optimizeDeps.rollupOptions.resolve) {
+            config.optimizeDeps.rollupOptions.resolve = {};
+          }
+          config.optimizeDeps.rollupOptions.resolve.extensions = extensions;
         } else {
           // configure out esbuild resolver
           if (!config.optimizeDeps.esbuildOptions) {

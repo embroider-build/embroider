@@ -4,12 +4,15 @@ import { resolve } from 'path';
 
 const { cleanUrl, getUrlQueryParams } = core;
 import type { PluginContext, ResolveIdResult } from 'rollup';
+import type { BackChannel } from './backchannel.js';
+import { assertNever } from 'assert-never';
 
 interface Init {
   context: PluginContext;
   source: string;
   importer: string | undefined;
   custom: Record<string, any> | undefined;
+  backChannel: BackChannel | undefined;
 }
 
 export interface ResponseMeta {
@@ -22,6 +25,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     source,
     importer,
     custom,
+    backChannel,
   }: Init) => {
     if (!(custom?.embroider?.enableCustomResolver ?? true)) {
       return;
@@ -49,7 +53,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
 
       return {
         initialState: { specifier: cleanSource, fromFile, meta: custom?.embroider?.meta },
-        adapter: new RollupRequestAdapter(context, queryParams, importerQueryParams, custom),
+        adapter: new RollupRequestAdapter(context, queryParams, importerQueryParams, custom, backChannel),
       };
     }
   };
@@ -58,7 +62,8 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     private context: PluginContext,
     private queryParams: string,
     private importerQueryParams: string,
-    private custom: Record<string, unknown> | undefined
+    private custom: Record<string, unknown> | undefined,
+    private backChannel: BackChannel | undefined
   ) {}
 
   get debugType() {
@@ -102,6 +107,10 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
   }
 
   async resolve(request: ModuleRequest<Resolution<ResolveIdResult>>): Promise<Resolution<ResolveIdResult>> {
+    if (this.backChannel) {
+      this.backChannel.requestStatus(request.specifier, request.fromFile);
+    }
+
     let result = await this.context.resolve(
       this.specifierWithQueryParams(request.specifier),
       this.fromFileWithQueryParams(request.fromFile),
@@ -116,11 +125,33 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
         },
       }
     );
-    if (result) {
-      let { pathname } = new URL(result.id, 'http://example.com');
-      return { type: 'found', filename: pathname, result, virtual: false };
-    } else {
+
+    if (!result) {
       return { type: 'not_found', err: undefined };
     }
+
+    let { pathname: filename } = new URL(result.id, 'http://example.com');
+
+    if (this.backChannel) {
+      let status = this.backChannel.readStatus(request.specifier, request.fromFile);
+      switch (status.type) {
+        case 'not_found':
+          return { type: 'not_found', err: result };
+        case 'found':
+          if (result.external) {
+            // when we know that the file was really found, but vite has
+            // externalized it, report the true filename that was found, not the
+            // externalized request path.
+            filename = status.filename;
+          }
+          break;
+        case 'indeterminate':
+          break;
+        default:
+          throw assertNever(status);
+      }
+    }
+
+    return { type: 'found', filename, result, virtual: false };
   }
 }

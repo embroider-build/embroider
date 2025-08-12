@@ -10,17 +10,19 @@ import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
 import fs from 'fs-extra';
 import { createHash } from 'crypto';
+import { BackChannel } from './backchannel.js';
 
 const { ensureSymlinkSync, outputJSONSync } = fs;
 
 const debug = makeDebug('embroider:vite');
 
-export function resolver(): Plugin {
+export function resolver(params?: { rolldown?: boolean }): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
   let server: ViteDevServer;
   const virtualDeps: Map<string, string[]> = new Map();
   const notViteDeps = new Set<string>();
   const responseMetas: Map<string, ResponseMeta> = new Map();
+  const backChannel = params?.rolldown ? new BackChannel() : undefined;
 
   async function resolveId(
     context: PluginContext,
@@ -30,7 +32,6 @@ export function resolver(): Plugin {
   ) {
     // vite 5 exposes `custom.depscan`, vite 6 exposes `options.scan`
     if (options.custom?.depScan || options.scan) {
-      // todo: skip on rolldown vite
       return await observeDepScan(context, source, importer, options);
     }
 
@@ -39,6 +40,7 @@ export function resolver(): Plugin {
       source,
       importer,
       custom: options.custom,
+      backChannel,
     });
     if (!request) {
       // fallthrough to other rollup plugins

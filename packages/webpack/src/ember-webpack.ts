@@ -358,9 +358,15 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       return style;
     }
 
-    const csso = await import('csso');
-    const cssContent = readFileSync(join(this.pathToVanillaApp, style), 'utf8');
-    const minifiedCss = csso.minify(cssContent).css;
+    const { transform } = await import('lightningcss');
+    const cssPath = join(this.pathToVanillaApp, style);
+    const cssBuffer = readFileSync(cssPath);
+    const { code } = transform({
+      code: cssBuffer,
+      filename: cssPath,
+      minify: true,
+    });
+    const minifiedCss = code.toString();
 
     let finalFilename = this.getFingerprintedFilename(style, minifiedCss);
     outputFileSync(join(this.outputPath, finalFilename), minifiedCss);

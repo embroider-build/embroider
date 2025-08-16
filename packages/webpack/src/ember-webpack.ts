@@ -365,6 +365,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       code: cssBuffer,
       filename: cssPath,
       minify: true,
+      errorRecovery: true,
     });
     const minifiedCss = code.toString();
 

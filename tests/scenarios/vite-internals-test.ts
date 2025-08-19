@@ -480,6 +480,9 @@ function viteMatrix(scenarios: Scenarios) {
     'vite-7.x': app => {
       app.linkDevDependency('vite', { resolveName: 'vite-7', baseDir: __dirname });
     },
+    'vite-rolldown': app => {
+      app.linkDevDependency('vite', { resolveName: 'vite-rolldown', baseDir: __dirname });
+    },
   });
 }
 

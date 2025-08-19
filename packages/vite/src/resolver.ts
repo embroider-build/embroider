@@ -30,11 +30,8 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
     importer: string | undefined,
     options: { custom?: Record<string, unknown>; scan?: boolean }
   ) {
-    // @ts-ignore
-    if (context.outputOptions?.dir?.includes('.vite')) {
-      // TODO: this is the phase where we need to do what the esbuild plugin
-      // calls the "bundling" phase to prevent recursion into the app
-    }
+    // @ts-expect-error not included in upstream types
+    let isDepBundling = Boolean(context.outputOptions?.dir?.includes('.vite'));
 
     // vite 5 exposes `custom.depscan`, vite 6 exposes `options.scan`
     if (options.custom?.depScan || options.scan) {
@@ -47,6 +44,8 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
       importer,
       custom: options.custom,
       backChannel,
+      isDepBundling,
+      packageCache: resolverLoader.resolver.packageCache,
     });
     if (!request) {
       // fallthrough to other rollup plugins

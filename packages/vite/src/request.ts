@@ -1,11 +1,19 @@
-import type { ModuleRequest, RequestAdapter, RequestAdapterCreate, Resolution, VirtualResponse } from '@embroider/core';
+import type {
+  ModuleRequest,
+  RequestAdapter,
+  RequestAdapterCreate,
+  Resolution,
+  RewrittenPackageCache,
+  VirtualResponse,
+} from '@embroider/core';
 import core from '@embroider/core';
 import { resolve } from 'path';
 
-const { cleanUrl, getUrlQueryParams } = core;
+const { cleanUrl, getUrlQueryParams, packageName } = core;
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import type { BackChannel } from './backchannel.js';
 import { assertNever } from 'assert-never';
+import { externalName } from '@embroider/reverse-exports';
 
 interface Init {
   context: PluginContext;
@@ -13,6 +21,8 @@ interface Init {
   importer: string | undefined;
   custom: Record<string, any> | undefined;
   backChannel: BackChannel | undefined;
+  isDepBundling: boolean;
+  packageCache: RewrittenPackageCache;
 }
 
 export interface ResponseMeta {
@@ -26,6 +36,8 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     importer,
     custom,
     backChannel,
+    isDepBundling,
+    packageCache,
   }: Init) => {
     if (!(custom?.embroider?.enableCustomResolver ?? true)) {
       return;
@@ -53,7 +65,15 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
 
       return {
         initialState: { specifier: cleanSource, fromFile, meta: custom?.embroider?.meta },
-        adapter: new RollupRequestAdapter(context, queryParams, importerQueryParams, custom, backChannel),
+        adapter: new RollupRequestAdapter(
+          context,
+          queryParams,
+          importerQueryParams,
+          custom,
+          backChannel,
+          isDepBundling,
+          packageCache
+        ),
       };
     }
   };
@@ -63,7 +83,9 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
     private queryParams: string,
     private importerQueryParams: string,
     private custom: Record<string, unknown> | undefined,
-    private backChannel: BackChannel | undefined
+    private backChannel: BackChannel | undefined,
+    private isDepBundling: boolean,
+    private packageCache: RewrittenPackageCache
   ) {}
 
   get debugType() {
@@ -149,6 +171,41 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
           break;
         default:
           throw assertNever(status);
+      }
+    }
+
+    if (this.isDepBundling) {
+      // we need to ensure that we don't traverse back into the app while
+      // doing dependency pre-bundling. There are multiple ways an addon can
+      // resolve things from the app, due to the existince of both app-js
+      // (modules in addons that are logically part of the app's namespace)
+      // and non-strict handlebars (which resolves
+      // components/helpers/modifiers against the app's global pool).
+      let pkg = this.packageCache.ownerOfFile(filename);
+      if (pkg?.root === this.packageCache.appRoot) {
+        let externalizedName = request.specifier;
+        if (!packageName(externalizedName)) {
+          // the request was a relative path. This won't remain valid once
+          // it has been bundled into vite/deps. But we know it targets the
+          // app, so we can always convert it into a non-relative import
+          // from the app's namespace
+          //
+          // IMPORTANT: whenever an addon resolves a relative path to the
+          // app, it does so because our code in the core resolver has
+          // rewritten the request to be relative to the app's root. So here
+          // we will only ever encounter relative paths that are already
+          // relative to the app's root directory.
+          externalizedName = externalName(pkg.packageJSON, externalizedName) || externalizedName;
+        }
+        return {
+          type: 'found',
+          filename: externalizedName,
+          virtual: false,
+          result: {
+            id: externalizedName,
+            external: true,
+          },
+        };
       }
     }
 

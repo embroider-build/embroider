@@ -5,6 +5,7 @@
 import { getOwner } from '@ember/owner';
 import EmberRouter from '@ember/routing/router';
 import { buildWaiter } from '@ember/test-waiters';
+import { isDestroying, isDestroyed } from '@ember/destroyable';
 import { macroCondition, getGlobalConfig } from '@embroider/macros';
 import type Resolver from 'ember-resolver';
 
@@ -126,12 +127,22 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
           loaded: false,
         };
         this.registeredBundles.set(bundle, entry);
+
+        /**
+         * SAFETY: `registerBundle` can *only* be called if an owner exists (normally it's potentially undefined)
+         */
+        const owner = getOwner(this)!;
         resolve!(
           (async () => {
             let token = waiter.beginAsync();
             let { default: modules } = await bundle.load();
             waiter.endAsync(token);
-            let resolver = getOwner(this)!.lookup('resolver:current') as Resolver | undefined;
+            /**
+             * The app was torn down while we were loading,
+             * so we don't need to proceed with what would otherwise be tossed work/effort.
+             */
+            if (isDestroyed(owner) || isDestroying(owner)) return;
+            let resolver = owner.lookup('resolver:current') as Resolver | undefined;
             if (!resolver) {
               throw new Error(`This version of @embroider/router requires ember-resolver >= 13.1.0`);
             }

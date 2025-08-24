@@ -1,7 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.0.1"
+      "oldVersion": "8.1.0"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.10.0"
@@ -14,17 +14,13 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.0.1",
-      "newVersion": "4.0.2",
+      "oldVersion": "4.1.1",
+      "newVersion": "4.1.2",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
@@ -33,95 +29,29 @@
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.0.1",
-      "newVersion": "4.0.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/reverse-exports"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.1.3"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.17.1",
-      "newVersion": "1.17.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.18.1"
     },
     "@embroider/reverse-exports": {
-      "impact": "patch",
-      "oldVersion": "0.1.1",
-      "newVersion": "0.1.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/reverse-exports/package.json"
+      "oldVersion": "0.1.2"
     },
     "@embroider/router": {
-      "impact": "patch",
-      "oldVersion": "3.0.0",
-      "newVersion": "3.0.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "oldVersion": "3.0.2"
     },
     "@embroider/shared-internals": {
       "oldVersion": "3.0.0"
     },
     "@embroider/template-tag-codemod": {
-      "oldVersion": "1.2.0"
+      "oldVersion": "1.3.2"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.0.2",
-      "newVersion": "1.0.3",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/reverse-exports"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.1.6"
     }
   },
-  "description": "## Release (2025-04-18)\n\n* @embroider/compat 4.0.2 (patch)\n* @embroider/core 4.0.2 (patch)\n* @embroider/macros 1.17.2 (patch)\n* @embroider/reverse-exports 0.1.2 (patch)\n* @embroider/router 3.0.1 (patch)\n* @embroider/vite 1.0.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/reverse-exports`\n  * [#2449](https://github.com/embroider-build/embroider/pull/2449) Major speedup of reverse-exports ([@simonihmig](https://github.com/simonihmig))\n* `@embroider/router`\n  * [#2443](https://github.com/embroider-build/embroider/pull/2443) Widen Range for @ember/test-waiters ([@jrjohnson](https://github.com/jrjohnson))\n\n#### :house: Internal\n* `@embroider/reverse-exports`\n  * [#2450](https://github.com/embroider-build/embroider/pull/2450) convert reverse-exports to a tsconfig project ([@mansona](https://github.com/mansona))\n* `@embroider/core`, `@embroider/macros`\n  * [#2451](https://github.com/embroider-build/embroider/pull/2451) move core to a tsconfig project ([@mansona](https://github.com/mansona))\n* `@embroider/compat`\n  * [#2324](https://github.com/embroider-build/embroider/pull/2324) move embroider compat to a tsconfig reference project ([@mansona](https://github.com/mansona))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Jon Johnson ([@jrjohnson](https://github.com/jrjohnson))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2025-08-05)\n\n* @embroider/compat 4.1.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2501](https://github.com/embroider-build/embroider/pull/2501) Ensure @ember/debug methods behave correctly in development vs production builds ([@robbytx](https://github.com/robbytx))\n\n#### :house: Internal\n* [#2534](https://github.com/embroider-build/embroider/pull/2534) update pnpm to 10 ([@mansona](https://github.com/mansona))\n* [#2531](https://github.com/embroider-build/embroider/pull/2531) Upstream webpack types broke our build ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Robby Morgan ([@robbytx](https://github.com/robbytx))\n"
 }

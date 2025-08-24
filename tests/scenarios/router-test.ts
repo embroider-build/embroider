@@ -1,7 +1,6 @@
 import { tsAppScenarios, tsAppClassicScenarios } from './scenarios';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
-import { merge } from 'lodash';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -12,7 +11,7 @@ function setupScenario(project: Project) {
   // case.
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
-  merge(project.files, {
+  project.mergeFiles({
     'ember-cli-build.js': `
       'use strict';
 
@@ -68,6 +67,16 @@ function setupScenario(project: Project) {
               export default class SplitMeIndexRoute extends Route {}
             `,
         },
+        'slow.ts': `
+          import Route from "@ember/routing/route";
+          export default class SlowRoute extends Route {
+            async model() {
+              return await new Promise((resolve) => {
+                (globalThis as any).resolveSlowRoute = resolve;
+              });
+            }
+          }
+        `,
       },
       templates: {
         'application.hbs': `
@@ -86,6 +95,8 @@ function setupScenario(project: Project) {
           'child.hbs': `<UsedInChild />`,
           'index.hbs': `<div data-test-split-me-index>This is the split-me/index.</div>`,
         },
+        'slow.hbs': `<div data-slow>{{@model.message}}</div>`,
+        'slow-loading.hbs': `<div data-loading>loading</div>`,
       },
       'router.ts': `
           import EmberRouter from '@embroider/router';
@@ -100,6 +111,7 @@ function setupScenario(project: Project) {
             this.route('split-me', function () {
               this.route('child');
             });
+            this.route('slow');
           });
         `,
     },
@@ -216,8 +228,6 @@ function setupScenario(project: Project) {
             });
 
             test("can enter a child of a lazy route", async function (assert) {
-              debugger;
-
               await visit("/split-me/child");
               assert.ok(
                 document.querySelector("[data-test-used-in-child]"),
@@ -226,6 +236,26 @@ function setupScenario(project: Project) {
             });
           });
 
+        `,
+        'slow-test.js': `
+          import { module, test } from "qunit";
+          import { visit, waitFor, settled } from "@ember/test-helpers";
+          import { setupApplicationTest } from "ember-qunit";
+
+          module("Acceptance | slow", function (hooks) {
+            setupApplicationTest(hooks);
+
+            test("loading routes work", async function (assert) {
+              visit("/slow");
+              let element = await waitFor("[data-loading]");
+              assert.dom(element).containsText("loading");
+              globalThis.resolveSlowRoute({
+                message: "I'm slow",
+              });
+              await settled();
+              assert.dom("[data-slow]").containsText("I'm slow");
+            });
+          });
         `,
       },
     },

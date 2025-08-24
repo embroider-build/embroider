@@ -4,7 +4,7 @@ const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = c
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
-import { join, resolve } from 'path';
+import { join, normalize, resolve } from 'path';
 import { writeStatus } from './backchannel.js';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
@@ -208,7 +208,10 @@ async function maybeCaptureNewOptimizedDep(
   if (!foundFile) {
     return result;
   }
-  if (foundFile.startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))) {
+  if (
+    foundFile.includes('.vite') &&
+    normalize(foundFile).startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))
+  ) {
     debug('maybeCaptureNewOptimizedDep: %s already in vite deps', foundFile);
     return result;
   }
@@ -224,7 +227,7 @@ async function maybeCaptureNewOptimizedDep(
   }
 
   if (notViteDeps.has(foundFile)) {
-    debug('maybeCaptureNewOptimizedDep: already attmpted %s', foundFile);
+    debug('maybeCaptureNewOptimizedDep: already attempted %s', foundFile);
     return result;
   }
 

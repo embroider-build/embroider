@@ -31,16 +31,45 @@ export class AppFiles {
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
 
-    let combinedFiles = new Set<string>();
-    let combinedNonFastbootFiles = new Set<string>();
-    let isFastbootOnly = new Map<string, boolean>();
+    let combinedFiles = new Map<string, string>();
+    let combinedNonFastbootFiles = new Map<string, string>();
+
+    function add(map: Map<string, string>, filename: string): void {
+      if (!resolvableExtensions.test(filename)) {
+        return;
+      }
+
+      if (/\.d\.ts$/.test(filename)) {
+        // .d.ts files are technically "*.ts" files but aren't really and we
+        // don't want to include them when we crawl through the app.
+        return;
+      }
+
+      filename = filename.split(sep).join('/');
+
+      let extensionless = filename.replace(resolvableExtensions, '');
+      let prior = map.get(extensionless);
+
+      if (!prior) {
+        // no prior, so we win
+        map.set(extensionless, filename);
+      } else if (prior.startsWith('components/') && prior.endsWith('.hbs') && !prior.endsWith('/template.hbs')) {
+        // The prior entry in combinedFiles is a colocated hbs component. The
+        // name "template.hbs" is special in the template colocation rules due
+        // to earlier pods patterns.
+        //
+        // colocated hbs never wins over the corresponding other resolvable js
+        // or ts.
+        map.set(extensionless, filename);
+      }
+    }
 
     for (let f of appFiles) {
-      combinedFiles.add(f);
-      combinedNonFastbootFiles.add(f);
+      add(combinedFiles, f);
+      add(combinedNonFastbootFiles, f);
     }
     for (let f of fastbootFiles) {
-      combinedFiles.add(f);
+      add(combinedFiles, f);
     }
 
     for (let addon of engine.addons.keys()) {
@@ -48,8 +77,8 @@ export class AppFiles {
       if (appJS) {
         for (let filename of Object.keys(appJS)) {
           filename = filename.replace(/^\.\//, '');
-          combinedFiles.add(filename);
-          combinedNonFastbootFiles.add(filename);
+          add(combinedFiles, filename);
+          add(combinedNonFastbootFiles, filename);
         }
       }
 
@@ -57,23 +86,14 @@ export class AppFiles {
       if (fastbootJS) {
         for (let filename of Object.keys(fastbootJS)) {
           filename = filename.replace(/^\.\//, '');
-          combinedFiles.add(filename);
+          add(combinedFiles, filename);
         }
       }
     }
 
-    for (let relativePath of combinedFiles) {
-      isFastbootOnly.set(relativePath, !combinedNonFastbootFiles.has(relativePath));
-      relativePath = relativePath.split(sep).join('/');
-      if (!resolvableExtensions.test(relativePath)) {
-        continue;
-      }
-
-      if (/\.d\.ts$/.test(relativePath)) {
-        // .d.ts files are technically "*.ts" files but aren't really and we
-        // don't want to include them when we crawl through the app.
-        continue;
-      }
+    let isFastbootOnly = new Map<string, boolean>();
+    for (let [extensionless, relativePath] of combinedFiles) {
+      isFastbootOnly.set(relativePath, !combinedNonFastbootFiles.has(extensionless));
 
       if (relativePath.startsWith('tests/')) {
         // skip tests because they are dealt with separately
@@ -95,9 +115,7 @@ export class AppFiles {
           // because the resolver will be able to recognize a template-only and
           // give a correct answer in the end.
           let jsPath = relativePath.replace(/\.hbs$/, '.js');
-          if (!combinedFiles.has(jsPath)) {
-            components.push(jsPath);
-          }
+          components.push(jsPath);
         }
         continue;
       }

@@ -11,7 +11,7 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
     EMBROIDER_PREBUILD: 'true',
   };
 
-  let emberCLIMain = require.resolve('ember-cli');
+  let emberCLIMain = require.resolve('ember-cli', { paths: [process.cwd()] });
   if (!emberCLIMain) {
     throw new Error('Could not resolve ember-cli');
   }

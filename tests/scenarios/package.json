@@ -48,6 +48,7 @@
     "@ember/test-waiters": "^3.0.2",
     "@embroider/addon-shim": "workspace:*",
     "@embroider/macros": "workspace:*",
+    "@embroider/macros-old": "npm:@embroider/macros@~1.16.0",
     "@embroider/router": "workspace:*",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-typescript": "^11.1.2",
@@ -109,6 +110,7 @@
     "typescript": "^5.4.5",
     "vite-5": "npm:vite@^5.0.0",
     "vite-6": "npm:vite@^6.1.0",
+    "vite-7": "npm:vite@^7.0.0",
     "webpack": "^5.90.3"
   }
 }

@@ -587,6 +587,9 @@ export default class CompatApp {
       // macros in a classic build.
       active: true,
     });
+
+    // Embroider 4.x always requires eager importSync
+    this.macrosConfig.importSyncImplementation = 'eager';
   }
 
   private inTrees(prevStageTree: BroccoliNode) {

@@ -74,6 +74,10 @@ export function buildMacros(options: Options = {}): ConfiguredMacros {
     macros.enableRuntimeMode();
   }
 
+  // `buildMacros` is only ever called under Embroider 4.x, where the eager
+  // implementation is mandatory.
+  macros.importSyncImplementation = 'eager';
+
   macros.finalize();
 
   return {

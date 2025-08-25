@@ -144,13 +144,14 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
     }
 
     private _handlerResolver(this: this & Internals, original: (name: string) => unknown) {
-      let handler = (async (name: string) => {
+      let handler = ((name: string) => {
         const bundle = this.lazyRoute(name) ?? this.lazyEngine(name);
         this.seenByRoute.add(name);
         if (bundle) {
-          await this.registerBundle(bundle);
+          return this.registerBundle(bundle).then(() => original(name));
+        } else {
+          return original(name);
         }
-        return original(name);
       }) as GetRoute;
       handler.isEmbroiderRouterHandler = true;
       return handler;

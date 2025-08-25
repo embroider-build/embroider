@@ -241,7 +241,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
-            true && !false && deprecate(
+            isDevelopingApp() && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
               false,
               {
@@ -256,6 +256,7 @@ Scenarios.fromProject(() => new Project())
               }
             );
             import component from "${esc(componentFile)}";
+            import { isDevelopingApp } from "@embroider/macros";
             export default setComponentTemplate(template, component);
           `);
 
@@ -281,7 +282,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
-            true && !false && deprecate(
+            isDevelopingApp() && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'hello-world'.",
               false,
               {
@@ -296,6 +297,7 @@ Scenarios.fromProject(() => new Project())
               }
             );
             import templateOnlyComponent from "@ember/component/template-only";
+            import { isDevelopingApp } from "@embroider/macros";
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "hello-world"));
           `);
 
@@ -396,7 +398,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
-            true && !false && deprecate(
+            isDevelopingApp() && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {
@@ -411,6 +413,7 @@ Scenarios.fromProject(() => new Project())
               }
             );
             import templateOnlyComponent from "@ember/component/template-only";
+            import { isDevelopingApp } from "@embroider/macros";
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
           `);
 
@@ -436,7 +439,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
-            true && !false && deprecate(
+            isDevelopingApp() && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {
@@ -451,6 +454,7 @@ Scenarios.fromProject(() => new Project())
               }
             );
             import templateOnlyComponent from "@ember/component/template-only";
+            import { isDevelopingApp } from "@embroider/macros";
             export default setComponentTemplate(template, templateOnlyComponent(undefined, "template"));
           `);
 
@@ -478,7 +482,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
-            true && !false && deprecate(
+            isDevelopingApp() && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {
@@ -493,6 +497,7 @@ Scenarios.fromProject(() => new Project())
               }
             );
             import component from "${esc(componentFile)}";
+            import { isDevelopingApp } from "@embroider/macros";
             export default setComponentTemplate(template, component);
           `);
 
@@ -521,7 +526,7 @@ Scenarios.fromProject(() => new Project())
             import { setComponentTemplate } from "@ember/component";
             import template from "${esc(templateFile)}";
             import { deprecate } from "@ember/debug";
-            true && !false && deprecate(
+            isDevelopingApp() && !false && deprecate(
               "Components with separately resolved templates are deprecated. Migrate to either co-located js/ts + hbs files or to gjs/gts. Tried to lookup 'template'.",
               false,
               {
@@ -536,6 +541,7 @@ Scenarios.fromProject(() => new Project())
               }
             );
             import component from "${esc(componentFile)}";
+            import { isDevelopingApp } from "@embroider/macros";
             export default setComponentTemplate(template, component);
           `);
           pairModule.resolves(templateFile).to('./pods/components/hello-world/template.hbs');

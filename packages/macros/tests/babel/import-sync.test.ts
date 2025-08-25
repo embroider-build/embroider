@@ -4,6 +4,7 @@ import type { MacrosConfig } from '../../src/node';
 describe('importSync', function () {
   allBabelVersions(function createTests(transform: (code: string) => string, config: MacrosConfig) {
     config.setOwnConfig(__filename, { target: 'my-plugin' });
+    config.importSyncImplementation = 'eager';
     config.finalize();
 
     test('importSync becomes import * as _something', () => {

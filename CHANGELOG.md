@@ -1,5 +1,58 @@
 # Embroider Changelog
 
+## Release (2025-08-05)
+
+* @embroider/compat 4.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2501](https://github.com/embroider-build/embroider/pull/2501) Ensure @ember/debug methods behave correctly in development vs production builds ([@robbytx](https://github.com/robbytx))
+
+#### :house: Internal
+* [#2534](https://github.com/embroider-build/embroider/pull/2534) update pnpm to 10 ([@mansona](https://github.com/mansona))
+* [#2531](https://github.com/embroider-build/embroider/pull/2531) Upstream webpack types broke our build ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robby Morgan ([@robbytx](https://github.com/robbytx))
+
+## Release (2025-07-23)
+
+* @embroider/core 4.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2525](https://github.com/embroider-build/embroider/pull/2525) App tree merging should be insensitive to file extensions ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-07-22)
+
+* @embroider/router 3.0.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2524](https://github.com/embroider-build/embroider/pull/2524) Fix loading route in @embroider/router ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-07-22)
+
+* @embroider/compat 4.1.1 (patch)
+* @embroider/core 4.1.2 (patch)
+* @embroider/macros 1.18.1 (patch)
+* @embroider/vite 1.1.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/macros`
+  * [#2511](https://github.com/embroider-build/embroider/pull/2511) Fixing lazy importSync ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-06-24)
 
 * @embroider/core 4.1.1 (patch)

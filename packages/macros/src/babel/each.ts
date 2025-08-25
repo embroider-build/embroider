@@ -4,7 +4,6 @@ import type { types as t } from '@babel/core';
 import error from './error';
 import type State from './state';
 import type * as Babel from '@babel/core';
-import cloneDeep from 'lodash/cloneDeep';
 
 type CallEachExpression = NodePath<t.CallExpression> & {
   get(callee: 'callee'): NodePath<t.Identifier>;
@@ -59,7 +58,7 @@ export function insertEach(path: EachPath, state: State, context: typeof Babel) 
       for (let target of nameRefs) {
         target.replaceWith(literalElement);
       }
-      path.insertBefore(cloneDeep(path.get('body').node));
+      path.insertBefore(state.cloneDeep(path.get('body').node));
     }
     path.remove();
   }

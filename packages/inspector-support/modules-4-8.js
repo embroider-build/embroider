@@ -28,6 +28,7 @@ export * as ObjectPromiseProxyMixin from '@ember/object/promise-proxy-mixin';
 export * as ObjectProxy from '@ember/object/proxy';
 export * as Runloop from '@ember/runloop';
 export * as Service from '@ember/service';
+export * as Owner from '@ember/owner';
 
 export * as VERSION from 'ember/version';
 

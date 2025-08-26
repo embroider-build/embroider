@@ -197,7 +197,7 @@ window._embroiderEngineBundles_ = [
   {
     names: {{json-stringify engine.names}},
     load: function() {
-      return import("{{js-string-escape engine.path}}");
+      return import("{{js-string-escape engine.path}}").then(m=> ({ default: { "{{engine.path}}": m.default } }));;
     }
   },
   {{/each}}

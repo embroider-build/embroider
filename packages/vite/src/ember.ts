@@ -1,11 +1,26 @@
 import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
-import { type UserConfig, type ConfigEnv } from 'vite';
+import { type UserConfig, type ConfigEnv, type Plugin } from 'vite';
 import { esBuildResolver } from './esbuild-resolver.js';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
-export function ember() {
+export const defaultRolldownSharedPlugins = [
+  'rollup-hbs-plugin',
+  'embroider-template-tag',
+  'embroider-resolver',
+  'babel',
+];
+
+export function ember(params?: {
+  /**
+   * List of names of rollup plugins that should be taken from your regular Vite
+   * config and also applied when Rolldown is bundling dependencies for
+   * development. The default list of names is importable as
+   * `defaultRolldownSharedPlugins`.
+   */
+  rolldownSharedPlugins?: string[];
+}) {
   return [
     templateTag(),
     resolver(),
@@ -42,14 +57,43 @@ export function ember() {
           config.optimizeDeps.exclude = ['@embroider/macros'];
         }
 
-        // configure out esbuild resolver
-        if (!config.optimizeDeps.esbuildOptions) {
-          config.optimizeDeps.esbuildOptions = {};
-        }
-        if (config.optimizeDeps.esbuildOptions.plugins) {
-          config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
+        // @ts-expect-error the types aren't finished yet it would seem
+        if (this?.meta?.rolldownVersion) {
+          // configure our embroider resolver for optimize deps
+          if (!config.optimizeDeps.rollupOptions) {
+            config.optimizeDeps.rollupOptions = {};
+          }
+
+          const emberRollupPlugins = sharedRolldownPlugins(
+            params?.rolldownSharedPlugins ?? defaultRolldownSharedPlugins,
+            config.plugins
+          );
+
+          if (config.optimizeDeps.rollupOptions.plugins) {
+            if (Array.isArray(config.optimizeDeps.rollupOptions.plugins)) {
+              config.optimizeDeps.rollupOptions.plugins.push(...emberRollupPlugins);
+            } else {
+              throw new Error('Could not automatically configure the Ember plugin for optimizeDeps');
+            }
+          } else {
+            config.optimizeDeps.rollupOptions.plugins = emberRollupPlugins;
+          }
+
+          if (!config.optimizeDeps.rollupOptions.resolve) {
+            config.optimizeDeps.rollupOptions.resolve = {};
+          }
+          config.optimizeDeps.rollupOptions.resolve.extensions = extensions;
         } else {
-          config.optimizeDeps.esbuildOptions.plugins = [esBuildResolver()];
+          // configure out esbuild resolver
+          if (!config.optimizeDeps.esbuildOptions) {
+            config.optimizeDeps.esbuildOptions = {};
+          }
+
+          if (config.optimizeDeps.esbuildOptions.plugins) {
+            config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
+          } else {
+            config.optimizeDeps.esbuildOptions.plugins = [esBuildResolver()];
+          }
         }
 
         if (!config.build) {
@@ -82,8 +126,15 @@ export function ember() {
         // vite will try to transpile away typescript in .ts files using
         // esbuild. But if we have any typescript, we expect it to get handled
         // by babel, because we don't want esbuild's decorator implementation.
-        if (config.esbuild == null) {
-          config.esbuild = false;
+        // @ts-expect-error the types aren't finished yet it would seem
+        if (this?.meta?.rolldownVersion) {
+          if (config.oxc == null) {
+            config.oxc = false;
+          }
+        } else {
+          if (config.esbuild == null) {
+            config.esbuild = false;
+          }
         }
 
         minification(config, env.mode);
@@ -122,4 +173,42 @@ function minification(config: UserConfig, mode: string) {
       },
     };
   }
+}
+
+function findPlugin(plugins: UserConfig['plugins'], name: string): Plugin | undefined {
+  if (!plugins) {
+    return undefined;
+  }
+  for (let element of plugins) {
+    if (typeof element === 'object' && element != null) {
+      if ('name' in element && element.name === name) {
+        return element;
+      }
+    }
+    if (Array.isArray(element)) {
+      let matched = findPlugin(element, name);
+      if (matched) {
+        return matched;
+      }
+    }
+  }
+  return undefined;
+}
+
+function sharedRolldownPlugins<T extends { name: string }>(
+  sharedPluginNames: string[],
+  plugins: UserConfig['plugins']
+): NonNullable<UserConfig['plugins']> {
+  return sharedPluginNames
+    .map(name => {
+      let matched = findPlugin(plugins, name);
+      if (matched) {
+        if (name === 'embroider-resolver') {
+          // special case. Needs different config.
+          return resolver({ rolldown: true });
+        }
+        return matched;
+      }
+    })
+    .filter(Boolean) as T[];
 }

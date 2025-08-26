@@ -39,6 +39,7 @@
     "@embroider/compat": "workspace:*",
     "@embroider/config-meta-loader": "workspace:*",
     "@embroider/core": "workspace:*",
+    "@embroider/inspector-support": "workspace:*",
     "@embroider/router": "workspace:*",
     "@embroider/test-setup": "workspace:*",
     "@embroider/vite": "workspace:*",

@@ -37,9 +37,6 @@
     "source-map-url": "^0.4.1",
     "terser": "^5.7.0"
   },
-  "peerDepencecies": {
-    "@rollup/plugin-babel": "*"
-  },
   "devDependencies": {
     "@embroider/core": "workspace:^",
     "@rollup/plugin-babel": "^5.3.1",

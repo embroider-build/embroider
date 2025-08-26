@@ -1,15 +1,26 @@
 import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
-import { type UserConfig, type ConfigEnv } from 'vite';
+import { type UserConfig, type ConfigEnv, type Plugin } from 'vite';
 import { esBuildResolver } from './esbuild-resolver.js';
-import { hbs } from './hbs.js';
-// I set this as a peer dependency, I'm not sure why eslint would have an issue finding it
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { babel } from '@rollup/plugin-babel';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
-export function ember() {
+export const defaultRolldownSharedPlugins = [
+  'rollup-hbs-plugin',
+  'embroider-template-tag',
+  'embroider-resolver',
+  'babel',
+];
+
+export function ember(params?: {
+  /**
+   * List of names of rollup plugins that should be taken from your regular Vite
+   * config and also applied when Rolldown is bundling dependencies for
+   * development. The default list of names is importable as
+   * `defaultRolldownSharedPlugins`.
+   */
+  rolldownSharedPlugins?: string[];
+}) {
   return [
     templateTag(),
     resolver(),
@@ -53,13 +64,10 @@ export function ember() {
             config.optimizeDeps.rollupOptions = {};
           }
 
-          // TODO we should probably split the hbs support into the classic-ember-support config
-          const emberRollupPlugins = [
-            hbs(),
-            templateTag(),
-            resolver({ rolldown: true }),
-            babel({ babelHelpers: 'runtime', extensions }),
-          ];
+          const emberRollupPlugins = sharedRolldownPlugins(
+            params?.rolldownSharedPlugins ?? defaultRolldownSharedPlugins,
+            config.plugins
+          );
 
           if (config.optimizeDeps.rollupOptions.plugins) {
             if (Array.isArray(config.optimizeDeps.rollupOptions.plugins)) {
@@ -165,4 +173,42 @@ function minification(config: UserConfig, mode: string) {
       },
     };
   }
+}
+
+function findPlugin(plugins: UserConfig['plugins'], name: string): Plugin | undefined {
+  if (!plugins) {
+    return undefined;
+  }
+  for (let element of plugins) {
+    if (typeof element === 'object' && element != null) {
+      if ('name' in element && element.name === name) {
+        return element;
+      }
+    }
+    if (Array.isArray(element)) {
+      let matched = findPlugin(element, name);
+      if (matched) {
+        return matched;
+      }
+    }
+  }
+  return undefined;
+}
+
+function sharedRolldownPlugins<T extends { name: string }>(
+  sharedPluginNames: string[],
+  plugins: UserConfig['plugins']
+): NonNullable<UserConfig['plugins']> {
+  return sharedPluginNames
+    .map(name => {
+      let matched = findPlugin(plugins, name);
+      if (matched) {
+        if (name === 'embroider-resolver') {
+          // special case. Needs different config.
+          return resolver({ rolldown: true });
+        }
+        return matched;
+      }
+    })
+    .filter(Boolean) as T[];
 }

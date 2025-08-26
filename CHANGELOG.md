@@ -1,5 +1,26 @@
 # Embroider Changelog
 
+## Release (2025-08-26)
+
+* @embroider/router 3.0.3 (patch)
+* @embroider/vite 1.2.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2538](https://github.com/embroider-build/embroider/pull/2538) Add support for rolldown-vite ([@mansona](https://github.com/mansona))
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2543](https://github.com/embroider-build/embroider/pull/2543) Protect against early destruction ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* [#2485](https://github.com/embroider-build/embroider/pull/2485) Delete @embroider/util ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* [#2535](https://github.com/embroider-build/embroider/pull/2535) add vite 7 to scenario tester ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-08-05)
 
 * @embroider/compat 4.1.2 (patch)

@@ -124,7 +124,7 @@ export class Resolver {
     request = this.handleTestSupportStyles(request);
     request = this.handleEntrypoint(request);
     request = this.handleRouteEntrypoint(request);
-    request = await this.handleRenaming(request);
+    request = this.handleRenaming(request);
     request = this.handleVendor(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
@@ -939,7 +939,7 @@ export class Resolver {
     return request;
   }
 
-  private async handleRenaming<R extends ModuleRequest>(request: R): Promise<R> {
+  private handleRenaming<R extends ModuleRequest>(request: R): R {
     if (request.resolvedTo) {
       return request;
     }
@@ -1022,15 +1022,6 @@ export class Resolver {
             request,
             request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
           );
-        }
-      } else if (pkg.isEngine()) {
-        let appJSMatch = await this.searchAppTree(
-          request,
-          pkg as unknown as EngineConfig, // this is safe because pkg.isEngine() is true in this case
-          request.specifier.replace(packageName, '.')
-        );
-        if (appJSMatch) {
-          return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
         }
       }
     }

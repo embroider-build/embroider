@@ -59,6 +59,7 @@
     "ember-cli-terser": "^4.0.2",
     "ember-load-initializers": "^3.0.0",
     "ember-modifier": "^4.1.0",
+    "ember-auto-import": "file:./fake-auto-import",
     "ember-page-title": "^7.0.0",
     "ember-qunit": "^8.1.1",
     "ember-resolver": "^13.1.0",
@@ -81,7 +82,7 @@
     "vite": "^6.0.0"
   },
   "engines": {
-    "node": "16.* || >= 18"
+    "node": ">= 18"
   },
   "ember": {
     "edition": "octane"

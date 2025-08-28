@@ -160,10 +160,6 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
     },
 
     _eaiAssertions(this: OwnType) {
-      if (this.parent.pkg.devDependencies?.['@embroider/vite']) {
-        return;
-      }
-
       // if we're being used by a v1 package, that package needs ember-auto-import 2
       if ((this.parent.pkg['ember-addon']?.version ?? 1) < 2) {
         // important: here we're talking about the version of ember-auto-import

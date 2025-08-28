@@ -1,5 +1,17 @@
 # Embroider Changelog
 
+## Release (2025-08-28)
+
+* @embroider/compat 4.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2544](https://github.com/embroider-build/embroider/pull/2544) Chore: Upgrade jsdom ([@nikolasrieble](https://github.com/nikolasrieble))
+  * [#2545](https://github.com/embroider-build/embroider/pull/2545) chore: upgrade @babel/runtime in compat ([@nikolasrieble](https://github.com/nikolasrieble))
+
+#### Committers: 1
+- Nikolas Rieble ([@nikolasrieble](https://github.com/nikolasrieble))
+
 ## Release (2025-08-26)
 
 * @embroider/router 3.0.3 (patch)

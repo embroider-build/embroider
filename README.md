@@ -13,7 +13,7 @@ You can read more about the motivation and key ideas in the [intro to the SPEC](
 
 There is an accepted RFC that will [make the Embroider build system the default for all newly generated Ember apps](https://rfcs.emberjs.com/id/0977-v2-app-format) i.e. when you run `ember new my-app` it will generate an Ember app that is built with [Vite](https://vite.dev) with this Embroider resolver installed as a plugin.
 
-If you don't want to wait until that RFC has been fully implemented you can try out the [ember-vite-codemod](https://github.com/mainmatter/ember-vite-codemod) which will guide you through updating your existing applications or you can try the current [draft blueprint for an Embroider based Ember ember app](https://github.com/embroider-build/app-blueprint) and follow the instructions on that README.
+If you don't want to wait until that RFC has been fully implemented you can try out the [ember-vite-codemod](https://github.com/mainmatter/ember-vite-codemod) which will guide you through updating your existing applications or you can try the current [draft blueprint for an Embroider based Ember ember app](https://github.com/ember-cli/ember-app-blueprint) and follow the instructions on that README.
 
 Embroider with Vite is considered production ready so you should try it out and let us know if you discover any issues with your Applications
 
@@ -79,3 +79,4 @@ Thanks to the [Embroider Initiative](https://mainmatter.com/embroider-initiative
 - [OTA Insight](https://www.otainsight.com/)
 - [XBE](https://www.x-b-e.com/)
 - [Teamtailor](https://www.teamtailor.com/)
+

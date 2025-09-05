@@ -9,7 +9,7 @@ const packageName = 'ember-source';
 
 export default function appEmberSatisfies(path: NodePath<t.CallExpression>, state: State): boolean {
   if (path.node.arguments.length !== 1) {
-    throw error(path, `dependencySatisfies takes exactly one argument, you passed ${path.node.arguments.length}`);
+    throw error(path, `appEmberSatisfies takes exactly one argument, you passed ${path.node.arguments.length}`);
   }
   const [range] = path.node.arguments;
   if (range.type !== 'StringLiteral') {

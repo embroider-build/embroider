@@ -15,7 +15,7 @@ export default function appEmberSatisfies(path: NodePath<t.CallExpression>, stat
   if (range.type !== 'StringLiteral') {
     throw error(
       assertArray(path.get('arguments'))[1],
-      `the second argument to dependencySatisfies must be a string literal`
+      `the only argument to appEmberSatisfies must be a string literal`
     );
   }
   try {

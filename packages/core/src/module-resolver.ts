@@ -539,6 +539,8 @@ export class Resolver {
         return this.resolveModifier(rest, engine, request);
       case 'ambiguous':
         return this.resolveHelperOrComponent(rest, engine, request);
+      case 'compat-modules':
+        return request;
       default:
         throw new Error(`bug: unexepected @embroider/virtual specifier: ${request.specifier}`);
     }
@@ -996,6 +998,14 @@ export class Resolver {
         if (addonConfig) {
           // auto-upgraded addons get special support for self-resolving here.
           return logTransition(`v1 addon self-import`, request, request.rehome(addonConfig.canResolveFromFile));
+        } else if (owningEngine.root === pkg.root) {
+          for (let engineConfig of this.options.engines) {
+            for (let activeAddon of engineConfig.activeAddons) {
+              if (activeAddon.root === pkg.root) {
+                return logTransition(`v1 engine self-import`, request, request.rehome(activeAddon.canResolveFromFile));
+              }
+            }
+          }
         } else {
           // auto-upgraded apps will necessarily have packageJSON.exports
           // because we insert them, so for that support we can fall through to
@@ -1198,11 +1208,18 @@ export class Resolver {
       return request;
     }
 
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    let abortFallback = (() => {
+      const unmodified = request;
+      // Whenever fallbackResolve gives up, it should return the original
+      // unmodifiedRequest so that we communicate clearly that no further
+      // fallbacks should be attempted. Internally, we track a modifiedRequest
+      // that has been adjusted to compensate for rehoming.
+      return (desc: string) => logTransition(desc, unmodified);
+    })();
 
-    if (pkg) {
-      ({ pkg, request } = this.restoreRehomedRequest(pkg, request));
-    }
+    request = this.restoreRehomedRequest(request);
+
+    let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg?.isV2Ember()) {
       // this request is coming from a file that appears to be owned by no ember
@@ -1222,13 +1239,13 @@ export class Resolver {
           request.rehome(this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root)
         );
       }
-      return logTransition(`fallbackResolver: ${description}`, request);
+      return abortFallback(`fallbackResolver: ${description}`);
     }
 
     let packageName = getPackageName(request.specifier);
     if (!packageName) {
       // this is a relative import
-      return this.relativeFallbackResolve(pkg, request);
+      return this.relativeFallbackResolve(pkg, request, abortFallback);
     }
 
     if (pkg.needsLooseResolving()) {
@@ -1266,26 +1283,25 @@ export class Resolver {
 
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
-    return logTransition('fallbackResolve final exit', request);
+    return abortFallback('fallbackResolve final exit');
   }
 
-  private restoreRehomedRequest<R extends ModuleRequest>(pkg: Package, request: R): { pkg: Package; request: R } {
+  private restoreRehomedRequest<R extends ModuleRequest>(request: R): R {
     // meta.originalFromFile gets set when we want to try to rehome a request
     // but then come back to the original location here in the fallback when the
     // rehomed request fails
-    let movedPkg = this.packageCache.maybeMoved(pkg);
-    if (movedPkg !== pkg) {
-      let originalFromFile = request.meta?.originalFromFile;
-      if (typeof originalFromFile !== 'string') {
-        throw new Error(`bug: embroider resolver's meta is not propagating`);
-      }
-      request = request.rehome(originalFromFile);
-      pkg = movedPkg;
+    let originalFromFile = request.meta?.originalFromFile;
+    if (typeof originalFromFile === 'string') {
+      return request.rehome(originalFromFile);
     }
-    return { pkg, request };
+    return request;
   }
 
-  private async relativeFallbackResolve<R extends ModuleRequest>(pkg: Package, request: R): Promise<R> {
+  private async relativeFallbackResolve<R extends ModuleRequest>(
+    pkg: Package,
+    request: R,
+    abortFallback: (desc: string) => R
+  ): Promise<R> {
     let withinEngine = this.engineConfig(pkg.name);
     if (withinEngine) {
       // it's a relative import inside an engine (which also means app), which
@@ -1293,20 +1309,17 @@ export class Resolver {
 
       let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
       if (!logicalName) {
-        return logTransition(
-          'fallbackResolve: relative failure because this file is not externally accessible',
-          request
-        );
+        return abortFallback('fallbackResolve: relative failure because this file is not externally accessible');
       }
       let appJSMatch = await this.searchAppTree(request, withinEngine, logicalName);
       if (appJSMatch) {
         return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
       } else {
-        return logTransition('fallbackResolve: relative appJs search failure', request);
+        return abortFallback('fallbackResolve: relative appJs search failure');
       }
     } else {
       // nothing else to do for relative imports
-      return logTransition('fallbackResolve: relative failure', request);
+      return abortFallback('fallbackResolve: relative failure');
     }
   }
 

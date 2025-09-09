@@ -61,7 +61,7 @@ export default RouteTemplate(
 ```
 ### --nativeLexicalThis
 
-This flag is a workaround for a bug in Ember < 6.4.0 (still unreleased at the time of writing). These versions have a bug that prevents you from accessing lexically scoped `this` in template tags that are used as expressions. The typical use case for this is in rendering tests:
+This flag is a workaround for a bug in Ember < 6.4.0. These versions have a bug that prevents you from accessing lexically scoped `this` in template tags that are used as expressions. The typical use case for this is in rendering tests:
 
 ```js
 // Input example:
@@ -135,8 +135,8 @@ Pass `--defaultFormat gts` instead if you prefer to produce typescript. Also see
 The `merge-history` command takes a branch where the codemod has already been applied and produces a new branch with the same contents, except that the Git history has been adjusted so that your GJS files inherit correctly from *both* the JS and HBS files that they replaced. Example:
 
 ```sh
-npx @embroider/template-tag-codemod merge-history --help`
-npx @embroider/template-tag-codemod merge-history main your-codemodded-branch --outputBranch better-codemodded-branch`
+npx @embroider/template-tag-codemod merge-history --help
+npx @embroider/template-tag-codemod merge-history main your-codemodded-branch --outputBranch better-codemodded-branch
 git push -u origin better-codemodded-branch
 ```
 

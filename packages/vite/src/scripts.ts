@@ -41,6 +41,7 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
       // this hook only runs in `vite build`
       for (let name of names) {
         for (let file of await optimizer.optimizedScript(name)) {
+          // @ts-expect-error rolldowns types seem to have a few issues 🤔
           this.emitFile(file);
         }
       }

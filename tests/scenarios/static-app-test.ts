@@ -1,4 +1,4 @@
-import { wideAppScenarios, baseAddon } from './scenarios';
+import { wideAppScenarios, baseAddon, baseV2Addon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
@@ -77,6 +77,23 @@ wideAppScenarios
     });
     project.addDevDependency(myHelpersAddon);
 
+    let overriddenServiceAddon = baseV2Addon();
+    overriddenServiceAddon.pkg.name = 'overridden-service';
+    overriddenServiceAddon.mergeFiles({
+      'reexport.js': `export { default } from './index.js'`,
+      'index.js': `
+         import Service from '@ember/service';
+         globalThis.addonOverriddenServiceRan = true;
+         export default class extends Service {
+           source = 'addon'
+         }
+       `,
+    });
+    overriddenServiceAddon.pkg['ember-addon']['app-js'] = {
+      './services/overridden.js': './reexport.js',
+    };
+    project.addDependency(overriddenServiceAddon);
+
     merge(project.files, {
       app: {
         adapters: {
@@ -143,6 +160,34 @@ wideAppScenarios
           'application.js': `
             import JSONAPISerializer from '@ember-data/serializer/json-api';
             export default class extends JSONAPISerializer {};
+          `,
+        },
+        services: {
+          'debug.js': `
+            import Service from '@ember/service';
+            import { assert, deprecate, runInDebug } from '@ember/debug';
+            import { DEBUG } from '@glimmer/env';
+
+            export default class extends Service {
+              isDebug() {
+                return DEBUG;
+              }
+              assert(desc, test) {
+                assert(desc, test);
+              }
+              deprecate(message, test, { id, until, since, for: source }) {
+                deprecate(message, test, { id, until, since, for: source });
+              }
+              runInDebug(func) {
+                runInDebug(func);
+              }
+            };
+          `,
+          'overridden.ts': `
+            import Service from '@ember/service';
+            export default class extends Service {
+              source = 'app'
+            }
           `,
         },
         templates: {
@@ -293,6 +338,89 @@ wideAppScenarios
                   assert.dom('[data-target]').hasAttribute('data-it-worked');
                 });
               });`,
+          },
+          services: {
+            'overridden-test.js': `
+              import { module, test } from 'qunit';
+              import { setupTest } from 'app-template/tests/helpers';
+
+              module('Integration | services | overridden', function (hooks) {
+                setupTest(hooks);
+
+                test('app wins', async function (assert) {
+                  assert.strictEqual(this.owner.lookup('service:overridden').source, 'app')
+                });
+
+                test('addon never evals', async function (assert) {
+                  assert.strictEqual(globalThis.addonOverriddenServiceRan, undefined);
+                })
+              });
+            `,
+          },
+        },
+        unit: {
+          services: {
+            'debug-test.js': `
+              import { module, test } from 'qunit';
+              import { setupTest } from '../../helpers';
+              import { registerDeprecationHandler } from '@ember/debug';
+
+              // https://vite.dev/guide/env-and-mode.html#built-in-constants
+              const isProduction = 'production' === import.meta.env.MODE;
+
+              module('Unit | Service | debug', function(hooks) {
+                setupTest(hooks);
+
+                test('DEBUG only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  assert.strictEqual(!isProduction, service.isDebug(), 'service.isDebug');
+                  assert.strictEqual(isProduction, service.isDebug.toString().endsWith('){return!1}'), 'service.isDebug is optimized');
+                });
+
+                test('asserts only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  const doAssert = () => service.assert('debug-test assertion', false);
+                  if (isProduction) {
+                    doAssert();
+                    assert.ok(true, 'assert ignored');
+                  } else {
+                    assert.throws(doAssert, /Assertion Failed: debug-test assertion/, 'service.assert throws');
+                    assert.strictEqual(isProduction, service.assert.toString().endsWith('){}'), 'service.assert is empty');
+                  }
+                });
+
+                test('runInDebug only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  const DID_NOT_RUN = 'runInDebug did NOT run';
+                  const DID_RUN = 'runInDebug DID run';
+
+                  let result = DID_NOT_RUN;
+                  service.runInDebug(() => result = DID_RUN);
+                  assert.strictEqual(result, isProduction ? DID_NOT_RUN : DID_RUN, 'service.runInDebug');
+                  assert.strictEqual(isProduction, service.runInDebug.toString().endsWith('){}'), 'service.runInDebug is empty');
+                });
+
+                test('deprecate only in development', function(assert) {
+                  const service = this.owner.lookup('service:debug');
+                  const DEPRECATION_FOR = 'unit/services/debug-test';
+
+                  const deprecations = [];
+                  registerDeprecationHandler((message, options, next) => {
+                    if (options.for === DEPRECATION_FOR) {
+                      deprecations.push(message, options);
+                    } else {
+                      next(message, options);
+                    }
+                  });
+
+                  const message = 'debug-test deprecation';
+                  const options = { id: 'debug-test-deprecation', until: '999999.0.0', since: '3.28', for: DEPRECATION_FOR };
+                  service.deprecate(message, false, options);
+                  assert.deepEqual(deprecations, isProduction ? [] : [ message, options ], 'service.deprecate');
+                  assert.strictEqual(isProduction, service.deprecate.toString().endsWith('){}'), 'service.deprecate is empty');
+                });
+              });
+            `,
           },
         },
         helpers: {

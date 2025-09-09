@@ -4,23 +4,25 @@ const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = c
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
-import { join, resolve } from 'path';
+import { join, normalize, resolve } from 'path';
 import { writeStatus } from './backchannel.js';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
 import fs from 'fs-extra';
 import { createHash } from 'crypto';
+import { BackChannel } from './backchannel.js';
 
 const { ensureSymlinkSync, outputJSONSync } = fs;
 
 const debug = makeDebug('embroider:vite');
 
-export function resolver(): Plugin {
+export function resolver(params?: { rolldown?: boolean }): Plugin {
   const resolverLoader = new ResolverLoader(process.cwd());
   let server: ViteDevServer;
   const virtualDeps: Map<string, string[]> = new Map();
   const notViteDeps = new Set<string>();
   const responseMetas: Map<string, ResponseMeta> = new Map();
+  const backChannel = params?.rolldown ? new BackChannel() : undefined;
 
   async function resolveId(
     context: PluginContext,
@@ -28,6 +30,9 @@ export function resolver(): Plugin {
     importer: string | undefined,
     options: { custom?: Record<string, unknown>; scan?: boolean }
   ) {
+    // @ts-expect-error not included in upstream types
+    let isDepBundling = Boolean(context.outputOptions?.dir?.includes('.vite'));
+
     // vite 5 exposes `custom.depscan`, vite 6 exposes `options.scan`
     if (options.custom?.depScan || options.scan) {
       return await observeDepScan(context, source, importer, options);
@@ -38,6 +43,9 @@ export function resolver(): Plugin {
       source,
       importer,
       custom: options.custom,
+      backChannel,
+      isDepBundling,
+      packageCache: resolverLoader.resolver.packageCache,
     });
     if (!request) {
       // fallthrough to other rollup plugins
@@ -208,7 +216,10 @@ async function maybeCaptureNewOptimizedDep(
   if (!foundFile) {
     return result;
   }
-  if (foundFile.startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))) {
+  if (
+    foundFile.includes('.vite') &&
+    normalize(foundFile).startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))
+  ) {
     debug('maybeCaptureNewOptimizedDep: %s already in vite deps', foundFile);
     return result;
   }
@@ -224,7 +235,7 @@ async function maybeCaptureNewOptimizedDep(
   }
 
   if (notViteDeps.has(foundFile)) {
-    debug('maybeCaptureNewOptimizedDep: already attmpted %s', foundFile);
+    debug('maybeCaptureNewOptimizedDep: already attempted %s', foundFile);
     return result;
   }
 

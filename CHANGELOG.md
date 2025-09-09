@@ -1,5 +1,212 @@
 # Embroider Changelog
 
+## Release (2025-08-28)
+
+* @embroider/compat 4.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2544](https://github.com/embroider-build/embroider/pull/2544) Chore: Upgrade jsdom ([@nikolasrieble](https://github.com/nikolasrieble))
+  * [#2545](https://github.com/embroider-build/embroider/pull/2545) chore: upgrade @babel/runtime in compat ([@nikolasrieble](https://github.com/nikolasrieble))
+
+#### Committers: 1
+- Nikolas Rieble ([@nikolasrieble](https://github.com/nikolasrieble))
+
+## Release (2025-08-26)
+
+* @embroider/router 3.0.3 (patch)
+* @embroider/vite 1.2.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2538](https://github.com/embroider-build/embroider/pull/2538) Add support for rolldown-vite ([@mansona](https://github.com/mansona))
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2543](https://github.com/embroider-build/embroider/pull/2543) Protect against early destruction ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* [#2485](https://github.com/embroider-build/embroider/pull/2485) Delete @embroider/util ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* [#2535](https://github.com/embroider-build/embroider/pull/2535) add vite 7 to scenario tester ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-08-05)
+
+* @embroider/compat 4.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2501](https://github.com/embroider-build/embroider/pull/2501) Ensure @ember/debug methods behave correctly in development vs production builds ([@robbytx](https://github.com/robbytx))
+
+#### :house: Internal
+* [#2534](https://github.com/embroider-build/embroider/pull/2534) update pnpm to 10 ([@mansona](https://github.com/mansona))
+* [#2531](https://github.com/embroider-build/embroider/pull/2531) Upstream webpack types broke our build ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Robby Morgan ([@robbytx](https://github.com/robbytx))
+
+## Release (2025-07-23)
+
+* @embroider/core 4.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2525](https://github.com/embroider-build/embroider/pull/2525) App tree merging should be insensitive to file extensions ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-07-22)
+
+* @embroider/router 3.0.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2524](https://github.com/embroider-build/embroider/pull/2524) Fix loading route in @embroider/router ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-07-22)
+
+* @embroider/compat 4.1.1 (patch)
+* @embroider/core 4.1.2 (patch)
+* @embroider/macros 1.18.1 (patch)
+* @embroider/vite 1.1.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/macros`
+  * [#2511](https://github.com/embroider-build/embroider/pull/2511) Fixing lazy importSync ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-06-24)
+
+* @embroider/core 4.1.1 (patch)
+* @embroider/template-tag-codemod 1.3.2 (patch)
+
+#### :memo: Documentation
+* Other
+  * [#2498](https://github.com/embroider-build/embroider/pull/2498) Update porting-addons-to-v2.md: add auto rebuild explanation ([@x-m-el](https://github.com/x-m-el))
+  * [#2492](https://github.com/embroider-build/embroider/pull/2492) Update porting-addons-to-v2.md ([@x-m-el](https://github.com/x-m-el))
+* `@embroider/template-tag-codemod`
+  * [#2495](https://github.com/embroider-build/embroider/pull/2495) Fix merge-history commands (remove `) ([@mkszepp](https://github.com/mkszepp))
+
+#### :house: Internal
+* Other
+  * [#2505](https://github.com/embroider-build/embroider/pull/2505) stop publishing unstable on every merge to master ([@mansona](https://github.com/mansona))
+* `@embroider/core`
+  * [#2503](https://github.com/embroider-build/embroider/pull/2503) Merge stable ([@ef4](https://github.com/ef4))
+
+#### Committers: 4
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+- [@x-m-el](https://github.com/x-m-el)
+
+## Release (2025-05-21)
+
+* @embroider/template-tag-codemod 1.3.1 (patch)
+
+#### :memo: Documentation
+* `@embroider/template-tag-codemod`
+  * [#2489](https://github.com/embroider-build/embroider/pull/2489) [template-tag-codemod] Add version to `--nativeLexicalThis` & update ReadMe ([@mkszepp](https://github.com/mkszepp))
+
+#### Committers: 1
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
+## Release (2025-05-20)
+
+* @embroider/vite 1.1.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2473](https://github.com/embroider-build/embroider/pull/2473) Update scenarios to supported versions of Ember Data as v2 addon ([@robbytx](https://github.com/robbytx))
+
+#### Committers: 1
+- Robby Morgan ([@robbytx](https://github.com/robbytx))
+
+## Release (2025-05-20)
+
+* @embroider/compat 4.1.0 (minor)
+* @embroider/core 4.1.0 (minor)
+* @embroider/macros 1.18.0 (minor)
+* @embroider/template-tag-codemod 1.3.0 (minor)
+* @embroider/vite 1.1.4 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/template-tag-codemod`
+  * [#2415](https://github.com/embroider-build/embroider/pull/2415) Use babel-plugin-ember-template-compilation 3.x ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-05-20)
+
+* @embroider/compat 4.0.4 (patch)
+* @embroider/core 4.0.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`
+  * [#2458](https://github.com/embroider-build/embroider/pull/2458) Fix splitAtRoutes when they are defined as a regex ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
+## Release (2025-05-15)
+
+* @embroider/vite 1.1.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2482](https://github.com/embroider-build/embroider/pull/2482) Propagate other plugin's custom metadata ([@ef4](https://github.com/ef4))
+  * [#2481](https://github.com/embroider-build/embroider/pull/2481) Vite build should resolve ember-cli from working dir ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-05-13)
+
+* @embroider/addon-dev 8.1.0 (minor)
+* @embroider/vite 1.1.2 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`
+  * [#2474](https://github.com/embroider-build/embroider/pull/2474) Allow declarations plugin to have its command customized ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2469](https://github.com/embroider-build/embroider/pull/2469) fix: ensure minify can be disabled ([@Techn1x](https://github.com/Techn1x))
+
+#### Committers: 2
+- Brad Overton ([@Techn1x](https://github.com/Techn1x))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-05-06)
+
+* @embroider/compat 4.0.3 (patch)
+* @embroider/core 4.0.3 (patch)
+* @embroider/macros 1.17.3 (patch)
+* @embroider/vite 1.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2464](https://github.com/embroider-build/embroider/pull/2464) Don't run terser when --mode=test ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/macros`
+  * [#2467](https://github.com/embroider-build/embroider/pull/2467) upstream changed generated identifiers and this test is fragile ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-04-30)
 
 * @embroider/vite 1.1.0 (minor)

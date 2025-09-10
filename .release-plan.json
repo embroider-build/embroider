@@ -14,8 +14,8 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.1.1",
-      "newVersion": "4.1.2",
+      "oldVersion": "4.1.2",
+      "newVersion": "4.1.3",
       "tagName": "latest",
       "constraints": [
         {
@@ -41,7 +41,7 @@
       "oldVersion": "0.1.2"
     },
     "@embroider/router": {
-      "oldVersion": "3.0.2"
+      "oldVersion": "3.0.3"
     },
     "@embroider/shared-internals": {
       "oldVersion": "3.0.0"
@@ -50,8 +50,8 @@
       "oldVersion": "1.3.2"
     },
     "@embroider/vite": {
-      "oldVersion": "1.1.6"
+      "oldVersion": "1.2.0"
     }
   },
-  "description": "## Release (2025-08-05)\n\n* @embroider/compat 4.1.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2501](https://github.com/embroider-build/embroider/pull/2501) Ensure @ember/debug methods behave correctly in development vs production builds ([@robbytx](https://github.com/robbytx))\n\n#### :house: Internal\n* [#2534](https://github.com/embroider-build/embroider/pull/2534) update pnpm to 10 ([@mansona](https://github.com/mansona))\n* [#2531](https://github.com/embroider-build/embroider/pull/2531) Upstream webpack types broke our build ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Robby Morgan ([@robbytx](https://github.com/robbytx))\n"
+  "description": "## Release (2025-08-28)\n\n* @embroider/compat 4.1.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2544](https://github.com/embroider-build/embroider/pull/2544) Chore: Upgrade jsdom ([@nikolasrieble](https://github.com/nikolasrieble))\n  * [#2545](https://github.com/embroider-build/embroider/pull/2545) chore: upgrade @babel/runtime in compat ([@nikolasrieble](https://github.com/nikolasrieble))\n\n#### Committers: 1\n- Nikolas Rieble ([@nikolasrieble](https://github.com/nikolasrieble))\n"
 }

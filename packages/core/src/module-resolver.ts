@@ -1208,7 +1208,17 @@ export class Resolver {
       return request;
     }
 
+    let abortFallback = (() => {
+      const unmodified = request;
+      // Whenever fallbackResolve gives up, it should return the original
+      // unmodifiedRequest so that we communicate clearly that no further
+      // fallbacks should be attempted. Internally, we track a modifiedRequest
+      // that has been adjusted to compensate for rehoming.
+      return (desc: string) => logTransition(desc, unmodified);
+    })();
+
     request = this.restoreRehomedRequest(request);
+
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg?.isV2Ember()) {
@@ -1229,13 +1239,13 @@ export class Resolver {
           request.rehome(this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root)
         );
       }
-      return logTransition(`fallbackResolver: ${description}`, request);
+      return abortFallback(`fallbackResolver: ${description}`);
     }
 
     let packageName = getPackageName(request.specifier);
     if (!packageName) {
       // this is a relative import
-      return this.relativeFallbackResolve(pkg, request);
+      return this.relativeFallbackResolve(pkg, request, abortFallback);
     }
 
     if (pkg.needsLooseResolving()) {
@@ -1273,7 +1283,7 @@ export class Resolver {
 
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
-    return logTransition('fallbackResolve final exit', request);
+    return abortFallback('fallbackResolve final exit');
   }
 
   private restoreRehomedRequest<R extends ModuleRequest>(request: R): R {
@@ -1287,7 +1297,11 @@ export class Resolver {
     return request;
   }
 
-  private async relativeFallbackResolve<R extends ModuleRequest>(pkg: Package, request: R): Promise<R> {
+  private async relativeFallbackResolve<R extends ModuleRequest>(
+    pkg: Package,
+    request: R,
+    abortFallback: (desc: string) => R
+  ): Promise<R> {
     let withinEngine = this.engineConfig(pkg.name);
     if (withinEngine) {
       // it's a relative import inside an engine (which also means app), which
@@ -1295,20 +1309,17 @@ export class Resolver {
 
       let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
       if (!logicalName) {
-        return logTransition(
-          'fallbackResolve: relative failure because this file is not externally accessible',
-          request
-        );
+        return abortFallback('fallbackResolve: relative failure because this file is not externally accessible');
       }
       let appJSMatch = await this.searchAppTree(request, withinEngine, logicalName);
       if (appJSMatch) {
         return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
       } else {
-        return logTransition('fallbackResolve: relative appJs search failure', request);
+        return abortFallback('fallbackResolve: relative appJs search failure');
       }
     } else {
       // nothing else to do for relative imports
-      return logTransition('fallbackResolve: relative failure', request);
+      return abortFallback('fallbackResolve: relative failure');
     }
   }
 

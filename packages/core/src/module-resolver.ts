@@ -985,7 +985,7 @@ export class Resolver {
 
     if (pkg.name === packageName) {
       // we found a self-import
-      if (pkg.meta?.['auto-upgraded']) {
+      if (pkg.meta?.['auto-upgraded'] && !pkg.isEngine()) {
         // auto-upgraded packages always get automatically adjusted. They never
         // supported fancy package.json exports features so this direct mapping
         // to the root is always right.

@@ -27,8 +27,6 @@ export function renderEntrypoint(
 ): { src: string; watches: string[] } {
   const owner = resolver.packageCache.ownerOfFile(fromDir);
 
-  let eagerModules: string[] = [];
-
   if (!owner) {
     throw new Error('Owner expected'); // ToDo: Really bad error, update message
   }
@@ -36,6 +34,7 @@ export function renderEntrypoint(
   let engine = resolver.owningEngine(owner);
   let isApp = owner?.root === resolver.options.engines[0]!.root;
   let hasFastboot = Boolean(resolver.options.engines[0]!.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
+  let defineModulesFrom = ['./-embroider-implicit-modules.js'];
 
   let appFiles = new AppFiles(
     {
@@ -81,25 +80,6 @@ export function renderEntrypoint(
     });
   }
 
-  let lazyEngines: { names: string[]; path: string }[] = [];
-
-  if (isApp) {
-    // deliberately ignoring the app (which is the first entry in the engines array)
-    let [, ...childEngines] = resolver.options.engines;
-    for (let childEngine of childEngines) {
-      let target = `@embroider/virtual/compat-modules/${childEngine.packageName}`;
-
-      if (childEngine.isLazy) {
-        lazyEngines.push({
-          names: [childEngine.packageName],
-          path: target,
-        });
-      } else {
-        eagerModules.push(target);
-      }
-    }
-  }
-
   let lazyRoutes: { names: string[]; path: string }[] = [];
   for (let [routeName, routeFiles] of appFiles.routeFiles.children) {
     splitRoute(
@@ -125,17 +105,35 @@ export function renderEntrypoint(
   let amdModules = nonFastboot.map(file => importPaths(resolver, appFiles, file));
   let fastbootOnlyAmdModules = fastboot.map(file => importPaths(resolver, appFiles, file));
 
+  let lazyEngines: { names: string[]; path: string }[] = [];
+
+  if (isApp) {
+    // deliberately ignoring the app (which is the first entry in the engines array)
+    let [, ...childEngines] = resolver.options.engines;
+    for (let childEngine of childEngines) {
+      if (childEngine.isLazy) {
+        lazyEngines.push({
+          names: [childEngine.packageName],
+          path: `${childEngine.packageName}/engine`,
+        });
+      } else {
+        amdModules.push({
+          buildtime: `${childEngine.packageName}/engine`,
+          runtime: `${childEngine.packageName}/engine`,
+        });
+      }
+    }
+  }
+
   let params = {
     amdModules,
     fastbootOnlyAmdModules,
     lazyRoutes,
     lazyEngines,
-    eagerModules,
     styles,
     // this is a backward-compatibility feature: addons can force inclusion of modules.
-    defineModulesFrom: './-embroider-implicit-modules.js',
+    defineModulesFrom,
   };
-
   return {
     src: entryTemplate(params),
     watches: [fromDir],
@@ -153,12 +151,8 @@ import { macroCondition, getGlobalConfig } from '@embroider/macros';
   }
 {{/if}}
 
-{{#if defineModulesFrom ~}}
-  import implicitModules from "{{js-string-escape defineModulesFrom}}";
-{{/if}}
-
-{{#each eagerModules as |eagerModule| ~}}
-  import "{{js-string-escape eagerModule}}";
+{{#each defineModulesFrom as |module index| ~}}
+  import defineModule{{index}} from "{{js-string-escape module}}";
 {{/each}}
 
 {{#each amdModules as |amdModule index| ~}}
@@ -203,7 +197,7 @@ window._embroiderEngineBundles_ = [
   {
     names: {{json-stringify engine.names}},
     load: function() {
-      return import("{{js-string-escape engine.path}}");
+      return import("{{js-string-escape engine.path}}").then(m=> ({ default: { "{{engine.path}}": m.default } }));;
     }
   },
   {{/each}}
@@ -212,7 +206,9 @@ window._embroiderEngineBundles_ = [
 
 export default Object.assign(
   {},
-  implicitModules,
+  {{#each defineModulesFrom as |module index| ~}}
+  defineModule{{index}},
+  {{/each}}
   {
     {{#each amdModules as |amdModule index| ~}}
       "{{js-string-escape amdModule.runtime}}": amdModule{{index}},
@@ -223,8 +219,7 @@ export default Object.assign(
 `) as (params: {
   amdModules: { runtime: string; buildtime: string }[];
   fastbootOnlyAmdModules?: { runtime: string; buildtime: string }[];
-  defineModulesFrom?: string;
-  eagerModules?: string[];
+  defineModulesFrom: string[];
   lazyRoutes?: { names: string[]; path: string }[];
   lazyEngines?: { names: string[]; path: string }[];
   styles?: { path: string }[];
@@ -321,7 +316,7 @@ function shouldSplitRoute(routeName: string, splitAtRoutes: (RegExp | string)[] 
 
 export function getAppFiles(appRoot: string): Set<string> {
   const files: string[] = walkSync(appRoot, {
-    ignore: ['_babel_filter_.js', 'app.js', 'assets', 'testem.js', 'node_modules'],
+    ignore: ['_babel_filter_.js', 'app.js', 'engine.js', 'assets', 'testem.js', 'node_modules'],
   });
   return new Set(files);
 }

@@ -6,3 +6,4 @@
 /tests/**/*.d.ts
 /tests/**/*.map
 /dist/
+!tests/warn-root-url.test.js

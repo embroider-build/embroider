@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2025-09-11)
+
+* @embroider/core 4.2.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/core`
+  * [#2456](https://github.com/embroider-build/embroider/pull/2456) Ember engines compatibility ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2465](https://github.com/embroider-build/embroider/pull/2465) Engine-specific module resolver fixes ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-08-28)
 
 * @embroider/compat 4.1.3 (patch)

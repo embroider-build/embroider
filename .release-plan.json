@@ -13,23 +13,27 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.2",
-      "newVersion": "4.1.3",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.3"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.1.3"
+      "impact": "minor",
+      "oldVersion": "4.1.3",
+      "newVersion": "4.2.0",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -53,5 +57,5 @@
       "oldVersion": "1.2.0"
     }
   },
-  "description": "## Release (2025-08-28)\n\n* @embroider/compat 4.1.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2544](https://github.com/embroider-build/embroider/pull/2544) Chore: Upgrade jsdom ([@nikolasrieble](https://github.com/nikolasrieble))\n  * [#2545](https://github.com/embroider-build/embroider/pull/2545) chore: upgrade @babel/runtime in compat ([@nikolasrieble](https://github.com/nikolasrieble))\n\n#### Committers: 1\n- Nikolas Rieble ([@nikolasrieble](https://github.com/nikolasrieble))\n"
+  "description": "## Release (2025-09-11)\n\n* @embroider/core 4.2.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/core`\n  * [#2456](https://github.com/embroider-build/embroider/pull/2456) Ember engines compatibility ([@void-mAlex](https://github.com/void-mAlex))\n\n#### :bug: Bug Fix\n* `@embroider/core`\n  * [#2465](https://github.com/embroider-build/embroider/pull/2465) Engine-specific module resolver fixes ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

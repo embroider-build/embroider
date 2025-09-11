@@ -35,7 +35,7 @@
     "js-string-escape": "^1.0.1",
     "lodash": "^4.17.21",
     "minimatch": "^3.0.4",
-    "pkg-entry-points": "^1.1.0",
+    "pkg-entry-points": "^1.1.1",
     "resolve.exports": "^2.0.2",
     "resolve-package-path": "^4.0.1",
     "semver": "^7.3.5",

@@ -2,6 +2,7 @@ import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
 import { type UserConfig, type ConfigEnv, type Plugin } from 'vite';
 import { esBuildResolver } from './esbuild-resolver.js';
+import { warnRootUrl } from './warn-root-url.js';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
@@ -22,6 +23,7 @@ export function ember(params?: {
   rolldownSharedPlugins?: string[];
 }) {
   return [
+    warnRootUrl(),
     templateTag(),
     resolver(),
     {

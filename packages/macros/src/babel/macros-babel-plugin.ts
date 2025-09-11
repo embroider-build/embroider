@@ -198,6 +198,7 @@ export default function main(context: typeof Babel): unknown {
     ReferencedIdentifier(path: NodePath<t.Identifier>, state: State) {
       for (let candidate of [
         'dependencySatisfies',
+        'appEmberSatisfies',
         'moduleExists',
         'getConfig',
         'getOwnConfig',

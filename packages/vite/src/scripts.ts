@@ -30,7 +30,6 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
 
   return {
     name: 'embroider-scripts',
-    enforce: 'pre',
 
     configResolved(resolvedConfig) {
       config = resolvedConfig;
@@ -61,13 +60,13 @@ class ScriptOptimizer {
   private emitted = new Map<string, string>();
   private transformState:
     | {
-        htmlIn: string;
-        htmlOut: string;
-        parsed: JSDOM;
-      }
+      htmlIn: string;
+      htmlOut: string;
+      parsed: JSDOM;
+    }
     | undefined;
 
-  constructor(private rootDir: string) {}
+  constructor(private rootDir: string) { }
 
   async optimizedScript(script: string): Promise<EmittedFile[]> {
     let fullName = resolve(this.rootDir, script.slice(1));

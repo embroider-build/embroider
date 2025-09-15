@@ -11,10 +11,10 @@ import { pathToFileURL } from 'url';
 export function classicEmberSupport() {
   return [
     hbs(),
+    contentFor(),
     scripts(),
     compatPrebuild(),
     assets(),
-    contentFor(),
     {
       name: 'vite-plugin-ember-browser-targets',
       async config() {

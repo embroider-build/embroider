@@ -60,10 +60,10 @@ class ScriptOptimizer {
   private emitted = new Map<string, string>();
   private transformState:
     | {
-      htmlIn: string;
-      htmlOut: string;
-      parsed: JSDOM;
-    }
+        htmlIn: string;
+        htmlOut: string;
+        parsed: JSDOM;
+      }
     | undefined;
 
   constructor(private rootDir: string) { }

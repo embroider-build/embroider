@@ -66,7 +66,7 @@ class ScriptOptimizer {
       }
     | undefined;
 
-  constructor(private rootDir: string) { }
+  constructor(private rootDir: string) {}
 
   async optimizedScript(script: string): Promise<EmittedFile[]> {
     let fullName = resolve(this.rootDir, script.slice(1));

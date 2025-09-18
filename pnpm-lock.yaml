@@ -758,7 +758,7 @@ importers:
         specifier: ^3.0.4
         version: 3.1.2
       pkg-entry-points:
-        specifier: ^1.1.0
+        specifier: ^1.1.1
         version: 1.1.1
       resolve-package-path:
         specifier: ^4.0.1

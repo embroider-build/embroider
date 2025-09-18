@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2025-09-18)
+
+* @embroider/compat 4.1.4 (patch)
+* @embroider/core 4.2.1 (patch)
+* @embroider/macros 1.18.2 (patch)
+* @embroider/shared-internals 3.0.1 (patch)
+* @embroider/vite 1.2.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`
+  * [#2553](https://github.com/embroider-build/embroider/pull/2553) Update pkg-entry-points dependency version ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-09-11)
 
 * @embroider/core 4.2.0 (minor)

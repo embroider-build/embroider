@@ -1,5 +1,23 @@
 # Embroider Changelog
 
+## Release (2025-09-24)
+
+* @embroider/compat 4.1.4 (patch)
+* @embroider/core 4.2.1 (patch)
+* @embroider/macros 1.18.2 (patch)
+* @embroider/shared-internals 3.0.1 (patch)
+* @embroider/vite 1.2.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2561](https://github.com/embroider-build/embroider/pull/2561) `@embroider/compat`: Remove `ember-source` from dependencies ([@mkszepp](https://github.com/mkszepp))
+* `@embroider/shared-internals`
+  * [#2553](https://github.com/embroider-build/embroider/pull/2553) Update pkg-entry-points dependency version ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-09-11)
 
 * @embroider/core 4.2.0 (minor)

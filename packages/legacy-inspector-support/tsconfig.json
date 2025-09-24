@@ -1,0 +1,16 @@
+{
+  "include": [
+    "src/**/*.js",
+  ],
+  "extends": "../../tsconfig-base.json",
+  "compilerOptions": {
+    "composite": true,
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
+    "removeComments": false
+  },
+}

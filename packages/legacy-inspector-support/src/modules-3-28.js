@@ -1,5 +1,5 @@
 // Modules used by Ember Inspector so an app that builds with Vite can be inspected.
-// This list should be used in apps using 3.16 <= Ember < 4.8.
+// This list should be used in apps using Ember < 4.8.
 
 export * as Application from '@ember/application';
 export * as ApplicationNamespace from '@ember/application/namespace';

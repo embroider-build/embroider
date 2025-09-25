@@ -1,18 +1,22 @@
-import { relative, resolve } from 'path';
 import execa from 'execa';
 
-function relativeToEmbroiderRoot(absolutePath: string): string {
-  let embroiderRoot = resolve(__dirname, '../..');
-  return relative(embroiderRoot, absolutePath);
-}
-
 async function githubMatrix() {
-  let dir = resolve(__dirname, '..', '..', 'tests', 'scenarios');
   let { stdout } = await execa(
-    'scenario-tester',
-    ['list', '--require', 'ts-node/register', '--files', '*-test.ts', '--matrix', 'pnpm run test --filter "/^%s/"'],
+    'pnpm',
+    [
+      '--filter',
+      'embroider-test-scenarios',
+      'exec',
+      'scenario-tester',
+      'list',
+      '--require',
+      'ts-node/register',
+      '--files',
+      '*-test.ts',
+      '--matrix',
+      'pnpm run test --filter "/^%s/"',
+    ],
     {
-      cwd: dir,
       preferLocal: true,
     }
   );
@@ -24,7 +28,6 @@ async function githubMatrix() {
       name: `${s.name} ubuntu`,
       os: 'ubuntu',
       command: s.command,
-      dir,
     })),
     ...suites
       .filter(s => !s.name.includes('watch-mode')) // TODO: watch tests are far too slow on windows right now
@@ -35,7 +38,6 @@ async function githubMatrix() {
         name: `${s.name} windows`,
         os: 'windows',
         command: s.command,
-        dir: relativeToEmbroiderRoot(dir),
       })),
   ];
 

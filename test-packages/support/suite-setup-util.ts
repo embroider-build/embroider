@@ -33,7 +33,7 @@ async function githubMatrix() {
 
   let include = [
     ...suites.map(s => ({
-      name: s.name,
+      name: `${s.name}${process.argv.includes('--windows') ? '-windows' : ''}`,
       command: s.command,
     })),
   ];

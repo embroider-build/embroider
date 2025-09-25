@@ -1,5 +1,5 @@
 // Modules used by Ember Inspector so an app that builds with Vite can be inspected.
-// This list should be used in apps using Ember = 4.8.
+// This list should be used in apps using Ember >= 4.12.
 
 export * as Application from '@ember/application';
 export * as ApplicationNamespace from '@ember/application/namespace';
@@ -28,6 +28,7 @@ export * as ObjectPromiseProxyMixin from '@ember/object/promise-proxy-mixin';
 export * as ObjectProxy from '@ember/object/proxy';
 export * as Runloop from '@ember/runloop';
 export * as Service from '@ember/service';
+export * as Owner from '@ember/owner';
 
 export * as VERSION from 'ember/version';
 

@@ -13,5 +13,5 @@ import setupGlobal from './common-implementation.js';
  * @param {Application} app your `@ember/application` Application sub-class
  */
 export default function (app) {
-  setupGlobal(app, () => import('./modules-4-8.js'));
+  setupGlobal(app, () => import('./modules-3-28.js'));
 }

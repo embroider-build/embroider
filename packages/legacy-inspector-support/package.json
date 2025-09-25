@@ -4,17 +4,24 @@
   "description": "Module that installs globals ember-inspector support",
   "type": "module",
   "exports": {
+    "./ember-source-4.12": {
+      "default": "./src/ember-source-4.12.js",
+      "types": "./dist/ember-source-4.12.d.ts"
+    },
     "./ember-source-4.8": {
       "default": "./src/ember-source-4.8.js",
-      "types": "./dist/ember-source-4.8.js"
+      "types": "./dist/ember-source-4.8.d.ts"
     },
     "./ember-source-3.28": {
       "default": "./src/ember-source-3.28.js",
-      "types": "./dist/ember-source-3.28.js"
+      "types": "./dist/ember-source-3.28.d.ts"
     }
   },
   "typesVersions": {
     "*": {
+      "ember-source-4.12": [
+        "dist/ember-source-4.12"
+      ],
       "ember-source-4.8": [
         "dist/ember-source-4.8"
       ],

@@ -27,6 +27,7 @@ runs:
       if: runner.os == 'Windows'
       with:
         workspace-copy: true
+        drive-size: 10GB
     - run: pnpm install ${{ fromJSON('{"false":"--no-lockfile", "true":"--frozen-lockfile"}')[inputs.use_lockfile] }}
       working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
       shell: bash

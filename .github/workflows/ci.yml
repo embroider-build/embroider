@@ -37,7 +37,7 @@ jobs:
       - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/*" test
 
-  preflight:
+  preflight-ubuntu:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -54,16 +54,16 @@ jobs:
           matrix_json=$(node ./suite-setup-util --matrix)
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
-  test:
-    needs: ['preflight']
+  test-ubuntu:
+    needs: ['preflight-ubuntu']
     name: ${{ matrix.name }}
-    runs-on: '${{ matrix.os }}-latest'
-    timeout-minutes: 60
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 10
 
     strategy:
       fail-fast: false
-      max-parallel: 50 # this is trying to avoid hitting API rate limits when too many tests are hitting the github API at once.
-      matrix: ${{fromJson(needs.preflight.outputs.matrix)}}
+      max-parallel: 25 # this is trying to avoid hitting API rate limits when too many tests are hitting the github API at once.
+      matrix: ${{fromJson(needs.preflight-ubuntu.outputs.matrix)}}
 
     steps:
       - uses: actions/checkout@v4
@@ -73,9 +73,48 @@ jobs:
       - name: Work around windows short path alias # https://github.com/actions/runner-images/issues/712
         if: runner.os == 'Windows'
         run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV
-      - uses: samypr100/setup-dev-drive@v3
+      - name: suite
+        run: ${{ matrix.command }}
+        working-directory: tests/scenarios
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+  preflight-windows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: lint
+        run: pnpm lint
+      - id: set-matrix
+        working-directory: test-packages/support
+        run: |
+          matrix_json=$(node ./suite-setup-util --matrix --windows)
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
+
+  test-windows:
+    needs: ['preflight-windows']
+    name: ${{ matrix.name }}
+    runs-on: 'windows-latest'
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      max-parallel: 25 # this is trying to avoid hitting API rate limits when too many tests are hitting the github API at once.
+      matrix: ${{fromJson(needs.preflight-windows.outputs.matrix)}}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
         with:
-          workspace-copy: true
+          use_lockfile: false
+      - name: Work around windows short path alias # https://github.com/actions/runner-images/issues/712
+        if: runner.os == 'Windows'
+        run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV
       - name: suite
         run: ${{ matrix.command }}
         working-directory: ${{ env.DEV_DRIVE_WORKSPACE}}tests/scenarios

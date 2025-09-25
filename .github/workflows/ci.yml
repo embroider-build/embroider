@@ -117,6 +117,6 @@ jobs:
         run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV
       - name: suite
         run: ${{ matrix.command }}
-        working-directory: ${{ env.DEV_DRIVE_WORKSPACE}}tests/scenarios
+        working-directory: ${{ env.DEV_DRIVE_WORKSPACE}}\tests\scenarios
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"

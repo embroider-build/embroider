@@ -21,7 +21,7 @@
     "dist/src/"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "dependencies": {
     "@babel/code-frame": "^7.14.5",
@@ -70,7 +70,6 @@
   },
   "devDependencies": {
     "@embroider/core": "workspace:^",
-    "embroider-sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.94.9",
     "@glint/template": "^1.0.0",
@@ -90,8 +89,11 @@
     "broccoli-node-api": "^1.7.0",
     "code-equality-assertions": "^1.0.1",
     "ember-engines": "^0.8.19",
+    "ember-source": "^6.7.0",
+    "embroider-sample-transforms": "workspace:*",
     "scenario-tester": "^4.0.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@embroider/core": "workspace:^"

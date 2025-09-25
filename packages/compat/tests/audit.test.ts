@@ -4,11 +4,11 @@ import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import fromPairs from 'lodash/fromPairs';
 import { Audit } from '../src/audit';
-import type { CompatResolverOptions } from '../src/resolver-transform';
+import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
 import type { TransformOptions } from '@babel/core';
 import type { Options as InlinePrecompileOptions } from 'babel-plugin-ember-template-compilation';
 import type { Transform } from 'babel-plugin-ember-template-compilation';
-import type { Options as ResolverTransformOptions } from '../src/resolver-transform';
+import type { Options as ResolverTransformOptions } from '@embroider/compat/src/resolver-transform';
 import { resolve } from 'path';
 
 describe('audit', function () {
@@ -86,7 +86,7 @@ describe('audit', function () {
       appRoot: resolverConfig.appRoot,
       emberVersion: '*', // since no packages are declared ember version can be anything so * is valid
     };
-    let transform: Transform = [require.resolve('../src/resolver-transform'), transformOpts];
+    let transform: Transform = [require.resolve('@embroider/compat/src/resolver-transform'), transformOpts];
 
     let etcOptions: InlinePrecompileOptions = {
       compilerPath: emberTemplateCompiler().path,
@@ -139,22 +139,24 @@ describe('audit', function () {
   test(`discovers html, js, and hbs`, async function () {
     let result = await audit();
     expect(result.findings).toEqual([]);
-    expect(Object.keys(result.modules)).toEqual([
-      './index.html',
-      './app.js',
-      './hello.hbs',
-      './node_modules/ember-source/dist/packages/@ember/template-factory/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/opcode-compiler/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/util/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/vm/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/encoder/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/wire-format/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/manager/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/destroyable/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/reference/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/validator/index.js',
-      './node_modules/ember-source/dist/packages/@glimmer/global-context/index.js',
-    ]);
+    expect(Object.keys(result.modules)).toMatchInlineSnapshot(`
+      [
+        "./index.html",
+        "./app.js",
+        "./hello.hbs",
+        "./node_modules/ember-source/dist/packages/@ember/template-factory/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/opcode-compiler/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/util/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/encoder/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/vm/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/wire-format/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/manager/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/global-context/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/destroyable/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/reference/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/validator/index.js",
+      ]
+    `);
   });
 
   test(`reports resolution failures`, async function () {

@@ -34,5 +34,7 @@
     "type": "addon",
     "main": "addon-main.cjs"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "@embroider/addon-shim": "workspace:^"
+  }
 }

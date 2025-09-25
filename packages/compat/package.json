@@ -70,7 +70,7 @@
   },
   "devDependencies": {
     "@embroider/core": "workspace:^",
-    "@embroider/sample-transforms": "workspace:*",
+    "embroider-sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.94.9",
     "@glint/template": "^1.0.0",

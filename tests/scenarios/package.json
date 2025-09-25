@@ -5,7 +5,7 @@
     "@embroider/addon-dev": "workspace:*",
     "@embroider/compat": "workspace:*",
     "@embroider/core": "workspace:*",
-    "@embroider/sample-transforms": "workspace:*",
+    "embroider-sample-transforms": "workspace:*",
     "@embroider/shared-internals": "workspace:*",
     "@embroider/template-tag-codemod": "workspace:*",
     "@embroider/test-support": "workspace:*",

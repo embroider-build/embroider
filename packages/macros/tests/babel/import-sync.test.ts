@@ -61,23 +61,25 @@ describe('importSync', function () {
         return importSync(\`../../\${file}\`).default;
       }
       `);
-      expect(code).toEqual(`import esc from "../../src/addon/es-compat2";
-import * as _importSync20 from "../../README";
-import * as _importSync40 from "../../jest.config";
-import * as _importSync60 from "../../node_modules";
-import * as _importSync80 from "../../package";
-import * as _importSync00 from "../../src";
-import * as _importSync100 from "../../tests";
-function getFile(file) {
-  return {
-    "README": esc(_importSync20),
-    "jest.config": esc(_importSync40),
-    "node_modules": esc(_importSync60),
-    "package": esc(_importSync80),
-    "src": esc(_importSync00),
-    "tests": esc(_importSync100)
-  }[file].default;
-}`);
+      expect(code).toMatchInlineSnapshot(`
+        "import esc from "../../src/addon/es-compat2";
+        import * as _importSync20 from "../../README";
+        import * as _importSync40 from "../../node_modules";
+        import * as _importSync60 from "../../package";
+        import * as _importSync80 from "../../src";
+        import * as _importSync00 from "../../tests";
+        import * as _importSync100 from "../../vitest.config";
+        function getFile(file) {
+          return {
+            "README": esc(_importSync20),
+            "node_modules": esc(_importSync40),
+            "package": esc(_importSync60),
+            "src": esc(_importSync80),
+            "tests": esc(_importSync00),
+            "vitest.config": esc(_importSync100)
+          }[file].default;
+        }"
+      `);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { wideAppScenarios } from './scenarios';
-import type { PreparedApp, Scenario } from 'scenario-tester';
+import type { PreparedApp, Project, Scenario } from 'scenario-tester';
 import QUnit from 'qunit';
 import { readdirSync, readFileSync, writeFileSync } from 'fs-extra';
 import { join, resolve } from 'path';
@@ -78,59 +78,49 @@ let commonScenario = wideAppScenarios.map('legacy-inspector-support', project =>
 commonScenario
   .skip('lts_3_28-legacy-inspector-support')
   .skip('lts_4_4-legacy-inspector-support')
-  .map('newer-ember-source', project => {
-    project.mergeFiles({
-      app: {
-        'app.js': `
-          import Application from '@ember/application';
-          import compatModules from '@embroider/virtual/compat-modules';
-          import Resolver from 'ember-resolver';
-          import loadInitializers from 'ember-load-initializers';
-          import config from './config/environment';
-
-          import setupInspector from '@embroider/legacy-inspector-support/ember-source-4.8';
-
-          export default class App extends Application {
-            modulePrefix = config.modulePrefix;
-            podModulePrefix = config.podModulePrefix;
-            Resolver = Resolver.withModules(compatModules);
-            inspector = setupInspector(this);
-          }
-
-          loadInitializers(App, config.modulePrefix, compatModules);
-          `,
-      },
-    });
-  })
+  .skip('lts_4_8-legacy-inspector-support')
+  .map('newer-ember-source', project => addAppJS(project, '@embroider/legacy-inspector-support/ember-source-4.12'))
   .forEachScenario(runTests);
 
 commonScenario
   .only('lts_3_28-legacy-inspector-support')
-  .map('older-ember-source', project => {
-    project.mergeFiles({
-      app: {
-        'app.js': `
-          import Application from '@ember/application';
-          import compatModules from '@embroider/virtual/compat-modules';
-          import Resolver from 'ember-resolver';
-          import loadInitializers from 'ember-load-initializers';
-          import config from './config/environment';
-
-          import setupInspector from '@embroider/legacy-inspector-support/ember-source-3.28';
-
-          export default class App extends Application {
-            modulePrefix = config.modulePrefix;
-            podModulePrefix = config.podModulePrefix;
-            Resolver = Resolver.withModules(compatModules);
-            inspector = setupInspector(this);
-          }
-
-          loadInitializers(App, config.modulePrefix, compatModules);
-          `,
-      },
-    });
-  })
+  .map('older-ember-source', project => addAppJS(project, '@embroider/legacy-inspector-support/ember-source-3.28'))
   .forEachScenario(runTests);
+
+commonScenario
+  .only('lts_4_4-legacy-inspector-support')
+  .map('older-ember-source', project => addAppJS(project, '@embroider/legacy-inspector-support/ember-source-3.28'))
+  .forEachScenario(runTests);
+
+commonScenario
+  .only('lts_4_8-legacy-inspector-support')
+  .map('older-ember-source', project => addAppJS(project, '@embroider/legacy-inspector-support/ember-source-4.8'))
+  .forEachScenario(runTests);
+
+function addAppJS(project: Project, inspectorPath: string) {
+  project.mergeFiles({
+    app: {
+      'app.js': `
+        import Application from '@ember/application';
+        import compatModules from '@embroider/virtual/compat-modules';
+        import Resolver from 'ember-resolver';
+        import loadInitializers from 'ember-load-initializers';
+        import config from './config/environment';
+
+        import setupInspector from '${inspectorPath}';
+
+        export default class App extends Application {
+          modulePrefix = config.modulePrefix;
+          podModulePrefix = config.podModulePrefix;
+          Resolver = Resolver.withModules(compatModules);
+          inspector = setupInspector(this);
+        }
+
+        loadInitializers(App, config.modulePrefix, compatModules);
+        `,
+    },
+  });
+}
 
 function runTests(scenario: Scenario) {
   Qmodule(scenario.name, function (hooks) {

@@ -1,10 +1,10 @@
 # @embroider/legacy-inspector-support
 
-This package provides a compat integration to allow the ember-inspector to load modules provided by ember-source to correctly function. This implementation is intended to be a **legacy** feature and should be phased out as more functionality is improved in the inspector and it starts to consume public APIs from ember-sourse to provide the same features.
+This package provides a compat integration to allow the ember-inspector to load modules provided by ember-source. This implementation is intended to be a **legacy** feature and should be phased out as the inspector starts to consume public APIs from ember-source instead of importing modules directly.
 
 ## Usage
 
-For any app with an ember-source version >=4.8 you need to import the `seteupInspector()` function from `@embroider/legacy-inspector-support/ember-source-4.8` and pass your `Application` subclass into the fucnction.
+For any app with an ember-source version >=4.12 you need to import the `setupInspector()` function from `@embroider/legacy-inspector-support/ember-source-4.12` and pass your `Application` subclass into the function.
 
 ```js
 import Application from '@ember/application';
@@ -14,7 +14,7 @@ import loadInitializers from 'ember-load-initializers';
 import config from './config/environment';
 
 // import the setupInspector() function
-import setupInspector from '@embroider/legacy-inspector-support/ember-source-4.8';
+import setupInspector from '@embroider/legacy-inspector-support/ember-source-4.12';
 
 export default class App extends Application {
   modulePrefix = config.modulePrefix;
@@ -28,7 +28,7 @@ export default class App extends Application {
 loadInitializers(App, config.modulePrefix, compatModules);
 ```
 
-If you are on an older `ember-source` version you can import the same function from `@embroider/legacy-inspector-support/ember-source-3.28`.
+If you are on `ember-source` version `4.8` you can import the same function from `@embroider/legacy-inspector-support/ember-source-4.8` and for all older versions of `ember-source` you can import from `@embroider/legacy-inspector-support/ember-source-3.28`
 
 
 ## Development

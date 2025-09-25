@@ -27,7 +27,6 @@ async function githubMatrix() {
       dir,
     })),
     ...suites
-      .filter(s => s.name !== 'jest-suites') // TODO: jest tests do not work under windows yet
       .filter(s => !s.name.includes('watch-mode')) // TODO: watch tests are far too slow on windows right now
       .filter(s => !s.name.endsWith('compat-addon-classic-features-virtual-scripts')) // TODO: these tests are too slow on windows right now
       .filter(s => !s.name.endsWith('vite-dep-optimizer')) // these tests are absurdly slow on windows

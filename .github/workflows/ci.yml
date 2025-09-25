@@ -16,12 +16,25 @@ concurrency:
 
 jobs:
   jest-suites:
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
     timeout-minutes: 5
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22', '24']
+        os: [ubuntu-latest, 'windows-latest', 'macos-latest']
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - name: remove pinned node version
+        run: echo "auto-install-peers=false" > .npmrc
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{matrix.node}}
+          cache: pnpm
+      - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/*" test
 
   preflight:

@@ -73,8 +73,11 @@ jobs:
       - name: Work around windows short path alias # https://github.com/actions/runner-images/issues/712
         if: runner.os == 'Windows'
         run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV
+      - uses: samypr100/setup-dev-drive@v3
+        with:
+          workspace-copy: true
       - name: suite
         run: ${{ matrix.command }}
-        working-directory: ${{ matrix.dir }}
+        working-directory: ${{ env.DEV_DRIVE_WORKSPACE}}tests/scenarios
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"

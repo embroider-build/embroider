@@ -1,5 +1,5 @@
 {
-  "name": "@embroider/test-scenarios",
+  "name": "embroider-test-scenarios",
   "version": "0.0.5",
   "dependencies": {
     "@embroider/addon-dev": "workspace:*",

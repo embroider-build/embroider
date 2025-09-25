@@ -112,6 +112,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           use_lockfile: false
+          setup_node_cache: ''
       - name: Work around windows short path alias # https://github.com/actions/runner-images/issues/712
         if: runner.os == 'Windows'
         run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV

@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2025-09-26)
+
+* @embroider/compat 4.1.5 (patch)
+* @embroider/core 4.2.2 (patch)
+* @embroider/macros 1.18.3 (patch)
+* @embroider/router 3.0.4 (patch)
+* @embroider/vite 1.2.2 (patch)
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/router`, `@embroider/vite`
+  * [#2562](https://github.com/embroider-build/embroider/pull/2562) Move jest-suites out of scenario tester and make it so we can swap individual packages to vitest ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-09-24)
 
 * @embroider/compat 4.1.4 (patch)

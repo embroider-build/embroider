@@ -1,6 +1,6 @@
 {
   "name": "@embroider/vite",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -17,8 +17,7 @@
     "@embroider/core": "workspace:^",
     "vite": ">= 5.2.0"
   },
-  "scripts": {
-  },
+  "scripts": {},
   "dependencies": {
     "@babel/core": "^7.22.9",
     "@embroider/macros": "workspace:*",

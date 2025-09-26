@@ -10,6 +10,7 @@
     "@embroider/template-tag-codemod": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@embroider/webpack": "workspace:*",
+    "@embroider/legacy-inspector-support": "workspace:*",
     "@types/qunit": "2.19.10",
     "ember-auto-import": "^2.6.3",
     "fastboot": "^4.1.1",

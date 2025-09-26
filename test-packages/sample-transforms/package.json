@@ -1,5 +1,5 @@
 {
-  "name": "@embroider/sample-transforms",
+  "name": "embroider-sample-transforms",
   "version": "0.0.0",
   "description": "An addon we use in our test suite.",
   "keywords": [

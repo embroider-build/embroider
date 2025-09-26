@@ -26,7 +26,7 @@
     "src/**/*.js.map"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",
@@ -56,7 +56,8 @@
     "babel-plugin-ember-template-compilation": "^3.0.0",
     "code-equality-assertions": "^1.0.1",
     "scenario-tester": "^3.0.1",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@glint/template": "^1.0.0"

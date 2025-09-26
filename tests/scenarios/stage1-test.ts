@@ -36,7 +36,7 @@ appScenarios
     merge(addon.files, loadFromFixtureData('hello-world-addon'));
     addon.pkg.name = 'my-addon';
 
-    addon.linkDependency('@embroider/sample-transforms', { baseDir: __dirname });
+    addon.linkDependency('embroider-sample-transforms', { baseDir: __dirname });
     addon.linkDependency('@embroider/macros', { baseDir: __dirname });
     project.addDependency(addon);
 
@@ -241,7 +241,7 @@ appScenarios
     });
     addon.pkg.name = 'my-addon';
 
-    addon.linkDependency('@embroider/sample-transforms', { baseDir: __dirname });
+    addon.linkDependency('embroider-sample-transforms', { baseDir: __dirname });
     addon.linkDependency('@embroider/macros', { baseDir: __dirname });
     project.addDependency(addon);
   })

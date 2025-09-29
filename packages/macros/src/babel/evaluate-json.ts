@@ -412,8 +412,8 @@ export class Evaluator {
         let maybeFastbootProperty = maybeFastbootMemberExpression.isMemberExpression()
           ? maybeFastbootMemberExpression.get('property')
           : maybeFastbootMemberExpression.isOptionalMemberExpression()
-            ? maybeFastbootMemberExpression.get('property')
-            : assertNever(maybeFastbootMemberExpression);
+          ? maybeFastbootMemberExpression.get('property')
+          : assertNever(maybeFastbootMemberExpression);
 
         if (maybeFastbootProperty.isIdentifier() && maybeFastbootProperty.node.name === 'fastboot') {
           return {
@@ -435,7 +435,7 @@ export class Evaluator {
         confident: true,
         value: Boolean(
           this.state.opts.appPackageRoot &&
-          this.state.opts.isDevelopingPackageRoots.includes(this.state.opts.appPackageRoot)
+            this.state.opts.isDevelopingPackageRoots.includes(this.state.opts.appPackageRoot)
         ),
         hasRuntimeImplementation: false,
       };

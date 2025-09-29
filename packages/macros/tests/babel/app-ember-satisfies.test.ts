@@ -3,11 +3,12 @@ import { Project } from 'scenario-tester';
 import { join, dirname } from 'node:path';
 import { buildMacros } from '../../src/babel';
 
-
 const ROOT = process.cwd();
 
 export function baseV2Addon() {
-  return Project.fromDir(dirname(require.resolve('../../../../tests/v2-addon-template/package.json')), { linkDeps: true });
+  return Project.fromDir(dirname(require.resolve('../../../../tests/v2-addon-template/package.json')), {
+    linkDeps: true,
+  });
 }
 
 export function fakeEmber(version: string) {
@@ -18,7 +19,6 @@ export function fakeEmber(version: string) {
 
   return project;
 }
-
 
 describe(`appEmberSatisfies`, function () {
   let project: Project;

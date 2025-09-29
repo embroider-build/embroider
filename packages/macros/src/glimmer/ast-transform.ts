@@ -147,9 +147,7 @@ export function makeFirstTransform(opts: FirstTransformParams) {
             );
           }
           if (node.path.original === 'macroAppEmberSatisfies') {
-            return env.syntax.builders.mustache(
-              literal(appEmberSatisfies(node, packageCache), env.syntax.builders)
-            );
+            return env.syntax.builders.mustache(literal(appEmberSatisfies(node, packageCache), env.syntax.builders));
           }
         },
       },

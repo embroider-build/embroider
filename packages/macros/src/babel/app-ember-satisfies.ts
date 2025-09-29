@@ -9,7 +9,6 @@ import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import findUp from 'find-up';
 
-
 const packageName = 'ember-source';
 const CACHE = new Map<string, string | false>();
 /**
@@ -31,14 +30,14 @@ function getAppEmberVersion(state: State): string | false {
   }
 
   /**
-   * This version can, and often is a range (^6.4.0), 
+   * This version can, and often is a range (^6.4.0),
    * and using a range for the first parameter of satisfies will cause a failure to always occur.
    * So we must resolve the actual version on disk.
-  */
+   */
   let resolvedInfo = state.packageCache.resolve(packageName, root);
   let version = resolvedInfo.version;
   /**
-   * But, if the version is "clean", we can avoid a disk hit 
+   * But, if the version is "clean", we can avoid a disk hit
    * (which is helpful for corporate machines which intercept every disk i/o behavior)
    */
   let cleanedVersion = String(coerce(version, { includePrerelease: true }));
@@ -63,7 +62,6 @@ function getAppEmberVersion(state: State): string | false {
   }
   const emberSourceManifest = require(emberSourceManifestPath);
 
-
   CACHE.set(appRoot, emberSourceManifest.version);
   return emberSourceManifest.version;
 }
@@ -80,7 +78,6 @@ export default function appEmberSatisfies(path: NodePath<t.CallExpression>, stat
     );
   }
   try {
-
     let appEmberVersion = getAppEmberVersion(state);
 
     if (!appEmberVersion) {

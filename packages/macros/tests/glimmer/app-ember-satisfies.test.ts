@@ -16,7 +16,7 @@ describe('app ember dependency satisfies (prerelease)', () => {
     project?.dispose();
   });
 
-  templateTests((originalTransform) => {
+  templateTests(originalTransform => {
     function transform(text: string): Promise<string> {
       return originalTransform(text, { filename, appRoot: project.baseDir });
     }
@@ -43,7 +43,7 @@ describe('app ember dependency satisfies (released)', () => {
     project?.dispose();
   });
 
-  templateTests((originalTransform) => {
+  templateTests(originalTransform => {
     function transform(text: string): Promise<string> {
       return originalTransform(text, { filename, appRoot: project.baseDir });
     }

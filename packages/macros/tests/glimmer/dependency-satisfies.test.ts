@@ -17,7 +17,7 @@ describe('dependency satisfies', () => {
     project?.dispose();
   });
 
-  templateTests((transform) => {
+  templateTests(transform => {
     test('in content position', async () => {
       let result = await transform(`{{macroDependencySatisfies 'qunit' '^2.8.0'}}`, { filename });
       expect(result).toEqual('{{true}}');

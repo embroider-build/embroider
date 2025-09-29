@@ -10,10 +10,11 @@ const compilerPath = emberTemplateCompiler().path;
 
 export { Project };
 
-type CreateTests = (transform: (templateContents: string, options?: TemplateTransformOptions) => Promise<string>) => void;
+type CreateTests = (
+  transform: (templateContents: string, options?: TemplateTransformOptions) => Promise<string>
+) => void;
 
 export interface TemplateTransformOptions {
-
   /**
    * The path to the source we are transforming
    */
@@ -26,7 +27,7 @@ export interface TemplateTransformOptions {
 
   /**
    * Allow further customization of the macros config before finalization and invocation of the transform callback.
-   * 
+   *
    * If this option is passed you must call `config.finalize()` yourself in this callback.
    */
   configure?: (config: MacrosConfig) => void;
@@ -91,7 +92,6 @@ export function templateTests(createTests: CreateTests) {
     );
     return hbs ?? `no hbs found`;
   };
-
 
   createTests(transform);
 }

@@ -602,7 +602,16 @@ importers:
     devDependencies:
       '@babel/core':
         specifier: ^7.14.5
+<<<<<<< HEAD
         version: 7.28.4
+||||||| parent of be9e9c48 (Fix issues with macroCondition tests trying to use a babel plugin that was not declared in the package.json)
+        version: 7.28.0
+=======
+        version: 7.28.0
+      '@babel/plugin-transform-class-properties':
+        specifier: ^7.27.1
+        version: 7.27.1(@babel/core@7.28.0)
+>>>>>>> be9e9c48 (Fix issues with macroCondition tests trying to use a babel plugin that was not declared in the package.json)
       '@babel/plugin-transform-modules-amd':
         specifier: ^7.19.6
         version: 7.27.1(@babel/core@7.28.4)

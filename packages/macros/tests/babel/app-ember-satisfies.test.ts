@@ -1,9 +1,24 @@
 import { allBabelVersions, runDefault } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
-import { join } from 'path';
+import { join, dirname } from 'node:path';
 import { buildMacros } from '../../src/babel';
 
+
 const ROOT = process.cwd();
+
+export function baseV2Addon() {
+  return Project.fromDir(dirname(require.resolve('../../../../tests/v2-addon-template/package.json')), { linkDeps: true });
+}
+
+export function fakeEmber(version: string) {
+  const project = baseV2Addon();
+
+  project.name = 'ember-source';
+  project.version = version;
+
+  return project;
+}
+
 
 describe(`appEmberSatisfies`, function () {
   let project: Project;
@@ -33,8 +48,23 @@ describe(`appEmberSatisfies`, function () {
     },
 
     createTests(transform) {
-      test('is satisfied', () => {
+      test('is satisfied (app specifies exact version)', () => {
         project.addDependency('ember-source', '4.11.0');
+        let code = transform(`
+      import { appEmberSatisfies } from '@embroider/macros';
+      export default function() {
+        return appEmberSatisfies('^4.11.0');
+      }
+      `);
+        expect(runDefault(code)).toBe(true);
+      });
+
+      test('is satisfied (app specifies caret version)', () => {
+        project.addDependency(fakeEmber('4.12.0'));
+        project.pkg.dependencies ||= {};
+        project.pkg.dependencies['ember-source'] = '^4.11.0';
+        project.write();
+
         let code = transform(`
       import { appEmberSatisfies } from '@embroider/macros';
       export default function() {

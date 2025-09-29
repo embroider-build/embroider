@@ -2,9 +2,15 @@ import { templateTests } from './helpers';
 import type { MacrosConfig } from '../../src/node';
 
 describe(`macroFailBuild`, function () {
-  templateTests(function (transform: (code: string) => Promise<string>, config: MacrosConfig) {
-    config.setOwnConfig(__filename, { failureMessage: 'I said so' });
-    config.finalize();
+  templateTests(function (originalTransform) {
+    function configure(config: MacrosConfig) {
+      config.setOwnConfig(__filename, { failureMessage: 'I said so' });
+      config.finalize();
+    }
+
+    async function transform(text: string): Promise<string> {
+      return originalTransform(text, { configure });
+    }
 
     test('it can fail the build, content position', async () => {
       await expect(async () => {

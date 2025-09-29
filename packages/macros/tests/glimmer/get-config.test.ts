@@ -1,22 +1,28 @@
+import { MacrosConfig } from '../../src/node';
 import { templateTests } from './helpers';
-import type { MacrosConfig } from '../../src/node';
 
 describe(`macroGetConfig`, function () {
-  templateTests(function (transform: (code: string) => Promise<string>, config: MacrosConfig) {
-    config.setOwnConfig(__filename, {
-      mode: 'amazing',
-      count: 42,
-      inner: {
-        items: [{ name: 'Arthur', awesome: true }],
-        description: null,
-      },
-    });
+  templateTests(function (originalTransform) {
+    function configure(config: MacrosConfig) {
+      config.setOwnConfig(__filename, {
+        mode: 'amazing',
+        count: 42,
+        inner: {
+          items: [{ name: 'Arthur', awesome: true }],
+          description: null,
+        },
+      });
 
-    config.setConfig(__filename, 'scenario-tester', {
-      color: 'orange',
-    });
+      config.setConfig(__filename, 'scenario-tester', {
+        color: 'orange',
+      });
 
-    config.finalize();
+      config.finalize();
+    }
+
+    async function transform(text: string): Promise<string> {
+      return originalTransform(text, { configure });
+    }
 
     test('macroGetOwnConfig in content position', async function () {
       let code = await transform(`{{macroGetOwnConfig "mode"}}`);

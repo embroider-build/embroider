@@ -1,4 +1,3 @@
-import type { TemplateTransformOptions } from './helpers';
 import { Project, templateTests } from './helpers';
 import { join } from 'path';
 
@@ -18,48 +17,50 @@ describe('dependency satisfies', () => {
     project?.dispose();
   });
 
-  templateTests((transform: (code: string, options?: TemplateTransformOptions) => Promise<string>) => {
+  templateTests((originalTransform) => {
+    function transform(text: string): Promise<string> {
+      return originalTransform(text, { filename, appRoot: project.baseDir });
+    }
+
     test('in content position', async () => {
-      let result = await transform(`{{macroAppEmberSatisfies '^2.8.0'}}`, { filename });
+      let result = await transform(`{{macroAppEmberSatisfies '^2.8.0'}}`);
       expect(result).toEqual('{{true}}');
     });
 
     test('in subexpression position', async () => {
-      let result = await transform(`<Foo @a={{macroAppEmberSatisfies '^2.8.0'}} />`, { filename });
+      let result = await transform(`<Foo @a={{macroAppEmberSatisfies '^2.8.0'}} />`);
       expect(result).toMatch(/@a=\{\{true\}\}/);
     });
 
     test('in branch', async () => {
-      let result = await transform(`{{#if (macroAppEmberSatisfies '^2.8.0')}}red{{else}}blue{{/if}}`, {
-        filename,
-      });
+      let result = await transform(`{{#if (macroAppEmberSatisfies '^2.8.0')}}red{{else}}blue{{/if}}`);
       expect(result).toEqual('red');
     });
 
     test('emits false for out-of-range package', async () => {
-      let result = await transform(`{{macroAppEmberSatisfies '^10.0.0'}}`, { filename });
+      let result = await transform(`{{macroAppEmberSatisfies '^10.0.0'}}`);
       expect(result).toEqual('{{false}}');
     });
 
     test('emits false for missing package', async () => {
-      let result = await transform(`{{macroAppEmberSatisfies '^10.0.0'}}`, { filename });
+      let result = await transform(`{{macroAppEmberSatisfies '^10.0.0'}}`);
       expect(result).toEqual('{{false}}');
     });
 
     test('args length error', async () => {
       await expect(async () => {
-        await transform(`{{macroAppEmberSatisfies 'not-a-real-dep' 'another'}}`, { filename });
+        await transform(`{{macroAppEmberSatisfies 'not-a-real-dep' 'another'}}`);
       }).rejects.toThrow(/macroAppEmberSatisfies requires one argument, you passed 2/);
     });
 
     test('non literal arg error', async () => {
       await expect(async () => {
-        await transform(`{{macroAppEmberSatisfies someDep }}`, { filename });
+        await transform(`{{macroAppEmberSatisfies someDep }}`);
       }).rejects.toThrow(/all arguments to macroAppEmberSatisfies must be string literals/);
     });
 
     test('it considers prereleases (otherwise within the range) as allowed', async () => {
-      let result = await transform(`{{macroAppEmberSatisfies '^1.0.0'}}`, { filename });
+      let result = await transform(`{{macroAppEmberSatisfies '^1.0.0'}}`);
       expect(result).toEqual('{{true}}');
     });
   });

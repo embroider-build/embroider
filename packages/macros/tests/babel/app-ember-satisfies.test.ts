@@ -63,7 +63,6 @@ describe(`appEmberSatisfies`, function () {
         project.addDependency(fakeEmber('4.12.0'));
         project.pkg.dependencies ||= {};
         project.pkg.dependencies['ember-source'] = '^4.11.0';
-        project.write();
 
         let code = transform(`
       import { appEmberSatisfies } from '@embroider/macros';

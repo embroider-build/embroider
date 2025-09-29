@@ -34,7 +34,7 @@ describe(`appEmberSatisfies`, function () {
 
     createTests(transform) {
       test('is satisfied', () => {
-        project.addDependency('ember-source', '>= 4.11.0');
+        project.addDependency('ember-source', '4.11.0');
         let code = transform(`
       import { appEmberSatisfies } from '@embroider/macros';
       export default function() {
@@ -79,7 +79,7 @@ describe(`appEmberSatisfies`, function () {
         let code = transform(`
       import { appEmberSatisfies } from '@embroider/macros';
       export default function() {
-        return appEmberSatisfies('not-a-real-dep', '*');
+        return appEmberSatisfies('*');
       }
       `);
         expect(code).not.toMatch(/appEmberSatisfies/);
@@ -122,7 +122,7 @@ describe(`appEmberSatisfies`, function () {
           let range = '*';
           appEmberSatisfies(range);
         `);
-        }).toThrow(/the first argument to appEmberSatisfies must be a string literal/);
+        }).toThrow(/the only argument to appEmberSatisfies must be a string literal/);
       });
 
       test('it considers prereleases (otherwise within the range) as allowed', () => {
@@ -136,25 +136,6 @@ describe(`appEmberSatisfies`, function () {
         `
         );
         expect(runDefault(code)).toBe(true);
-      });
-
-      test('monorepo resolutions resolve correctly', () => {
-        project.addDependency('ember-source', '1.2.3');
-        let code = transform(`
-        import { appEmberSatisfies } from '@embroider/macros';
-
-        export default function() {
-          return {
-            // specified in dependencies
-            util: appEmberSatisfies('*'),
-
-            // not specified as any kind of dep
-            webpack: appEmberSatisfies('*'),
-          }
-        }
-      `);
-
-        expect(runDefault(code)).toEqual({ util: true, webpack: false });
       });
     },
   });

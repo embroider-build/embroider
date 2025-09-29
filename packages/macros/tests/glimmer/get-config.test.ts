@@ -1,4 +1,4 @@
-import { MacrosConfig } from '../../src/node';
+import type { MacrosConfig } from '../../src/node';
 import { templateTests } from './helpers';
 
 describe(`macroGetConfig`, function () {

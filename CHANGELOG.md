@@ -2,6 +2,26 @@
 
 ## Release (2025-09-30)
 
+* @embroider/compat 4.1.6 (patch)
+* @embroider/core 4.2.3 (patch)
+* @embroider/legacy-inspector-support 0.1.1 (patch)
+* @embroider/macros 1.19.0 (minor)
+* @embroider/vite 1.2.3 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/macros`
+  * [#2550](https://github.com/embroider-build/embroider/pull/2550) new Macro: `appEmberSatisfies(range)` ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/legacy-inspector-support`
+  * [#2569](https://github.com/embroider-build/embroider/pull/2569) fix release of legacy-inspector-support ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-09-30)
+
 * @embroider/compat 4.1.5 (patch)
 * @embroider/core 4.2.2 (patch)
 * @embroider/legacy-inspector-support 0.1.0 (minor)

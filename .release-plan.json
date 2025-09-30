@@ -14,14 +14,10 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.1.4",
-      "newVersion": "4.1.5",
+      "oldVersion": "4.1.5",
+      "newVersion": "4.1.6",
       "tagName": "latest",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -34,14 +30,10 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.2.1",
-      "newVersion": "4.2.2",
+      "oldVersion": "4.2.2",
+      "newVersion": "4.2.3",
       "tagName": "latest",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -53,27 +45,27 @@
       "oldVersion": "4.0.0"
     },
     "@embroider/legacy-inspector-support": {
-      "impact": "minor",
-      "oldVersion": "0.0.0",
-      "newVersion": "0.1.0",
+      "impact": "patch",
+      "oldVersion": "0.1.0",
+      "newVersion": "0.1.1",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/legacy-inspector-support/package.json"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.18.2",
-      "newVersion": "1.18.3",
+      "impact": "minor",
+      "oldVersion": "1.18.3",
+      "newVersion": "1.19.0",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
@@ -82,17 +74,7 @@
       "oldVersion": "0.1.2"
     },
     "@embroider/router": {
-      "impact": "patch",
-      "oldVersion": "3.0.3",
-      "newVersion": "3.0.4",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "oldVersion": "3.0.4"
     },
     "@embroider/shared-internals": {
       "oldVersion": "3.0.1"
@@ -102,25 +84,17 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.2.1",
-      "newVersion": "1.2.2",
+      "oldVersion": "1.2.2",
+      "newVersion": "1.2.3",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-09-30)\n\n* @embroider/compat 4.1.5 (patch)\n* @embroider/core 4.2.2 (patch)\n* @embroider/legacy-inspector-support 0.1.0 (minor)\n* @embroider/macros 1.18.3 (patch)\n* @embroider/router 3.0.4 (patch)\n* @embroider/vite 1.2.2 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/legacy-inspector-support`\n  * [#2522](https://github.com/embroider-build/embroider/pull/2522) Add compat ember-inspector support ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2566](https://github.com/embroider-build/embroider/pull/2566) Fix CI for upstream rolldown and webpack changes ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/router`, `@embroider/vite`\n  * [#2562](https://github.com/embroider-build/embroider/pull/2562) Move jest-suites out of scenario tester and make it so we can swap individual packages to vitest ([@mansona](https://github.com/mansona))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
+  "description": "## Release (2025-09-30)\n\n* @embroider/compat 4.1.6 (patch)\n* @embroider/core 4.2.3 (patch)\n* @embroider/legacy-inspector-support 0.1.1 (patch)\n* @embroider/macros 1.19.0 (minor)\n* @embroider/vite 1.2.3 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/macros`\n  * [#2550](https://github.com/embroider-build/embroider/pull/2550) new Macro: `appEmberSatisfies(range)` ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/legacy-inspector-support`\n  * [#2569](https://github.com/embroider-build/embroider/pull/2569) fix release of legacy-inspector-support ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

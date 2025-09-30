@@ -1,5 +1,31 @@
 # Embroider Changelog
 
+## Release (2025-09-30)
+
+* @embroider/compat 4.1.5 (patch)
+* @embroider/core 4.2.2 (patch)
+* @embroider/legacy-inspector-support 0.1.0 (minor)
+* @embroider/macros 1.18.3 (patch)
+* @embroider/router 3.0.4 (patch)
+* @embroider/vite 1.2.2 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/legacy-inspector-support`
+  * [#2522](https://github.com/embroider-build/embroider/pull/2522) Add compat ember-inspector support ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2566](https://github.com/embroider-build/embroider/pull/2566) Fix CI for upstream rolldown and webpack changes ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/router`, `@embroider/vite`
+  * [#2562](https://github.com/embroider-build/embroider/pull/2562) Move jest-suites out of scenario tester and make it so we can swap individual packages to vitest ([@mansona](https://github.com/mansona))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
 ## Release (2025-09-24)
 
 * @embroider/compat 4.1.4 (patch)

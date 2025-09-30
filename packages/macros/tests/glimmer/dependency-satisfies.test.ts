@@ -1,4 +1,3 @@
-import type { TemplateTransformOptions } from './helpers';
 import { Project, templateTests } from './helpers';
 import { join } from 'path';
 
@@ -18,7 +17,7 @@ describe('dependency satisfies', () => {
     project?.dispose();
   });
 
-  templateTests((transform: (code: string, options?: TemplateTransformOptions) => Promise<string>) => {
+  templateTests(transform => {
     test('in content position', async () => {
       let result = await transform(`{{macroDependencySatisfies 'qunit' '^2.8.0'}}`, { filename });
       expect(result).toEqual('{{true}}');

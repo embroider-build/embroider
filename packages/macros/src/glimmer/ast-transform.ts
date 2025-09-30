@@ -1,5 +1,6 @@
 import literal from './literal';
 import getConfig from './get-config';
+import appEmberSatisfies from './app-ember-satisfies';
 import dependencySatisfies from './dependency-satisfies';
 import { maybeAttrs } from './macro-maybe-attrs';
 import {
@@ -106,6 +107,15 @@ export function makeFirstTransform(opts: FirstTransformParams) {
             }
             return staticValue;
           }
+          if (node.path.original === 'macroAppEmberSatisfies') {
+            const staticValue = literal(appEmberSatisfies(node, packageCache), env.syntax.builders);
+            // If this is a macro expression by itself, then turn it into a macroCondition for the second pass to prune.
+            // Otherwise assume it's being composed with another macro and evaluate it as a literal
+            if (walker.parent.node.path.original === 'if') {
+              return env.syntax.builders.sexpr('macroCondition', [staticValue]);
+            }
+            return staticValue;
+          }
         },
         MustacheStatement(node: any) {
           if (node.path.type !== 'PathExpression') {
@@ -135,6 +145,9 @@ export function makeFirstTransform(opts: FirstTransformParams) {
             return env.syntax.builders.mustache(
               literal(dependencySatisfies(node, opts.packageRoot, moduleName, packageCache), env.syntax.builders)
             );
+          }
+          if (node.path.original === 'macroAppEmberSatisfies') {
+            return env.syntax.builders.mustache(literal(appEmberSatisfies(node, packageCache), env.syntax.builders));
           }
         },
       },

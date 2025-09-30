@@ -603,6 +603,9 @@ importers:
       '@babel/core':
         specifier: ^7.14.5
         version: 7.28.4
+      '@babel/plugin-transform-class-properties':
+        specifier: ^7.27.1
+        version: 7.27.1(@babel/core@7.28.4)
       '@babel/plugin-transform-modules-amd':
         specifier: ^7.19.6
         version: 7.27.1(@babel/core@7.28.4)

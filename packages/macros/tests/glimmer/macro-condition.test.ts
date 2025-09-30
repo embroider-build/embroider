@@ -1,6 +1,5 @@
 import { Project } from 'scenario-tester';
 import { join } from 'path';
-import type { TemplateTransformOptions } from './helpers';
 import { templateTests } from './helpers';
 
 describe(`macroCondition`, function () {
@@ -10,7 +9,7 @@ describe(`macroCondition`, function () {
     project?.dispose();
   });
 
-  templateTests(function (transform: (code: string, opts?: TemplateTransformOptions) => Promise<string>) {
+  templateTests(function (transform) {
     test('leaves regular if-block untouched', async function () {
       let code = await transform(`{{#if this.error}}red{{else}}blue{{/if}}`);
       expect(code).toEqual(`{{#if this.error}}red{{else}}blue{{/if}}`);

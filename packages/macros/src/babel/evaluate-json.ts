@@ -3,6 +3,7 @@ import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import type State from './state';
 import dependencySatisfies from './dependency-satisfies';
+import appEmberSatisfies from './app-ember-satisfies';
 import moduleExists from './module-exists';
 import getConfig from './get-config';
 import assertNever from 'assert-never';
@@ -385,6 +386,9 @@ export class Evaluator {
       return { confident: false };
     }
     let callee = path.get('callee');
+    if (callee.referencesImport('@embroider/macros', 'appEmberSatisfies')) {
+      return { confident: true, value: appEmberSatisfies(path, this.state), hasRuntimeImplementation: false };
+    }
     if (callee.referencesImport('@embroider/macros', 'dependencySatisfies')) {
       return { confident: true, value: dependencySatisfies(path, this.state), hasRuntimeImplementation: false };
     }

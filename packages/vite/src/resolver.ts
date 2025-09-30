@@ -4,7 +4,7 @@ const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = c
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
-import { join, normalize, resolve } from 'path';
+import { join, normalize, resolve, dirname } from 'path';
 import { writeStatus } from './backchannel.js';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
@@ -12,7 +12,7 @@ import fs from 'fs-extra';
 import { createHash } from 'crypto';
 import { BackChannel } from './backchannel.js';
 
-const { ensureSymlinkSync, outputJSONSync } = fs;
+const { ensureSymlinkSync, writeFileSync, mkdirpSync, renameSync } = fs;
 
 const debug = makeDebug('embroider:vite');
 
@@ -243,9 +243,16 @@ async function maybeCaptureNewOptimizedDep(
 
   let jumpRoot = join(tmpdir, 'embroider-vite-jump', hashed(pkg.root));
   let fromFile = join(jumpRoot, 'package.json');
-  outputJSONSync(fromFile, {
-    name: 'jump-root',
-  });
+
+  mkdirpSync(dirname(fromFile));
+  writeFileSync(
+    fromFile + '.tmp',
+    JSON.stringify({
+      name: 'jump-root',
+    }),
+    { flush: true }
+  );
+  renameSync(fromFile + '.tmp', fromFile);
   ensureSymlinkSync(pkg.root, join(jumpRoot, 'node_modules', pkg.name));
   let newResult = await context.resolve(target, fromFile);
   if (newResult) {

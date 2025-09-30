@@ -306,7 +306,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       mergeWith({}, this.configureWebpack(appInfo, variant, variantIndex), this.extraConfig, appendArrays)
     );
     this.lastAppInfo = appInfo;
-    return (this.lastWebpack = webpack(config)!);
+    return (this.lastWebpack = webpack(config as any)! as any);
   }
 
   private async writeScript(script: string, written: Set<string>, variant: Variant) {

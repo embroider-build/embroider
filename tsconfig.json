@@ -30,6 +30,7 @@
     { "path": "packages/config-meta-loader" },
     { "path": "packages/vite" },
     { "path": "packages/template-tag-codemod" },
+    { "path": "packages/legacy-inspector-support" },
     { "path": "tests/scenarios" },
   ]
 }

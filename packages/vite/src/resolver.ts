@@ -12,7 +12,7 @@ import fs from 'fs-extra';
 import { createHash } from 'crypto';
 import { BackChannel } from './backchannel.js';
 
-const { ensureSymlinkSync, writeFileSync, mkdirpSync } = fs;
+const { ensureSymlinkSync, writeFileSync, mkdirpSync, renameSync } = fs;
 
 const debug = makeDebug('embroider:vite');
 
@@ -246,12 +246,13 @@ async function maybeCaptureNewOptimizedDep(
 
   mkdirpSync(dirname(fromFile));
   writeFileSync(
-    fromFile,
+    fromFile + '.tmp',
     JSON.stringify({
       name: 'jump-root',
     }),
     { flush: true }
   );
+  renameSync(fromFile + '.tmp', fromFile);
   ensureSymlinkSync(pkg.root, join(jumpRoot, 'node_modules', pkg.name));
   let newResult = await context.resolve(target, fromFile);
   if (newResult) {

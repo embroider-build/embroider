@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "description": "Module that installs globals ember-inspector support",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/legacy-inspector-support"
+  },
   "exports": {
     "./ember-source-4.12": {
       "default": "./src/ember-source-4.12.js",

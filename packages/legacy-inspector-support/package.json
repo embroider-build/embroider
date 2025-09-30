@@ -1,6 +1,6 @@
 {
   "name": "@embroider/legacy-inspector-support",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Module that installs globals ember-inspector support",
   "type": "module",
   "exports": {

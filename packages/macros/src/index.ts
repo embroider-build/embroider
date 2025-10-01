@@ -35,6 +35,16 @@ export function each<T>(array: T[]): T[] {
 // We would prefer to write:
 //   export function importSync<T extends string>(specifier: T): typeof import(T) {
 // but TS doesn't seem to support that at present.
+//
+// Though, we should at least provide explicit overloads for the specific uses of importSync
+// that are mentioned in official guides, such as deprecation guides.
+// See e.g. https://deprecations.emberjs.com/id/deprecate-import-get-owner-from-ember
+
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+export function importSync(specifier: '@ember/owner'): typeof import('@ember/owner');
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+export function importSync(specifier: '@ember/application'): typeof import('@ember/application');
+
 export function importSync(specifier: string): unknown {
   throw new Oops(specifier);
 }

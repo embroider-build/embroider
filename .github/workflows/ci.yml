@@ -45,7 +45,8 @@ jobs:
       fail-fast: false
       matrix:
         node: ["12"]
-        os: [ubuntu-latest, "macos-latest"] # TODO add windows here
+        os: [ubuntu-latest]
+        # macos doesn't have node 12
 
     steps:
       - uses: actions/checkout@v4

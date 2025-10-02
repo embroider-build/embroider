@@ -3,7 +3,7 @@ name: CI
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 7 * * *' # daily, 7am
+    - cron: "0 7 * * *" # daily, 7am
 
   push:
     branches:
@@ -22,8 +22,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['20', '22', '24']
-        os: [ubuntu-latest, 'macos-latest'] # TODO add windows here
+        node: ["20", "22", "24"]
+        os: [ubuntu-latest, "macos-latest"] # TODO add windows here
 
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +36,29 @@ jobs:
           cache: pnpm
       - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/*" test
+
+  legacy-macros:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["12.22.12", "14.21.3", "16.20.2", "18.20.8", "20.19.5", "22.20.0", "24.9.0"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # this is only used for the pnpm install, the user-node-version above will be used in tests
+          cache: pnpm
+      - run: pnpm install --no-lockfile
+      - name: downgrade Node Version in .npmrc
+        run: printf "auto-install-peers=false\nuse-node-version=${{matrix.node}}" > .npmrc
+      - run: pnpm node -v
+      - run: cat .npmrc
+      - run: pnpm --filter "@embroider/macros" test:smoke
 
   preflight:
     runs-on: ubuntu-latest
@@ -55,9 +78,9 @@ jobs:
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
   test:
-    needs: ['preflight']
+    needs: ["preflight"]
     name: ${{ matrix.name }}
-    runs-on: '${{ matrix.os }}-latest'
+    runs-on: "${{ matrix.os }}-latest"
     timeout-minutes: 60
 
     strategy:

@@ -66,17 +66,19 @@ describe('importSync', function () {
         import * as _importSync20 from "../../README";
         import * as _importSync40 from "../../node_modules";
         import * as _importSync60 from "../../package";
-        import * as _importSync80 from "../../src";
-        import * as _importSync00 from "../../tests";
-        import * as _importSync100 from "../../vitest.config";
+        import * as _importSync80 from "../../smoke-test";
+        import * as _importSync00 from "../../src";
+        import * as _importSync100 from "../../tests";
+        import * as _importSync120 from "../../vitest.config";
         function getFile(file) {
           return {
             "README": esc(_importSync20),
             "node_modules": esc(_importSync40),
             "package": esc(_importSync60),
-            "src": esc(_importSync80),
-            "tests": esc(_importSync00),
-            "vitest.config": esc(_importSync100)
+            "smoke-test": esc(_importSync80),
+            "src": esc(_importSync00),
+            "tests": esc(_importSync100),
+            "vitest.config": esc(_importSync120)
           }[file].default;
         }"
       `);

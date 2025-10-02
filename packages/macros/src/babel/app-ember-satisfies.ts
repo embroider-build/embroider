@@ -4,9 +4,9 @@ import type State from './state';
 import { satisfies, coerce } from 'semver';
 import error from './error';
 import { assertArray } from './evaluate-json';
-import { pathToFileURL } from 'node:url';
-import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
+import { pathToFileURL } from 'url';
+import { createRequire } from 'module';
+import { dirname } from 'path';
 import findUp from 'find-up';
 
 const packageName = 'ember-source';

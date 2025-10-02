@@ -35,6 +35,7 @@
       ]
     }
   },
+  "files": ["addon-main.cjs", "dist", "src"],
   "scripts": {},
   "author": "",
   "license": "MIT",

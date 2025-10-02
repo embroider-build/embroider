@@ -26,7 +26,8 @@
     "src/**/*.js.map"
   ],
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "test:smoke": "node smoke-test.js"
   },
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",

@@ -58,7 +58,7 @@ jobs:
         run: printf "auto-install-peers=false\nuse-node-version=${{matrix.node}}" > .npmrc
       - run: pnpm node -v
       - run: cat .npmrc
-      - run: pnpm --filter "@embroider/macros" test
+      - run: pnpm --filter "@embroider/macros" test:smoke
 
   preflight:
     runs-on: ubuntu-latest

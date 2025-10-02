@@ -56,6 +56,7 @@ jobs:
           node-version: 22 # this is only used for the pnpm install, the user-node-version above will be used in tests
           cache: pnpm
       - run: pnpm install --no-lockfile
+      - run: pnpm node -v
       - run: pnpm --filter "@embroider/macros" test
 
   preflight:

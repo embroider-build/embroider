@@ -1,5 +1,33 @@
 # Embroider Changelog
 
+## Release (2025-10-02)
+
+* @embroider/compat 4.1.7 (patch)
+* @embroider/core 4.2.4 (patch)
+* @embroider/legacy-inspector-support 0.1.2 (patch)
+* @embroider/macros 1.19.1 (patch)
+* @embroider/vite 1.3.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2552](https://github.com/embroider-build/embroider/pull/2552) Warn if `{{rootURL}}` is present in index.html ([@pichfl](https://github.com/pichfl))
+
+#### :bug: Bug Fix
+* `@embroider/legacy-inspector-support`
+  * [#2574](https://github.com/embroider-build/embroider/pull/2574) fix deploying of types for inspector-support ([@mansona](https://github.com/mansona))
+  * [#2576](https://github.com/embroider-build/embroider/pull/2576) don't break SSR with legacy-inspector-support ([@mansona](https://github.com/mansona))
+* `@embroider/macros`
+  * [#2571](https://github.com/embroider-build/embroider/pull/2571) Drop `node:` prefix on imports in app-ember-satisfies to accomodate node < 16 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2575](https://github.com/embroider-build/embroider/pull/2575) simplify gitignore for @embroider/vite ([@mansona](https://github.com/mansona))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Florian Pichler ([@pichfl](https://github.com/pichfl))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-09-30)
 
 * @embroider/compat 4.1.6 (patch)

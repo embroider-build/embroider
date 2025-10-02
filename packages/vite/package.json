@@ -17,7 +17,9 @@
     "@embroider/core": "workspace:^",
     "vite": ">= 5.2.0"
   },
-  "scripts": {},
+  "scripts": {
+    "test": "vitest"
+  },
   "dependencies": {
     "@babel/core": "^7.22.9",
     "@embroider/macros": "workspace:*",
@@ -26,6 +28,7 @@
     "assert-never": "^1.2.1",
     "browserslist": "*",
     "browserslist-to-esbuild": "^2.1.1",
+    "chalk": "^5.6.2",
     "content-tag": "^3.1.1",
     "debug": "^4.3.2",
     "fast-glob": "^3.3.2",
@@ -45,7 +48,8 @@
     "@types/send": "^0.17.4",
     "esbuild": "^0.25.0",
     "rollup": "npm:rolldown@1.0.0-beta.29",
-    "vite": "npm:rolldown-vite@^7.0.0"
+    "vite": "npm:rolldown-vite@^7.0.0",
+    "vitest": "^3.2.4"
   },
   "files": [
     "dist"

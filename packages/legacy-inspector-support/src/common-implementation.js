@@ -9,5 +9,8 @@ export default function setupGlobal(app, importCallback) {
     loadCompatInspector: importCallback,
   });
 
-  window.dispatchEvent(new Event('Ember'));
+  // Only dispatch an event if window.dispatchEvent is available i.e. we are not in SSR mode
+  if (globalThis.dispatchEvent) {
+    globalThis.dispatchEvent(new Event('Ember'));
+  }
 }

@@ -9,6 +9,10 @@ inputs:
     description: "Whether to use the node version defined in .npmrc"
     required: false
     default: "false"
+  setup_node_cache:
+    description: "Value for cache value for actions/setup-node"
+    required: false
+    default: "pnpm"
 runs:
   using: 'composite'
   steps:
@@ -21,6 +25,12 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: pnpm
+        cache: ${{inputs.setup_node_cache}}
+    - uses: samypr100/setup-dev-drive@v3
+      if: runner.os == 'Windows'
+      with:
+        workspace-copy: true
+        drive-size: 10GB
     - run: pnpm install ${{ fromJSON('{"false":"--no-lockfile", "true":"--frozen-lockfile"}')[inputs.use_lockfile] }}
+      working-directory: ${{ env.DEV_DRIVE_WORKSPACE }}
       shell: bash

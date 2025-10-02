@@ -37,25 +37,23 @@ jobs:
       - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/*" test
 
-  extended-support:
-    runs-on: ${{matrix.os}}
+  legacy-macros:
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     strategy:
       fail-fast: false
       matrix:
-        node: ["12"]
-        os: [ubuntu-latest]
-        # macos doesn't have node 12
+        node: ["12.22.12", "14.21.3", "16.20.2", "18.20.8", "20.19.5", "22.20.0", "24.9.0"]
 
     steps:
       - uses: actions/checkout@v4
-      - name: remove pinned node version
-        run: echo "auto-install-peers=false" > .npmrc
+      - name: run test
+        run: echo "auto-install-peers=false\nuse-node-version=${{matrix.node}}" > .npmrc
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{matrix.node}}
+          node-version: 22 # this is only used for the pnpm install, the user-node-version above will be used in tests
           cache: pnpm
       - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/macros" test

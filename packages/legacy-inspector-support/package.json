@@ -1,6 +1,6 @@
 {
   "name": "@embroider/legacy-inspector-support",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Module that installs globals ember-inspector support",
   "type": "module",
   "repository": {
@@ -35,7 +35,11 @@
       ]
     }
   },
-  "files": ["addon-main.cjs", "dist", "src"],
+  "files": [
+    "addon-main.cjs",
+    "dist",
+    "src"
+  ],
   "scripts": {},
   "author": "",
   "license": "MIT",

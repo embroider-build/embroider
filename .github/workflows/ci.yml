@@ -48,15 +48,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: run test
-        run: echo "auto-install-peers=false\nuse-node-version=${{matrix.node}}" > .npmrc
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22 # this is only used for the pnpm install, the user-node-version above will be used in tests
           cache: pnpm
       - run: pnpm install --no-lockfile
+      - name: downgrade Node Version in .npmrc
+        run: printf "auto-install-peers=false\nuse-node-version=${{matrix.node}}" > .npmrc
       - run: pnpm node -v
+      - run: cat .npmrc
       - run: pnpm --filter "@embroider/macros" test
 
   preflight:

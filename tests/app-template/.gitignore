@@ -1,14 +1,14 @@
 # compiled output
 /dist/
+/declarations/
+/tmp/
 
 # dependencies
 /node_modules/
 
 # misc
-/.env*
+*.local
 /.pnp*
-/.sass-cache
-/connect.lock
 /.eslintcache
 /coverage/
 /npm-debug.log*

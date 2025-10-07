@@ -96,15 +96,18 @@ function* newFiles(changedFiles: string[]) {
 }
 
 function applyMoves(workDir: string, changedFiles: string[], sourceExtensions: string[]) {
+  let processed = false;
   for (let filename of newFiles(changedFiles)) {
     for (let sourceExtension of sourceExtensions) {
       let sourceFilename = filename.replace(newExtension, sourceExtension);
       if (changedFiles.includes(sourceFilename)) {
         execSync(`git mv ${sourceFilename} ${filename}`, { cwd: workDir });
         console.log(`renamed ${sourceFilename} -> ${filename}`);
+        processed = true;
       }
     }
   }
+  return processed;
 }
 
 function expectMergeConflicts(cb: () => void) {
@@ -120,6 +123,7 @@ function listConflicts(opts?: { cwd: string }) {
 }
 
 function concatenateMerge(workDir: string, jsRenameCommit: string, hbsRenameCommit: string) {
+  let processed = false;
   for (let filename of listConflicts({ cwd: workDir })) {
     writeFileSync(
       resolve(workDir, filename),
@@ -127,7 +131,9 @@ function concatenateMerge(workDir: string, jsRenameCommit: string, hbsRenameComm
     );
     execSync(`git add ${filename}`, { cwd: workDir });
     console.log(`resolved merge conflict in ${filename}`);
+    processed = true;
   }
+  return processed;
 }
 
 function applyCodemod(workDir: string, changedFiles: string[], endpoints: Endpoints) {
@@ -153,18 +159,21 @@ export async function mergeHistory(opts: MergeHistoryOptions): Promise<void> {
   let endpoints = resolveEndpoints(opts);
   let workDir = setupWorkDir(opts, endpoints);
   let changedFiles = listFiles(endpoints);
-  applyMoves(workDir, changedFiles, ['.js', '.ts']);
-  execSync(`git commit --no-verify -m "renamed JS/TS to GJS/GTS"`, { cwd: workDir });
+  if (applyMoves(workDir, changedFiles, ['.js', '.ts'])) {
+    execSync(`git commit --no-verify -m "renamed JS/TS to GJS/GTS"`, { cwd: workDir });
+  }
   let jsRenameCommit = head({ cwd: workDir });
   execSync(`git reset --hard ${endpoints.beforeSha}`, { cwd: workDir });
-  applyMoves(workDir, changedFiles, ['.hbs']);
-  execSync(`git commit --no-verify -m "renamed HBS to GJS/GTS"`, { cwd: workDir });
+  if (applyMoves(workDir, changedFiles, ['.hbs'])) {
+    execSync(`git commit --no-verify -m "renamed HBS to GJS/GTS"`, { cwd: workDir });
+  }
   let hbsRenameCommit = head({ cwd: workDir });
   expectMergeConflicts(() => {
     execSync(`git merge ${jsRenameCommit}`, { cwd: workDir });
   });
-  concatenateMerge(workDir, jsRenameCommit, hbsRenameCommit);
-  execSync(`git commit --no-verify -m "combined JS and HBS"`, { cwd: workDir });
+  if (concatenateMerge(workDir, jsRenameCommit, hbsRenameCommit)) {
+    execSync(`git commit --no-verify -m "combined JS and HBS"`, { cwd: workDir });
+  }
   applyCodemod(workDir, changedFiles, endpoints);
   execSync(`git commit --no-verify -m "applied codemod"`, { cwd: workDir });
   let codemodCommit = head({ cwd: workDir });

@@ -146,7 +146,20 @@ export function ember(params?: {
 }
 
 function shouldBuildTests(mode: string) {
-  return mode !== 'production' || process.env.FORCE_BUILD_TESTS;
+  let shouldBuildTests = mode !== 'production' || process.env.FORCE_BUILD_TESTS;
+
+  /**
+   * If we are trying to build tests in a production by setting `FORCE_BUILD_TESTS=true` then we need
+   * to tell ember-cli to build the test files too. This will allow embroider to discover things like
+   * {{content-for}} invocations in your tests/index.html and build them effectively in the prebuild.
+   *
+   * This is the relevant code in ember-cli that we're targeting: https://github.com/ember-cli/ember-cli/blob/a5648f9da2e8ae547091248f3e528485943a53bf/lib/broccoli/ember-app.js#L173
+   */
+  if (shouldBuildTests) {
+    process.env.EMBER_CLI_TEST_COMMAND = 'true';
+  }
+
+  return shouldBuildTests;
 }
 
 function minification(config: UserConfig, mode: string) {

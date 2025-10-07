@@ -2,6 +2,12 @@
 
 This package provides a compat integration to allow the ember-inspector to load modules provided by ember-source. This implementation is intended to be a **legacy** feature and should be phased out as the inspector starts to consume public APIs from ember-source instead of importing modules directly.
 
+## Installation
+
+```
+ember install @embroider/legacy-inspector-support
+```
+
 ## Usage
 
 For any app with an ember-source version >=4.12 you need to import the `setupInspector()` function from `@embroider/legacy-inspector-support/ember-source-4.12` and pass your `Application` subclass into the function.

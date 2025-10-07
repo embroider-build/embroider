@@ -253,7 +253,14 @@ async function maybeCaptureNewOptimizedDep(
     { flush: true }
   );
   renameSync(fromFile + '.tmp', fromFile);
-  ensureSymlinkSync(pkg.root, join(jumpRoot, 'node_modules', pkg.name));
+  try {
+    ensureSymlinkSync(pkg.root, join(jumpRoot, 'node_modules', pkg.name));
+  } catch (error) {
+    //on windows ensureSymlinkSync can throw an EEXIST for invalid reasons
+    if (error.code !== 'EEXIST') {
+      throw error;
+    }
+  }
   let newResult = await context.resolve(target, fromFile);
   if (newResult) {
     if (idFromResult(newResult) === foundFile) {

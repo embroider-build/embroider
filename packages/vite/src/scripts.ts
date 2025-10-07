@@ -30,7 +30,6 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
 
   return {
     name: 'embroider-scripts',
-    enforce: 'pre',
 
     configResolved(resolvedConfig) {
       config = resolvedConfig;

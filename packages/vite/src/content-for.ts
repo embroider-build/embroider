@@ -8,6 +8,7 @@ const { locateEmbroiderWorkingDir } = core;
 export function contentFor(): Plugin {
   return {
     name: 'embroider-content-for',
+    enforce: 'pre',
 
     transformIndexHtml(html, { path }) {
       let config: any = readJSONSync(join(locateEmbroiderWorkingDir(process.cwd()), 'content-for.json'));

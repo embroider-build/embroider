@@ -2,6 +2,17 @@
 
 ## Release (2025-10-07)
 
+* @embroider/vite 1.3.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2581](https://github.com/embroider-build/embroider/pull/2581) fix error on windows build with lazy engines or re-written packages ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
+## Release (2025-10-07)
+
 * @embroider/legacy-inspector-support 0.1.3 (patch)
 * @embroider/template-tag-codemod 1.3.3 (patch)
 * @embroider/vite 1.3.1 (patch)

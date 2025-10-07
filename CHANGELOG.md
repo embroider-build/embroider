@@ -1,5 +1,26 @@
 # Embroider Changelog
 
+## Release (2025-10-07)
+
+* @embroider/legacy-inspector-support 0.1.3 (patch)
+* @embroider/template-tag-codemod 1.3.3 (patch)
+* @embroider/vite 1.3.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2580](https://github.com/embroider-build/embroider/pull/2580) allow FORCE_BUILD_TESTS to work in mode=production ([@mansona](https://github.com/mansona))
+* `@embroider/template-tag-codemod`
+  * [#2478](https://github.com/embroider-build/embroider/pull/2478) allow merging histories for independent codemod invocations of components routes and tests ([@void-mAlex](https://github.com/void-mAlex))
+
+#### :memo: Documentation
+* `@embroider/legacy-inspector-support`
+  * [#2578](https://github.com/embroider-build/embroider/pull/2578) Add installation section to `@embroider/legacy-inspector-support` README.md ([@johanrd](https://github.com/johanrd))
+
+#### Committers: 3
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@johanrd](https://github.com/johanrd)
+
 ## Release (2025-10-02)
 
 * @embroider/compat 4.1.7 (patch)

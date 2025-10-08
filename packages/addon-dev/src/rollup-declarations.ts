@@ -73,12 +73,22 @@ async function fixDeclarationsInMatchingFiles(dir: string) {
   );
 }
 
-// Strip any .gts extension from imports in d.ts files, as these won't resolve. See https://github.com/typed-ember/glint/issues/628
-// Once Glint v2 is available, this shouldn't be needed anymore.
+// Strip any .gts extension from imports in d.ts files, as these won't resolve.
+// See:
+//   - https://github.com/typed-ember/glint/issues/628
+//   - https://github.com/typed-ember/glint/pull/999/files
 function fixDeclarations(content: string) {
-  return content
-    .replace(/from\s+'([^']+)\.gts'/g, `from '$1'`)
-    .replace(/from\s+"([^"]+)\.gts"/g, `from '$1'`)
-    .replace(/import\("([^"]+)\.gts"\)/g, `import('$1')`)
-    .replace(/import\('([^']+)\.gts'\)/g, `import('$1')`);
+  return (
+    content
+      .replace(/from\s+'([^']+)\.gts'/g, `from '$1'`)
+      .replace(/from\s+"([^"]+)\.gts"/g, `from '$1'`)
+      .replace(/import\("([^"]+)\.gts"\)/g, `import('$1')`)
+      .replace(/import\('([^']+)\.gts'\)/g, `import('$1')`)
+      // ts projects with mixed js (+ .d.ts)
+      // aka gts with gjs + .gjs.d.ts
+      .replace(/from\s+'([^']+)\.gjs'/g, `from '$1'`)
+      .replace(/from\s+"([^"]+)\.gjs"/g, `from '$1'`)
+      .replace(/import\("([^"]+)\.gjs"\)/g, `import('$1')`)
+      .replace(/import\('([^']+)\.gjs'\)/g, `import('$1')`)
+  );
 }

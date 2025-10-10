@@ -57,6 +57,7 @@
 /packages/*/tmp/
 /test-packages/*/dist/
 /test-packages/*/tmp/
+/tests/*/dist/
 
 # dependencies
 bower_components/

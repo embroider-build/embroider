@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
 import { type UserConfig, type ConfigEnv, type Plugin } from 'vite';
@@ -110,10 +111,24 @@ export function ember(params?: {
         // and, in non-production or when forcing tests, tests/index.html. But
         // the user may choose to take charge of input entirely.
         if (!config.build.rollupOptions.input) {
-          config.build.rollupOptions.input = {
-            main: 'index.html',
-            ...(shouldBuildTests(env.mode) ? { tests: 'tests/index.html' } : undefined),
-          };
+          let hasRootEntry = existsSync('index.html');
+          let hasTestsEntry = existsSync('tests/index.html');
+
+          config.build.rollupOptions.input = {};
+
+          if (hasRootEntry) {
+            Object.assign(config.build.rollupOptions.input, {
+              main: 'index.html',
+            });
+          }
+
+          if (hasTestsEntry) {
+            if (shouldBuildTests(env.mode)) {
+              Object.assign(config.build.rollupOptions.input, {
+                tests: 'tests/index.html',
+              });
+            }
+          }
         }
 
         if (!config.server) {

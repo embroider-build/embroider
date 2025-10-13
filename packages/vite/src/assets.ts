@@ -1,5 +1,5 @@
 import type { Resolver } from '@embroider/core';
-import core from '@embroider/core';
+import * as core from '@embroider/core';
 const { ResolverLoader } = core;
 import type { Plugin } from 'vite';
 import * as process from 'process';

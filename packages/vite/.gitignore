@@ -3,3 +3,4 @@
 /src/**/*.d.ts
 /src/**/*.map
 /dist/
+/tests/fixtures/**/dist

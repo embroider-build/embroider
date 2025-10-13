@@ -1,0 +1,26 @@
+{
+  "/index.html": {
+    "head": "<meta name=\"head\" content=\"this is my meta block\" />",
+    "test-head": "",
+    "head-footer": "<meta name=\"head-footer\" content=\"this is my meta block\" />",
+    "test-head-footer": "",
+    "body": "<h1>body</h1>",
+    "test-body": "",
+    "body-footer": "<h1>body footer</h1>",
+    "test-body-footer": "",
+    "config-module": "",
+    "app-boot": ""
+  },
+  "/tests/index.html": {
+    "head": "<meta name=\"head\" content=\"this is my meta block\" />",
+    "test-head": "",
+    "head-footer": "<meta name=\"head-footer\" content=\"this is my meta block\" />",
+    "test-head-footer": "",
+    "body": "<h1>body</h1>",
+    "test-body": "",
+    "body-footer": "<h1>body footer</h1>",
+    "test-body-footer": "",
+    "config-module": "",
+    "app-boot": ""
+  }
+}

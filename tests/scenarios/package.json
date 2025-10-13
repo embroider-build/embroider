@@ -51,6 +51,7 @@
     "@embroider/macros": "workspace:*",
     "@embroider/macros-old": "npm:@embroider/macros@~1.16.0",
     "@embroider/router": "workspace:*",
+    "@glimmer/component-1": "npm:@glimmer/component@^1.0.0",
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-typescript": "^11.1.2",
     "@tsconfig/ember": "1.0.1",

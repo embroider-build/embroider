@@ -7,6 +7,9 @@ export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+
+  // @glimmer/component@2 relies on @ember/owner which isn't available before ember-source@4.12
+  project.linkDevDependency('@glimmer/component', { baseDir: __dirname, resolveName: '@glimmer/component-1' });
 }
 
 async function lts_4_4(project: Project) {
@@ -15,6 +18,9 @@ async function lts_4_4(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+
+  // @glimmer/component@2 relies on @ember/owner which isn't available before ember-source@4.12
+  project.linkDevDependency('@glimmer/component', { baseDir: __dirname, resolveName: '@glimmer/component-1' });
 }
 
 async function lts_4_8(project: Project) {
@@ -23,6 +29,9 @@ async function lts_4_8(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+
+  // @glimmer/component@2 relies on @ember/owner which isn't available before ember-source@4.12
+  project.linkDevDependency('@glimmer/component', { baseDir: __dirname, resolveName: '@glimmer/component-1' });
 }
 
 async function lts_4_12(project: Project) {

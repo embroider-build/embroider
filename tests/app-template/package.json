@@ -55,6 +55,7 @@
     "ember-cli": "^6.6.0",
     "ember-cli-babel": "^8.2.0",
     "ember-cli-deprecation-workflow": "^3.4.0",
+    "ember-cli-htmlbars": "^6.3.0",
     "ember-load-initializers": "^3.0.1",
     "ember-modifier": "^4.2.2",
     "ember-page-title": "^9.0.3",

@@ -1538,6 +1538,9 @@ importers:
       ember-cli-deprecation-workflow:
         specifier: ^3.4.0
         version: 3.4.0(ember-source@6.7.0(@glimmer/component@2.0.0)(rsvp@4.8.5))
+      ember-cli-htmlbars:
+        specifier: ^6.3.0
+        version: 6.3.0
       ember-load-initializers:
         specifier: ^3.0.1
         version: 3.0.1(ember-source@6.7.0(@glimmer/component@2.0.0)(rsvp@4.8.5))

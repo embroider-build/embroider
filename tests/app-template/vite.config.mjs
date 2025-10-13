@@ -1,6 +1,6 @@
-import { defineConfig } from "vite";
-import { extensions, classicEmberSupport, ember } from "@embroider/vite";
-import { babel } from "@rollup/plugin-babel";
+import { defineConfig } from 'vite';
+import { extensions, classicEmberSupport, ember } from '@embroider/vite';
+import { babel } from '@rollup/plugin-babel';
 
 export default defineConfig({
   plugins: [
@@ -8,7 +8,7 @@ export default defineConfig({
     ember(),
     // extra plugins here
     babel({
-      babelHelpers: "runtime",
+      babelHelpers: 'runtime',
       extensions,
     }),
   ],

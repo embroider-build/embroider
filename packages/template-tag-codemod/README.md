@@ -132,7 +132,11 @@ Pass `--defaultFormat gts` instead if you prefer to produce typescript. Also see
 
 ## merge-history
 
-The `merge-history` command takes a branch where the codemod has already been applied and produces a new branch with the same contents, except that the Git history has been adjusted so that your GJS files inherit correctly from *both* the JS and HBS files that they replaced. Example:
+The `merge-history` command takes a branch where the codemod has already been applied and produces a new branch with the same contents, except that the Git history has been adjusted so that your GJS files inherit correctly from *both* the JS and HBS files that they replaced.
+
+**IMPORTANT:** The command only carries over changes in `.gjs` and `.gts` files from your branch to the new branch, which means all other changes in the original branch are lost if you then only merge the new one.
+
+Example:
 
 ```sh
 npx @embroider/template-tag-codemod merge-history --help

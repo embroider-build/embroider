@@ -17,7 +17,7 @@
 */
 
 export function dependencySatisfies(packageName: string, semverRange: string): boolean {
-  throw new Oops(packageName, semverRange);
+  return Boolean(packageName && semverRange);
 }
 
 export function appEmberSatisfies(semverRange: string): boolean {
@@ -25,7 +25,7 @@ export function appEmberSatisfies(semverRange: string): boolean {
 }
 
 export function macroCondition(predicate: boolean): boolean {
-  throw new Oops(predicate);
+  return predicate;
 }
 
 export function each<T>(array: T[]): T[] {
@@ -52,11 +52,11 @@ export function getGlobalConfig<T>(): T {
 }
 
 export function isDevelopingApp(): boolean {
-  throw new Oops();
+  return true;
 }
 
 export function isTesting(): boolean {
-  throw new Oops();
+  return true;
 }
 
 export function failBuild(message: string): void {

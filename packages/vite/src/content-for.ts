@@ -2,12 +2,13 @@ import type { Plugin } from 'vite';
 import fs from 'fs-extra';
 const { readJSONSync } = fs;
 import { join } from 'path';
-import core from '@embroider/core';
+import * as core from '@embroider/core';
 const { locateEmbroiderWorkingDir } = core;
 
 export function contentFor(): Plugin {
   return {
     name: 'embroider-content-for',
+    enforce: 'pre',
 
     transformIndexHtml(html, { path }) {
       let config: any = readJSONSync(join(locateEmbroiderWorkingDir(process.cwd()), 'content-for.json'));

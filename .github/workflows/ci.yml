@@ -78,7 +78,7 @@ jobs:
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
   test:
-    needs: ["preflight"]
+    needs: ["preflight", "jest-suites"]
     name: ${{ matrix.name }}
     runs-on: "${{ matrix.os }}-latest"
     timeout-minutes: 60

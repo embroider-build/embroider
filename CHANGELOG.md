@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-10-14)
+
+* @embroider/vite 1.3.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2586](https://github.com/embroider-build/embroider/pull/2586) Fix {{content-for "head"}} being moved to body and add a regression test ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-10-07)
 
 * @embroider/vite 1.3.2 (patch)

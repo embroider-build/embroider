@@ -4,7 +4,7 @@ import type State from './state';
 import { initState } from './state';
 import type { Mode as GetConfigMode } from './get-config';
 import { inlineRuntimeConfig, insertConfig } from './get-config';
-import macroCondition, { isMacroConditionPath } from './macro-condition';
+import macroCondition, { identifyMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
 
 import error from './error';
@@ -31,9 +31,10 @@ export default function main(context: typeof Babel): unknown {
     },
     'IfStatement|ConditionalExpression': {
       enter(path: NodePath<t.IfStatement | t.ConditionalExpression>, state: State) {
-        if (isMacroConditionPath(path)) {
-          state.calledIdentifiers.add(path.get('test').get('callee').node);
-          macroCondition(path, state);
+        let found = identifyMacroConditionPath(path);
+        if (found) {
+          state.calledIdentifiers.add(found.callExpression.get('callee').node);
+          macroCondition(found, state);
         }
       },
     },

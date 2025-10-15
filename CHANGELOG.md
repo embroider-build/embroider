@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2025-10-15)
+
+* @embroider/compat 4.1.8 (patch)
+* @embroider/core 4.2.5 (patch)
+* @embroider/macros 1.19.2 (patch)
+* @embroider/vite 1.3.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2590](https://github.com/embroider-build/embroider/pull/2590) tolerate negation before macroCondition ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-10-14)
 
 * @embroider/vite 1.3.3 (patch)

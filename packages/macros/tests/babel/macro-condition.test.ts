@@ -386,6 +386,23 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/alpha/);
       });
 
+      // adding this because some other babel plugins can introduce this as part
+      // of their "optimization".
+      test('tolerates negation between IfStatement and macroCondition CallExpression', () => {
+        let code = transform(`
+      import { macroCondition, getConfig } from '@embroider/macros';
+      export default function() {
+        if (!macroCondition(getConfig('qunit').items[0]["approved"])) {
+          return 'alpha';
+        } else {
+          return 'beta';
+        }
+      }
+      `);
+        expect(run(code, { filename })).toBe('beta');
+        expect(code).not.toMatch(/alpha/);
+      });
+
       if (transform.babelMajorVersion === 7) {
         buildTimeTest('can be used as class field initializer', () => {
           let code = transform(`

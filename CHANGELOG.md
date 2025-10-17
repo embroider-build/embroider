@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-10-17)
+
+* @embroider/vite 1.3.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2584](https://github.com/embroider-build/embroider/pull/2584) Conditianlly add entrypoints for the index.html files IFF they exist ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-10-15)
 
 * @embroider/compat 4.1.8 (patch)

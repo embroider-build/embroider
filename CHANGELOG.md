@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-10-21)
+
+* @embroider/vite 1.3.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2593](https://github.com/embroider-build/embroider/pull/2593) Fix race between multiple builds creating embroider-vite-jump ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-10-17)
 
 * @embroider/vite 1.3.5 (patch)

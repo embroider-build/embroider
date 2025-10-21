@@ -1,18 +1,19 @@
 import { type Plugin, type ViteDevServer, normalizePath } from 'vite';
-import core, { ModuleRequest, type Resolver } from '@embroider/core';
+import core, { ModuleRequest, type Package, type Resolver } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
-import { join, normalize, resolve, dirname } from 'path';
+import { join, normalize, resolve } from 'path';
 import { writeStatus } from './backchannel.js';
 import type { PluginContext, ResolveIdResult } from 'rollup';
 import { externalName } from '@embroider/reverse-exports';
 import fs from 'fs-extra';
 import { createHash } from 'crypto';
 import { BackChannel } from './backchannel.js';
+import { existsSync, mkdtempSync } from 'node:fs';
 
-const { ensureSymlinkSync, writeFileSync, mkdirpSync, renameSync } = fs;
+const { ensureSymlinkSync, writeFileSync, renameSync } = fs;
 
 const debug = makeDebug('embroider:vite');
 
@@ -241,27 +242,21 @@ async function maybeCaptureNewOptimizedDep(
 
   debug('maybeCaptureNewOptimizedDep: doing re-resolve for %s ', foundFile);
 
-  let jumpRoot = join(tmpdir, 'embroider-vite-jump', hashed(pkg.root));
-  let fromFile = join(jumpRoot, 'package.json');
-
-  mkdirpSync(dirname(fromFile));
-  writeFileSync(
-    fromFile + '.tmp',
-    JSON.stringify({
-      name: 'jump-root',
-    }),
-    { flush: true }
-  );
-  renameSync(fromFile + '.tmp', fromFile);
-  try {
-    ensureSymlinkSync(pkg.root, join(jumpRoot, 'node_modules', pkg.name));
-  } catch (error) {
-    //on windows ensureSymlinkSync can throw an EEXIST for invalid reasons
-    if (error.code !== 'EEXIST') {
-      throw error;
+  let jumpRoot = join(tmpdir, 'embroider-vite-jump-' + hashed(pkg.root + '|' + pkg.name));
+  if (!existsSync(jumpRoot)) {
+    let tmp = buildViteJump(pkg);
+    try {
+      renameSync(tmp, jumpRoot);
+    } catch (err) {
+      if (err.code === 'EEXIST') {
+        // somebody raced us and made it first. It's content-addressable so
+        // that's fine.
+      } else {
+        throw err;
+      }
     }
   }
-  let newResult = await context.resolve(target, fromFile);
+  let newResult = await context.resolve(target, join(jumpRoot, 'package.json'));
   if (newResult) {
     if (idFromResult(newResult) === foundFile) {
       // This case is normal. For example, people could be using
@@ -278,4 +273,17 @@ async function maybeCaptureNewOptimizedDep(
   } else {
     return result;
   }
+}
+
+function buildViteJump(pkg: Package) {
+  let tmp = mkdtempSync(join(tmpdir, 'embroider-vite-jump-tmp-'));
+  writeFileSync(
+    join(tmp, 'package.json'),
+    JSON.stringify({
+      name: 'jump-root',
+    }),
+    { flush: true }
+  );
+  ensureSymlinkSync(pkg.root, join(tmp, 'node_modules', pkg.name));
+  return tmp;
 }

@@ -14,6 +14,15 @@ interface Options {
    * Defaults to true.
    */
   watch?: boolean;
+
+  /**
+   * Specifies whether to skip prebuild next time the vite is invoked.
+   * This re-uses the output from the node_modules/.embroider folder
+   * from the previous build.
+   *
+   * Defaults to false.
+   */
+  reusePrebuild?: boolean;
 }
 
 export function classicEmberSupport(options: Options = {}) {

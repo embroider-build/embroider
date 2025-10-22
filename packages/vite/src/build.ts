@@ -1,7 +1,9 @@
 import { fork } from 'child_process';
 import type { Plugin } from 'vite';
+import { locateEmbroiderWorkingDir } from '@embroider/core';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join, dirname } from 'node:path';
+import { resolve, relative, join, dirname } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
@@ -64,6 +66,7 @@ export function emberBuild(
 
 interface CompatPrebuildOptions {
   watch?: boolean;
+  reusePrebuild?: boolean;
 }
 
 export function compatPrebuild(options: CompatPrebuildOptions = {}): Plugin {
@@ -86,6 +89,24 @@ export function compatPrebuild(options: CompatPrebuildOptions = {}): Plugin {
       if (!viteMode) {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's mode`);
       }
+
+      if (options?.reusePrebuild) {
+        let working = locateEmbroiderWorkingDir(process.cwd());
+        let versions: Record<string, string> = {};
+        try {
+          versions = JSON.parse(readFileSync(resolve(working, 'version.json'), 'utf8'));
+        } catch (err) {}
+
+        if (
+          versions['@embroider/core'] &&
+          versions['@embroider/core'] ===
+            JSON.parse(readFileSync(require.resolve('@embroider/core/package.json'), 'utf8')).version
+        ) {
+          console.log(`Reusing addon prebuild in ${relative(process.cwd(), working)}`);
+          return;
+        }
+      }
+
       await emberBuild(viteCommand, viteMode, resolvableExtensions, options);
     },
   };

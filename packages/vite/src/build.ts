@@ -5,7 +5,14 @@ import { join, dirname } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
-export function emberBuild(command: string, mode: string, resolvableExtensions: string[] | undefined): Promise<void> {
+export function emberBuild(
+  command: string,
+  mode: string,
+  resolvableExtensions: string[] | undefined,
+  options: CompatPrebuildOptions
+): Promise<void> {
+  let shouldWatch = options?.watch ?? true;
+
   let env: Record<string, string> = {
     ...process.env,
     EMBROIDER_PREBUILD: 'true',
@@ -30,9 +37,11 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
     });
   }
   return new Promise((resolve, reject) => {
+    let watchArgs = shouldWatch ? ['--watch'] : [];
+
     const child = fork(
       emberCLI,
-      ['build', '--watch', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
+      ['build', ...watchArgs, '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
       {
         silent: true,
         env,
@@ -53,7 +62,11 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
   });
 }
 
-export function compatPrebuild(): Plugin {
+interface CompatPrebuildOptions {
+  watch?: boolean;
+}
+
+export function compatPrebuild(options: CompatPrebuildOptions = {}): Plugin {
   let viteCommand: string | undefined;
   let viteMode: string | undefined;
   let resolvableExtensions: string[] | undefined;
@@ -73,7 +86,7 @@ export function compatPrebuild(): Plugin {
       if (!viteMode) {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's mode`);
       }
-      await emberBuild(viteCommand, viteMode, resolvableExtensions);
+      await emberBuild(viteCommand, viteMode, resolvableExtensions, options);
     },
   };
 }

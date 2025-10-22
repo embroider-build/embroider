@@ -4,7 +4,7 @@ import { babel } from "@rollup/plugin-babel";
 
 export default defineConfig({
   plugins: [
-    classicEmberSupport(),
+    classicEmberSupport({ watch: false }),
     ember(),
     // extra plugins here
     babel({

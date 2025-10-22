@@ -8,12 +8,20 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 
-export function classicEmberSupport() {
+interface Options {
+  /**
+   * Whether or not to start ember-cli in watch mode.
+   * Defaults to true.
+   */
+  watch?: boolean;
+}
+
+export function classicEmberSupport(options: Options = {}) {
   return [
     hbs(),
     contentFor(),
     scripts(),
-    compatPrebuild(),
+    compatPrebuild(options),
     assets(),
     {
       name: 'vite-plugin-ember-browser-targets',

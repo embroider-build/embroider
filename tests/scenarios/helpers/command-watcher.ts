@@ -68,6 +68,24 @@ export default class CommandWatcher {
     return false;
   }
 
+  private searchOutput(output: string | RegExp): boolean | RegExpExecArray {
+    for (let rawLine of this.lines) {
+      let line = stripAnsi(rawLine);
+
+      if (typeof output === 'string') {
+        if (output === line) {
+          return true;
+        }
+      } else {
+        let result = output.exec(line);
+        if (result) {
+          return result;
+        }
+      }
+    }
+    return false;
+  }
+
   async waitFor(output: string | RegExp, timeout = DEFAULT_TIMEOUT): Promise<any> {
     let timedOut = new Promise<void>((_resolve, reject) => {
       setTimeout(() => {
@@ -101,6 +119,21 @@ export default class CommandWatcher {
       }
       await this.internalWait(timedOut);
     }
+  }
+
+  clearLogs() {
+    this.lines = [];
+    this.nextWaitedLine = 0;
+  }
+
+  didEmit(line: string | RegExp) {
+    let result = this.searchOutput(line);
+
+    if (typeof result === 'boolean') return result;
+
+    return {
+      count: result.length,
+    };
   }
 
   async shutdown(): Promise<void> {

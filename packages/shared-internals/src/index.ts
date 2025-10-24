@@ -29,6 +29,7 @@ export {
   version as cacheBustingPluginVersion,
 } from './babel-plugin-cache-busting';
 export { locateEmbroiderWorkingDir } from './working-dir';
+export { getLockfileHash } from './get-lockfile-hash';
 
 export * from './dep-validation';
 export * from './colocation';

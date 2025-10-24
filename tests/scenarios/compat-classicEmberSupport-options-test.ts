@@ -3,7 +3,7 @@ import { throwOnWarnings } from '@embroider/core';
 import merge from 'lodash/merge';
 import QUnit from 'qunit';
 import CommandWatcher from './helpers/command-watcher';
-import { PreparedApp } from 'scenario-tester';
+import type { PreparedApp } from 'scenario-tester';
 import { join } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';

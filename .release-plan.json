@@ -43,18 +43,18 @@
       "oldVersion": "1.3.3"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.3.5",
-      "newVersion": "1.3.6",
+      "impact": "minor",
+      "oldVersion": "1.3.6",
+      "newVersion": "1.4.0",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-10-21)\n\n* @embroider/vite 1.3.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2593](https://github.com/embroider-build/embroider/pull/2593) Fix race between multiple builds creating embroider-vite-jump ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-10-28)\n\n* @embroider/vite 1.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2597](https://github.com/embroider-build/embroider/pull/2597) Pull out and export configTargets plugin ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-10-28)
+
+* @embroider/vite 1.4.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2597](https://github.com/embroider-build/embroider/pull/2597) Pull out and export configTargets plugin ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-10-21)
 
 * @embroider/vite 1.3.6 (patch)

@@ -405,7 +405,7 @@ describe('macroCondition', function () {
 
       test('tolerates negation between IfStatement and macroCondition CallExpression (with isTesting))', () => {
         let code = transform(`
-      import { macroCondition, isTetsing } from '@embroider/macros';
+      import { macroCondition, isTesting } from '@embroider/macros';
       export default function() {
         if (!macroCondition(isTesting())) {
           return 'alpha';

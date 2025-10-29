@@ -403,6 +403,21 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/alpha/);
       });
 
+      test('tolerates negation between IfStatement and macroCondition CallExpression (with isTesting))', () => {
+        let code = transform(`
+      import { macroCondition, isTetsing } from '@embroider/macros';
+      export default function() {
+        if (!macroCondition(isTesting())) {
+          return 'alpha';
+        } else {
+          return 'beta';
+        }
+      }
+      `);
+        expect(run(code, { filename })).toBe('beta');
+        expect(code).not.toMatch(/alpha/);
+      });
+
       if (transform.babelMajorVersion === 7) {
         buildTimeTest('can be used as class field initializer', () => {
           let code = transform(`

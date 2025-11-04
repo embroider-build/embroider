@@ -15,6 +15,7 @@ export function contentFor(): Plugin {
       let contentsForConfig = config[path];
       for (const [contentType, htmlContent] of Object.entries(contentsForConfig)) {
         html = html.replace(`{{content-for "${contentType}"}}`, `${htmlContent}`);
+        html = html.replace(`{{content-for '${contentType}'}}`, `${htmlContent}`);
       }
       return html;
     },

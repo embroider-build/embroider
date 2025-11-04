@@ -388,7 +388,7 @@ describe('macroCondition', function () {
 
       // adding this because some other babel plugins can introduce this as part
       // of their "optimization".
-      test('tolerates negation between IfStatement and macroCondition CallExpression', () => {
+      test('tolerates negation between IfStatement and macroCondition CallExpression (build time)', () => {
         let code = transform(`
       import { macroCondition, getConfig } from '@embroider/macros';
       export default function() {
@@ -401,6 +401,20 @@ describe('macroCondition', function () {
       `);
         expect(run(code, { filename })).toBe('beta');
         expect(code).not.toMatch(/alpha/);
+      });
+
+      runTimeTest('tolerates negation between IfStatement and macroCondition CallExpression (runtime))', () => {
+        let code = transform(`
+          import { macroCondition, isTesting } from '@embroider/macros';
+          export default function() {
+            if (!macroCondition(isTesting())) {
+              return 'alpha';
+            } else {
+              return 'beta';
+            }
+          }
+      `);
+        expect(run(code, { filename })).toBe('beta');
       });
 
       if (transform.babelMajorVersion === 7) {

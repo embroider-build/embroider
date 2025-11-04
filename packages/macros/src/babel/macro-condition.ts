@@ -46,7 +46,7 @@ export default function macroCondition(macro: MacroCondition, state: State) {
   let alternate = macro.conditional.get('alternate');
 
   if (state.opts.mode === 'run-time' && predicate.hasRuntimeImplementation !== false) {
-    let callee = macro.conditional.get('test').get('callee');
+    let callee = macro.callExpression.get('callee');
     callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'macroCondition'));
   } else {
     let [kept, removed] =

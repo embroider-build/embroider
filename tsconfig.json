@@ -21,7 +21,8 @@
     "packages/template-tag-codemod",
     "packages/compat",
     "packages/core",
-    "packages/reverse-exports"
+    "packages/reverse-exports",
+    "packages/addon-shim",
   ],
   "references": [
     { "path": "packages/reverse-exports" },
@@ -31,6 +32,7 @@
     { "path": "packages/vite" },
     { "path": "packages/template-tag-codemod" },
     { "path": "packages/legacy-inspector-support" },
+    { "path": "packages/addon-shim" },
     { "path": "tests/scenarios" },
   ]
 }

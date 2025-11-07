@@ -25,8 +25,12 @@ appScenarios
             switch (type) {
               case 'body':
                 return '<p>Content for body</p>';
+              case 'body-single-quotes':
+                return '<p>Content for body-single-quotes</p>';
               case 'custom':
                 return '<p>Content for custom</p>';
+              case 'custom-single-quotes':
+                return '<p>Content for custom-single-quotes</p>';
               default:
                 return '';
             }
@@ -51,7 +55,7 @@ appScenarios
           });
 
           return maybeEmbroider(app, {
-            availableContentForTypes: ['custom'],
+            availableContentForTypes: ['body-single-quotes', 'custom', 'custom-single-quotes'],
           });
         };
       `,
@@ -73,7 +77,9 @@ appScenarios
             </head>
             <body>
               {{content-for "body"}}
+              {{content-for 'body-single-quotes'}}
               {{content-for "custom"}}
+              {{content-for 'custom-single-quotes'}}
 
               <script src="/@embroider/virtual/vendor.js"></script>
               <script type="module">
@@ -111,11 +117,15 @@ appScenarios
 
         let content = readFileSync(`${app.dir}/dist/index.html`).toString();
         assert.true(content.includes('<p>Content for body</p>'));
+        assert.true(content.includes('<p>Content for body-single-quotes</p>'));
         assert.true(content.includes('<p>Content for custom</p>'));
+        assert.true(content.includes('<p>Content for custom-single-quotes</p>'));
 
         content = readFileSync(`${app.dir}/dist/tests/index.html`).toString();
         assert.true(content.includes('<p>Content for body</p>'));
+        assert.true(!content.includes('<p>Content for body-single-quotes</p>'));
         assert.true(!content.includes('<p>Content for custom</p>'));
+        assert.true(!content.includes('<p>Content for custom-single-quotes</p>'));
       });
 
       test('content-for are replaced: dev mode', async function (assert) {
@@ -125,7 +135,9 @@ appScenarios
           let response = await fetch(`${url}/`);
           let text = await response.text();
           assert.true(text.includes('<p>Content for body</p>'));
+          assert.true(text.includes('<p>Content for body-single-quotes</p>'));
           assert.true(text.includes('<p>Content for custom</p>'));
+          assert.true(text.includes('<p>Content for custom-single-quotes</p>'));
         } finally {
           await server.shutdown();
         }

@@ -100,7 +100,7 @@ module.exports = {
 
 ### macroCondition
 
-The `macroCondition` macro allows branch level code isolation (and deletion in the case of production builds). Generally macroConditions are viewed as a foundation macro and are combined with others marcos (detailed below) to create more complex scenarios. `macroCondition` takes a single argument which must be statically known or another macro which will compile down to a static value.
+The `macroCondition` macro allows branch level code isolation (and deletion in the case of production builds). Generally macroConditions are viewed as a foundation macro and are combined with other macros (detailed below) to create more complex scenarios. `macroCondition` takes a single argument which must be statically known or another macro which will compile down to a static value.
 
 ```js
 import { macroCondition } from '@embroider/macros';

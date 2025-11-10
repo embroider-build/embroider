@@ -1,4 +1,4 @@
-import { appScenarios, baseAddon, baseV2Addon } from './scenarios';
+import { appScenarios, baseAddon, baseV2Addon, tsAppClassicScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -159,6 +159,35 @@ appScenarios
       test(`pnpm test`, async function (assert) {
         let result = await app.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });
+
+tsAppClassicScenarios
+  .only('lts_5_12') // we only need to test this against one version of ember since we are testing a addon-shim feature
+  .map('ember-auto-import-error', project => {
+    // we need a v2 addon to trigger the error and this seems to be enough to guarentee that we get the error in CI
+    project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: 'ember-test-helpers-4' });
+    project.removeDevDependency('ember-auto-import');
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`pnpm test`, async function (assert) {
+        let result = await app.execute('pnpm test:ember', {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'classic',
+          },
+        });
+        assert.equal(result.exitCode, 1, 'We expect the tests to fail when ember-auto-import is missing');
+        assert.ok(
+          /ts-app-template needs to depend on ember-auto-import in order to use/.test(result.stderr),
+          result.stderr
+        );
       });
     });
   });

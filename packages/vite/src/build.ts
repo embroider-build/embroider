@@ -66,7 +66,13 @@ export function compatPrebuild(): Plugin {
       viteMode = mode;
       resolvableExtensions = config.resolve?.extensions;
     },
-    async buildStart() {
+    // Using the options hook is the best way to ensure that the compat-prebuild has completely finished before any
+    // attempt at resolving (e.g. Ember virtual modules) is made.
+    // Using `buildStart` does not work reliably due to possible race conditions, as it is of kind "async, parallel".
+    // So if any other plugin running at buildStart would cause a resolve request to be made and compat-prebuild hasn't finished by then,
+    // then our resolver would get initialized without the meta data needed from compat-prebuild.
+    // See https://github.com/embroider-build/embroider/issues/2490
+    async options() {
       if (!viteCommand) {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's command`);
       }

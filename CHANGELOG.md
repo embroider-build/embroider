@@ -2,6 +2,34 @@
 
 ## Release (2025-11-11)
 
+* @embroider/addon-shim 1.10.2 (patch)
+* @embroider/compat 4.1.10 (patch)
+* @embroider/core 4.2.7 (patch)
+* @embroider/macros 1.19.4 (patch)
+* @embroider/vite 1.4.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2499](https://github.com/embroider-build/embroider/pull/2499) Use options hook for running compat-prebuild ([@simonihmig](https://github.com/simonihmig))
+  * [#2600](https://github.com/embroider-build/embroider/pull/2600) Use Vite's resolved cacheDir to determine cache location ([@mogstad](https://github.com/mogstad))
+* `@embroider/addon-shim`
+  * [#2608](https://github.com/embroider-build/embroider/pull/2608) fix deployment of addon-shim ([@mansona](https://github.com/mansona))
+
+#### :memo: Documentation
+* Other
+  * [#2448](https://github.com/embroider-build/embroider/pull/2448) Document adding app reexports to package.json#exports ([@fdeters](https://github.com/fdeters))
+* `@embroider/macros`
+  * [#2606](https://github.com/embroider-build/embroider/pull/2606) Fix typo in README.md regarding macroCondition ([@MelSumner](https://github.com/MelSumner))
+
+#### Committers: 5
+- Bjarne Mogstad ([@mogstad](https://github.com/mogstad))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Forrest Deters ([@fdeters](https://github.com/fdeters))
+- Melanie Sumner ([@MelSumner](https://github.com/MelSumner))
+- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))
+
+## Release (2025-11-11)
+
 * @embroider/addon-shim 1.10.1 (patch)
 * @embroider/compat 4.1.9 (patch)
 * @embroider/core 4.2.6 (patch)

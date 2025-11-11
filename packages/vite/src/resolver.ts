@@ -24,6 +24,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
   const notViteDeps = new Set<string>();
   const responseMetas: Map<string, ResponseMeta> = new Map();
   const backChannel = params?.rolldown ? new BackChannel() : undefined;
+  let cacheDir = '';
 
   async function resolveId(
     context: PluginContext,
@@ -58,7 +59,13 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
         if (resolution.virtual) {
           return resolution.result;
         } else {
-          return await maybeCaptureNewOptimizedDep(context, resolverLoader.resolver, resolution.result, notViteDeps);
+          return await maybeCaptureNewOptimizedDep(
+            context,
+            resolverLoader.resolver,
+            resolution.result,
+            notViteDeps,
+            cacheDir
+          );
         }
       case 'not_found':
         return null;
@@ -103,6 +110,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
 
     configResolved(config) {
       mode = config.mode;
+      cacheDir = normalize(config.cacheDir);
     },
 
     configureServer(s) {
@@ -211,16 +219,14 @@ async function maybeCaptureNewOptimizedDep(
   context: PluginContext,
   resolver: Resolver,
   result: ResolveIdResult,
-  notViteDeps: Set<string>
+  notViteDeps: Set<string>,
+  cacheDir: string
 ): Promise<ResolveIdResult> {
   let foundFile = idFromResult(result);
   if (!foundFile) {
     return result;
   }
-  if (
-    foundFile.includes('.vite') &&
-    normalize(foundFile).startsWith(join(resolver.packageCache.appRoot, 'node_modules', '.vite'))
-  ) {
+  if (normalize(foundFile).startsWith(cacheDir)) {
     debug('maybeCaptureNewOptimizedDep: %s already in vite deps', foundFile);
     return result;
   }

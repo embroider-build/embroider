@@ -15,6 +15,9 @@
     "doc": "doc",
     "test": "tests"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@embroider/shared-internals": "workspace:^",
     "broccoli-funnel": "^3.0.8",

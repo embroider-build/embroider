@@ -257,8 +257,8 @@ importers:
         specifier: ^1.0.11
         version: 1.0.11
       broccoli:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^4.0.0
+        version: 4.0.0
       broccoli-concat:
         specifier: ^4.2.5
         version: 4.2.5
@@ -877,8 +877,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.1
       broccoli:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^4.0.0
+        version: 4.0.0
       chalk:
         specifier: ^5.4.1
         version: 5.6.2
@@ -1250,8 +1250,8 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0
       broccoli:
-        specifier: ^3.4.2
-        version: 3.5.2
+        specifier: ^4.0.0
+        version: 4.0.0
       code-equality-assertions:
         specifier: ^1.0.1
         version: 1.0.1(@types/jest@29.5.14)(@types/qunit@2.19.13)(qunit@2.24.1)
@@ -5940,6 +5940,11 @@ packages:
     engines: {'0': node >= 0.8.0}
     hasBin: true
 
+  ansi-html@0.0.9:
+    resolution: {integrity: sha512-ozbS3LuenHVxNRh/wdnN16QapUHzauqSomAl1jwwJRRsGwFwtj644lIhxfWu0Fy0acCij2+AEgHvjscq3dlVXg==}
+    engines: {'0': node >= 0.8.0}
+    hasBin: true
+
   ansi-regex@2.1.1:
     resolution: {integrity: sha512-TIGnTpdo+E3+pCyAluZvtED5p5wCqLdezCyhPZzKPcxvFplEt4i+W7OONCKgeZFT3+y5NZZfOOS/Bdcanm1MYA==}
     engines: {node: '>=0.10.0'}
@@ -6762,6 +6767,10 @@ packages:
     resolution: {integrity: sha512-sWi3b3fTUSVPDsz5KsQ5eCQNVAtLgkIE/HYFkEZXR/07clqmd4E/gFiuwSaqa9b+QTXc1Uemfb7TVWbEIURWDg==}
     engines: {node: 8.* || >= 10.*}
 
+  broccoli@4.0.0:
+    resolution: {integrity: sha512-p5el5/ig0QeRGFPkLMPdm7KblkTm44eicEWfwnRTz6hncghVuRZ0+XDAtCi7ynxobeE/mey5Q7lAulFkgNzxVA==}
+    engines: {node: '>= 20.19.*'}
+
   browser-process-hrtime@1.0.0:
     resolution: {integrity: sha512-9o5UecI3GhkpM6DrXr69PblIuWxPKk9Y0jHBRhdocZ2y7YECBFCsHm79Pr3OyR2AvjhDkabFJaDJMYRazHgsow==}
 
@@ -7117,6 +7126,10 @@ packages:
   commander@13.1.0:
     resolution: {integrity: sha512-/rFeCpNJQbhSZjGVwO9RFV3xPqbnERS8MmIQzCtD/zl6gpJuV/bMLuN92oG3F7d8oDEHHRrujSXNUr8fpjntKw==}
     engines: {node: '>=18'}
+
+  commander@14.0.2:
+    resolution: {integrity: sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ==}
+    engines: {node: '>=20'}
 
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
@@ -10804,6 +10817,10 @@ packages:
     resolution: {integrity: sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==}
     engines: {node: '>= 0.6'}
 
+  mime-types@3.0.1:
+    resolution: {integrity: sha512-xRc4oEhT6eaBpU1XF7AjpOFD+xQmXNB5OVKwp4tqCuBpHLS/ZbBDrc07mYTDqVMg6PfxUjjNp85O6Cd2Z/5HWA==}
+    engines: {node: '>= 0.6'}
+
   mime@1.6.0:
     resolution: {integrity: sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==}
     engines: {node: '>=4'}
@@ -12071,6 +12088,11 @@ packages:
   rimraf@3.0.2:
     resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
     deprecated: Rimraf versions prior to v4 are no longer supported
+    hasBin: true
+
+  rimraf@6.1.0:
+    resolution: {integrity: sha512-DxdlA1bdNzkZK7JiNWH+BAx1x4tEJWoTofIopFo6qWUU94jYrFZ0ubY05TqH3nWPJ1nKa1JWVFDINZ3fnrle/A==}
+    engines: {node: 20 || >=22}
     hasBin: true
 
   rolldown-vite@7.1.13:
@@ -19347,6 +19369,8 @@ snapshots:
 
   ansi-html@0.0.7: {}
 
+  ansi-html@0.0.9: {}
+
   ansi-regex@2.1.1: {}
 
   ansi-regex@3.0.1: {}
@@ -20901,6 +20925,29 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  broccoli@4.0.0:
+    dependencies:
+      ansi-html: 0.0.9
+      broccoli-node-info: 2.2.0
+      broccoli-source: 3.0.1
+      commander: 14.0.2
+      connect: 3.7.0
+      console-ui: 3.1.2
+      findup-sync: 5.0.0
+      handlebars: 4.7.8
+      heimdalljs: 0.2.6
+      heimdalljs-logger: 0.1.10
+      mime-types: 3.0.1
+      resolve-path: 1.4.0
+      rimraf: 6.1.0
+      sane: 5.0.1
+      tmp: 0.2.5
+      tree-sync: 2.1.0
+      underscore.string: 3.3.6
+      watch-detector: 1.0.2
+    transitivePeerDependencies:
+      - supports-color
+
   browser-process-hrtime@1.0.0: {}
 
   browserslist-to-esbuild@2.1.1(browserslist@4.26.2):
@@ -21277,6 +21324,8 @@ snapshots:
   commander@10.0.1: {}
 
   commander@13.1.0: {}
+
+  commander@14.0.2: {}
 
   commander@2.20.3: {}
 
@@ -28820,6 +28869,10 @@ snapshots:
     dependencies:
       mime-db: 1.52.0
 
+  mime-types@3.0.1:
+    dependencies:
+      mime-db: 1.54.0
+
   mime@1.6.0: {}
 
   mimic-fn@1.2.0: {}
@@ -30101,6 +30154,11 @@ snapshots:
   rimraf@3.0.2:
     dependencies:
       glob: 7.2.3
+
+  rimraf@6.1.0:
+    dependencies:
+      glob: 11.0.3
+      package-json-from-dist: 1.0.1
 
   rolldown-vite@7.1.13(@types/node@22.18.6)(esbuild@0.25.10)(terser@5.44.0):
     dependencies:

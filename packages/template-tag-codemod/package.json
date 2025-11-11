@@ -38,7 +38,7 @@
     "@types/babel__core": "^7.20.5",
     "babel-import-util": "^3.0.1",
     "babel-plugin-ember-template-compilation": "^3.0.0",
-    "broccoli": "^3.5.2",
+    "broccoli": "^4.0.0",
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "console-ui": "^3.1.2",

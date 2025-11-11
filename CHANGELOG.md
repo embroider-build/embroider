@@ -1,5 +1,41 @@
 # Embroider Changelog
 
+## Release (2025-11-11)
+
+* @embroider/addon-shim 1.10.1 (patch)
+* @embroider/compat 4.1.9 (patch)
+* @embroider/core 4.2.6 (patch)
+* @embroider/macros 1.19.3 (patch)
+* @embroider/template-tag-codemod 1.3.4 (patch)
+* @embroider/vite 1.4.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2597](https://github.com/embroider-build/embroider/pull/2597) Pull out and export configTargets plugin ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/addon-shim`
+  * [#2604](https://github.com/embroider-build/embroider/pull/2604) Drop the need for ember-auto-import dependency on app for @embroider/addon-shim ([@mansona](https://github.com/mansona))
+* `@embroider/vite`
+  * [#2601](https://github.com/embroider-build/embroider/pull/2601) Support `content-for` with single quotes as well ([@bertdeblock](https://github.com/bertdeblock))
+* `@embroider/macros`
+  * [#2599](https://github.com/embroider-build/embroider/pull/2599) Fix runtime implementation of negated macroCondition ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :memo: Documentation
+* `@embroider/template-tag-codemod`
+  * [#2588](https://github.com/embroider-build/embroider/pull/2588) Add warning about losing non-template-tag changes in merge-history ([@balinterdi](https://github.com/balinterdi))
+
+#### :house: Internal
+* [#2605](https://github.com/embroider-build/embroider/pull/2605) Regenerate lockfile ([@ef4](https://github.com/ef4))
+* [#2585](https://github.com/embroider-build/embroider/pull/2585) Split windows tests ([@mansona](https://github.com/mansona))
+
+#### Committers: 5
+- Balint Erdi ([@balinterdi](https://github.com/balinterdi))
+- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-10-21)
 
 * @embroider/vite 1.3.6 (patch)

@@ -4,7 +4,17 @@
       "oldVersion": "8.1.0"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "1.10.0"
+      "impact": "patch",
+      "oldVersion": "1.10.0",
+      "newVersion": "1.10.1",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-shim/package.json"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "4.0.0"
@@ -13,13 +23,33 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.8"
+      "impact": "patch",
+      "oldVersion": "4.1.8",
+      "newVersion": "4.1.9",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.2.5"
+      "impact": "patch",
+      "oldVersion": "4.2.5",
+      "newVersion": "4.2.6",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -28,7 +58,17 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.19.2"
+      "impact": "patch",
+      "oldVersion": "1.19.2",
+      "newVersion": "1.19.3",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.1.2"
@@ -40,21 +80,39 @@
       "oldVersion": "3.0.1"
     },
     "@embroider/template-tag-codemod": {
-      "oldVersion": "1.3.3"
-    },
-    "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.3.5",
-      "newVersion": "1.3.6",
+      "oldVersion": "1.3.3",
+      "newVersion": "1.3.4",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
+          "reason": "Appears in changelog section :memo: Documentation"
+        }
+      ],
+      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+    },
+    "@embroider/vite": {
+      "impact": "minor",
+      "oldVersion": "1.3.6",
+      "newVersion": "1.4.0",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-10-21)\n\n* @embroider/vite 1.3.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2593](https://github.com/embroider-build/embroider/pull/2593) Fix race between multiple builds creating embroider-vite-jump ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-11-11)\n\n* @embroider/addon-shim 1.10.1 (patch)\n* @embroider/compat 4.1.9 (patch)\n* @embroider/core 4.2.6 (patch)\n* @embroider/macros 1.19.3 (patch)\n* @embroider/template-tag-codemod 1.3.4 (patch)\n* @embroider/vite 1.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2597](https://github.com/embroider-build/embroider/pull/2597) Pull out and export configTargets plugin ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/addon-shim`\n  * [#2604](https://github.com/embroider-build/embroider/pull/2604) Drop the need for ember-auto-import dependency on app for @embroider/addon-shim ([@mansona](https://github.com/mansona))\n* `@embroider/vite`\n  * [#2601](https://github.com/embroider-build/embroider/pull/2601) Support `content-for` with single quotes as well ([@bertdeblock](https://github.com/bertdeblock))\n* `@embroider/macros`\n  * [#2599](https://github.com/embroider-build/embroider/pull/2599) Fix runtime implementation of negated macroCondition ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :memo: Documentation\n* `@embroider/template-tag-codemod`\n  * [#2588](https://github.com/embroider-build/embroider/pull/2588) Add warning about losing non-template-tag changes in merge-history ([@balinterdi](https://github.com/balinterdi))\n\n#### :house: Internal\n* [#2605](https://github.com/embroider-build/embroider/pull/2605) Regenerate lockfile ([@ef4](https://github.com/ef4))\n* [#2585](https://github.com/embroider-build/embroider/pull/2585) Split windows tests ([@mansona](https://github.com/mansona))\n\n#### Committers: 5\n- Balint Erdi ([@balinterdi](https://github.com/balinterdi))\n- Bert De Block ([@bertdeblock](https://github.com/bertdeblock))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

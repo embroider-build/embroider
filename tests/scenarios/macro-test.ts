@@ -110,6 +110,8 @@ appScenarios
 appScenarios
   .map('classic-macro-tests', project => {
     project.linkDevDependency('loader.js', { baseDir: __dirname });
+    // as we are actually in a classic build here we need to re-add ember-auto-import for things to workk
+    project.linkDevDependency('ember-auto-import', { baseDir: __dirname });
     scenarioSetup(project);
     merge(project.files, loadFromFixtureData('macro-test-classic'));
   })
@@ -164,6 +166,9 @@ appScenarios
   .only('canary')
   .map('macro-babel-cache-busting-classic', project => {
     project.linkDevDependency('loader.js', { baseDir: __dirname });
+    // as we are actually in a classic build here we need to re-add ember-auto-import for things to workk
+    project.linkDevDependency('ember-auto-import', { baseDir: __dirname });
+
     scenarioSetup(project);
     merge(project.files, loadFromFixtureData('macro-test-classic'));
   })

@@ -99,6 +99,7 @@
     "ember-source-latest": "npm:ember-source@latest",
     "ember-template-imports": "^4.1.2",
     "ember-test-helpers-2": "npm:@ember/test-helpers@^2.0.0",
+    "ember-test-helpers-4": "npm:@ember/test-helpers@^4.0.0",
     "ember-truth-helpers": "^3.0.0",
     "ember-welcome-page": "^7.0.2",
     "execa": "^5.1.1",

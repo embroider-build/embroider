@@ -3,7 +3,7 @@
   "version": "1.10.0",
   "description": "Make v2 addons work in non-Embroider apps.",
   "keywords": [],
-  "main": "./src/index.js",
+  "main": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/embroider-build/embroider.git",
@@ -15,7 +15,6 @@
     "doc": "doc",
     "test": "tests"
   },
-  "scripts": {},
   "dependencies": {
     "@embroider/shared-internals": "workspace:^",
     "broccoli-funnel": "^3.0.8",

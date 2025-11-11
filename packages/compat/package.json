@@ -99,6 +99,6 @@
     "@embroider/core": "workspace:^"
   },
   "engines": {
-    "node": "12.* || 14.* || >= 16"
+    "node": ">= 20.19.*"
   }
 }

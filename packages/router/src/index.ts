@@ -159,7 +159,11 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
         const bundle = this.lazyRoute(name) ?? this.lazyEngine(name);
         this.seenByRoute.add(name);
         if (bundle) {
-          return this.registerBundle(bundle).then(() => original(name));
+          if (this.registeredBundles.get(bundle)?.loaded) {
+            return original(name);
+          } else {
+            return this.registerBundle(bundle).then(() => original(name));
+          }
         } else {
           return original(name);
         }

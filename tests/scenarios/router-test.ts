@@ -41,7 +41,7 @@ function setupScenario(project: Project) {
           `,
       },
       controllers: {
-        'split-me.ts': `
+        'split-me.js': `
             import Controller from '@ember/controller';
             import { tracked } from '@glimmer/tracking';
             export default class SplitMeController extends Controller {

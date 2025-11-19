@@ -13,9 +13,12 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "mem": "^8.0.0",
     "resolve.exports": "^2.0.2"
+  },
+  "engines": {
+    "node": "12.* || 14.* || >= 16"
   }
 }

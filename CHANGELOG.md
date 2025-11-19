@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-11-18)
+
+* @embroider/router 3.0.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2612](https://github.com/embroider-build/embroider/pull/2612) fix stickly queryParams on lazy routes/engines ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
 ## Release (2025-11-11)
 
 * @embroider/addon-shim 1.10.2 (patch)

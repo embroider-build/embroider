@@ -1,5 +1,5 @@
 import { externalName } from '../src';
-import assert from 'node:assert';
+import assert from 'assert';
 
 const actual = externalName(
   {

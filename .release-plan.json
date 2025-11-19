@@ -19,7 +19,17 @@
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.2.7"
+      "impact": "patch",
+      "oldVersion": "4.2.7",
+      "newVersion": "4.2.8",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/reverse-exports"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -31,20 +41,20 @@
       "oldVersion": "1.19.4"
     },
     "@embroider/reverse-exports": {
-      "oldVersion": "0.1.2"
-    },
-    "@embroider/router": {
-      "impact": "patch",
-      "oldVersion": "3.0.4",
-      "newVersion": "3.0.5",
+      "impact": "minor",
+      "oldVersion": "0.1.2",
+      "newVersion": "0.2.0",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "pkgJSONPath": "./packages/reverse-exports/package.json"
+    },
+    "@embroider/router": {
+      "oldVersion": "3.0.5"
     },
     "@embroider/shared-internals": {
       "oldVersion": "3.0.1"
@@ -53,8 +63,18 @@
       "oldVersion": "1.3.4"
     },
     "@embroider/vite": {
-      "oldVersion": "1.4.1"
+      "impact": "patch",
+      "oldVersion": "1.4.1",
+      "newVersion": "1.4.2",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/reverse-exports"
+        }
+      ],
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-11-18)\n\n* @embroider/router 3.0.5 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#2612](https://github.com/embroider-build/embroider/pull/2612) fix stickly queryParams on lazy routes/engines ([@void-mAlex](https://github.com/void-mAlex))\n\n#### Committers: 1\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n"
+  "description": "## Release (2025-11-19)\n\n* @embroider/core 4.2.8 (patch)\n* @embroider/reverse-exports 0.2.0 (minor)\n* @embroider/vite 1.4.2 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/reverse-exports`\n  * [#2614](https://github.com/embroider-build/embroider/pull/2614) Extend node support for reverse-exports package back to Node v12 ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

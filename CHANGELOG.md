@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## Release (2025-11-19)
+
+* @embroider/core 4.2.8 (patch)
+* @embroider/reverse-exports 0.2.0 (minor)
+* @embroider/vite 1.4.2 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/reverse-exports`
+  * [#2614](https://github.com/embroider-build/embroider/pull/2614) Extend node support for reverse-exports package back to Node v12 ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-11-18)
 
 * @embroider/router 3.0.5 (patch)

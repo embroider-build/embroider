@@ -59,7 +59,7 @@ jobs:
       - run: pnpm node -v
       - run: cat .npmrc
       - run: pnpm --filter "@embroider/macros" test:smoke
-      - run: pnpm --filter "@embroider/reverse-exports" test
+      - run: pnpm --filter "@embroider/reverse-exports" test:smoke
 
   preflight-ubuntu:
     runs-on: ubuntu-latest

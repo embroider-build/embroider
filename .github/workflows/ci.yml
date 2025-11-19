@@ -37,7 +37,7 @@ jobs:
       - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/*" test
 
-  legacy-macros:
+  extended-node-support:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -59,6 +59,7 @@ jobs:
       - run: pnpm node -v
       - run: cat .npmrc
       - run: pnpm --filter "@embroider/macros" test:smoke
+      - run: pnpm --filter "@embroider/reverse-exports" test:smoke
 
   preflight-ubuntu:
     runs-on: ubuntu-latest

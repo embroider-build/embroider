@@ -39,7 +39,6 @@ export default function keepAssets({
           },
         };
       }
-      return null;
     },
 
     transform(code: string, id: string) {
@@ -65,7 +64,6 @@ export default function keepAssets({
           return `${marker}("${ref}")`;
         }
       }
-      return null;
     },
     renderChunk(code, chunk) {
       if (code.includes(marker)) {
@@ -82,7 +80,6 @@ export default function keepAssets({
         );
         return imports() + code;
       }
-      return null;
     },
   };
 }

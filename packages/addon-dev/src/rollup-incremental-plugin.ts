@@ -23,7 +23,7 @@ export default function incremental(): Plugin {
   function initGeneratedFiles(outDir: string) {
     if (existsSync(outDir)) {
       const files = walkSync(outDir, {
-        globs: ['*/**'],
+        globs: ['**/*'],
         directories: false,
       });
       for (const file of files) {

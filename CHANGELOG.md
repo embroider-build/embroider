@@ -1,5 +1,17 @@
 # Embroider Changelog
 
+## Release (2025-11-21)
+
+* @embroider/addon-dev 8.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2618](https://github.com/embroider-build/embroider/pull/2618) Cleanup for #2616 ([@bendemboski](https://github.com/bendemboski))
+  * [#2616](https://github.com/embroider-build/embroider/pull/2616) Don't let keepAssets plugin corrupt source maps ([@bendemboski](https://github.com/bendemboski))
+
+#### Committers: 1
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+
 ## Release (2025-11-19)
 
 * @embroider/core 4.2.8 (patch)

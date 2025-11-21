@@ -39,6 +39,7 @@ export default function keepAssets({
           },
         };
       }
+      return null;
     },
 
     transform(code: string, id: string) {
@@ -64,20 +65,24 @@ export default function keepAssets({
           return `${marker}("${ref}")`;
         }
       }
+      return null;
     },
     renderChunk(code, chunk) {
-      const { getName, imports } = nameTracker(code, exports);
+      if (code.includes(marker)) {
+        const { getName, imports } = nameTracker(code, exports);
 
-      code = code.replace(
-        new RegExp(`${marker}\\("([^"]+)"\\)`, 'g'),
-        (_x, ref) => {
-          let assetFileName = this.getFileName(ref);
-          let relativeName =
-            './' + relative(dirname(chunk.fileName), assetFileName);
-          return getName(relativeName) ?? '';
-        }
-      );
-      return imports() + code;
+        code = code.replace(
+          new RegExp(`${marker}\\("([^"]+)"\\)`, 'g'),
+          (_x, ref) => {
+            let assetFileName = this.getFileName(ref);
+            let relativeName =
+              './' + relative(dirname(chunk.fileName), assetFileName);
+            return getName(relativeName) ?? '';
+          }
+        );
+        return imports() + code;
+      }
+      return null;
     },
   };
 }

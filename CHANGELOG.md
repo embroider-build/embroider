@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-11-22)
+
+* @embroider/addon-dev 8.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2619](https://github.com/embroider-build/embroider/pull/2619) Fix rollup incremental plugin ([@bendemboski](https://github.com/bendemboski))
+
+#### Committers: 1
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+
 ## Release (2025-11-21)
 
 * @embroider/addon-dev 8.1.1 (patch)

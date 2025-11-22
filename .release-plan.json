@@ -2,8 +2,8 @@
   "solution": {
     "@embroider/addon-dev": {
       "impact": "patch",
-      "oldVersion": "8.1.0",
-      "newVersion": "8.1.1",
+      "oldVersion": "8.1.1",
+      "newVersion": "8.1.2",
       "tagName": "latest",
       "constraints": [
         {
@@ -56,5 +56,5 @@
       "oldVersion": "1.4.2"
     }
   },
-  "description": "## Release (2025-11-21)\n\n* @embroider/addon-dev 8.1.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2618](https://github.com/embroider-build/embroider/pull/2618) Cleanup for #2616 ([@bendemboski](https://github.com/bendemboski))\n  * [#2616](https://github.com/embroider-build/embroider/pull/2616) Don't let keepAssets plugin corrupt source maps ([@bendemboski](https://github.com/bendemboski))\n\n#### Committers: 1\n- Ben Demboski ([@bendemboski](https://github.com/bendemboski))\n"
+  "description": "## Release (2025-11-22)\n\n* @embroider/addon-dev 8.1.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2619](https://github.com/embroider-build/embroider/pull/2619) Fix rollup incremental plugin ([@bendemboski](https://github.com/bendemboski))\n\n#### Committers: 1\n- Ben Demboski ([@bendemboski](https://github.com/bendemboski))\n"
 }

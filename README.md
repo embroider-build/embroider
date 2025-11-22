@@ -11,7 +11,7 @@ You can read more about the motivation and key ideas in the [intro to the SPEC](
 
 Quick Links:
 - current [template repo](https://github.com/ember-cli/ember-app-blueprint) for apps: `npx ember-cli new my-app --blueprint @ember/app-blueprint` (use `--blueprint @ember/app-blueprint@alpha` for latest)
-- current [template repo](https://github.com/ember-cli/ember-addon-blueprint/) for libraries: `npx ember-cli addon my-library --blueprint @ember/addon-blueprint`
+- current [template repo](https://github.com/ember-cli/ember-addon-blueprint) for libraries: `npx ember-cli addon my-library --blueprint @ember/addon-blueprint`
 
 ## Status / Should I Use It?
 

@@ -281,6 +281,61 @@ appScenarios
       `,
     });
 
+    let addonRebuild = baseV2Addon();
+    addonRebuild.pkg.name = 'v2-addon-rebuild';
+    addonRebuild.pkg.scripts = {
+      build: 'node ./node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
+    };
+
+    merge(addonRebuild.files, {
+      src: {
+        'entry.js': 'console.log("hello world");',
+      },
+      dist: {
+        'old-file.js': 'console.log("i am old");',
+        subdir: {
+          'old-file.js': 'console.log("i am old too");',
+        },
+      },
+      'babel.config.json': `
+        {
+          "plugins": [
+            "@embroider/addon-dev/template-colocation-plugin",
+            "@babel/plugin-transform-class-static-block",
+            ["babel-plugin-ember-template-compilation", {
+              targetFormat: 'hbs',
+              compilerPath: 'ember-source/dist/ember-template-compiler.js',
+            }],
+            ["@babel/plugin-proposal-decorators", { "legacy": true }],
+            [ "@babel/plugin-transform-class-properties" ]
+          ]
+        }
+      `,
+      'rollup.config.mjs': `
+        import { babel } from '@rollup/plugin-babel';
+        import { Addon } from '@embroider/addon-dev/rollup';
+
+        const addon = new Addon({
+          srcDir: 'src',
+          destDir: 'dist',
+        });
+
+        export default {
+          output: addon.output(),
+
+          plugins: [
+            addon.publicEntrypoints(['entry.js']),
+
+            babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
+
+            addon.hbs(),
+
+            addon.clean(),
+          ],
+        };
+      `,
+    });
+
     function linkDependencies(addon: Project) {
       addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
       addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
@@ -295,9 +350,11 @@ appScenarios
 
     linkDependencies(addon);
     linkDependencies(addonNoNamespace);
+    linkDependencies(addonRebuild);
 
     project.addDevDependency(addon);
     project.addDependency(addonNoNamespace);
+    project.addDevDependency(addonRebuild);
 
     merge(project.files, {
       tests: {
@@ -549,6 +606,25 @@ export { SingleFileComponent as default };
         test(`pnpm test`, async function (assert) {
           let result = await app.execute('pnpm test');
           assert.equal(result.exitCode, 0, result.output);
+        });
+      });
+
+      Qmodule('Rebuilds', function (hooks) {
+        hooks.beforeEach(assert => {
+          expectFile = expectFilesAt(inDependency(app, 'v2-addon-rebuild').dir, { qunit: assert });
+        });
+
+        test('remove old files', async function () {
+          expectFile('dist/old-file.js').exists();
+          expectFile('dist/subdir/old-file.js').exists();
+
+          const result = await inDependency(app, 'v2-addon-rebuild').execute('pnpm build');
+          if (result.exitCode !== 0) {
+            throw new Error(result.output);
+          }
+
+          expectFile('dist/old-file.js').doesNotExist();
+          expectFile('dist/subdir/old-file.js').doesNotExist();
         });
       });
     });

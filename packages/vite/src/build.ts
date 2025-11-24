@@ -53,6 +53,8 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
   });
 }
 
+let buildPromise: Promise<void> | undefined;
+
 export function compatPrebuild(): Plugin {
   let viteCommand: string | undefined;
   let viteMode: string | undefined;
@@ -73,13 +75,19 @@ export function compatPrebuild(): Plugin {
     // then our resolver would get initialized without the meta data needed from compat-prebuild.
     // See https://github.com/embroider-build/embroider/issues/2490
     async options() {
+      if (buildPromise) {
+        await buildPromise;
+        return;
+      }
       if (!viteCommand) {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's command`);
       }
       if (!viteMode) {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's mode`);
       }
-      await emberBuild(viteCommand, viteMode, resolvableExtensions);
+
+      buildPromise = emberBuild(viteCommand, viteMode, resolvableExtensions);
+      await buildPromise;
     },
   };
 }

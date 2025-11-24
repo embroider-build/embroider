@@ -34,17 +34,17 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
       emberCLI,
       ['build', '--watch', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
       {
+        /**
+         * When silent is true, the std in/out/err of the child process are piped to the parent process.
+         * https://nodejs.org/api/child_process.html#child_processforkmodulepath-args-options
+         */
         silent: true,
         env,
       }
     );
     child.on('exit', code => (code === 0 ? resolve() : reject(new Error('ember build --watch failed'))));
     child.on('spawn', () => {
-      child.stderr?.on('data', data => {
-        console.error(data.toString());
-      });
       child.stdout!.on('data', data => {
-        console.log(data.toString());
         if (data.toString().includes('Build successful')) {
           resolve();
         }

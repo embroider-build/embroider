@@ -2,12 +2,25 @@
 /*
   This code is adapted from ember-engines/addon/-private/router-ext.js.
 */
-import { getOwner } from '@ember/owner';
 import EmberRouter from '@ember/routing/router';
 import { buildWaiter } from '@ember/test-waiters';
 import { isDestroying, isDestroyed } from '@ember/destroyable';
-import { macroCondition, getGlobalConfig } from '@embroider/macros';
+import { macroCondition, getGlobalConfig, dependencySatisfies, importSync } from '@embroider/macros';
 import type Resolver from 'ember-resolver';
+import { type getOwner as getOwenerType } from '@ember/owner';
+let getOwner: typeof getOwenerType;
+
+if (macroCondition(dependencySatisfies('ember-source', '>=4.12.0'))) {
+  // In no version of ember where `@ember/owner` tried to be imported did it exist
+  // if (macroCondition(false)) {
+  // Using 'any' here because importSync can't lookup types correctly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getOwner = (importSync('@ember/owner') as any).getOwner;
+} else {
+  // Using 'any' here because importSync can't lookup types correctly
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getOwner = (importSync('@ember/application') as any).getOwner;
+}
 
 interface GlobalConfig {
   '@embroider/core'?: { active: boolean };

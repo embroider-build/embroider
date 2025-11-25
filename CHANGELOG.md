@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-11-25)
+
+* @embroider/router 3.0.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2624](https://github.com/embroider-build/embroider/pull/2624) Embroider router support for ember source less than 4.12 ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
 ## Release (2025-11-22)
 
 * @embroider/addon-dev 8.1.2 (patch)

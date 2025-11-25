@@ -5,12 +5,12 @@
 import EmberRouter from '@ember/routing/router';
 import { buildWaiter } from '@ember/test-waiters';
 import { isDestroying, isDestroyed } from '@ember/destroyable';
-import { macroCondition, getGlobalConfig, dependencySatisfies, importSync } from '@embroider/macros';
+import { macroCondition, getGlobalConfig, appEmberSatisfies, importSync } from '@embroider/macros';
 import type Resolver from 'ember-resolver';
 import { type getOwner as getOwenerType } from '@ember/owner';
 let getOwner: typeof getOwenerType;
 
-if (macroCondition(dependencySatisfies('ember-source', '>=4.12.0'))) {
+if (macroCondition(appEmberSatisfies('>=4.12.0'))) {
   // In no version of ember where `@ember/owner` tried to be imported did it exist
   // if (macroCondition(false)) {
   // Using 'any' here because importSync can't lookup types correctly

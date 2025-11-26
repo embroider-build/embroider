@@ -9,7 +9,10 @@ const CACHE = new Map<string, string | false>();
 
 function getAppEmberVersion(state: State): string | false {
   let appRoot = state.packageCache.appRoot;
-
+  const DUMMY_APP_PATH = '/tests/dummy';
+  if (appRoot.endsWith(DUMMY_APP_PATH)) {
+    appRoot = appRoot.slice(0, -DUMMY_APP_PATH.length);
+  }
   if (CACHE.has(appRoot)) {
     return CACHE.get(appRoot)!;
   }

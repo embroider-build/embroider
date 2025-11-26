@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2025-11-26)
+
+* @embroider/compat 4.1.11 (patch)
+* @embroider/core 4.2.9 (patch)
+* @embroider/macros 1.19.5 (patch)
+* @embroider/vite 1.4.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2626](https://github.com/embroider-build/embroider/pull/2626) Fix appEmberSatisfies macro ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-11-25)
 
 * @embroider/router 3.0.6 (patch)

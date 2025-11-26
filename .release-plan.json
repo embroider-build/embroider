@@ -13,13 +13,33 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.10"
+      "impact": "patch",
+      "oldVersion": "4.1.10",
+      "newVersion": "4.1.11",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.2.8"
+      "impact": "patch",
+      "oldVersion": "4.2.8",
+      "newVersion": "4.2.9",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -28,15 +48,9 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.19.4"
-    },
-    "@embroider/reverse-exports": {
-      "oldVersion": "0.2.0"
-    },
-    "@embroider/router": {
       "impact": "patch",
-      "oldVersion": "3.0.5",
-      "newVersion": "3.0.6",
+      "oldVersion": "1.19.4",
+      "newVersion": "1.19.5",
       "tagName": "latest",
       "constraints": [
         {
@@ -44,7 +58,13 @@
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "pkgJSONPath": "./packages/macros/package.json"
+    },
+    "@embroider/reverse-exports": {
+      "oldVersion": "0.2.0"
+    },
+    "@embroider/router": {
+      "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
       "oldVersion": "3.0.1"
@@ -53,8 +73,18 @@
       "oldVersion": "1.3.4"
     },
     "@embroider/vite": {
-      "oldVersion": "1.4.2"
+      "impact": "patch",
+      "oldVersion": "1.4.2",
+      "newVersion": "1.4.3",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-11-25)\n\n* @embroider/router 3.0.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#2624](https://github.com/embroider-build/embroider/pull/2624) Embroider router support for ember source less than 4.12 ([@void-mAlex](https://github.com/void-mAlex))\n\n#### Committers: 1\n- Alex ([@void-mAlex](https://github.com/void-mAlex))\n"
+  "description": "## Release (2025-11-26)\n\n* @embroider/compat 4.1.11 (patch)\n* @embroider/core 4.2.9 (patch)\n* @embroider/macros 1.19.5 (patch)\n* @embroider/vite 1.4.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2626](https://github.com/embroider-build/embroider/pull/2626) Fix appEmberSatisfies macro ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

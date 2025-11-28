@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-11-28)
+
+* @embroider/core 4.3.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/core`
+  * [#2629](https://github.com/embroider-build/embroider/pull/2629) Make route-splitter 10-20x faster when you have > 3000 route splits ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-11-26)
 
 * @embroider/compat 4.1.11 (patch)

@@ -637,7 +637,7 @@ importers:
   packages/router:
     dependencies:
       '@ember/test-waiters':
-        specifier: ^3.0.2
+        specifier: ^3.0.2 || ^4.0.0
         version: 3.1.0
       '@embroider/addon-shim':
         specifier: ^1.10.0

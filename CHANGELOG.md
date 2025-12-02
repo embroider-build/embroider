@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-12-02)
+
+* @embroider/core 4.4.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/core`
+  * [#2161](https://github.com/embroider-build/embroider/pull/2161) Optimize implicit-modules graph ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2025-11-28)
 
 * @embroider/core 4.3.0 (minor)

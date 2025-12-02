@@ -23,7 +23,7 @@
     "test": "jest"
   },
   "release-plan": {
-    "publishTag": "3.x"
+    "publishTag": "v3.x"
   },
   "dependencies": {
     "@babel/code-frame": "^7.14.5",

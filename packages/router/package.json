@@ -30,10 +30,10 @@
     "prepack": "rollup --config"
   },
   "release-plan": {
-    "publishTag": "2.x"
+    "publishTag": "v2.x"
   },
   "dependencies": {
-    "@ember/test-waiters": "^3.0.2 || ^4.0.0",
+    "@ember/test-waiters": "^3.0.2",
     "@embroider/addon-shim": "^1.10.0"
   },
   "devDependencies": {

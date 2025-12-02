@@ -29,7 +29,7 @@
     "test": "jest"
   },
   "release-plan": {
-    "publishTag": "2.x"
+    "publishTag": "v2.x"
   },
   "dependencies": {
     "babel-import-util": "^2.0.0",

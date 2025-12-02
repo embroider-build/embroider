@@ -18,7 +18,7 @@
   ],
   "scripts": {},
   "release-plan": {
-    "publishTag": "3.x"
+    "publishTag": "v3.x"
   },
   "dependencies": {},
   "devDependencies": {

@@ -20,8 +20,8 @@
     },
     "@embroider/core": {
       "impact": "minor",
-      "oldVersion": "4.2.9",
-      "newVersion": "4.3.0",
+      "oldVersion": "4.3.0",
+      "newVersion": "4.4.0",
       "tagName": "latest",
       "constraints": [
         {
@@ -56,5 +56,5 @@
       "oldVersion": "1.4.3"
     }
   },
-  "description": "## Release (2025-11-28)\n\n* @embroider/core 4.3.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/core`\n  * [#2629](https://github.com/embroider-build/embroider/pull/2629) Make route-splitter 10-20x faster when you have > 3000 route splits ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-12-02)\n\n* @embroider/core 4.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/core`\n  * [#2161](https://github.com/embroider-build/embroider/pull/2161) Optimize implicit-modules graph ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
 }

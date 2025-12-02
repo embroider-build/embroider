@@ -30,7 +30,7 @@
     "prepack": "rollup --config"
   },
   "release-plan": {
-    "publishTag": "v2.x"
+    "publishTag": "v2-x"
   },
   "dependencies": {
     "@ember/test-waiters": "^3.0.2",

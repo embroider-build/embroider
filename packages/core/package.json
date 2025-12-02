@@ -20,7 +20,7 @@
     "test": "jest"
   },
   "release-plan": {
-    "publishTag": "v3.x"
+    "publishTag": "v3-x"
   },
   "dependencies": {
     "@babel/core": "^7.14.5",

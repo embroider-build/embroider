@@ -34,7 +34,7 @@
     }
   },
   "release-plan": {
-    "publishTag": "v7.x"
+    "publishTag": "v7-x"
   },
   "dependencies": {
     "@embroider/core": "workspace:^",

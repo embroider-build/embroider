@@ -19,7 +19,7 @@
     "@embroider/core": "workspace:^"
   },
   "release-plan": {
-    "publishTag": "3.x"
+    "publishTag": "v3-x"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

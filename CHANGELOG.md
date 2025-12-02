@@ -2,6 +2,17 @@
 
 ## Release (2025-12-02)
 
+* @embroider/router 2.1.12 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2634](https://github.com/embroider-build/embroider/pull/2634) Widen test-waiters range in @embroider/router ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-12-02)
+
 * @embroider/addon-dev 7.1.6 (patch)
 * @embroider/babel-loader-9 3.1.3 (patch)
 * @embroider/compat 3.9.3 (patch)

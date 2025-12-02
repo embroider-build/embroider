@@ -1,5 +1,34 @@
 # Embroider Changelog
 
+## Release (2025-12-02)
+
+* @embroider/addon-dev 7.1.6 (patch)
+* @embroider/babel-loader-9 3.1.3 (patch)
+* @embroider/compat 3.9.3 (patch)
+* @embroider/core 3.5.9 (patch)
+* @embroider/hbs-loader 3.0.5 (patch)
+* @embroider/router 2.1.11 (patch)
+* @embroider/shared-internals 2.9.2 (patch)
+* @embroider/util 1.13.5 (patch)
+* @embroider/webpack 4.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`, `@embroider/babel-loader-9`, `@embroider/compat`, `@embroider/core`, `@embroider/hbs-loader`, `@embroider/router`, `@embroider/shared-internals`
+  * [#2633](https://github.com/embroider-build/embroider/pull/2633) Update tags ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/compat`, `@embroider/core`, `@embroider/router`, `@embroider/util`
+  * [#2528](https://github.com/embroider-build/embroider/pull/2528) unpin @embroider/macros now that lazy mode has been fixed ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/core`, `@embroider/router`, `@embroider/util`
+  * [#2506](https://github.com/embroider-build/embroider/pull/2506) Prepare Stable Release ([@github-actions[bot]](https://github.com/apps/github-actions))
+* Other
+  * [#2504](https://github.com/embroider-build/embroider/pull/2504) Update release plan ([@mansona](https://github.com/mansona))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+- [@github-actions[bot]](https://github.com/apps/github-actions)
+
 ## Release (2025-07-23)
 
 * @embroider/compat 3.9.2 (patch)

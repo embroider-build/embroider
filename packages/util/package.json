@@ -1,6 +1,6 @@
 {
   "name": "@embroider/util",
-  "version": "1.13.4",
+  "version": "1.13.5",
   "description": "Utilities for app and addon authors.",
   "keywords": [
     "ember-addon"

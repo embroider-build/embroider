@@ -8,6 +8,7 @@ import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
+import resolvableExtensions from './resolvable-extensions';
 
 export interface EntrypointResponse {
   type: 'entrypoint';

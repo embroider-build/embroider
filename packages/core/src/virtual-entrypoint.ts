@@ -8,7 +8,7 @@ import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
-import resolvableExtensions from './resolvable-extensions';
+import { resolvableExtensions } from './resolvable-extensions';
 
 export interface EntrypointResponse {
   type: 'entrypoint';
@@ -317,7 +317,14 @@ function shouldSplitRoute(routeName: string, splitAtRoutes: (RegExp | string)[] 
 
 export function getAppFiles(appRoot: string): Set<string> {
   const files: string[] = walkSync(appRoot, {
-    ignore: ['_babel_filter_.js', 'app.js', 'engine.js', 'assets', 'testem.js', 'node_modules'],
+    ignore: [
+      '_babel_filter_.js',
+      ...resolvableExtensions().map(ext => `app.${ext}`),
+      ...resolvableExtensions().map(ext => `engine.${ext}`),
+      'assets',
+      ...resolvableExtensions().map(ext => `testem.${ext}`),
+      'node_modules',
+    ],
   });
   return new Set(files);
 }

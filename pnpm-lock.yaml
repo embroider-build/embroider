@@ -1022,6 +1022,9 @@ importers:
       html-minifier-terser:
         specifier: ^7.2.0
         version: 7.2.0
+      rolldown-vite:
+        specifier: ^7.2.10
+        version: 7.2.10(@types/node@22.19.1)(esbuild@0.25.12)(terser@5.44.1)
       rollup:
         specifier: ^4.53.3
         version: 4.53.3

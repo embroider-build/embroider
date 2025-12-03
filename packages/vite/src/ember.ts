@@ -1,7 +1,9 @@
 import { existsSync } from 'fs';
 import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
-import { type UserConfig, type ConfigEnv, type Plugin } from 'vite';
+import type { UserConfig as ViteUserConfig, ConfigEnv, Plugin } from 'vite';
+import type { UserConfig as RolldownUserConfig } from 'rolldown-vite';
+
 import { esBuildResolver } from './esbuild-resolver.js';
 import { warnRootUrl } from './warn-root-url.js';
 
@@ -13,6 +15,9 @@ export const defaultRolldownSharedPlugins = [
   'embroider-resolver',
   'babel',
 ];
+
+// We support a range of vite versions with different types here
+type UserConfig = ViteUserConfig & RolldownUserConfig;
 
 export function ember(params?: {
   /**
@@ -212,11 +217,11 @@ function findPlugin(plugins: UserConfig['plugins'], name: string): Plugin | unde
   for (let element of plugins) {
     if (typeof element === 'object' && element != null) {
       if ('name' in element && element.name === name) {
-        return element;
+        return element as unknown as Plugin;
       }
     }
     if (Array.isArray(element)) {
-      let matched = findPlugin(element, name);
+      let matched = findPlugin(element as unknown as Plugin[], name);
       if (matched) {
         return matched;
       }

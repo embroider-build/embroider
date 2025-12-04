@@ -53,12 +53,11 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
   });
 }
 
-let buildPromise: Promise<void> | undefined;
-
 export function compatPrebuild(): Plugin {
   let viteCommand: string | undefined;
   let viteMode: string | undefined;
   let resolvableExtensions: string[] | undefined;
+  let buildPromise: Promise<void> | undefined;
 
   return {
     name: 'embroider-builder',

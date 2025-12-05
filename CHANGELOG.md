@@ -1,5 +1,23 @@
 # Embroider Changelog
 
+## Release (2025-12-04)
+
+* @embroider/vite 1.4.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2622](https://github.com/embroider-build/embroider/pull/2622) Protect against the compat build running multiple times in parallel ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2642](https://github.com/embroider-build/embroider/pull/2642) Use stable vite by default in development ([@ef4](https://github.com/ef4))
+  * [#2640](https://github.com/embroider-build/embroider/pull/2640) Align the rollup versions to latest beta - fixes CI ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-12-02)
 
 * @embroider/core 4.4.0 (minor)

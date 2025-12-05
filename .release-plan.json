@@ -19,17 +19,7 @@
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "minor",
-      "oldVersion": "4.3.0",
-      "newVersion": "4.4.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.4.0"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -53,8 +43,22 @@
       "oldVersion": "1.3.4"
     },
     "@embroider/vite": {
-      "oldVersion": "1.4.3"
+      "impact": "patch",
+      "oldVersion": "1.4.3",
+      "newVersion": "1.4.4",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-12-02)\n\n* @embroider/core 4.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/core`\n  * [#2161](https://github.com/embroider-build/embroider/pull/2161) Optimize implicit-modules graph ([@ef4](https://github.com/ef4))\n\n#### Committers: 1\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2025-12-04)\n\n* @embroider/vite 1.4.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2622](https://github.com/embroider-build/embroider/pull/2622) Protect against the compat build running multiple times in parallel ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :house: Internal\n* `@embroider/vite`\n  * [#2642](https://github.com/embroider-build/embroider/pull/2642) Use stable vite by default in development ([@ef4](https://github.com/ef4))\n  * [#2640](https://github.com/embroider-build/embroider/pull/2640) Align the rollup versions to latest beta - fixes CI ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### Committers: 3\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

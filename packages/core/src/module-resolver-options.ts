@@ -1,5 +1,6 @@
 import { explicitRelative, RewrittenPackageCache, type AddonPackage, type Package } from '@embroider/shared-internals';
 import type { Engine } from './app-files';
+import { resolvableExtensions } from './resolvable-extensions';
 import { resolve as resolvePath } from 'path';
 import { realpathSync } from 'fs-extra';
 import flatMap from 'lodash/flatMap';
@@ -71,15 +72,6 @@ export function buildResolverOptions<T extends Options>(inputs: {
     return inputs.extend(output as T, allActiveAddons);
   }
   return output as T;
-}
-
-function resolvableExtensions(): string[] {
-  let fromEnv = process.env.EMBROIDER_RESOLVABLE_EXTENSIONS;
-  if (fromEnv) {
-    return fromEnv.split(',');
-  } else {
-    return ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
-  }
 }
 
 function partitionEngines(

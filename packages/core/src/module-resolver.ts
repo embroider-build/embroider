@@ -161,7 +161,11 @@ export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res ex
 ) => Res;
 
 export class Resolver {
-  constructor(readonly options: Options) {}
+  componentCache: Map<String, { hbsModule: string | null; jsModule: string | null }>;
+
+  constructor(readonly options: Options) {
+    this.componentCache = new Map();
+  }
 
   beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
@@ -477,31 +481,42 @@ export class Resolver {
     let hbsModule: string | null = null;
     let jsModule: string | null = null;
 
-    // first, the various places our template might be.
-    for (let candidate of this.componentTemplateCandidates(target.packageName)) {
-      let resolution = this.nodeResolve(
-        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
-        target.from
-      );
-      if (resolution.type === 'real') {
-        hbsModule = resolution.filename;
-        break;
-      }
-    }
+    const cacheKey = `${target.from}:${target.packageName}:${target.memberName}`;
 
-    // then the various places our javascript might be.
-    for (let candidate of this.componentJSCandidates(target.packageName)) {
-      let resolution = this.nodeResolve(
-        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
-        target.from
-      );
-      // .hbs is a resolvable extension for us, so we need to exclude it here.
-      // It matches as a priority lower than .js, so finding an .hbs means
-      // there's definitely not a .js.
-      if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = resolution.filename;
-        break;
+    const result = this.componentCache.get(cacheKey);
+
+    if (result) {
+      hbsModule = result.hbsModule;
+      jsModule = result.jsModule;
+    } else {
+      // first, the various places our template might be.
+      for (let candidate of this.componentTemplateCandidates(target.packageName)) {
+        let resolution = this.nodeResolve(
+          `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
+          target.from
+        );
+        if (resolution.type === 'real') {
+          hbsModule = resolution.filename;
+          break;
+        }
       }
+
+      // then the various places our javascript might be.
+      for (let candidate of this.componentJSCandidates(target.packageName)) {
+        let resolution = this.nodeResolve(
+          `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
+          target.from
+        );
+        // .hbs is a resolvable extension for us, so we need to exclude it here.
+        // It matches as a priority lower than .js, so finding an .hbs means
+        // there's definitely not a .js.
+        if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
+          jsModule = resolution.filename;
+          break;
+        }
+      }
+
+      this.componentCache.set(cacheKey, { hbsModule, jsModule });
     }
 
     if (hbsModule) {

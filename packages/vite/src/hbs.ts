@@ -1,9 +1,6 @@
-import { createFilter } from '@rollup/pluginutils';
 import type { PluginContext } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS, templateOnlyComponentSource } from '@embroider/core';
-
-const hbsFilter = createFilter('**/*.hbs?([?]*)');
 
 export function hbs(): Plugin {
   return {
@@ -18,11 +15,13 @@ export function hbs(): Plugin {
       }
     },
 
-    transform(code: string, id: string) {
-      if (!hbsFilter(id)) {
-        return null;
-      }
-      return hbsToJS(code);
+    transform: {
+      filter: {
+        id: '**/*.hbs?([?]*)',
+      },
+      handler(code: string) {
+        return hbsToJS(code);
+      },
     },
   };
 }

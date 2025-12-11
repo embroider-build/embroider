@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2025-12-09)
+
+* @embroider/core 4.4.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2639](https://github.com/embroider-build/embroider/pull/2639) Fix `getAppFiles` filters to prevent app.ts from ending up in compatModules ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 1
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
 ## Release (2025-12-04)
 
 * @embroider/vite 1.4.4 (patch)

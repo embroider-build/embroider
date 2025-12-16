@@ -201,9 +201,6 @@ function dummyAppScenarioSetup(project: Project) {
   let addonFiles = loadFromFixtureData('macro-sample-addon');
   project.name = 'macro-sample-addon';
   project.linkDependency('@embroider/macros', { baseDir: __dirname });
-  project.linkDependency('@embroider/webpack', { baseDir: __dirname });
-  project.linkDependency('@embroider/compat', { baseDir: __dirname });
-  project.linkDependency('@embroider/core', { baseDir: __dirname });
 
   addonFiles['index.js'] = `
   module.exports = {
@@ -275,7 +272,6 @@ dummyAppScenarios
   });
 
 dummyAppScenarios
-  .skip()
   .map('macro-sample-addon-classic', project => {
     dummyAppScenarioSetup(project);
     project.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
@@ -289,8 +285,8 @@ dummyAppScenarios
         addon = await scenario.prepare();
       });
 
-      test(`pnpm test EMBROIDER_TEST_SETUP_FORCE=classic`, async function (assert) {
-        let result = await addon.execute('cross-env EMBROIDER_TEST_SETUP_FORCE=classic pnpm ember test');
+      test(`pnpm test`, async function (assert) {
+        let result = await addon.execute('pnpm ember test');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

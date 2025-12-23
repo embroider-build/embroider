@@ -1,5 +1,26 @@
 # Embroider Changelog
 
+## Release (2025-12-23)
+
+* @embroider/addon-dev 8.2.0 (minor)
+* @embroider/compat 4.1.12 (patch)
+* @embroider/core 4.4.2 (patch)
+* @embroider/macros 1.19.6 (patch)
+* @embroider/shared-internals 3.0.2 (patch)
+* @embroider/vite 1.5.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`, `@embroider/vite`
+  * [#2650](https://github.com/embroider-build/embroider/pull/2650) Update content-tag to 4.1.0 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`
+  * [#2648](https://github.com/embroider-build/embroider/pull/2648) Fix dependency-aware macros in dummy apps ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-12-09)
 
 * @embroider/core 4.4.1 (patch)

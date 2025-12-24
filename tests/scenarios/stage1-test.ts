@@ -199,7 +199,7 @@ appScenarios
               return 'abs';
             }
           }
-          setComponentTemplate(precompileTemplate("\\n              this is gts\\n              with <OtherComponent />\\n            ", {
+          setComponentTemplate(precompileTemplate("this is gts\\nwith <OtherComponent />", {
             strictMode: true,
             scope: () => ({
               OtherComponent

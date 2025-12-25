@@ -24,7 +24,7 @@ const projectBoilerplate = {
   }),
 };
 
-async function generateProject(src: {}): Promise<Project> {
+async function generateGlintV1Project(src: {}): Promise<Project> {
   const project = new Project('my-addon', {
     files: {
       ...projectBoilerplate,
@@ -40,6 +40,23 @@ async function generateProject(src: {}): Promise<Project> {
   project.linkDevDependency('@glint/environment-ember-template-imports', {
     baseDir: __dirname,
   });
+
+  await project.write();
+
+  return project;
+}
+
+async function generateGlintV2Project(src: {}): Promise<Project> {
+  const project = new Project('my-addon', {
+    files: {
+      ...projectBoilerplate,
+      src,
+    },
+  });
+  project.linkDevDependency('typescript', { baseDir: __dirname });
+  project.linkDevDependency('@glint/ember-tsc', { baseDir: __dirname });
+  project.linkDevDependency('@glint/template', { baseDir: __dirname });
+  project.linkDevDependency('@glint/tsserver-plugin', { baseDir: __dirname });
 
   await project.write();
 
@@ -71,23 +88,28 @@ describe('declarations', function () {
     project = null;
   });
 
-  test('it generates dts output', async function () {
-    project = await generateProject({
-      'index.ts': 'export default 123',
-    });
-
-    await runRollup(project.baseDir);
-
-    expect(
-      await readFile(join(project.baseDir, 'declarations/index.d.ts'), {
-        encoding: 'utf8',
-      })
-    ).toContain('export default');
+  describe('glint not present', function () {
+    test('it errors without glint present', async function () {});
   });
 
-  test('it has correct imports', async function () {
-    project = await generateProject({
-      'index.ts': `
+  describe('glint v1', function () {
+    test('it generates dts output', async function () {
+      project = await generateGlintV1Project({
+        'index.ts': 'export default 123',
+      });
+
+      await runRollup(project.baseDir);
+
+      expect(
+        await readFile(join(project.baseDir, 'declarations/index.d.ts'), {
+          encoding: 'utf8',
+        })
+      ).toContain('export default');
+    });
+
+    test('it has correct imports', async function () {
+      project = await generateGlintV1Project({
+        'index.ts': `
         import foo from './foo.gts';
         import bar from './bar.gts';
         import baz from './baz.ts';
@@ -97,23 +119,72 @@ describe('declarations', function () {
           bar = import('./bar.gts')
         }
       `,
-      'foo.gts': 'export default 123',
-      'bar.gts': 'export default 234',
-      'baz.ts': 'export default 345',
+        'foo.gts': 'export default 123',
+        'bar.gts': 'export default 234',
+        'baz.ts': 'export default 345',
+      });
+
+      await runRollup(project.baseDir);
+
+      const output = await readFile(
+        join(project.baseDir, 'declarations/index.d.ts'),
+        {
+          encoding: 'utf8',
+        }
+      );
+
+      expect(output).toContain(`import foo from './foo';`);
+      expect(output).toContain(`import bar from './bar';`);
+      expect(output).toContain(`import baz from './baz.ts';`);
+      expect(output).toContain(`import('./bar')`);
+    });
+  });
+
+  describe('glint v2', function () {
+    test('it generates dts output', async function () {
+      project = await generateGlintV2Project({
+        'index.ts': 'export default 123',
+      });
+
+      await runRollup(project.baseDir);
+
+      expect(
+        await readFile(join(project.baseDir, 'declarations/index.d.ts'), {
+          encoding: 'utf8',
+        })
+      ).toContain('export default');
     });
 
-    await runRollup(project.baseDir);
+    test('it has correct imports', async function () {
+      project = await generateGlintV2Project({
+        'index.ts': `
+        import foo from './foo.gts';
+        import bar from './bar.gts';
+        import baz from './baz.ts';
+        export { foo, bar, baz };
 
-    const output = await readFile(
-      join(project.baseDir, 'declarations/index.d.ts'),
-      {
-        encoding: 'utf8',
-      }
-    );
+        export class Foo {
+          bar = import('./bar.gts')
+        }
+      `,
+        'foo.gts': 'export default 123',
+        'bar.gts': 'export default 234',
+        'baz.ts': 'export default 345',
+      });
 
-    expect(output).toContain(`import foo from './foo';`);
-    expect(output).toContain(`import bar from './bar';`);
-    expect(output).toContain(`import baz from './baz.ts';`);
-    expect(output).toContain(`import('./bar')`);
+      await runRollup(project.baseDir);
+
+      const output = await readFile(
+        join(project.baseDir, 'declarations/index.d.ts'),
+        {
+          encoding: 'utf8',
+        }
+      );
+
+      expect(output).toContain(`import foo from './foo';`);
+      expect(output).toContain(`import bar from './bar';`);
+      expect(output).toContain(`import baz from './baz.ts';`);
+      expect(output).toContain(`import('./bar')`);
+    });
   });
 });

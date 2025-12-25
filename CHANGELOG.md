@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## Release (2025-12-25)
+
+* @embroider/addon-dev 8.2.1 (patch)
+
+#### :house: Internal
+* `@embroider/addon-dev`
+  * [#2652](https://github.com/embroider-build/embroider/pull/2652) Switch addon-dev to vitest ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* Other
+  * [#2653](https://github.com/embroider-build/embroider/pull/2653) Checking if CI is green ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-12-23)
 
 * @embroider/addon-dev 8.2.0 (minor)

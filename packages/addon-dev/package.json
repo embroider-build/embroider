@@ -23,7 +23,7 @@
     "src/**/*.js.map"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "peerDependencies": {
     "rollup": "^4.6.0"
@@ -59,7 +59,8 @@
     "@types/yargs": "^17.0.3",
     "rollup": "^3.23.0",
     "scenario-tester": "^4.0.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

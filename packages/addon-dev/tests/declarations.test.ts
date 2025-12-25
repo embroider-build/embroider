@@ -1,4 +1,4 @@
-'use strict';
+import { describe, test, afterEach, expect } from 'vitest';
 
 import rollupDeclarationsPlugin from '../src/rollup-declarations';
 import { Project } from 'scenario-tester';

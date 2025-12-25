@@ -1,5 +1,6 @@
 # Embroider: translating existing Ember code into spec-compliant modern JavaScript
 
+
 [![GitHub Actions CI][github-actions-badge]][github-actions-ci-url]
 
 [github-actions-badge]: https://github.com/embroider-build/embroider/workflows/CI/badge.svg

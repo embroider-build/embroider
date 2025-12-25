@@ -23,7 +23,7 @@
     "src/**/*.js.map"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "peerDependencies": {
     "rollup": "^4.6.0"
@@ -48,15 +48,16 @@
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.94.9",
     "@glint/core": "^1.5.0",
-    "@glint/template": "^1.5.0",
     "@glint/environment-ember-loose": "^1.5.0",
     "@glint/environment-ember-template-imports": "^1.5.0",
+    "@glint/template": "^1.5.0",
     "@types/fs-extra": "^9.0.12",
     "@types/minimatch": "^3.0.4",
     "@types/yargs": "^17.0.3",
     "rollup": "^3.23.0",
     "scenario-tester": "^4.0.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

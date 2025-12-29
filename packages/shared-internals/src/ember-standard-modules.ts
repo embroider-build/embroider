@@ -54,6 +54,9 @@ emberVirtualPackages.add('@ember/owner');
 // Added in ember-source 6.1.0-beta.1
 emberVirtualPackages.add('@ember/template-compiler');
 
+// Added in ember-source 6.8.0-beta.1
+emberVirtualPackages.add('@ember/reactive');
+
 // Not provided by rfc176-data, but is needed for special librarys
 // that know the dangers of importing private APIs
 emberVirtualPackages.add('@ember/-internals');

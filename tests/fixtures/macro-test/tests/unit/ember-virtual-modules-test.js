@@ -1,4 +1,5 @@
 import { module, test } from 'qunit';
+import { appEmberSatisfies } from '@embroider/macros';
 
 module('Unit | ember-virtual-modules', function () {
 

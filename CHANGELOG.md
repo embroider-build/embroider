@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2026-01-06)
+
+* @embroider/addon-dev 8.3.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`
+  * [#2651](https://github.com/embroider-build/embroider/pull/2651) Update addon-dev to support glint 1 and glint 2 and choose between them based on your available dependencies ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/addon-dev`
+  * [#2652](https://github.com/embroider-build/embroider/pull/2652) Switch addon-dev to vitest ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* Other
+  * [#2653](https://github.com/embroider-build/embroider/pull/2653) Checking if CI is green ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-12-23)
 
 * @embroider/addon-dev 8.2.0 (minor)

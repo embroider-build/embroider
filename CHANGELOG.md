@@ -1,5 +1,149 @@
 # Embroider Changelog
 
+## Release (2025-12-23)
+
+* @embroider/addon-dev 8.2.0 (minor)
+* @embroider/compat 4.1.12 (patch)
+* @embroider/core 4.4.2 (patch)
+* @embroider/macros 1.19.6 (patch)
+* @embroider/shared-internals 3.0.2 (patch)
+* @embroider/vite 1.5.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`, `@embroider/vite`
+  * [#2650](https://github.com/embroider-build/embroider/pull/2650) Update content-tag to 4.1.0 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/shared-internals`
+  * [#2648](https://github.com/embroider-build/embroider/pull/2648) Fix dependency-aware macros in dummy apps ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-12-09)
+
+* @embroider/core 4.4.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2639](https://github.com/embroider-build/embroider/pull/2639) Fix `getAppFiles` filters to prevent app.ts from ending up in compatModules ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 1
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+## Release (2025-12-04)
+
+* @embroider/vite 1.4.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2622](https://github.com/embroider-build/embroider/pull/2622) Protect against the compat build running multiple times in parallel ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2642](https://github.com/embroider-build/embroider/pull/2642) Use stable vite by default in development ([@ef4](https://github.com/ef4))
+  * [#2640](https://github.com/embroider-build/embroider/pull/2640) Align the rollup versions to latest beta - fixes CI ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-12-02)
+
+* @embroider/core 4.4.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/core`
+  * [#2161](https://github.com/embroider-build/embroider/pull/2161) Optimize implicit-modules graph ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-11-28)
+
+* @embroider/core 4.3.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/core`
+  * [#2629](https://github.com/embroider-build/embroider/pull/2629) Make route-splitter 10-20x faster when you have > 3000 route splits ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2025-11-26)
+
+* @embroider/compat 4.1.11 (patch)
+* @embroider/core 4.2.9 (patch)
+* @embroider/macros 1.19.5 (patch)
+* @embroider/vite 1.4.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2626](https://github.com/embroider-build/embroider/pull/2626) Fix appEmberSatisfies macro ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-11-25)
+
+* @embroider/router 3.0.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2624](https://github.com/embroider-build/embroider/pull/2624) Embroider router support for ember source less than 4.12 ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
+## Release (2025-11-22)
+
+* @embroider/addon-dev 8.1.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2619](https://github.com/embroider-build/embroider/pull/2619) Fix rollup incremental plugin ([@bendemboski](https://github.com/bendemboski))
+
+#### Committers: 1
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+
+## Release (2025-11-21)
+
+* @embroider/addon-dev 8.1.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2618](https://github.com/embroider-build/embroider/pull/2618) Cleanup for #2616 ([@bendemboski](https://github.com/bendemboski))
+  * [#2616](https://github.com/embroider-build/embroider/pull/2616) Don't let keepAssets plugin corrupt source maps ([@bendemboski](https://github.com/bendemboski))
+
+#### Committers: 1
+- Ben Demboski ([@bendemboski](https://github.com/bendemboski))
+
+## Release (2025-11-19)
+
+* @embroider/core 4.2.8 (patch)
+* @embroider/reverse-exports 0.2.0 (minor)
+* @embroider/vite 1.4.2 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/reverse-exports`
+  * [#2614](https://github.com/embroider-build/embroider/pull/2614) Extend node support for reverse-exports package back to Node v12 ([@ef4](https://github.com/ef4))
+
+#### Committers: 1
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
+## Release (2025-11-18)
+
+* @embroider/router 3.0.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/router`
+  * [#2612](https://github.com/embroider-build/embroider/pull/2612) fix stickly queryParams on lazy routes/engines ([@void-mAlex](https://github.com/void-mAlex))
+
+#### Committers: 1
+- Alex ([@void-mAlex](https://github.com/void-mAlex))
+
 ## Release (2025-11-11)
 
 * @embroider/addon-shim 1.10.2 (patch)

@@ -1,10 +1,11 @@
 import { Memoize } from 'typescript-memoize';
 import { readFileSync, existsSync } from 'fs-extra';
-import { join, extname } from 'path';
+import { join, extname, resolve } from 'path';
 import get from 'lodash/get';
 import type { AddonMeta, PackageInfo } from './metadata';
 import type PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
+import cloneDeep from 'lodash/cloneDeep';
 
 // This is controllable via env var because there are many different contexts
 // (babel/rollup/vite/webpack/handlebars plugins) that can all depend on
@@ -54,9 +55,28 @@ export default class Package {
     return this.packageJSON.version;
   }
 
+  private dummyAppOwnedByAddon: Package | undefined;
+
   @Memoize()
   protected get internalPackageJSON() {
-    return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    try {
+      return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
+    } catch (err) {
+      if (err.code === 'ENOENT' && this.root === this.packageCache.appRoot) {
+        // if the app is missing it's package.json, we could be looking at a
+        // dummy app of a v1 addon.
+        let upPkg = this.packageCache.ownerOfFile(resolve(this.root, '..'));
+        if (upPkg?.isEmberAddon()) {
+          // found containing addon. Synthesize the dummy's app's virtual
+          // package.json
+          this.dummyAppOwnedByAddon = upPkg;
+          let pkg = cloneDeep(upPkg.packageJSON);
+          pkg.name = 'dummy';
+          return pkg;
+        }
+      }
+      throw err;
+    }
   }
 
   @Memoize()
@@ -162,9 +182,10 @@ export default class Package {
 
   @Memoize()
   get nonResolvableDeps(): Map<string, Package> | undefined {
+    let result: Map<string, Package> | undefined;
     let meta = this.internalPackageJSON['ember-addon'];
     if (meta && meta.paths) {
-      return new Map(
+      result = new Map(
         meta.paths
           .map((path: string) => {
             // ember-cli gives a warning if the path specifies an invalid, malformed or missing addon. the logic for invalidating an addon is:
@@ -199,6 +220,14 @@ export default class Package {
           .filter(Boolean)
       );
     }
+    if (this.dummyAppOwnedByAddon) {
+      if (!result) {
+        result = new Map();
+      }
+      // dummy apps magically depend on the containing addon.
+      result.set(this.dummyAppOwnedByAddon.name, this.dummyAppOwnedByAddon);
+    }
+    return result;
   }
 
   get dependencyNames(): string[] {

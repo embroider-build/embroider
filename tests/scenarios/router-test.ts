@@ -41,9 +41,18 @@ function setupScenario(project: Project) {
           `,
       },
       controllers: {
-        'split-me.ts': `
+        'split-me.js': `
             import Controller from '@ember/controller';
-            export default class SplitMeController extends Controller {}
+            import { tracked } from '@glimmer/tracking';
+            export default class SplitMeController extends Controller {
+              queryParams = ['name'];
+
+              @tracked name;
+
+              updateName = (event) => {
+                this.name = event.target.value;
+              }
+            }
           `,
         'split-me': {
           'child.ts': `
@@ -84,13 +93,15 @@ function setupScenario(project: Project) {
 
             <h2 id='title'>Welcome to Ember</h2>
 
-            <LinkTo @route='index'>Index</LinkTo>
-            <LinkTo @route='split-me'>Split Index</LinkTo>
-            <LinkTo @route='split-me.child'>Split Child</LinkTo>
+            <LinkTo @route='index' data-test-index-link>Index</LinkTo>
+            <LinkTo @route='split-me' data-test-split-me-link>Split Index</LinkTo>
+            <LinkTo @route='split-me.child' data-test-split-me-child-link>Split Child</LinkTo>
 
             {{outlet}}
           `,
-        'split-me.hbs': `{{outlet}}`,
+        'split-me.hbs': `{{outlet}}
+                        <label for="name-input">Enter name to update query params</label>
+                        <input id="name-input" type="text" value={{this.name}} {{on "change" this.updateName}} />`,
         'split-me': {
           'child.hbs': `<UsedInChild />`,
           'index.hbs': `<div data-test-split-me-index>This is the split-me/index.</div>`,
@@ -119,7 +130,7 @@ function setupScenario(project: Project) {
       acceptance: {
         'lazy-routes-test.ts': `
           import { module, test, only } from "qunit";
-          import { visit } from "@ember/test-helpers";
+          import { click, currentURL, fillIn, visit } from "@ember/test-helpers";
           import { setupApplicationTest } from "ember-qunit";
           import { getGlobalConfig, getOwnConfig } from "@embroider/macros";
           import type Resolver from "ember-resolver";
@@ -232,6 +243,23 @@ function setupScenario(project: Project) {
               assert.ok(
                 document.querySelector("[data-test-used-in-child]"),
                 "split-me/child rendered",
+              );
+            });
+          });
+          module("Acceptance | lazy routes query params", function (hooks) {
+            setupApplicationTest(hooks);
+
+            test("sticky params when re-entering route", async function (assert) {
+              await visit("/split-me");
+              await fillIn('#name-input','QueryValue');
+              assert.equal(currentURL(), '/split-me?name=QueryValue', "query param is updated in the url");
+              await click('[data-test-index-link]');
+              assert.equal(currentURL(), '/', "query param removed from url on navigation");
+              await click('[data-test-split-me-link]');
+              assert.equal(currentURL(), '/split-me?name=QueryValue', "query param is updated in the url");
+              assert.ok(
+                document.querySelector("[data-test-split-me-index]"),
+                "split-me/index rendered",
               );
             });
           });

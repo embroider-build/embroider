@@ -1,20 +1,20 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.1.0"
-    },
-    "@embroider/addon-shim": {
-      "impact": "patch",
-      "oldVersion": "1.10.1",
-      "newVersion": "1.10.2",
+      "impact": "minor",
+      "oldVersion": "8.1.2",
+      "newVersion": "8.2.0",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
-      "pkgJSONPath": "./packages/addon-shim/package.json"
+      "pkgJSONPath": "./packages/addon-dev/package.json"
+    },
+    "@embroider/addon-shim": {
+      "oldVersion": "1.10.2"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "4.0.0"
@@ -24,8 +24,8 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.1.9",
-      "newVersion": "4.1.10",
+      "oldVersion": "4.1.11",
+      "newVersion": "4.1.12",
       "tagName": "latest",
       "constraints": [
         {
@@ -40,10 +40,14 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.2.6",
-      "newVersion": "4.2.7",
+      "oldVersion": "4.4.1",
+      "newVersion": "4.4.2",
       "tagName": "latest",
       "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -59,38 +63,48 @@
     },
     "@embroider/macros": {
       "impact": "patch",
-      "oldVersion": "1.19.3",
-      "newVersion": "1.19.4",
+      "oldVersion": "1.19.5",
+      "newVersion": "1.19.6",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :memo: Documentation"
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
-      "oldVersion": "0.1.2"
+      "oldVersion": "0.2.0"
     },
     "@embroider/router": {
-      "oldVersion": "3.0.4"
+      "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "3.0.1"
-    },
-    "@embroider/template-tag-codemod": {
-      "oldVersion": "1.3.4"
-    },
-    "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.4.0",
-      "newVersion": "1.4.1",
+      "oldVersion": "3.0.1",
+      "newVersion": "3.0.2",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
+    },
+    "@embroider/template-tag-codemod": {
+      "oldVersion": "1.3.4"
+    },
+    "@embroider/vite": {
+      "impact": "minor",
+      "oldVersion": "1.4.4",
+      "newVersion": "1.5.0",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         },
         {
           "impact": "patch",
@@ -100,5 +114,5 @@
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-11-11)\n\n* @embroider/addon-shim 1.10.2 (patch)\n* @embroider/compat 4.1.10 (patch)\n* @embroider/core 4.2.7 (patch)\n* @embroider/macros 1.19.4 (patch)\n* @embroider/vite 1.4.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2499](https://github.com/embroider-build/embroider/pull/2499) Use options hook for running compat-prebuild ([@simonihmig](https://github.com/simonihmig))\n  * [#2600](https://github.com/embroider-build/embroider/pull/2600) Use Vite's resolved cacheDir to determine cache location ([@mogstad](https://github.com/mogstad))\n* `@embroider/addon-shim`\n  * [#2608](https://github.com/embroider-build/embroider/pull/2608) fix deployment of addon-shim ([@mansona](https://github.com/mansona))\n\n#### :memo: Documentation\n* Other\n  * [#2448](https://github.com/embroider-build/embroider/pull/2448) Document adding app reexports to package.json#exports ([@fdeters](https://github.com/fdeters))\n* `@embroider/macros`\n  * [#2606](https://github.com/embroider-build/embroider/pull/2606) Fix typo in README.md regarding macroCondition ([@MelSumner](https://github.com/MelSumner))\n\n#### Committers: 5\n- Bjarne Mogstad ([@mogstad](https://github.com/mogstad))\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Forrest Deters ([@fdeters](https://github.com/fdeters))\n- Melanie Sumner ([@MelSumner](https://github.com/MelSumner))\n- Simon Ihmig ([@simonihmig](https://github.com/simonihmig))\n"
+  "description": "## Release (2025-12-23)\n\n* @embroider/addon-dev 8.2.0 (minor)\n* @embroider/compat 4.1.12 (patch)\n* @embroider/core 4.4.2 (patch)\n* @embroider/macros 1.19.6 (patch)\n* @embroider/shared-internals 3.0.2 (patch)\n* @embroider/vite 1.5.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`, `@embroider/vite`\n  * [#2650](https://github.com/embroider-build/embroider/pull/2650) Update content-tag to 4.1.0 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/shared-internals`\n  * [#2648](https://github.com/embroider-build/embroider/pull/2648) Fix dependency-aware macros in dummy apps ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

@@ -42,7 +42,7 @@ describe("@embroider/vite scripts plugin", () => {
       build: {
         rollupOptions: {
           input: {
-            index: 'index.html',
+            index: resolve(__dirname, 'fixtures/scripts/index.html'),
           },
         },
       },

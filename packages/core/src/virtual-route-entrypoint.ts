@@ -12,6 +12,9 @@ export interface RouteEntrypointResponse {
   route: string;
 }
 
+// Cache AppFiles instances by fromDir to avoid recreating them for every route
+const appFilesCache = new Map();
+
 export function renderRouteEntrypoint(
   { fromDir, route }: RouteEntrypointResponse,
   resolver: Resolver
@@ -25,26 +28,31 @@ export function renderRouteEntrypoint(
   let engine = resolver.owningEngine(owner);
   let isApp = owner?.root === resolver.options.engines[0]!.root;
   let hasFastboot = Boolean(resolver.options.engines[0]!.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
+  let appFiles = appFilesCache.get(fromDir);
 
-  let appFiles = new AppFiles(
-    {
-      package: owner,
-      addons: new Map(
-        engine.activeAddons.map(addon => [
-          resolver.packageCache.get(addon.root) as V2AddonPackage,
-          addon.canResolveFromFile,
-        ])
-      ),
-      isApp,
-      modulePrefix: isApp ? resolver.options.modulePrefix : engine.packageName,
-      appRelativePath: 'NOT_USED_DELETE_ME',
-    },
-    getAppFiles(fromDir),
-    hasFastboot ? getFastbootFiles(owner.root) : new Set(),
-    extensionsPattern(resolver.options.resolvableExtensions),
-    staticAppPathsPattern(resolver.options.staticAppPaths),
-    resolver.options.podModulePrefix
-  );
+  if (!appFiles) {
+    appFiles = new AppFiles(
+      {
+        package: owner,
+        addons: new Map(
+          engine.activeAddons.map(addon => [
+            resolver.packageCache.get(addon.root) as V2AddonPackage,
+            addon.canResolveFromFile,
+          ])
+        ),
+        isApp,
+        modulePrefix: isApp ? resolver.options.modulePrefix : engine.packageName,
+        appRelativePath: 'NOT_USED_DELETE_ME',
+      },
+      getAppFiles(fromDir),
+      hasFastboot ? getFastbootFiles(owner.root) : new Set(),
+      extensionsPattern(resolver.options.resolvableExtensions),
+      staticAppPathsPattern(resolver.options.staticAppPaths),
+      resolver.options.podModulePrefix
+    );
+
+    appFilesCache.set(fromDir, appFiles);
+  }
 
   let src = '';
 

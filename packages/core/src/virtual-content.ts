@@ -146,6 +146,26 @@ export interface ImplicitModulesResponse {
   fromFile: string;
 }
 
+function hasDepsWithImplicitModules(pkg: Package, type: 'implicit-modules' | 'implicit-test-modules'): boolean {
+  for (let dep of pkg.dependencies) {
+    // anything that isn't a v2 ember package by this point is not an active
+    // addon. We ignore peerDependencies here because classic ember-cli ignores
+    // peerDependencies here, and we're implementing the implicit-modules
+    // backward-comptibility feature.
+    if (!dep.isV2Addon() || pkg.categorizeDependency(dep.name) === 'peerDependencies') {
+      continue;
+    }
+    let implicitModules = dep.meta[type];
+    if (implicitModules && implicitModules.length > 0) {
+      return true;
+    }
+    if (hasDepsWithImplicitModules(dep, type)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function renderImplicitModules({ type, fromFile }: ImplicitModulesResponse, resolver: Resolver): VirtualContentResult {
   let resolvableExtensionsPattern = extensionsPattern(resolver.options.resolvableExtensions);
 
@@ -202,7 +222,7 @@ function renderImplicitModules({ type, fromFile }: ImplicitModulesResponse, reso
     }
     // we don't recurse across an engine boundary. Engines import their own
     // implicit-modules.
-    if (!dep.isEngine()) {
+    if (!dep.isEngine() && hasDepsWithImplicitModules(dep, type)) {
       dependencyModules.push(posix.join(dep.name, `-embroider-${type}.js`));
     }
   }

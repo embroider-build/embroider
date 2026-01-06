@@ -66,18 +66,20 @@ export default function keepAssets({
       }
     },
     renderChunk(code, chunk) {
-      const { getName, imports } = nameTracker(code, exports);
+      if (code.includes(marker)) {
+        const { getName, imports } = nameTracker(code, exports);
 
-      code = code.replace(
-        new RegExp(`${marker}\\("([^"]+)"\\)`, 'g'),
-        (_x, ref) => {
-          let assetFileName = this.getFileName(ref);
-          let relativeName =
-            './' + relative(dirname(chunk.fileName), assetFileName);
-          return getName(relativeName) ?? '';
-        }
-      );
-      return imports() + code;
+        code = code.replace(
+          new RegExp(`${marker}\\("([^"]+)"\\)`, 'g'),
+          (_x, ref) => {
+            let assetFileName = this.getFileName(ref);
+            let relativeName =
+              './' + relative(dirname(chunk.fileName), assetFileName);
+            return getName(relativeName) ?? '';
+          }
+        );
+        return imports() + code;
+      }
     },
   };
 }

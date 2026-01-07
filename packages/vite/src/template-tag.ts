@@ -1,8 +1,5 @@
-import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
 import { Preprocessor } from 'content-tag';
-
-const gjsFilter = createFilter('**/*.{gjs,gts}?(\\?)*');
 
 export function templateTag(): Plugin {
   let preprocessor = new Preprocessor();
@@ -11,13 +8,15 @@ export function templateTag(): Plugin {
     name: 'embroider-template-tag',
     enforce: 'pre',
 
-    transform(code: string, id: string) {
-      if (!gjsFilter(id)) {
-        return null;
-      }
-      return preprocessor.process(code, {
-        filename: id,
-      });
+    transform: {
+      filter: {
+        id: '**/*.{gjs,gts}?(\\?)*',
+      },
+      handler(code: string, id: string) {
+        return preprocessor.process(code, {
+          filename: id,
+        });
+      },
     },
   };
 }

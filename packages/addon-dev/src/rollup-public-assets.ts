@@ -20,6 +20,22 @@ export interface PublicAssetsOptions {
   namespace?: string;
 }
 
+export interface PublicAssetsPathAndOptions extends PublicAssetsOptions {
+  /**
+   * the public folder that you want to add as public assets
+   */
+  path: string;
+}
+
+/**
+ * A rollup plugin to expose a folder of assets
+ *
+ * @param pathsAndOptions - the public folders that you want to add as public assets
+ * @returns
+ */
+export default function publicAssets(
+  pathsAndOptions: readonly PublicAssetsPathAndOptions[]
+): Plugin;
 /**
  * A rollup plugin to expose a folder of assets
  *
@@ -29,9 +45,16 @@ export interface PublicAssetsOptions {
 export default function publicAssets(
   path: string,
   opts?: PublicAssetsOptions
+): Plugin;
+export default function publicAssets(
+  ...args:
+    | [readonly PublicAssetsPathAndOptions[]]
+    | [string, PublicAssetsOptions?]
 ): Plugin {
-  const includeGlobPatterns = opts?.include;
-  const excludedGlobPatterns = opts?.exclude || [];
+  const paths =
+    typeof args[0] === 'string'
+      ? [{ ...(args[1] ?? {}), path: args[0] }]
+      : args[0];
 
   return {
     name: 'public-assets-bundler',
@@ -39,25 +62,30 @@ export default function publicAssets(
     // Prior to https://github.com/rollup/rollup/pull/5270, we cannot call this
     // from within `generateBundle`
     buildStart() {
-      this.addWatchFile(path);
+      for (let { path } of paths) {
+        this.addWatchFile(path);
+      }
     },
 
     generateBundle() {
       let pkg = readJsonSync('package.json');
-      const filenames = walkSync(path, {
-        directories: false,
-        globs: includeGlobPatterns,
-        ignore: excludedGlobPatterns,
-      });
-      const publicAssets: Record<string, string> = filenames.reduce(
-        (acc: Record<string, string>, v): Record<string, string> => {
-          const namespace = opts?.namespace ?? pkg.name;
 
-          acc[`./${path}/${v}`] = resolve('/' + join(namespace, v));
-          return acc;
-        },
-        {}
-      );
+      const publicAssets: Record<string, string> = {};
+
+      for (const { path, ...opts } of paths) {
+        const filenames = walkSync(path, {
+          directories: false,
+          globs: opts?.include,
+          ignore: opts?.exclude || [],
+        });
+
+        for (const filename of filenames) {
+          const namespace = opts?.namespace ?? pkg.name;
+          publicAssets[`./${path}/${filename}`] = resolve(
+            '/' + join(namespace, filename)
+          );
+        }
+      }
 
       let originalPublicAssets = pkg['ember-addon']?.['public-assets'];
 

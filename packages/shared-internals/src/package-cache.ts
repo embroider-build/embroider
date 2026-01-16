@@ -67,6 +67,12 @@ export default class PackageCache {
   }
 
   ownerOfFile(filename: string): Package | undefined {
+    // this can arise if anyone is using @embroider/macros with babel on an explicit
+    // string (not a file on disk). We should never even try to check owner of the
+    // file since there is no file that can be owned
+    if (!filename) {
+      return undefined;
+    }
     let candidate = filename;
 
     // first we look through our cached packages for any that are rooted right

@@ -316,6 +316,26 @@ export default class MacrosConfig {
     };
   }
 
+  private static lockFilePathForAppRoot: Map<string, string | undefined> = new Map();
+  private static getLockFilePath(appRoot: string): string | undefined {
+    if (this.lockFilePathForAppRoot.has(appRoot)) {
+      return this.lockFilePathForAppRoot.get(appRoot);
+    }
+    let path = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: appRoot });
+    this.lockFilePathForAppRoot.set(appRoot, path);
+    return path;
+  }
+
+  private static packageJsonPathForAppPackageRoot: Map<string, string | undefined> = new Map();
+  private static getPackageJsonPath(appPackageRoot: string): string | undefined {
+    if (this.packageJsonPathForAppPackageRoot.has(appPackageRoot)) {
+      return this.packageJsonPathForAppPackageRoot.get(appPackageRoot);
+    }
+    let path = findUp.sync('package.json', { cwd: appPackageRoot });
+    this.packageJsonPathForAppPackageRoot.set(appPackageRoot, path);
+    return path;
+  }
+
   // to be called from within your build system. Returns the thing you should
   // push into your babel plugins list.
   //
@@ -355,10 +375,10 @@ export default class MacrosConfig {
       importSyncImplementation: this.importSyncImplementation,
     };
 
-    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: self.appRoot });
+    let lockFilePath = MacrosConfig.getLockFilePath(self.appRoot);
 
     if (!lockFilePath) {
-      lockFilePath = findUp.sync('package.json', { cwd: opts.appPackageRoot });
+      lockFilePath = MacrosConfig.getPackageJsonPath(opts.appPackageRoot);
     }
 
     let lockFileBuffer = lockFilePath ? fs.readFileSync(lockFilePath) : 'no-cache-key';

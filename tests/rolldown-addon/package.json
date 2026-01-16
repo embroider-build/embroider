@@ -1,0 +1,22 @@
+{
+  "name": "rolldown-addon",
+  "type": "module",
+  "scripts": {
+    "build:rolldown": "rolldown -c",
+    "build:tsdown": "tsdown"
+  },
+  "dependencies": {
+    "@glimmer/component": "^2.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.6",
+    "@babel/plugin-transform-typescript": "^7.28.6",
+    "@embroider/rolldown": "workspace:*",
+    "@rollup/plugin-babel": "^6.1.0",
+    "babel-plugin-ember-template-compilation": "^4.0.0",
+    "ember-source": "^6.10.0",
+    "rolldown": "^1.0.0-beta.60",
+    "tsdown": "^0.20.0-beta.3",
+    "typescript": "^5.9.3"
+  }
+}

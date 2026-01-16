@@ -1,10 +1,7 @@
 import type { Plugin } from 'rolldown';
-import emberExternals from './src/dependencies-plugin.js';
-import gjsPlugin from './src/gjs-plugin.js';
+import { emberExternals } from './src/externals.js';
+import { emberTransform } from './src/transform.js';
 
 export function ember(): Plugin[] {
-  return [
-    emberExternals(),
-    gjsPlugin()
-  ]
+  return [emberExternals(), emberTransform()];
 }

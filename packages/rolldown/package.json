@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@embroider/core": "workspace:^",
-    "content-tag": "^4.1.0",
-    "fs-extra": "^10.0.0"
+    "@embroider/shared-internals": "workspace:^",
+    "content-tag": "^4.1.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.12",

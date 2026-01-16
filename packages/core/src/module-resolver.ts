@@ -1022,7 +1022,13 @@ export class Resolver {
       if (pkg.packageJSON.exports) {
         let found = resolveExports(pkg.packageJSON, request.specifier, {
           browser: true,
-          conditions: ['default', 'imports'],
+          /**
+           * Ideally, these would be exported by vite, but the constant
+           * that defines client conditions is not exposed to us
+           *
+           * See: https://vite.dev/config/shared-options.html#resolve-conditions
+           */
+          conditions: ['import', 'module', 'browser' /*, development | production */, 'default'],
         });
         if (found?.[0]) {
           return logTransition(

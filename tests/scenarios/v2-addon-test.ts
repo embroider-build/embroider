@@ -7,6 +7,18 @@ const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('v2-addon-basics', project => {
+    let fakeContentTag = baseV2Addon();
+    fakeContentTag.pkg.name = 'fake-content-tag';
+    fakeContentTag.pkg.exports = {
+      browser: './browser.js',
+      default: './not-browser.js',
+    };
+    fakeContentTag.pkg.files = ['browser.js', 'not-browser.js'];
+    merge(fakeContentTag.files, {
+      'browser.js': `export const value = 'browser'`,
+      'not-browser.js': `export const value = 'not browser'`,
+    });
+
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
     (addon.pkg as any)['ember-addon']['app-js']['./components/example-component.js'] =
@@ -34,11 +46,16 @@ appScenarios
       'import-from-npm.js': `
         export default async function() {
           let { message } = await import('third-party');
-          return message()
+          let { value } = await import('fake-content-tag');
+
+          if (value !== 'browser') throw new Error('Incorrect conditions for fake-content-tag');
+
+          return message();
         }
         `,
     });
 
+    addon.addDependency(fakeContentTag);
     addon.addDependency('third-party', {
       files: {
         'index.js': `

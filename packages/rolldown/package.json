@@ -1,0 +1,28 @@
+{
+  "name": "@embroider/rolldown",
+  "version": "0.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/embroider-build/embroider.git",
+    "directory": "packages/rolldown"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "dependencies": {
+    "@embroider/core": "workspace:^",
+    "@embroider/shared-internals": "workspace:^",
+    "content-tag": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.12",
+    "rolldown": "^1.0.0-beta.60"
+  },
+  "files": [
+    "dist"
+  ]
+}

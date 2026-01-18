@@ -4,11 +4,6 @@ import { babel } from '@rollup/plugin-babel';
 
 export default defineConfig({
   input: ['src/index.ts'],
-  // sourcemap: true,
-  // clean: true,
-  // dts: false,
-  // tsconfig: './tsconfig.build.json',
-  // tsconfig: true,
   plugins: [
     babel({
       babelHelpers: 'bundled',

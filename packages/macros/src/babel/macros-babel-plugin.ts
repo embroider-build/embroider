@@ -107,6 +107,30 @@ export default function main(context: typeof Babel): unknown {
           return;
         }
 
+        if (callee.referencesImport('@embroider/macros', 'setTesting')) {
+          state.calledIdentifiers.add(callee.node);
+
+          if (state.opts.mode === 'run-time') {
+            callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'setTesting'));
+          } else {
+            let args = path.get('arguments');
+            if (args.length > 0) {
+              let arg = args[0];
+              let evaluator = new Evaluator({ state });
+              let result = evaluator.evaluate(arg);
+              if (result.confident) {
+                let macrosConfig = (state.opts.globalConfig['@embroider/macros'] as any) || {};
+                state.opts.globalConfig['@embroider/macros'] = {
+                  ...macrosConfig,
+                  isTesting: Boolean(result.value),
+                };
+              }
+            }
+            path.remove();
+          }
+          return;
+        }
+
         let result = new Evaluator({ state }).evaluateMacroCall(path);
         if (result.confident) {
           state.calledIdentifiers.add(callee.node);
@@ -209,6 +233,7 @@ export default function main(context: typeof Babel): unknown {
         'isDevelopingApp',
         'isDevelopingThisPackage',
         'isTesting',
+        'setTesting',
       ]) {
         if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {
           throw error(path, `You can only use ${candidate} as a function call`);

@@ -33,7 +33,7 @@
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
     "babel-import-util": "^3.0.1",
-    "ember-cli-babel": "^7.26.6",
+    "ember-cli-babel": "^7.26.6 || ^8.3.1",
     "find-up": "^5.0.0",
     "lodash": "^4.17.21",
     "resolve": "^1.20.0",

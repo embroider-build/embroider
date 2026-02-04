@@ -2,13 +2,17 @@
   "solution": {
     "@embroider/addon-dev": {
       "impact": "minor",
-      "oldVersion": "8.1.2",
-      "newVersion": "8.2.0",
+      "oldVersion": "8.2.0",
+      "newVersion": "8.3.0",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "minor",
           "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/addon-dev/package.json"
@@ -24,10 +28,14 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.1.11",
-      "newVersion": "4.1.12",
+      "oldVersion": "4.1.12",
+      "newVersion": "4.1.13",
       "tagName": "latest",
       "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -40,14 +48,10 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.4.1",
-      "newVersion": "4.4.2",
+      "oldVersion": "4.4.2",
+      "newVersion": "4.4.3",
       "tagName": "latest",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
         {
           "impact": "patch",
           "reason": "Has dependency `workspace:*` on @embroider/macros"
@@ -63,13 +67,13 @@
     },
     "@embroider/macros": {
       "impact": "patch",
-      "oldVersion": "1.19.5",
-      "newVersion": "1.19.6",
+      "oldVersion": "1.19.6",
+      "newVersion": "1.19.7",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/macros/package.json"
@@ -81,9 +85,12 @@
       "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
+      "oldVersion": "3.0.2"
+    },
+    "@embroider/template-tag-codemod": {
       "impact": "patch",
-      "oldVersion": "3.0.1",
-      "newVersion": "3.0.2",
+      "oldVersion": "1.3.4",
+      "newVersion": "1.3.5",
       "tagName": "latest",
       "constraints": [
         {
@@ -91,20 +98,17 @@
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
-    },
-    "@embroider/template-tag-codemod": {
-      "oldVersion": "1.3.4"
+      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
     },
     "@embroider/vite": {
-      "impact": "minor",
-      "oldVersion": "1.4.4",
-      "newVersion": "1.5.0",
+      "impact": "patch",
+      "oldVersion": "1.5.0",
+      "newVersion": "1.5.1",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
         },
         {
           "impact": "patch",
@@ -114,5 +118,5 @@
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-12-23)\n\n* @embroider/addon-dev 8.2.0 (minor)\n* @embroider/compat 4.1.12 (patch)\n* @embroider/core 4.4.2 (patch)\n* @embroider/macros 1.19.6 (patch)\n* @embroider/shared-internals 3.0.2 (patch)\n* @embroider/vite 1.5.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`, `@embroider/vite`\n  * [#2650](https://github.com/embroider-build/embroider/pull/2650) Update content-tag to 4.1.0 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/shared-internals`\n  * [#2648](https://github.com/embroider-build/embroider/pull/2648) Fix dependency-aware macros in dummy apps ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-02-04)\n\n* @embroider/addon-dev 8.3.0 (minor)\n* @embroider/compat 4.1.13 (patch)\n* @embroider/core 4.4.3 (patch)\n* @embroider/macros 1.19.7 (patch)\n* @embroider/template-tag-codemod 1.3.5 (patch)\n* @embroider/vite 1.5.1 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`\n  * [#2651](https://github.com/embroider-build/embroider/pull/2651) Update addon-dev to support glint 1 and glint 2 and choose between them based on your available dependencies ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/template-tag-codemod`\n  * [#2656](https://github.com/embroider-build/embroider/pull/2656) Upgrade broccoli to ^4.0.0 and align Node requirements to >= 20.19.* ([@Copilot](https://github.com/apps/copilot-swe-agent))\n* `@embroider/vite`\n  * [#2664](https://github.com/embroider-build/embroider/pull/2664) Narrow gjsFilter to not include files that happen to have .gjs in their file name ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/macros`\n  * [#2665](https://github.com/embroider-build/embroider/pull/2665) widen the ember-cli-babel dependency range for macros ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* Other\n  * [#2666](https://github.com/embroider-build/embroider/pull/2666) upgrade release-plan ([@mansona](https://github.com/mansona))\n  * [#2653](https://github.com/embroider-build/embroider/pull/2653) Fix CI - content-tag whitespace ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/addon-dev`\n  * [#2652](https://github.com/embroider-build/embroider/pull/2652) Switch addon-dev to vitest ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Copilot [Bot] ([@copilot-swe-agent](https://github.com/apps/copilot-swe-agent))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

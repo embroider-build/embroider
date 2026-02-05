@@ -1,14 +1,9 @@
-import { createFilter } from '@rollup/pluginutils';
+import { makeIdFiltersToMatchWithQuery } from '@rolldown/pluginutils';
 import type { PluginContext } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS, templateOnlyComponentSource } from '@embroider/core';
 
-const hbsPathFilter = createFilter('**/*.hbs');
-
-export function hbsFilter(id: string): boolean {
-  let [path] = id.split('?');
-  return hbsPathFilter(path);
-}
+const hbsFilter = makeIdFiltersToMatchWithQuery('**/*.hbs');
 
 export function hbs(): Plugin {
   return {
@@ -23,11 +18,15 @@ export function hbs(): Plugin {
       }
     },
 
-    transform(code: string, id: string) {
-      if (!hbsFilter(id)) {
-        return null;
-      }
-      return hbsToJS(code);
+    transform: {
+      filter: {
+        id: hbsFilter,
+      },
+      // SAFETY: TS complains because hbsToJS doesn't take more than one arg
+      //         But we have no need to warrant an extra function
+      //         to just strip the extra arguments
+      // @ts-expect-error
+      handler: hbsToJS,
     },
   };
 }

@@ -24,7 +24,7 @@
     "@babel/core": "^7.22.9",
     "@embroider/macros": "workspace:*",
     "@embroider/reverse-exports": "workspace:*",
-    "@rollup/pluginutils": "^5.1.0",
+    "@rolldown/pluginutils": "1.0.0-rc.3",
     "assert-never": "^1.2.1",
     "browserslist": "*",
     "browserslist-to-esbuild": "^2.1.1",

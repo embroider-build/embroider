@@ -3,7 +3,12 @@ import type { PluginContext } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS, templateOnlyComponentSource } from '@embroider/core';
 
-const hbsFilter = createFilter('**/*.hbs?([?]*)');
+const hbsPathFilter = createFilter('**/*.hbs');
+
+export function hbsFilter(id: string): boolean {
+  let [path] = id.split('?');
+  return hbsPathFilter(path);
+}
 
 export function hbs(): Plugin {
   return {

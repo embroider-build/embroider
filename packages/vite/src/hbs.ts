@@ -1,9 +1,9 @@
-import { makeIdFiltersToMatchWithQuery } from '@rolldown/pluginutils';
 import type { PluginContext } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS, templateOnlyComponentSource } from '@embroider/core';
+import { buildIdFilter } from './build-id-filter.js';
 
-const hbsFilter = makeIdFiltersToMatchWithQuery('**/*.hbs');
+export const hbsFilter = buildIdFilter({ extensions: ['hbs'] });
 
 export function hbs(): Plugin {
   return {
@@ -19,9 +19,7 @@ export function hbs(): Plugin {
     },
 
     transform: {
-      filter: {
-        id: hbsFilter,
-      },
+      filter: hbsFilter,
       // SAFETY: TS complains because hbsToJS doesn't take more than one arg
       //         But we have no need to warrant an extra function
       //         to just strip the extra arguments

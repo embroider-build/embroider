@@ -967,9 +967,6 @@ importers:
       '@embroider/reverse-exports':
         specifier: workspace:*
         version: link:../reverse-exports
-      '@rolldown/pluginutils':
-        specifier: 1.0.0-rc.3
-        version: 1.0.0-rc.3
       assert-never:
         specifier: ^1.2.1
         version: 1.4.0
@@ -1034,6 +1031,9 @@ importers:
       html-minifier-terser:
         specifier: ^7.2.0
         version: 7.2.0
+      picomatch:
+        specifier: ^4.0.3
+        version: 4.0.3
       rolldown-vite:
         specifier: ^7.2.10
         version: 7.2.10(@types/node@22.19.1)(esbuild@0.25.12)(jiti@2.4.2)(terser@5.44.1)
@@ -5220,9 +5220,6 @@ packages:
 
   '@rolldown/pluginutils@1.0.0-beta.53':
     resolution: {integrity: sha512-vENRlFU4YbrwVqNDZ7fLvy+JR1CRkyr01jhSiDpE1u6py3OMzQfztQU2jxykW3ALNxO4kSlqIDeYyD0Y9RcQeQ==}
-
-  '@rolldown/pluginutils@1.0.0-rc.3':
-    resolution: {integrity: sha512-eybk3TjzzzV97Dlj5c+XrBFW57eTNhzod66y9HrBlzJ6NsCrWCp/2kaPS3K9wJmurBC0Tdw4yPjXKZqlznim3Q==}
 
   '@rollup/plugin-babel@5.3.1':
     resolution: {integrity: sha512-WFfdLWU/xVWKeRQnKmIAQULUI7Il0gZnBIH/ZFO069wYIfPu+8zrfp/KMW0atmELoRDq8FbiP3VCss9MhCut7Q==}
@@ -18971,8 +18968,6 @@ snapshots:
     optional: true
 
   '@rolldown/pluginutils@1.0.0-beta.53': {}
-
-  '@rolldown/pluginutils@1.0.0-rc.3': {}
 
   '@rollup/plugin-babel@5.3.1(@babel/core@7.28.5)(@types/babel__core@7.20.5)(rollup@3.29.5)':
     dependencies:

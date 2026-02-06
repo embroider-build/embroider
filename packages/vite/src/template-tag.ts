@@ -1,8 +1,8 @@
-import { makeIdFiltersToMatchWithQuery } from '@rolldown/pluginutils';
 import type { Plugin } from 'vite';
 import { Preprocessor } from 'content-tag';
+import { buildIdFilter } from './build-id-filter.js';
 
-const gjsFilter = makeIdFiltersToMatchWithQuery('**/*.{gjs,gts}');
+export const gjsFilter = buildIdFilter({ extensions: ['gjs', 'gts'] });
 
 export function templateTag(): Plugin {
   let preprocessor = new Preprocessor();
@@ -12,9 +12,7 @@ export function templateTag(): Plugin {
     enforce: 'pre',
 
     transform: {
-      filter: {
-        id: gjsFilter,
-      },
+      filter: gjsFilter,
       handler(code: string, id: string) {
         return preprocessor.process(code, {
           filename: id,

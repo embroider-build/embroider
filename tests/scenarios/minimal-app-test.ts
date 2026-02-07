@@ -234,6 +234,20 @@ minimalAppScenarios
           assert.equal(result.exitCode, 0, result.output);
           result = await app.execute('pnpm ember test --path dist --config-file ./testem.cjs');
           assert.equal(result.exitCode, 0, result.output);
+
+          for (let output of [
+            'debug utils remain in the build: assert',
+            'debug utils remain in the build: isTesting',
+            'debug utils remain in the build: isDevelopingApp',
+            'debug utils remain in the build > not supported: DEBUG',
+            'fancy-component: it renders',
+          ]) {
+            let actual = result.stdout.includes(output);
+            if (!actual) {
+              console.log(result.stdout);
+            }
+            assert.ok(actual, `stdout includes \`${output}\``);
+          }
         });
       });
     });

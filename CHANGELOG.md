@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-02-07)
+
+* @embroider/vite 1.5.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2667](https://github.com/embroider-build/embroider/pull/2667) Fix the hbs filter ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-02-04)
 
 * @embroider/addon-dev 8.3.0 (minor)

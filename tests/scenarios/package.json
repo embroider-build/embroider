@@ -47,6 +47,7 @@
     "@ember/legacy-built-in-components": "^0.4.1",
     "@ember/string": "^3.0.0",
     "@ember/test-waiters": "^3.0.2",
+    "@ember/test-waiters-4": "npm:@ember/test-waiters@^4.1.1",
     "@embroider/addon-shim": "workspace:*",
     "@embroider/macros": "workspace:*",
     "@embroider/macros-old": "npm:@embroider/macros@~1.16.0",

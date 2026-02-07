@@ -230,7 +230,7 @@ minimalAppScenarios
 
       Qmodule('vite build', function () {
         test('run tests suite against vite build output', async function (assert) {
-          let result = await app.execute('pnpm vite build --mode test');
+          let result = await app.execute('pnpm cross-env NODE_ENV=development vite build --mode development');
           assert.equal(result.exitCode, 0, result.output);
           result = await app.execute('pnpm ember test --path dist --config-file ./testem.cjs');
           assert.equal(result.exitCode, 0, result.output);

@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import picomatch from 'picomatch';
-
 import { gjsFilter } from '../src/template-tag';
 import { hbsFilter } from '../src/hbs';
 
 const betterExpect = expect.soft;
 
 function test(filter, str) {
-  return filter.id.include[0].test(str);
+  return filter.test(str);
 }
 
 describe('template-tag', () => {

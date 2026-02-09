@@ -1,9 +1,9 @@
 import type { PluginContext } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS, templateOnlyComponentSource } from '@embroider/core';
-import { buildIdFilter } from './build-id-filter.js';
+import { extFilter, supportsObjectHooks } from './build-id-filter.js';
 
-export const hbsFilter = buildIdFilter({ extensions: ['hbs'] });
+export const hbsFilter = extFilter('hbs');
 
 export function hbs(): Plugin {
   return {
@@ -18,13 +18,17 @@ export function hbs(): Plugin {
       }
     },
 
-    transform: {
-      filter: hbsFilter,
-
-      handler(code: string) {
-        return hbsToJS(code);
-      },
-    },
+    transform: supportsObjectHooks
+      ? {
+          filter: { id: hbsFilter },
+          handler(code: string) {
+            return hbsToJS(code);
+          },
+        }
+      : function (code: string, id: string) {
+          if (!hbsFilter.test(id)) return null;
+          return hbsToJS(code);
+        },
   };
 }
 

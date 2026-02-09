@@ -1708,8 +1708,8 @@ importers:
         specifier: ^5.7.0
         version: 5.44.1
       vite:
-        specifier: ^6.0.9
-        version: 6.4.1(@types/node@22.19.1)(jiti@2.4.2)(lightningcss@1.30.2)(terser@5.44.1)
+        specifier: ^5.0.9
+        version: 5.4.21(@types/node@22.19.1)(lightningcss@1.30.2)(terser@5.44.1)
 
   tests/fixtures: {}
 
@@ -32695,7 +32695,7 @@ snapshots:
       debug: 4.4.3(supports-color@8.1.1)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.4.1(@types/node@22.19.1)(jiti@2.4.2)(lightningcss@1.30.2)(terser@5.44.1)
+      vite: 7.2.6(@types/node@22.19.1)(jiti@2.4.2)(lightningcss@1.30.2)(terser@5.44.1)
     transitivePeerDependencies:
       - '@types/node'
       - jiti

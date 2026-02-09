@@ -20,11 +20,10 @@ export function hbs(): Plugin {
 
     transform: {
       filter: hbsFilter,
-      // SAFETY: TS complains because hbsToJS doesn't take more than one arg
-      //         But we have no need to warrant an extra function
-      //         to just strip the extra arguments
-      // @ts-expect-error
-      handler: hbsToJS,
+
+      handler(code: string) {
+        return hbsToJS(code);
+      },
     },
   };
 }

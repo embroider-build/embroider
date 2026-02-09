@@ -5,8 +5,6 @@ import picomatch from 'picomatch';
 import { gjsFilter } from '../src/template-tag';
 import { hbsFilter } from '../src/hbs';
 
-console.log({ gjsFilter, hbsFilter });
-
 const betterExpect = expect.soft;
 
 function test(filter, str) {

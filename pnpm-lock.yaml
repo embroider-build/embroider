@@ -967,9 +967,6 @@ importers:
       '@embroider/reverse-exports':
         specifier: workspace:*
         version: link:../reverse-exports
-      '@rollup/pluginutils':
-        specifier: ^5.1.0
-        version: 5.3.0(rollup@4.53.3)
       assert-never:
         specifier: ^1.2.1
         version: 1.4.0
@@ -18513,14 +18510,6 @@ snapshots:
       picomatch: 4.0.3
     optionalDependencies:
       rollup: 3.29.5
-
-  '@rollup/pluginutils@5.3.0(rollup@4.53.3)':
-    dependencies:
-      '@types/estree': 1.0.8
-      estree-walker: 2.0.2
-      picomatch: 4.0.3
-    optionalDependencies:
-      rollup: 4.53.3
 
   '@rollup/rollup-android-arm-eabi@4.53.3':
     optional: true

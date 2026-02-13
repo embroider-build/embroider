@@ -23,10 +23,18 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
             <TemplateOnlyComponent />
           `,
       },
-      helpers: {
-        'renamed.js': 'export { default } from "ember-feature-flags/helpers/feature-flag"',
-      },
       components: {
+        'using-non-component.gjs': `
+          import featureFlag from "ember-feature-flags/helpers/feature-flag";
+
+          <template>
+            {{#if (featureFlag 'foo')}}
+              hi
+            {{else}}
+              there
+            {{/if}}
+          </template>
+        `,
         'has-colocated-template.js': `
           import Component from '@glimmer/component';
           import ComponentOne from 'my-addon/components/component-one';
@@ -35,6 +43,26 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
           `,
         'has-colocated-template.hbs': `<div>{{this.title}}</div>`,
         'template-only-component.hbs': `<div>I am template only</div>`,
+      },
+    },
+    tests: {
+      rendering: {
+        'non-component-test.gjs': `
+          import { module, test } from 'qunit';
+          import { setupRenderingTest } from 'ember-qunit';
+          import { render } from '@ember/test-helpers';
+          import CompWithNonComponent from 'my-app/components/using-non-component';
+
+          module('non-component', function (hooks) {
+            setupRenderingTest(hooks);
+
+            test('it works', async function (assert) {
+              await render(CompWithNonComponent);
+
+              assert.dom().containsText('there');
+            });
+          });
+        `,
       },
     },
   });
@@ -239,11 +267,7 @@ module('Integration | Component | addon-component-one', function (hooks) {
         assertFile.get(['ember-addon', 'implicit-modules']).equals(undefined);
       });
 
-      // TODO running pnpm test in this scenario is causing rollup to build things in a strange order
-      // it could just be a specific thing about this scenario but it would be worth investigating more
-      // when I debugged it a little bit it seems like thigs from glimmer are being included too early in the
-      // bundle, so it could be related to staticInvokables: false being turned on
-      skip('tests should succeed', async function (assert) {
+      test('tests should succeed', async function (assert) {
         let result = await app.execute('pnpm test');
 
         assert.equal(result.exitCode, 0, result.output);
@@ -303,6 +327,12 @@ scenarios
       test(`addon's colocated components are not in implicit-modules`, function () {
         let assertFile = expectFile('./node_modules/my-addon/package.json').json();
         assertFile.get(['ember-addon', 'implicit-modules']).equals(undefined);
+      });
+
+      test('tests should succeed', async function (assert) {
+        let result = await app.execute('pnpm test');
+
+        assert.equal(result.exitCode, 0, result.output);
       });
     });
   });

@@ -1929,6 +1929,9 @@ importers:
       ember-engines:
         specifier: ^0.8.23
         version: 0.8.23(@ember/legacy-built-in-components@0.4.2(@glint/template@1.7.3)(ember-source@6.11.0-alpha.4(@glimmer/component@2.0.0)(rsvp@4.8.5)))(@glint/template@1.7.3)(ember-source@6.11.0-alpha.4(@glimmer/component@2.0.0)(rsvp@4.8.5))
+      ember-feature-flags:
+        specifier: ^8.0.0
+        version: 8.0.0(@glint/template@1.7.3)(ember-source@6.11.0-alpha.4(@glimmer/component@2.0.0)(rsvp@4.8.5))(webpack@5.103.0(esbuild@0.25.12))
       ember-inline-svg:
         specifier: ^0.2.1
         version: 0.2.1(@babel/core@7.28.5)
@@ -8106,6 +8109,12 @@ packages:
     resolution: {integrity: sha512-B7wiurPgsxsSGzJuPFkpBWnaeuCu2PGpG2BjyrfA1VcL7//o+5RSnZqiCEY326y7qmxb2GoCgo0ft03KBU0rRw==}
     engines: {node: '>= 4'}
 
+  ember-feature-flags@8.0.0:
+    resolution: {integrity: sha512-9YZV23Gc6zxMfmGdmtj9sr/2xpDXo+9Byxf9STEXVD1ksnWVaHbT19uNs+gr5e4huRCtzx2aaZMAao97OMUk2A==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      ember-source: '>= 4.0.0'
+
   ember-focus-trap@1.1.1:
     resolution: {integrity: sha512-5tOWu6eV1UoNZE+P9Gl9lJXNrENZVCoOXi52ePb7JOrOZ3ckOk1OkPsFwR4Jym9VJ7vZ6S3Z3D8BrkFa2aCpYw==}
     engines: {node: 12.* || >= 14}
@@ -13029,6 +13038,9 @@ packages:
 
   tracked-built-ins@3.4.0:
     resolution: {integrity: sha512-aRwWQXC3VkY50oYxS7wKZiavkjf3uaN+UYUH30D5gxUqbxDN2LnNsfWyDfckmxHUGw4gJDH5lpRS0jX/tim0vw==}
+
+  tracked-built-ins@4.1.0:
+    resolution: {integrity: sha512-v1+jca3sD3LgbAFVsontSONTv7HsZll3yeUB00L6KPwLilFRrY77gvgptDe35fTalk9ea7mmrM2wABD56pTvuw==}
 
   tracked-toolbox@1.3.0:
     resolution: {integrity: sha512-KHfYLvNyRr0qQeXQPnmb6Z4JYZ0/47R7LjVwzUrsKc539eQi3Sz2z3mb7FJN9KgaJXVuM3GQ8zcwUFTf0hrOsQ==}
@@ -24425,6 +24437,18 @@ snapshots:
 
   ember-export-application-global@2.0.1: {}
 
+  ember-feature-flags@8.0.0(@glint/template@1.7.3)(ember-source@6.11.0-alpha.4(@glimmer/component@2.0.0)(rsvp@4.8.5))(webpack@5.103.0(esbuild@0.25.12)):
+    dependencies:
+      '@babel/core': 7.28.5
+      ember-auto-import: 2.12.0(@glint/template@1.7.3)(webpack@5.103.0(esbuild@0.25.12))
+      ember-cli-babel: 8.3.1(@babel/core@7.28.5)
+      ember-source: 6.11.0-alpha.4(@glimmer/component@2.0.0)(rsvp@4.8.5)
+      tracked-built-ins: 4.1.0(@babel/core@7.28.5)
+    transitivePeerDependencies:
+      - '@glint/template'
+      - supports-color
+      - webpack
+
   ember-focus-trap@1.1.1(ember-source@6.11.0-alpha.4(@glimmer/component@2.0.0)(rsvp@4.8.5)):
     dependencies:
       '@embroider/addon-shim': link:packages/addon-shim
@@ -31475,6 +31499,15 @@ snapshots:
       punycode: 2.3.1
 
   tracked-built-ins@3.4.0(@babel/core@7.28.5):
+    dependencies:
+      '@embroider/addon-shim': link:packages/addon-shim
+      decorator-transforms: 2.3.0(@babel/core@7.28.5)
+      ember-tracked-storage-polyfill: 1.0.0
+    transitivePeerDependencies:
+      - '@babel/core'
+      - supports-color
+
+  tracked-built-ins@4.1.0(@babel/core@7.28.5):
     dependencies:
       '@embroider/addon-shim': link:packages/addon-shim
       decorator-transforms: 2.3.0(@babel/core@7.28.5)

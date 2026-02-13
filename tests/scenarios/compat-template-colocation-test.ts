@@ -23,6 +23,9 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
             <TemplateOnlyComponent />
           `,
       },
+      helpers: {
+        'renamed.js': 'export { default } from "ember-feature-flags/helpers/feature-flag"',
+      },
       components: {
         'has-colocated-template.js': `
           import Component from '@glimmer/component';
@@ -35,6 +38,9 @@ let scenarios = appScenarios.map('compat-template-colocation', app => {
       },
     },
   });
+
+  // A v1 addon with no hbs
+  app.linkDependency('ember-feature-flags', { baseDir: __dirname });
 
   let addon = baseAddon();
   addon.pkg.name = 'my-addon';

@@ -125,7 +125,7 @@ export default function main(context: typeof Babel): unknown {
             if (!result.confident) {
               throw error(
                 arg,
-                `setTesting() can only be called with a statically analyzable value in compile-time mode. The argument must be a literal boolean (true or false), not a variable or expression that can't be evaluated at build time.`
+                `setTesting() can only be called with a statically analyzable value in compile-time mode. The argument must be a literal boolean or other macro that can resolves to a boolean at compile-time.`
               );
             }
 

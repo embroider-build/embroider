@@ -16,6 +16,10 @@ describe(`setTesting macro`, function () {
 
       beforeEach(function () {
         macrosConfig = MacrosConfig.for({}, resolve(__dirname, '..', '..'));
+        macrosConfig.setOwnConfig(__dirname, {
+          valueTrue: true,
+          valueFalse: false,
+        });
         applyMode(macrosConfig);
         macrosConfig.finalize();
         run = makeRunner(transform);
@@ -43,6 +47,27 @@ describe(`setTesting macro`, function () {
         `);
         expect(code).toMatch(/from ['"].*runtime['"]/);
         expect(run(code)).toBe(true);
+      });
+
+      runTimeTest('setTesting: can be called with static config macro (no error)', () => {
+        let code = transform(`
+          import { setTesting, getOwnConfig } from '@embroider/macros';
+          export default function() {
+            setTesting(getOwnConfig().valueTrue);
+          }
+        `);
+        expect(code).toMatch(/from ['"].*runtime['"]/);
+      });
+
+      buildTimeTest('setTesting: removed with static config macro that matches global config', () => {
+        let code = transform(`
+          import { setTesting, getOwnConfig } from '@embroider/macros';
+          export default function() {
+            setTesting(getOwnConfig().valueFalse);
+          }
+        `);
+        expect(code).not.toMatch(/setTesting/);
+        expect(code).toMatch(/export default function \(\) \{\}/);
       });
 
       buildTimeTest('setTesting: removed in build-time mode when value matches global config', () => {

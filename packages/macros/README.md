@@ -251,6 +251,17 @@ if (macroCondition(isDevelopingApp())) {
 
 Note that these can be used in combination - e.g. if you run tests in the production environment, `isTesting()` will be true, but `isDevelopingApp()` will be false.
 
+#### setTesting
+
+To enable test-only code paths at runtime, you can use the `setTesting()` function. This is particularly useful in test setup files to control the behavior of the `isTesting()` macro in development builds.
+
+```js
+import { setTesting } from '@embroider/macros';
+
+// In your test setup file (e.g., test-helper.js):
+setTesting(true);
+```
+
 ## Glint usage
 If you are using [Glint](https://typed-ember.gitbook.io/glint/) and `environment-ember-loose`, you can add all the macros to your app at once by adding
 

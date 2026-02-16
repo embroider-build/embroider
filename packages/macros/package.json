@@ -15,10 +15,7 @@
   "author": "Edward Faulkner",
   "main": "src/index.js",
   "exports": {
-    ".": {
-      "browser": "./src/addon/runtime.js",
-      "default": "./src/index.js"
-    },
+    ".": "./src/index.js",
     "./babel": "./src/babel.js",
     "./src/*": "./src/*.js",
     "./src/*.js": "./src/*.js"

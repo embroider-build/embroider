@@ -7,4 +7,3 @@
 /tests/**/*.map
 !/src/vendor/*.js
 !/src/addon/*.js
-!/src/addon/runtime.d.ts

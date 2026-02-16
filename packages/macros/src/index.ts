@@ -59,7 +59,9 @@ export function isTesting(): boolean {
   throw new Oops();
 }
 
-export { setTesting } from './addon/runtime';
+export function setTesting(): boolean {
+  throw new Oops();
+}
 
 export function failBuild(message: string): void {
   throw new Oops(message);

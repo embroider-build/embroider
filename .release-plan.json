@@ -43,18 +43,18 @@
       "oldVersion": "1.3.5"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.5.1",
-      "newVersion": "1.5.2",
+      "impact": "minor",
+      "oldVersion": "1.5.2",
+      "newVersion": "1.6.0",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-02-07)\n\n* @embroider/vite 1.5.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2667](https://github.com/embroider-build/embroider/pull/2667) Fix the hbs filter ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-02-16)\n\n* @embroider/vite 1.6.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2668](https://github.com/embroider-build/embroider/pull/2668) Rolldown + Rollup :: better filtering ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

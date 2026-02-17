@@ -847,5 +847,24 @@ tsAppScenarios
           via: `node ${templateTagPath} --reusePrebuild  --renderTests ./tests/integration/components/example-test.js --routeTemplates false --components false`,
         });
       });
+
+      test('template compiler printer quoting bug', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `
+              <MessageBox @copyText='{{@crate.name}} = "{{@crate.default_version}}"' />
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+            import MessageBox from "./message-box.js";
+            <template>
+              <MessageBox @copyText='{{@crate.name}} = "{{@crate.default_version}}"' />
+            </template>
+            `,
+          },
+          via: 'npx template-tag-codemod  --renderTests false --routeTemplates false --components ./app/components/example.hbs',
+        });
+      });
     });
   });

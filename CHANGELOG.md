@@ -1,5 +1,49 @@
 # Embroider Changelog
 
+## Release (2026-02-07)
+
+* @embroider/vite 1.5.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2667](https://github.com/embroider-build/embroider/pull/2667) Fix the hbs filter ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2026-02-04)
+
+* @embroider/addon-dev 8.3.0 (minor)
+* @embroider/compat 4.1.13 (patch)
+* @embroider/core 4.4.3 (patch)
+* @embroider/macros 1.19.7 (patch)
+* @embroider/template-tag-codemod 1.3.5 (patch)
+* @embroider/vite 1.5.1 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`
+  * [#2651](https://github.com/embroider-build/embroider/pull/2651) Update addon-dev to support glint 1 and glint 2 and choose between them based on your available dependencies ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/template-tag-codemod`
+  * [#2656](https://github.com/embroider-build/embroider/pull/2656) Upgrade broccoli to ^4.0.0 and align Node requirements to >= 20.19.* ([@Copilot](https://github.com/apps/copilot-swe-agent))
+* `@embroider/vite`
+  * [#2664](https://github.com/embroider-build/embroider/pull/2664) Narrow gjsFilter to not include files that happen to have .gjs in their file name ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/macros`
+  * [#2665](https://github.com/embroider-build/embroider/pull/2665) widen the ember-cli-babel dependency range for macros ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* Other
+  * [#2666](https://github.com/embroider-build/embroider/pull/2666) upgrade release-plan ([@mansona](https://github.com/mansona))
+  * [#2653](https://github.com/embroider-build/embroider/pull/2653) Fix CI - content-tag whitespace ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/addon-dev`
+  * [#2652](https://github.com/embroider-build/embroider/pull/2652) Switch addon-dev to vitest ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Copilot [Bot] ([@copilot-swe-agent](https://github.com/apps/copilot-swe-agent))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2025-12-23)
 
 * @embroider/addon-dev 8.2.0 (minor)

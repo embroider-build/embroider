@@ -1,17 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "minor",
-      "oldVersion": "8.1.2",
-      "newVersion": "8.2.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "8.3.0"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.10.2"
@@ -23,37 +13,13 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.11",
-      "newVersion": "4.1.12",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.13"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.4.1",
-      "newVersion": "4.4.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.4.3"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -62,17 +28,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.19.5",
-      "newVersion": "1.19.6",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.19.7"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -81,9 +37,15 @@
       "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
+      "oldVersion": "3.0.2"
+    },
+    "@embroider/template-tag-codemod": {
+      "oldVersion": "1.3.5"
+    },
+    "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "3.0.1",
-      "newVersion": "3.0.2",
+      "oldVersion": "1.5.1",
+      "newVersion": "1.5.2",
       "tagName": "latest",
       "constraints": [
         {
@@ -91,28 +53,8 @@
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
-    },
-    "@embroider/template-tag-codemod": {
-      "oldVersion": "1.3.4"
-    },
-    "@embroider/vite": {
-      "impact": "minor",
-      "oldVersion": "1.4.4",
-      "newVersion": "1.5.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2025-12-23)\n\n* @embroider/addon-dev 8.2.0 (minor)\n* @embroider/compat 4.1.12 (patch)\n* @embroider/core 4.4.2 (patch)\n* @embroider/macros 1.19.6 (patch)\n* @embroider/shared-internals 3.0.2 (patch)\n* @embroider/vite 1.5.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`, `@embroider/vite`\n  * [#2650](https://github.com/embroider-build/embroider/pull/2650) Update content-tag to 4.1.0 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/shared-internals`\n  * [#2648](https://github.com/embroider-build/embroider/pull/2648) Fix dependency-aware macros in dummy apps ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-02-07)\n\n* @embroider/vite 1.5.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2667](https://github.com/embroider-build/embroider/pull/2667) Fix the hbs filter ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

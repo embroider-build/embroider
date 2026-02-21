@@ -1,6 +1,6 @@
 {
   "name": "@embroider/compat",
-  "version": "4.1.12",
+  "version": "4.1.13",
   "private": false,
   "description": "Backward compatibility layer for the Embroider build system.",
   "repository": {
@@ -43,7 +43,7 @@
     "babel-plugin-syntax-dynamic-import": "^6.18.0",
     "babylon": "^6.18.0",
     "bind-decorator": "^1.0.11",
-    "broccoli": "^3.5.2",
+    "broccoli": "^4.0.0",
     "broccoli-concat": "^4.2.5",
     "broccoli-file-creator": "^2.1.1",
     "broccoli-funnel": "^3.0.7",
@@ -99,6 +99,6 @@
     "@embroider/core": "workspace:^"
   },
   "engines": {
-    "node": "12.* || 14.* || >= 16"
+    "node": ">= 20.19.*"
   }
 }

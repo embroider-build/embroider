@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2026-02-24)
+
+* @embroider/compat 4.1.14 (patch)
+* @embroider/core 4.4.4 (patch)
+* @embroider/macros 1.20.0 (minor)
+* @embroider/vite 1.6.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/macros`
+  * [#2662](https://github.com/embroider-build/embroider/pull/2662) `setTesting()` from `@embroider/macros` ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/vite`
+  * [#2668](https://github.com/embroider-build/embroider/pull/2668) Rolldown + Rollup :: better filtering ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-02-07)
 
 * @embroider/vite 1.5.2 (patch)

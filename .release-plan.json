@@ -13,13 +13,33 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.13"
+      "impact": "patch",
+      "oldVersion": "4.1.13",
+      "newVersion": "4.1.14",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.4.3"
+      "impact": "patch",
+      "oldVersion": "4.4.3",
+      "newVersion": "4.4.4",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -28,7 +48,17 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.19.7"
+      "impact": "minor",
+      "oldVersion": "1.19.7",
+      "newVersion": "1.20.0",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -43,18 +73,22 @@
       "oldVersion": "1.3.5"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.5.1",
-      "newVersion": "1.5.2",
+      "impact": "minor",
+      "oldVersion": "1.5.2",
+      "newVersion": "1.6.0",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        },
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-02-07)\n\n* @embroider/vite 1.5.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2667](https://github.com/embroider-build/embroider/pull/2667) Fix the hbs filter ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-02-24)\n\n* @embroider/compat 4.1.14 (patch)\n* @embroider/core 4.4.4 (patch)\n* @embroider/macros 1.20.0 (minor)\n* @embroider/vite 1.6.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/macros`\n  * [#2662](https://github.com/embroider-build/embroider/pull/2662) `setTesting()` from `@embroider/macros` ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/vite`\n  * [#2668](https://github.com/embroider-build/embroider/pull/2668) Rolldown + Rollup :: better filtering ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

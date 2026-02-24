@@ -1,3 +1,5 @@
+import { setTesting } from '@embroider/macros';
+
 const ENV = {
   modulePrefix: 'app-template-minimal',
   environment: import.meta.env.DEV ? 'development' : 'production',
@@ -12,6 +14,8 @@ const ENV = {
 export default ENV;
 
 export function enterTestMode() {
+  setTesting(true);
+
   ENV.locationType = 'none';
   ENV.APP.rootElement = '#ember-testing';
   ENV.APP.autoboot = false;

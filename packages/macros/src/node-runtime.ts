@@ -73,8 +73,14 @@ export function isDevelopingApp(): boolean {
   return process.env['EMBER_ENV'] !== 'production';
 }
 
+let _isTesting = false;
+
 export function isTesting(): boolean {
-  return process.env['EMBER_ENV'] === 'test';
+  return _isTesting;
+}
+
+export function setTesting(value: boolean): void {
+  _isTesting = value;
 }
 
 export function failBuild(message: string, ...params: unknown[]): never {

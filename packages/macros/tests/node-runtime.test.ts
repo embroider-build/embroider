@@ -9,6 +9,7 @@ import {
   getGlobalConfig,
   isDevelopingApp,
   isTesting,
+  setTesting,
   failBuild,
   moduleExists,
 } from '../src/node-runtime';
@@ -97,30 +98,18 @@ describe(`node runtime`, function () {
     }
   });
 
-  test('isTesting returns false by default', function () {
-    let orig = process.env['EMBER_ENV'];
-    delete process.env['EMBER_ENV'];
-    try {
+  describe('isTesting + setTesting', function () {
+    test('isTesting returns false by default', function () {
       expect(isTesting()).toBe(false);
-    } finally {
-      if (orig !== undefined) {
-        process.env['EMBER_ENV'] = orig;
-      }
-    }
-  });
+    });
 
-  test('isTesting returns true when EMBER_ENV is test', function () {
-    let orig = process.env['EMBER_ENV'];
-    process.env['EMBER_ENV'] = 'test';
-    try {
+    test('isTesting can be toggled', function () {
+      setTesting(true);
       expect(isTesting()).toBe(true);
-    } finally {
-      if (orig === undefined) {
-        delete process.env['EMBER_ENV'];
-      } else {
-        process.env['EMBER_ENV'] = orig;
-      }
-    }
+
+      setTesting(false);
+      expect(isTesting()).toBe(false);
+    });
   });
 
   test('failBuild throws an error with the message', function () {

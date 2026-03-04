@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2026-03-04)
+
+* @embroider/compat 4.1.15 (patch)
+* @embroider/core 4.4.5 (patch)
+* @embroider/macros 1.20.1 (patch)
+* @embroider/vite 1.6.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2680](https://github.com/embroider-build/embroider/pull/2680) Fix types for setTesting ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-02-24)
 
 * @embroider/compat 4.1.14 (patch)

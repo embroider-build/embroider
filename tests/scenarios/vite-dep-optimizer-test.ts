@@ -1,4 +1,4 @@
-import { appScenarios, baseAddon } from './scenarios';
+import { appScenarios, baseAddon, baseV2Addon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import CommandWatcher from './helpers/command-watcher';
@@ -35,6 +35,42 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
     },
   });
   project.addDevDependency(myServicesAddon);
+
+  // Regression test for https://github.com/embroider-build/embroider/issues/2660:
+  // A v2 addon that uses @embroider/macros (simulating a separate-repo addon) should
+  // have @embroider/macros dep-optimized so there is only a single runtime instance.
+  let macrosAddon = baseV2Addon();
+  macrosAddon.pkg.name = 'my-macros-addon';
+  macrosAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
+  macrosAddon.mergeFiles({
+    'is-testing.js': `
+      import { isTesting } from '@embroider/macros';
+      export function getIsTestingResult() { return isTesting(); }
+    `,
+  });
+  project.addDevDependency(macrosAddon);
+  project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
+
+  project.mergeFiles({
+    tests: {
+      unit: {
+        'macros-addon-test.js': `
+          import { module, test } from 'qunit';
+          import { getIsTestingResult } from 'my-macros-addon/is-testing';
+
+          module('macros isTesting in v2 addon (regression test for #2660)', function() {
+            test('isTesting() returns true in a v2 addon when running tests', function(assert) {
+              assert.strictEqual(
+                getIsTestingResult(),
+                true,
+                'isTesting() should return true in v2 addon code when running tests'
+              );
+            });
+          });
+        `,
+      },
+    },
+  });
 });
 
 async function rerunUntilReady(expectAudit: ReturnType<typeof setupAuditTest>) {
@@ -148,7 +184,7 @@ app.forEachScenario(scenario => {
       });
 
       test('all deps are optimized', function (assert) {
-        const allow = ['vite/dist/client/env.mjs', '@babel+runtime', '.css', '@embroider/macros'];
+        const allow = ['vite/dist/client/env.mjs', '@babel+runtime', '.css'];
         const notOptimized = Object.keys(expectAudit.modules).filter(m => {
           const isOptimized = m.includes('.vite/deps');
           if (!isOptimized) {
@@ -159,6 +195,19 @@ app.forEachScenario(scenario => {
           return false;
         });
         assert.ok(notOptimized.length === 0, `not all are optimized: ${notOptimized}`);
+      });
+
+      // Regression test for https://github.com/embroider-build/embroider/issues/2660
+      test('@embroider/macros is dep-optimized (not excluded from dep optimization)', function (assert) {
+        const macrosModules = Object.keys(expectAudit.modules).filter(
+          m => m.includes('@embroider/macros') || m.includes('@embroider+macros')
+        );
+        assert.ok(macrosModules.length > 0, 'should have @embroider/macros in module graph');
+        const notOptimized = macrosModules.filter(m => !m.includes('.vite/deps'));
+        assert.ok(
+          notOptimized.length === 0,
+          `@embroider/macros should be dep-optimized so there is a single runtime instance, but these are not: ${notOptimized}`
+        );
       });
 
       test('should use optimized files for deps', function (assert) {

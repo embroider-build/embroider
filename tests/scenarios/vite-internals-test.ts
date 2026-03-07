@@ -1,4 +1,4 @@
-import { baseAddon, tsAppScenarios } from './scenarios';
+import { baseAddon, baseV2Addon, tsAppScenarios } from './scenarios';
 import type { PreparedApp, Project, Scenario, Scenarios } from 'scenario-tester';
 import QUnit from 'qunit';
 import fetch from 'node-fetch';
@@ -321,6 +321,43 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
     },
   });
   app.addDevDependency(v1ExampleAddon);
+
+  // Regression test for https://github.com/embroider-build/embroider/issues/2660:
+  // a v2 addon using @embroider/macros (simulating a separate-repo addon) must share
+  // the same @embroider/macros runtime instance as the host app so that isTesting()
+  // returns the correct value.
+  let v2MacrosAddon = baseV2Addon();
+  v2MacrosAddon.pkg.name = 'v2-macros-addon';
+  v2MacrosAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
+  v2MacrosAddon.mergeFiles({
+    'is-testing.js': `
+      import { isTesting } from '@embroider/macros';
+      export function getIsTestingResult() { return isTesting(); }
+    `,
+  });
+  app.addDevDependency(v2MacrosAddon);
+  app.linkDevDependency('@embroider/macros', { baseDir: __dirname });
+
+  app.mergeFiles({
+    tests: {
+      unit: {
+        'macros-v2-addon-test.js': `
+          import { module, test } from 'qunit';
+          import { getIsTestingResult } from 'v2-macros-addon/is-testing';
+
+          module('macros isTesting in v2 addon (regression test for #2660)', function() {
+            test('isTesting() returns true in a v2 addon when running tests via vite dev', function(assert) {
+              assert.strictEqual(
+                getIsTestingResult(),
+                true,
+                'isTesting() should return true in v2 addon code when running tests'
+              );
+            });
+          });
+        `,
+      },
+    },
+  });
 
   let babelPlugin = app.addDevDependency('babel-plugin-is-a-module', {
     files: {

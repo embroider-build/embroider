@@ -340,7 +340,10 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
     `,
   });
 
-  // addon-2: the consuming addon that depends on addon-1 and also uses isTesting() itself
+  // addon-2: the consuming addon that depends on addon-1 and also uses isTesting() itself.
+  // It re-exports addon-1's function so that the test can import both without needing
+  // addon-1 as a direct dependency of the app (strict node_modules resolution requires
+  // every imported package to be declared in the importer's package.json).
   let v2MacrosAddon2 = baseV2Addon();
   v2MacrosAddon2.pkg.name = 'v2-macros-addon-2';
   v2MacrosAddon2.linkDependency('@embroider/macros', { baseDir: __dirname });
@@ -348,6 +351,7 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
   v2MacrosAddon2.mergeFiles({
     'is-testing.js': `
       import { isTesting } from '@embroider/macros';
+      export { getIsTestingFromAddon1 } from 'v2-macros-addon-1/is-testing';
       export function getIsTestingFromAddon2() { return isTesting(); }
     `,
   });
@@ -360,8 +364,7 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
       unit: {
         'macros-v2-addon-test.js': `
           import { module, test } from 'qunit';
-          import { getIsTestingFromAddon1 } from 'v2-macros-addon-1/is-testing';
-          import { getIsTestingFromAddon2 } from 'v2-macros-addon-2/is-testing';
+          import { getIsTestingFromAddon1, getIsTestingFromAddon2 } from 'v2-macros-addon-2/is-testing';
 
           module('macros isTesting in v2 addons (regression test for #2660)', function() {
             test('isTesting() in the consumed v2 addon (addon-1) returns true when running tests', function(assert) {

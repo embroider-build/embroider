@@ -52,7 +52,10 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
     `,
   });
 
-  // addon-2: the consuming addon that depends on addon-1 and also uses @embroider/macros itself
+  // addon-2: the consuming addon that depends on addon-1 and also uses @embroider/macros itself.
+  // It re-exports addon-1's function so that the test can import both without needing
+  // addon-1 as a direct dependency of the app (strict node_modules resolution requires
+  // every imported package to be declared in the importer's package.json).
   let macrosAddon2 = baseV2Addon();
   macrosAddon2.pkg.name = 'my-macros-addon-2';
   macrosAddon2.linkDependency('@embroider/macros', { baseDir: __dirname });
@@ -60,6 +63,7 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
   macrosAddon2.mergeFiles({
     'is-testing.js': `
       import { isTesting } from '@embroider/macros';
+      export { getIsTestingFromAddon1 } from 'my-macros-addon-1/is-testing';
       export function getIsTestingFromAddon2() { return isTesting(); }
     `,
   });
@@ -72,8 +76,7 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
       unit: {
         'macros-addon-test.js': `
           import { module, test } from 'qunit';
-          import { getIsTestingFromAddon1 } from 'my-macros-addon-1/is-testing';
-          import { getIsTestingFromAddon2 } from 'my-macros-addon-2/is-testing';
+          import { getIsTestingFromAddon1, getIsTestingFromAddon2 } from 'my-macros-addon-2/is-testing';
 
           module('macros isTesting in v2 addons (regression test for #2660)', function() {
             test('isTesting() in consumed v2 addon (addon-1) returns true', function(assert) {

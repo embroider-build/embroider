@@ -37,18 +37,34 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
   project.addDevDependency(myServicesAddon);
 
   // Regression test for https://github.com/embroider-build/embroider/issues/2660:
-  // A v2 addon that uses @embroider/macros (simulating a separate-repo addon) should
-  // have @embroider/macros dep-optimized so there is only a single runtime instance.
-  let macrosAddon = baseV2Addon();
-  macrosAddon.pkg.name = 'my-macros-addon';
-  macrosAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
-  macrosAddon.mergeFiles({
+  // The bug occurs when two v2 addons both use @embroider/macros and one consumes the other
+  // (simulating separate-repo addons). @embroider/macros must be dep-optimized so there is
+  // only a single runtime instance shared across all addons.
+  //
+  // addon-1: the consumed addon (simulating a separate-repo v2 addon with its own @embroider/macros)
+  let macrosAddon1 = baseV2Addon();
+  macrosAddon1.pkg.name = 'my-macros-addon-1';
+  macrosAddon1.linkDependency('@embroider/macros', { baseDir: __dirname });
+  macrosAddon1.mergeFiles({
     'is-testing.js': `
       import { isTesting } from '@embroider/macros';
-      export function getIsTestingResult() { return isTesting(); }
+      export function getIsTestingFromAddon1() { return isTesting(); }
     `,
   });
-  project.addDevDependency(macrosAddon);
+
+  // addon-2: the consuming addon that depends on addon-1 and also uses @embroider/macros itself
+  let macrosAddon2 = baseV2Addon();
+  macrosAddon2.pkg.name = 'my-macros-addon-2';
+  macrosAddon2.linkDependency('@embroider/macros', { baseDir: __dirname });
+  macrosAddon2.addDependency(macrosAddon1);
+  macrosAddon2.mergeFiles({
+    'is-testing.js': `
+      import { isTesting } from '@embroider/macros';
+      export function getIsTestingFromAddon2() { return isTesting(); }
+    `,
+  });
+
+  project.addDevDependency(macrosAddon2);
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
   project.mergeFiles({
@@ -56,14 +72,22 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
       unit: {
         'macros-addon-test.js': `
           import { module, test } from 'qunit';
-          import { getIsTestingResult } from 'my-macros-addon/is-testing';
+          import { getIsTestingFromAddon1 } from 'my-macros-addon-1/is-testing';
+          import { getIsTestingFromAddon2 } from 'my-macros-addon-2/is-testing';
 
-          module('macros isTesting in v2 addon (regression test for #2660)', function() {
-            test('isTesting() returns true in a v2 addon when running tests', function(assert) {
+          module('macros isTesting in v2 addons (regression test for #2660)', function() {
+            test('isTesting() in consumed v2 addon (addon-1) returns true', function(assert) {
               assert.strictEqual(
-                getIsTestingResult(),
+                getIsTestingFromAddon1(),
                 true,
-                'isTesting() should return true in v2 addon code when running tests'
+                'isTesting() in addon-1 (consumed by addon-2) should return true - before the fix this was false'
+              );
+            });
+            test('isTesting() in consuming v2 addon (addon-2) returns true', function(assert) {
+              assert.strictEqual(
+                getIsTestingFromAddon2(),
+                true,
+                'isTesting() in addon-2 should return true'
               );
             });
           });

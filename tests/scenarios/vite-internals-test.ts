@@ -323,19 +323,36 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
   app.addDevDependency(v1ExampleAddon);
 
   // Regression test for https://github.com/embroider-build/embroider/issues/2660:
-  // a v2 addon using @embroider/macros (simulating a separate-repo addon) must share
-  // the same @embroider/macros runtime instance as the host app so that isTesting()
-  // returns the correct value.
-  let v2MacrosAddon = baseV2Addon();
-  v2MacrosAddon.pkg.name = 'v2-macros-addon';
-  v2MacrosAddon.linkDependency('@embroider/macros', { baseDir: __dirname });
-  v2MacrosAddon.mergeFiles({
+  // The bug occurs when two v2 addons both use @embroider/macros, one consuming the other
+  // (simulating separate-repo addons). Before the fix, @embroider/macros was excluded from
+  // Vite's dep optimization, so addon-1 got its own runtime.js instance separate from addon-2's.
+  // Calling setTesting(true) in one instance had no effect on the other, so isTesting() in
+  // addon-1 would return false even while tests were running.
+  //
+  // addon-1: the consumed separate-repo addon that uses isTesting()
+  let v2MacrosAddon1 = baseV2Addon();
+  v2MacrosAddon1.pkg.name = 'v2-macros-addon-1';
+  v2MacrosAddon1.linkDependency('@embroider/macros', { baseDir: __dirname });
+  v2MacrosAddon1.mergeFiles({
     'is-testing.js': `
       import { isTesting } from '@embroider/macros';
-      export function getIsTestingResult() { return isTesting(); }
+      export function getIsTestingFromAddon1() { return isTesting(); }
     `,
   });
-  app.addDevDependency(v2MacrosAddon);
+
+  // addon-2: the consuming addon that depends on addon-1 and also uses isTesting() itself
+  let v2MacrosAddon2 = baseV2Addon();
+  v2MacrosAddon2.pkg.name = 'v2-macros-addon-2';
+  v2MacrosAddon2.linkDependency('@embroider/macros', { baseDir: __dirname });
+  v2MacrosAddon2.addDependency(v2MacrosAddon1);
+  v2MacrosAddon2.mergeFiles({
+    'is-testing.js': `
+      import { isTesting } from '@embroider/macros';
+      export function getIsTestingFromAddon2() { return isTesting(); }
+    `,
+  });
+
+  app.addDevDependency(v2MacrosAddon2);
   app.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
   app.mergeFiles({
@@ -343,14 +360,22 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
       unit: {
         'macros-v2-addon-test.js': `
           import { module, test } from 'qunit';
-          import { getIsTestingResult } from 'v2-macros-addon/is-testing';
+          import { getIsTestingFromAddon1 } from 'v2-macros-addon-1/is-testing';
+          import { getIsTestingFromAddon2 } from 'v2-macros-addon-2/is-testing';
 
-          module('macros isTesting in v2 addon (regression test for #2660)', function() {
-            test('isTesting() returns true in a v2 addon when running tests via vite dev', function(assert) {
+          module('macros isTesting in v2 addons (regression test for #2660)', function() {
+            test('isTesting() in the consumed v2 addon (addon-1) returns true when running tests', function(assert) {
               assert.strictEqual(
-                getIsTestingResult(),
+                getIsTestingFromAddon1(),
                 true,
-                'isTesting() should return true in v2 addon code when running tests'
+                'isTesting() in addon-1 (consumed by addon-2) should return true - before the fix this was false'
+              );
+            });
+            test('isTesting() in the consuming v2 addon (addon-2) returns true when running tests', function(assert) {
+              assert.strictEqual(
+                getIsTestingFromAddon2(),
+                true,
+                'isTesting() in addon-2 should return true'
               );
             });
           });

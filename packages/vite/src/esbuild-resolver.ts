@@ -86,28 +86,36 @@ export function esBuildResolver(): EsBuildPlugin {
         // below, because esbuild calls onResolve hooks in registration order and
         // the Embroider Resolver uses filter /./ which would otherwise win first.
         // See https://github.com/embroider-build/embroider/issues/2660
-        build.onResolve({ filter: /[/\\]runtime(\.js)?$/ }, ({ path, resolveDir, importer }) => {
-          if (!path.startsWith('.') && !path.startsWith('/')) {
-            return null; // bare specifier – handled elsewhere
+        build.onResolve(
+          { filter: /[/\\]macros[/\\]src[/\\]addon[/\\]runtime(\.js)?$/ },
+          ({ path, resolveDir, importer }) => {
+            if (!path.startsWith('.') && !path.startsWith('/')) {
+              return null; // bare specifier – handled elsewhere
+            }
+            const base = resolveDir || (importer ? dirname(importer) : undefined);
+            if (!base) return null;
+            const absolutePath = resolve(base, path);
+            const withoutExt = absolutePath.replace(/\.js$/, '');
+            if (/[/\\]macros[/\\]src[/\\]addon[/\\]runtime$/.test(withoutExt)) {
+              // Use a root-relative path so Vite's dev server always serves this
+              // file at the same URL regardless of which dep bundle references it.
+              // This avoids the ?v=hash URL divergence that causes duplicate
+              // runtime instances. See https://github.com/embroider-build/embroider/issues/2660
+              const absoluteWithExt = withoutExt + '.js';
+              const cwd = process.cwd();
+              if (!absoluteWithExt.startsWith(cwd)) {
+                // The macros runtime is outside the project root (unusual edge case,
+                // e.g. a workspace with a parent-level install). Skip the external
+                // marking and let esbuild handle it normally rather than emit a
+                // path that the browser cannot reach.
+                return null;
+              }
+              const rootRelative = absoluteWithExt.slice(cwd.length).replace(/\\/g, '/');
+              return { path: rootRelative, external: true };
+            }
+            return null;
           }
-          const base = resolveDir || (importer ? dirname(importer) : undefined);
-          if (!base) return null;
-          const absolutePath = resolve(base, path);
-          const withoutExt = absolutePath.replace(/\.js$/, '');
-          if (/[/\\]macros[/\\]src[/\\]addon[/\\]runtime$/.test(withoutExt)) {
-            // Use a root-relative path so Vite's dev server always serves this
-            // file at the same URL regardless of which dep bundle references it.
-            // This avoids the ?v=hash URL divergence that causes duplicate
-            // runtime instances. See https://github.com/embroider-build/embroider/issues/2660
-            const absoluteWithExt = withoutExt + '.js';
-            const cwd = process.cwd();
-            const rootRelative = absoluteWithExt.startsWith(cwd)
-              ? absoluteWithExt.slice(cwd.length).replace(/\\/g, '/')
-              : '/node_modules/@embroider/macros/src/addon/runtime.js';
-            return { path: rootRelative, external: true };
-          }
-          return null;
-        });
+        );
       }
 
       // Embroider Resolver

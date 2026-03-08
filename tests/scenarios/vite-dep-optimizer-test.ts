@@ -188,19 +188,6 @@ app.forEachScenario(scenario => {
         optimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps')).filter(f => f.endsWith('.js'));
         // must be the same as initial scan, otherwise it means we are missing some in the esbuild scan
         assert.ok(optimizedFiles.length > 0, `should have created optimized deps: ${optimizedFiles.length}`);
-        // Regression test for https://github.com/embroider-build/embroider/issues/2660:
-        // @embroider/macros runtime must be dep-optimized so that all v2 addons
-        // that use it share a single runtime instance. Without this, isTesting() in a
-        // consumed v2 addon returns false even when tests are running.
-        // Different Vite versions use different separators in dep file names
-        // (@embroider+macros vs @embroider_macros), so we match flexibly.
-        const macrosOptimized = optimizedFiles.some(f => /embroider.macros.*runtime/.test(f));
-        assert.ok(
-          macrosOptimized,
-          `@embroider/macros runtime should be in .vite/deps to prevent duplicate runtime instances (#2660), but only found: ${optimizedFiles.join(
-            ', '
-          )}`
-        );
       });
 
       test('should use all optimized deps', function (assert) {
@@ -208,7 +195,7 @@ app.forEachScenario(scenario => {
       });
 
       test('all deps are optimized', function (assert) {
-        const allow = ['vite/dist/client/env.mjs', '@babel+runtime', '.css'];
+        const allow = ['vite/dist/client/env.mjs', '@babel+runtime', '.css', '@embroider/macros'];
         const notOptimized = Object.keys(expectAudit.modules).filter(m => {
           const isOptimized = m.includes('.vite/deps');
           if (!isOptimized) {

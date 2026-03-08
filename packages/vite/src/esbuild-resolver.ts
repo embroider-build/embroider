@@ -67,6 +67,49 @@ export function esBuildResolver(): EsBuildPlugin {
         backChannel = new BackChannel();
       }
 
+      if (phase === 'bundling') {
+        // When the @embroider/macros babel plugin rewrites
+        // `import { isTesting } from '@embroider/macros'` it emits a relative
+        // file path pointing at runtime.js.  If we let esbuild resolve that
+        // relative path normally it will *inline* runtime.js into every dep
+        // bundle, giving each bundle its own runtimeConfig object.  Calling
+        // setTesting() in one context then has no effect on another, so
+        // isTesting() in a consumed v2 addon returns the wrong value.
+        //
+        // By marking the resolved file as external with its root-relative path
+        // (e.g. /node_modules/@embroider/macros/src/addon/runtime.js), esbuild
+        // leaves an `import` statement in the bundle output.  Vite's dev server
+        // then serves ALL references to that path from the same URL, so every
+        // dep bundle and the app code share one module instance.
+        //
+        // IMPORTANT: this hook must be registered BEFORE the Embroider Resolver
+        // below, because esbuild calls onResolve hooks in registration order and
+        // the Embroider Resolver uses filter /./ which would otherwise win first.
+        // See https://github.com/embroider-build/embroider/issues/2660
+        build.onResolve({ filter: /[/\\]runtime(\.js)?$/ }, ({ path, resolveDir, importer }) => {
+          if (!path.startsWith('.') && !path.startsWith('/')) {
+            return null; // bare specifier – handled elsewhere
+          }
+          const base = resolveDir || (importer ? dirname(importer) : undefined);
+          if (!base) return null;
+          const absolutePath = resolve(base, path);
+          const withoutExt = absolutePath.replace(/\.js$/, '');
+          if (/[/\\]macros[/\\]src[/\\]addon[/\\]runtime$/.test(withoutExt)) {
+            // Use a root-relative path so Vite's dev server always serves this
+            // file at the same URL regardless of which dep bundle references it.
+            // This avoids the ?v=hash URL divergence that causes duplicate
+            // runtime instances. See https://github.com/embroider-build/embroider/issues/2660
+            const absoluteWithExt = withoutExt + '.js';
+            const cwd = process.cwd();
+            const rootRelative = absoluteWithExt.startsWith(cwd)
+              ? absoluteWithExt.slice(cwd.length).replace(/\\/g, '/')
+              : '/node_modules/@embroider/macros/src/addon/runtime.js';
+            return { path: rootRelative, external: true };
+          }
+          return null;
+        });
+      }
+
       // Embroider Resolver
       build.onResolve({ filter: /./ }, async ({ path, importer, pluginData, kind }) => {
         let request = ModuleRequest.create(EsBuildRequestAdapter.create, {
@@ -94,33 +137,6 @@ export function esBuildResolver(): EsBuildPlugin {
       });
 
       if (phase === 'bundling') {
-        // When the @embroider/macros babel plugin rewrites
-        // `import { isTesting } from '@embroider/macros'` it emits a relative
-        // file path pointing at runtime.js.  If we let esbuild resolve that
-        // relative path normally it will *inline* runtime.js into every dep
-        // bundle, giving each bundle its own runtimeConfig object.  Calling
-        // setTesting() in one context then has no effect on another, so
-        // isTesting() in a consumed v2 addon returns the wrong value.
-        //
-        // By marking the resolved file as external (with the canonical bare
-        // specifier), esbuild leaves an `import` statement in the bundle
-        // output.  Vite's importAnalysis plugin then rewrites that bare
-        // specifier to the single pre-bundled copy produced by
-        // optimizeDeps.include, so all code shares one module instance.
-        // See https://github.com/embroider-build/embroider/issues/2660
-        build.onResolve({ filter: /[/\\]runtime(\.js)?$/ }, ({ path, resolveDir, importer }) => {
-          if (!path.startsWith('.') && !path.startsWith('/')) {
-            return null; // bare specifier – handled elsewhere
-          }
-          const base = resolveDir || (importer ? dirname(importer) : undefined);
-          if (!base) return null;
-          const resolved = resolve(base, path).replace(/\.js$/, '');
-          if (/[/\\]macros[/\\]src[/\\]addon[/\\]runtime$/.test(resolved)) {
-            return { path: '@embroider/macros/src/addon/runtime', external: true };
-          }
-          return null;
-        });
-
         // during bundling phase, we need to provide our own extension
         // searching. We do it here in its own resolve plugin so that it's
         // sitting beneath the embroider resolver since it expects the ambient

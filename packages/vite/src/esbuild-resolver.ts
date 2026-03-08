@@ -8,12 +8,33 @@ import { EsBuildRequestAdapter } from './esbuild-request.js';
 import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
-import { extname, resolve, dirname } from 'path';
+import { extname, join } from 'path';
 import { BackChannel } from './backchannel.js';
+import { createRequire } from 'node:module';
 
 export function esBuildResolver(): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let preprocessor = new Preprocessor();
+
+  // Cache the canonical runtime.js path for this plugin instance.
+  // We use createRequire from the app's cwd so that Node.js resolves the
+  // exports field of @embroider/macros correctly on all platforms.
+  let _canonicalRuntimePath: string | null | undefined = undefined;
+  function getCanonicalRuntimePath(): string | null {
+    if (_canonicalRuntimePath !== undefined) {
+      return _canonicalRuntimePath;
+    }
+    try {
+      // createRequire needs an absolute path filename as context for resolution.
+      // We use a non-existent file in cwd; only the directory matters for Node's
+      // resolution algorithm.
+      const req = createRequire(join(process.cwd(), 'package.json'));
+      _canonicalRuntimePath = req.resolve('@embroider/macros/src/addon/runtime');
+    } catch {
+      _canonicalRuntimePath = null;
+    }
+    return _canonicalRuntimePath;
+  }
 
   async function transformAndAssert(src: string, filename: string): Promise<string> {
     const result = await transformAsync(src, { filename });
@@ -76,12 +97,11 @@ export function esBuildResolver(): EsBuildPlugin {
         // setTesting() in one context then has no effect on another, so
         // isTesting() in a consumed v2 addon returns the wrong value.
         //
-        // By marking the resolved file external with the canonical bare
-        // specifier '@embroider/macros/src/addon/runtime', esbuild leaves an
-        // `import` statement in the bundle output.  Vite's importAnalysis
-        // plugin then rewrites ALL bare-specifier references (both from dep
-        // bundles and from app files) to the same canonical URL, so every
-        // dep bundle and the app code share one module instance.
+        // By redirecting ALL relative runtime.js imports to the single canonical
+        // absolute path (from the top-level @embroider/macros installation),
+        // esbuild sees them as the same module and extracts it into one shared
+        // chunk.  Every dep bundle then imports from that shared chunk, so they
+        // all share a single runtimeConfig object at runtime.
         //
         // IMPORTANT: this hook must be registered BEFORE the Embroider Resolver
         // below, because esbuild calls onResolve hooks in registration order and
@@ -89,20 +109,16 @@ export function esBuildResolver(): EsBuildPlugin {
         // See https://github.com/embroider-build/embroider/issues/2660
         build.onResolve(
           { filter: /[/\\]macros[/\\]src[/\\]addon[/\\]runtime(\.js)?$/ },
-          ({ path, resolveDir, importer }) => {
-            if (!path.startsWith('.') && !path.startsWith('/')) {
-              return null; // bare specifier – handled elsewhere
+          ({ path }) => {
+            if (!path.startsWith('.')) {
+              // Not a relative import (bare specifier or absolute path) – skip
+              return null;
             }
-            const base = resolveDir || (importer ? dirname(importer) : undefined);
-            if (!base) return null;
-            const absolutePath = resolve(base, path);
-            const withoutExt = absolutePath.replace(/\.js$/, '');
-            if (/[/\\]macros[/\\]src[/\\]addon[/\\]runtime$/.test(withoutExt)) {
-              // Redirect to the canonical bare specifier so that Vite's
-              // importAnalysis resolves all references to the same URL,
-              // regardless of which copy of @embroider/macros was installed
-              // (top-level vs. nested in a v2 addon's node_modules).
-              return { path: '@embroider/macros/src/addon/runtime', external: true };
+            const canonical = getCanonicalRuntimePath();
+            if (canonical) {
+              // Redirect every relative runtime.js import to the canonical
+              // absolute path so esbuild deduplicates it into one shared chunk.
+              return { path: canonical };
             }
             return null;
           }

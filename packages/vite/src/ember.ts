@@ -58,24 +58,6 @@ export function ember(params?: {
           }
         }
 
-        // The @embroider/macros babel plugin rewrites bare `@embroider/macros`
-        // imports to relative file paths pointing at runtime.js.  If esbuild
-        // follows those relative paths it inlines runtime.js into every dep
-        // bundle, giving each bundle its own isolated runtimeConfig object.
-        // Our esbuild hook (in esbuild-resolver.ts) marks those relative paths
-        // external with the bare specifier '@embroider/macros/src/addon/runtime'.
-        // Pre-bundling that specifier here ensures Vite has a single stable
-        // '.vite/deps/' entry for it; importAnalysis then redirects every dep
-        // bundle's reference to that shared URL rather than trying to resolve
-        // the bare specifier at serve time (which can fail on Windows).
-        // See https://github.com/embroider-build/embroider/issues/2660
-        if (!config.optimizeDeps.include) {
-          config.optimizeDeps.include = [];
-        }
-        if (!config.optimizeDeps.include.includes('@embroider/macros/src/addon/runtime')) {
-          config.optimizeDeps.include.push('@embroider/macros/src/addon/runtime');
-        }
-
         // @ts-expect-error the types aren't finished yet it would seem
         if (this?.meta?.rolldownVersion) {
           // configure our embroider resolver for optimize deps

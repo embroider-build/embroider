@@ -76,10 +76,11 @@ export function esBuildResolver(): EsBuildPlugin {
         // setTesting() in one context then has no effect on another, so
         // isTesting() in a consumed v2 addon returns the wrong value.
         //
-        // By marking the resolved file as external with its root-relative path
-        // (e.g. /node_modules/@embroider/macros/src/addon/runtime.js), esbuild
-        // leaves an `import` statement in the bundle output.  Vite's dev server
-        // then serves ALL references to that path from the same URL, so every
+        // By marking the resolved file external with the canonical bare
+        // specifier '@embroider/macros/src/addon/runtime', esbuild leaves an
+        // `import` statement in the bundle output.  Vite's importAnalysis
+        // plugin then rewrites ALL bare-specifier references (both from dep
+        // bundles and from app files) to the same canonical URL, so every
         // dep bundle and the app code share one module instance.
         //
         // IMPORTANT: this hook must be registered BEFORE the Embroider Resolver
@@ -97,21 +98,11 @@ export function esBuildResolver(): EsBuildPlugin {
             const absolutePath = resolve(base, path);
             const withoutExt = absolutePath.replace(/\.js$/, '');
             if (/[/\\]macros[/\\]src[/\\]addon[/\\]runtime$/.test(withoutExt)) {
-              // Use a root-relative path so Vite's dev server always serves this
-              // file at the same URL regardless of which dep bundle references it.
-              // This avoids the ?v=hash URL divergence that causes duplicate
-              // runtime instances. See https://github.com/embroider-build/embroider/issues/2660
-              const absoluteWithExt = withoutExt + '.js';
-              const cwd = process.cwd();
-              if (!absoluteWithExt.startsWith(cwd)) {
-                // The macros runtime is outside the project root (unusual edge case,
-                // e.g. a workspace with a parent-level install). Skip the external
-                // marking and let esbuild handle it normally rather than emit a
-                // path that the browser cannot reach.
-                return null;
-              }
-              const rootRelative = absoluteWithExt.slice(cwd.length).replace(/\\/g, '/');
-              return { path: rootRelative, external: true };
+              // Redirect to the canonical bare specifier so that Vite's
+              // importAnalysis resolves all references to the same URL,
+              // regardless of which copy of @embroider/macros was installed
+              // (top-level vs. nested in a v2 addon's node_modules).
+              return { path: '@embroider/macros/src/addon/runtime', external: true };
             }
             return null;
           }

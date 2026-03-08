@@ -58,6 +58,20 @@ export function ember(params?: {
           }
         }
 
+        // Ensure @embroider/macros/src/addon/runtime is always pre-bundled so that
+        // all imports (from the app and from v2 addons) resolve to the same single
+        // module instance. Without this, the @embroider/macros babel plugin rewrites
+        // imports to relative file paths before the dep scanner records them as bare
+        // package imports, which can leave runtime.js un-pre-bundled and result in
+        // duplicate instances when a v2 addon from a separate repo is consumed. See
+        // https://github.com/embroider-build/embroider/issues/2660
+        if (!config.optimizeDeps.include) {
+          config.optimizeDeps.include = [];
+        }
+        if (!config.optimizeDeps.include.includes('@embroider/macros/src/addon/runtime')) {
+          config.optimizeDeps.include.push('@embroider/macros/src/addon/runtime');
+        }
+
         // @ts-expect-error the types aren't finished yet it would seem
         if (this?.meta?.rolldownVersion) {
           // configure our embroider resolver for optimize deps

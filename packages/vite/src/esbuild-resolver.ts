@@ -8,7 +8,7 @@ import { EsBuildRequestAdapter } from './esbuild-request.js';
 import { assertNever } from 'assert-never';
 import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
-import { extname } from 'path';
+import { extname, resolve, dirname } from 'path';
 import { BackChannel } from './backchannel.js';
 
 export function esBuildResolver(): EsBuildPlugin {
@@ -94,6 +94,33 @@ export function esBuildResolver(): EsBuildPlugin {
       });
 
       if (phase === 'bundling') {
+        // When the @embroider/macros babel plugin rewrites
+        // `import { isTesting } from '@embroider/macros'` it emits a relative
+        // file path pointing at runtime.js.  If we let esbuild resolve that
+        // relative path normally it will *inline* runtime.js into every dep
+        // bundle, giving each bundle its own runtimeConfig object.  Calling
+        // setTesting() in one context then has no effect on another, so
+        // isTesting() in a consumed v2 addon returns the wrong value.
+        //
+        // By marking the resolved file as external (with the canonical bare
+        // specifier), esbuild leaves an `import` statement in the bundle
+        // output.  Vite's importAnalysis plugin then rewrites that bare
+        // specifier to the single pre-bundled copy produced by
+        // optimizeDeps.include, so all code shares one module instance.
+        // See https://github.com/embroider-build/embroider/issues/2660
+        build.onResolve({ filter: /runtime/ }, ({ path, resolveDir, importer }) => {
+          if (!path.startsWith('.') && !path.startsWith('/')) {
+            return null; // bare specifier – handled elsewhere
+          }
+          const base = resolveDir || (importer ? dirname(importer) : undefined);
+          if (!base) return null;
+          const resolved = resolve(base, path).replace(/\.js$/, '');
+          if (/[/\\]macros[/\\]src[/\\]addon[/\\]runtime$/.test(resolved)) {
+            return { path: '@embroider/macros/src/addon/runtime', external: true };
+          }
+          return null;
+        });
+
         // during bundling phase, we need to provide our own extension
         // searching. We do it here in its own resolve plugin so that it's
         // sitting beneath the embroider resolver since it expects the ambient

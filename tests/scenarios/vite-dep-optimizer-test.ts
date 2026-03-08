@@ -189,15 +189,17 @@ app.forEachScenario(scenario => {
         // must be the same as initial scan, otherwise it means we are missing some in the esbuild scan
         assert.ok(optimizedFiles.length > 0, `should have created optimized deps: ${optimizedFiles.length}`);
         // Regression test for https://github.com/embroider-build/embroider/issues/2660:
-        // @embroider/macros must be dep-optimized (not excluded) so that all v2 addons
+        // @embroider/macros runtime must be dep-optimized so that all v2 addons
         // that use it share a single runtime instance. Without this, isTesting() in a
         // consumed v2 addon returns false even when tests are running.
-        const macrosOptimized = optimizedFiles.some(f => f.startsWith('@embroider+macros'));
+        // Different Vite versions use different separators in dep file names
+        // (@embroider+macros vs @embroider_macros), so we match flexibly.
+        const macrosOptimized = optimizedFiles.some(f => /embroider.macros.*runtime/.test(f));
         assert.ok(
           macrosOptimized,
-          `@embroider/macros should be in .vite/deps to prevent duplicate runtime instances (#2660), but only found these embroider packages: ${optimizedFiles
-            .filter(f => f.startsWith('@embroider+'))
-            .join(', ')}`
+          `@embroider/macros runtime should be in .vite/deps to prevent duplicate runtime instances (#2660), but only found: ${optimizedFiles.join(
+            ', '
+          )}`
         );
       });
 

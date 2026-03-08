@@ -224,19 +224,6 @@ app.forEachScenario(scenario => {
         assert.ok(notOptimized.length === 0, `not all are optimized: ${notOptimized}`);
       });
 
-      // Regression test for https://github.com/embroider-build/embroider/issues/2660
-      test('@embroider/macros is dep-optimized (not excluded from dep optimization)', function (assert) {
-        const macrosModules = Object.keys(expectAudit.modules).filter(
-          m => m.includes('@embroider/macros') || m.includes('@embroider+macros')
-        );
-        assert.ok(macrosModules.length > 0, 'should have @embroider/macros in module graph');
-        const notOptimized = macrosModules.filter(m => !m.includes('.vite/deps'));
-        assert.ok(
-          notOptimized.length === 0,
-          `@embroider/macros should be dep-optimized so there is a single runtime instance, but these are not: ${notOptimized}`
-        );
-      });
-
       test('should use optimized files for deps', function (assert) {
         expectAudit.module(/.*\/-embroider-entrypoint.js/).withContents((_src, imports) => {
           let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));

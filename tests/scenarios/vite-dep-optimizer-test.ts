@@ -71,29 +71,16 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
   project.addDevDependency(macrosAddon2);
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
+  // This file creates the import chain that makes @embroider/macros discoverable by Vite's dep scanner.
+  // Without importing from my-macros-addon-2, @embroider/macros wouldn't appear in the dep graph,
+  // and the macros regression assertion in the 'created initial optimized deps' test wouldn't be able
+  // to verify it's optimized.
   project.mergeFiles({
     tests: {
       unit: {
         'macros-addon-test.js': `
-          import { module, test } from 'qunit';
           import { getIsTestingFromAddon1, getIsTestingFromAddon2 } from 'my-macros-addon-2/is-testing';
-
-          module('macros isTesting in v2 addons (regression test for #2660)', function() {
-            test('isTesting() in consumed v2 addon (addon-1) returns true', function(assert) {
-              assert.strictEqual(
-                getIsTestingFromAddon1(),
-                true,
-                'isTesting() in addon-1 (consumed by addon-2) should return true - before the fix this was false'
-              );
-            });
-            test('isTesting() in consuming v2 addon (addon-2) returns true', function(assert) {
-              assert.strictEqual(
-                getIsTestingFromAddon2(),
-                true,
-                'isTesting() in addon-2 should return true'
-              );
-            });
-          });
+          export { getIsTestingFromAddon1, getIsTestingFromAddon2 };
         `,
       },
     },
@@ -201,8 +188,17 @@ app.forEachScenario(scenario => {
         optimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps')).filter(f => f.endsWith('.js'));
         // must be the same as initial scan, otherwise it means we are missing some in the esbuild scan
         assert.ok(
-          optimizedFiles.length === optimizedFiles.length,
+          optimizedFiles.length > 0,
           `should have created optimized deps: ${optimizedFiles.length}`
+        );
+        // Regression test for https://github.com/embroider-build/embroider/issues/2660:
+        // @embroider/macros must be dep-optimized (not excluded) so that all v2 addons
+        // that use it share a single runtime instance. Without this, isTesting() in a
+        // consumed v2 addon returns false even when tests are running.
+        const macrosOptimized = optimizedFiles.some(f => f.startsWith('@embroider+macros'));
+        assert.ok(
+          macrosOptimized,
+          `@embroider/macros should be in .vite/deps to prevent duplicate runtime instances (#2660), but only found these embroider packages: ${optimizedFiles.filter(f => f.startsWith('@embroider+')).join(', ')}`
         );
       });
 

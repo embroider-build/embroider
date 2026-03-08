@@ -108,7 +108,7 @@ export function esBuildResolver(): EsBuildPlugin {
         // specifier to the single pre-bundled copy produced by
         // optimizeDeps.include, so all code shares one module instance.
         // See https://github.com/embroider-build/embroider/issues/2660
-        build.onResolve({ filter: /runtime/ }, ({ path, resolveDir, importer }) => {
+        build.onResolve({ filter: /[/\\]runtime(\.js)?$/ }, ({ path, resolveDir, importer }) => {
           if (!path.startsWith('.') && !path.startsWith('/')) {
             return null; // bare specifier – handled elsewhere
           }

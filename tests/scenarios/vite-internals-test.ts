@@ -364,22 +364,25 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
       unit: {
         'macros-v2-addon-test.js': `
           import { module, test } from 'qunit';
+          import { setTesting } from '@embroider/macros';
           import { getIsTestingFromAddon1, getIsTestingFromAddon2 } from 'v2-macros-addon-2/is-testing';
 
-          module('macros isTesting in v2 addons (regression test for #2660)', function() {
-            test('isTesting() in the consumed v2 addon (addon-1) returns true when running tests', function(assert) {
-              assert.strictEqual(
-                getIsTestingFromAddon1(),
-                true,
-                'isTesting() in addon-1 (consumed by addon-2) should return true - before the fix this was false'
-              );
+          module('macros isTesting in v2 addons (regression test for #2660)', function(hooks) {
+            // Restore isTesting to true after this module runs so other tests are unaffected
+            hooks.after(function() {
+              setTesting(true);
             });
-            test('isTesting() in the consuming v2 addon (addon-2) returns true when running tests', function(assert) {
-              assert.strictEqual(
-                getIsTestingFromAddon2(),
-                true,
-                'isTesting() in addon-2 should return true'
-              );
+
+            test('setTesting toggles isTesting() in both addons simultaneously (proves shared runtime state)', function(assert) {
+              // Both addons share the same @embroider/macros runtime instance when dep-optimized.
+              // If they had separate instances (before the fix), setTesting would only affect one.
+              setTesting(false);
+              assert.strictEqual(getIsTestingFromAddon1(), false, 'addon-1: isTesting() returns false after setTesting(false)');
+              assert.strictEqual(getIsTestingFromAddon2(), false, 'addon-2: isTesting() returns false after setTesting(false)');
+
+              setTesting(true);
+              assert.strictEqual(getIsTestingFromAddon1(), true, 'addon-1: isTesting() returns true after setTesting(true)');
+              assert.strictEqual(getIsTestingFromAddon2(), true, 'addon-2: isTesting() returns true after setTesting(true)');
             });
           });
         `,

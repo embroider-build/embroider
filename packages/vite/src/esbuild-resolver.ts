@@ -107,22 +107,19 @@ export function esBuildResolver(): EsBuildPlugin {
         // below, because esbuild calls onResolve hooks in registration order and
         // the Embroider Resolver uses filter /./ which would otherwise win first.
         // See https://github.com/embroider-build/embroider/issues/2660
-        build.onResolve(
-          { filter: /[/\\]macros[/\\]src[/\\]addon[/\\]runtime(\.js)?$/ },
-          ({ path }) => {
-            if (!path.startsWith('.')) {
-              // Not a relative import (bare specifier or absolute path) – skip
-              return null;
-            }
-            const canonical = getCanonicalRuntimePath();
-            if (canonical) {
-              // Redirect every relative runtime.js import to the canonical
-              // absolute path so esbuild deduplicates it into one shared chunk.
-              return { path: canonical };
-            }
+        build.onResolve({ filter: /[/\\]macros[/\\]src[/\\]addon[/\\]runtime(\.js)?$/ }, ({ path }) => {
+          if (!path.startsWith('.')) {
+            // Not a relative import (bare specifier or absolute path) – skip
             return null;
           }
-        );
+          const canonical = getCanonicalRuntimePath();
+          if (canonical) {
+            // Redirect every relative runtime.js import to the canonical
+            // absolute path so esbuild deduplicates it into one shared chunk.
+            return { path: canonical };
+          }
+          return null;
+        });
       }
 
       // Embroider Resolver

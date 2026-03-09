@@ -57,18 +57,24 @@ export function setTesting(isTesting) {
 
 const runtimeConfig = initializeRuntimeMacrosConfig();
 
-// this exists to be targeted by our babel plugin.
-// In browser environments we store the config on window so that all copies of
-// this module (e.g. from Vite dep-optimization creating separate bundles) share
-// the same runtimeConfig object.  Without this, calling setTesting() in one
-// bundle would have no effect on isTesting() in another.
-function initializeRuntimeMacrosConfig() {
-  if (typeof window !== 'undefined') {
-    if (!window._embroider_macros_config) {
-      window._embroider_macros_config = { packages: {}, global: {} };
-    }
-    return window._embroider_macros_config;
+// In browser environments, share just the global config sub-object across all
+// instances of this module.  Vite dep-optimization can create separate bundles
+// for v2 addons, each with their own inlined copy of runtime.js. Without this
+// sharing, calling setTesting() in the app would not affect isTesting() in a
+// dep-optimized addon bundle (and vice-versa).
+//
+// We deliberately share only `global` and not the entire runtimeConfig so that
+// each bundle keeps its own per-package config (which is set at compile time).
+if (typeof window !== 'undefined') {
+  if (!window._embroider_macros_global_config) {
+    window._embroider_macros_global_config = runtimeConfig.global;
+  } else {
+    runtimeConfig.global = window._embroider_macros_global_config;
   }
+}
+
+// this exists to be targeted by our babel plugin.
+function initializeRuntimeMacrosConfig() {
   return { packages: {}, global: {} };
 }
 

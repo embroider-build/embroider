@@ -7,7 +7,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   dts: true,
-  external: ['node:*', '@ember/*', '@glimmer/*'],
+  neverBundle: ['node:*', '@ember/*', '@glimmer/*'],
   plugins: [
     babel({
       babelHelpers: 'bundled',
@@ -15,4 +15,7 @@ export default defineConfig({
     }),
     ember(),
   ],
+  devtools: {
+    ui: true,
+  },
 });

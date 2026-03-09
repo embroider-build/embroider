@@ -40,7 +40,7 @@ export function emberExternals(): Plugin {
   let deps: Set<string>;
 
   return {
-    name: 'ember-externals',
+    name: 'ember:externals',
 
     buildStart() {
       this.addWatchFile('package.json');
@@ -50,12 +50,15 @@ export function emberExternals(): Plugin {
     resolveId: {
       order: 'pre',
       async handler(source) {
+        if (source.includes(':')) {
+          return null;
+        }
+
         let pkgName = packageName(source);
-        console.log('EXTERNAL', source, pkgName);
         if (!pkgName) {
           // No package name found means this is a relative import, which we don't
           // need to deal with.
-          return;
+          return null;
         }
         // console.log({ emberVirtualPackages, emberVirtualPeerDeps, packageName, templateCompilationModules });
 
@@ -65,7 +68,8 @@ export function emberExternals(): Plugin {
           emberVirtualPackages.has(pkgName) ||
           compilationModules.has(pkgName)
         ) {
-          return { id: source, external: true };
+          // return { id: source, external: true };
+          return false;
         }
       },
     },

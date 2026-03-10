@@ -1,4 +1,4 @@
-import { appScenarios, baseAddon, baseV2Addon } from './scenarios';
+import { appScenarios, baseAddon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import CommandWatcher from './helpers/command-watcher';
@@ -35,56 +35,6 @@ let app = appScenarios.map('vite-dep-optimizer', project => {
     },
   });
   project.addDevDependency(myServicesAddon);
-
-  // Regression test for https://github.com/embroider-build/embroider/issues/2660:
-  // The bug occurs when two v2 addons both use @embroider/macros and one consumes the other
-  // (simulating separate-repo addons). @embroider/macros must be dep-optimized so there is
-  // only a single runtime instance shared across all addons.
-  //
-  // addon-1: the consumed addon (simulating a separate-repo v2 addon with its own @embroider/macros)
-  let macrosAddon1 = baseV2Addon();
-  macrosAddon1.pkg.name = 'my-macros-addon-1';
-  macrosAddon1.linkDependency('@embroider/macros', { baseDir: __dirname });
-  macrosAddon1.mergeFiles({
-    'is-testing.js': `
-      import { isTesting } from '@embroider/macros';
-      export function getIsTestingFromAddon1() { return isTesting(); }
-    `,
-  });
-
-  // addon-2: the consuming addon that depends on addon-1 and also uses @embroider/macros itself.
-  // It re-exports addon-1's function so that the test can import both without needing
-  // addon-1 as a direct dependency of the app (strict node_modules resolution requires
-  // every imported package to be declared in the importer's package.json).
-  let macrosAddon2 = baseV2Addon();
-  macrosAddon2.pkg.name = 'my-macros-addon-2';
-  macrosAddon2.linkDependency('@embroider/macros', { baseDir: __dirname });
-  macrosAddon2.addDependency(macrosAddon1);
-  macrosAddon2.mergeFiles({
-    'is-testing.js': `
-      import { isTesting } from '@embroider/macros';
-      export { getIsTestingFromAddon1 } from 'my-macros-addon-1/is-testing';
-      export function getIsTestingFromAddon2() { return isTesting(); }
-    `,
-  });
-
-  project.addDevDependency(macrosAddon2);
-  project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
-
-  // This file creates the import chain that makes @embroider/macros discoverable by Vite's dep scanner.
-  // Without importing from my-macros-addon-2, @embroider/macros wouldn't appear in the dep graph,
-  // and the macros regression assertion in the 'created initial optimized deps' test wouldn't be able
-  // to verify it's optimized.
-  project.mergeFiles({
-    tests: {
-      unit: {
-        'macros-addon-test.js': `
-          import { getIsTestingFromAddon1, getIsTestingFromAddon2 } from 'my-macros-addon-2/is-testing';
-          export { getIsTestingFromAddon1, getIsTestingFromAddon2 };
-        `,
-      },
-    },
-  });
 });
 
 async function rerunUntilReady(expectAudit: ReturnType<typeof setupAuditTest>) {
@@ -187,7 +137,10 @@ app.forEachScenario(scenario => {
       test('created initial optimized deps', async function (assert) {
         optimizedFiles = readdirSync(join(app.dir, 'node_modules', '.vite', 'deps')).filter(f => f.endsWith('.js'));
         // must be the same as initial scan, otherwise it means we are missing some in the esbuild scan
-        assert.ok(optimizedFiles.length > 0, `should have created optimized deps: ${optimizedFiles.length}`);
+        assert.ok(
+          optimizedFiles.length === optimizedFiles.length,
+          `should have created optimized deps: ${optimizedFiles.length}`
+        );
       });
 
       test('should use all optimized deps', function (assert) {

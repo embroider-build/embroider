@@ -58,6 +58,13 @@ export function ember(params?: {
           }
         }
 
+        // @embroider/macros needs to not go through dep optimization
+        if (config.optimizeDeps.exclude) {
+          config.optimizeDeps.exclude.push('@embroider/macros');
+        } else {
+          config.optimizeDeps.exclude = ['@embroider/macros'];
+        }
+
         // @ts-expect-error the types aren't finished yet it would seem
         if (this?.meta?.rolldownVersion) {
           // configure our embroider resolver for optimize deps

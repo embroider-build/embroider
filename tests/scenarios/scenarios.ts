@@ -61,6 +61,7 @@ async function lts_6_12(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-6.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
   project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('ember-cli-htmlbars', { baseDir: __dirname, resolveName: 'ember-cli-htmlbars-7' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
 
   project.mergeFiles({
@@ -83,27 +84,6 @@ async function lts_6_12(project: Project) {
       null,
       2
     ),
-  });
-}
-
-async function lts_6_12_with_useEmberModules(project: Project) {
-  await lts_6_12(project);
-  project.linkDevDependency('ember-cli-htmlbars', { baseDir: __dirname, resolveName: 'ember-cli-htmlbars-7' });
-
-  project.mergeFiles({
-    config: {
-      'optional-features.json': JSON.stringify(
-        {
-          'application-template-wrapper': false,
-          'default-async-observers': true,
-          'jquery-integration': false,
-          'template-only-glimmer-components': true,
-          'use-ember-modules': true,
-        },
-        null,
-        2
-      ),
-    },
   });
 }
 
@@ -162,7 +142,6 @@ export function fullSupportMatrix(scenarios: Scenarios) {
     lts_5_8,
     lts_5_12,
     lts_6_12,
-    lts_6_12_with_useEmberModules,
     release,
     beta,
     canary,

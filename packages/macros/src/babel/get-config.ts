@@ -106,18 +106,21 @@ function collapse(path: NodePath, config: unknown) {
   }
 }
 
+const GLOBAL_SHARED_KEY = '__embroider_macros_runtime_config__';
+
 export function inlineRuntimeConfig(path: NodePath<t.FunctionDeclaration>, state: State, context: typeof Babel) {
   let t = context.types;
   let configLiteral = buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context);
 
-  // globalThis.__embroider_macros_runtime_config__
-  let sharedKey = t.memberExpression(t.identifier('globalThis'), t.identifier('__embroider_macros_runtime_config__'));
+  function globalThisConfig() {
+    return t.memberExpression(t.identifier('globalThis'), t.identifier(GLOBAL_SHARED_KEY));
+  }
 
   // var c = { packages: {...}, global: {...} };
   let configVar = t.variableDeclaration('var', [t.variableDeclarator(t.identifier('c'), configLiteral)]);
 
   // var s = globalThis.__embroider_macros_runtime_config__;
-  let sharedVar = t.variableDeclaration('var', [t.variableDeclarator(t.identifier('s'), sharedKey)]);
+  let sharedVar = t.variableDeclaration('var', [t.variableDeclarator(t.identifier('s'), globalThisConfig())]);
 
   // Object.assign(s.packages, c.packages);
   let assignPackages = t.expressionStatement(
@@ -138,15 +141,7 @@ export function inlineRuntimeConfig(path: NodePath<t.FunctionDeclaration>, state
   // if (!s) { globalThis.__embroider_macros_runtime_config__ = c; } else { merge; c = s; }
   let innerIf = t.ifStatement(
     t.unaryExpression('!', t.identifier('s')),
-    t.blockStatement([
-      t.expressionStatement(
-        t.assignmentExpression(
-          '=',
-          t.memberExpression(t.identifier('globalThis'), t.identifier('__embroider_macros_runtime_config__')),
-          t.identifier('c')
-        )
-      ),
-    ]),
+    t.blockStatement([t.expressionStatement(t.assignmentExpression('=', globalThisConfig(), t.identifier('c')))]),
     t.blockStatement([
       assignPackages,
       assignGlobal,

@@ -76,3 +76,4 @@ tests/scenarios/output/
 packages/template-tag-codemod/dist/
 packages/config-meta-loader/dist/
 tests/scenarios/dist/
+package-lock.json

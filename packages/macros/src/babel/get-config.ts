@@ -106,10 +106,20 @@ function collapse(path: NodePath, config: unknown) {
   }
 }
 
+const GLOBAL_SHARED_KEY = '__embroider_macros_runtime_config__';
+
 export function inlineRuntimeConfig(path: NodePath<t.FunctionDeclaration>, state: State, context: typeof Babel) {
-  path.get('body').node.body = [
-    context.types.returnStatement(
-      buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context)
-    ),
-  ];
+  let configLiteral = buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context);
+
+  let buildBody = context.template.statements(`
+    var c = %%configLiteral%%;
+    globalThis.${GLOBAL_SHARED_KEY} ||= {};
+    globalThis.${GLOBAL_SHARED_KEY}.packages ||= {};
+    globalThis.${GLOBAL_SHARED_KEY}.global ||= {};
+    Object.assign(globalThis.${GLOBAL_SHARED_KEY}.packages, c.packages);
+    Object.assign(globalThis.${GLOBAL_SHARED_KEY}.global, c.global);
+    return globalThis.${GLOBAL_SHARED_KEY};
+  `);
+
+  path.get('body').node.body = buildBody({ configLiteral });
 }

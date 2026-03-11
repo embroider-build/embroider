@@ -57,7 +57,7 @@ export function setTesting(isTesting) {
 
 const runtimeConfig = initializeRuntimeMacrosConfig();
 
-// this exists to be targeted by our babel plugin
+// this exists to be targeted by our babel plugin.
 function initializeRuntimeMacrosConfig() {
   return { packages: {}, global: {} };
 }

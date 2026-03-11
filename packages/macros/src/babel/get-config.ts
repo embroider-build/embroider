@@ -107,9 +107,61 @@ function collapse(path: NodePath, config: unknown) {
 }
 
 export function inlineRuntimeConfig(path: NodePath<t.FunctionDeclaration>, state: State, context: typeof Babel) {
-  path.get('body').node.body = [
-    context.types.returnStatement(
-      buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context)
-    ),
-  ];
+  let t = context.types;
+  let configLiteral = buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context);
+
+  // globalThis.__embroider_macros_runtime_config__
+  let sharedKey = t.memberExpression(t.identifier('globalThis'), t.identifier('__embroider_macros_runtime_config__'));
+
+  // var c = { packages: {...}, global: {...} };
+  let configVar = t.variableDeclaration('var', [t.variableDeclarator(t.identifier('c'), configLiteral)]);
+
+  // var s = globalThis.__embroider_macros_runtime_config__;
+  let sharedVar = t.variableDeclaration('var', [t.variableDeclarator(t.identifier('s'), sharedKey)]);
+
+  // Object.assign(s.packages, c.packages);
+  let assignPackages = t.expressionStatement(
+    t.callExpression(t.memberExpression(t.identifier('Object'), t.identifier('assign')), [
+      t.memberExpression(t.identifier('s'), t.identifier('packages')),
+      t.memberExpression(t.identifier('c'), t.identifier('packages')),
+    ])
+  );
+
+  // Object.assign(s.global, c.global);
+  let assignGlobal = t.expressionStatement(
+    t.callExpression(t.memberExpression(t.identifier('Object'), t.identifier('assign')), [
+      t.memberExpression(t.identifier('s'), t.identifier('global')),
+      t.memberExpression(t.identifier('c'), t.identifier('global')),
+    ])
+  );
+
+  // if (!s) { globalThis.__embroider_macros_runtime_config__ = c; } else { merge; c = s; }
+  let innerIf = t.ifStatement(
+    t.unaryExpression('!', t.identifier('s')),
+    t.blockStatement([
+      t.expressionStatement(
+        t.assignmentExpression(
+          '=',
+          t.memberExpression(t.identifier('globalThis'), t.identifier('__embroider_macros_runtime_config__')),
+          t.identifier('c')
+        )
+      ),
+    ]),
+    t.blockStatement([
+      assignPackages,
+      assignGlobal,
+      t.expressionStatement(t.assignmentExpression('=', t.identifier('c'), t.identifier('s'))),
+    ])
+  );
+
+  // if (typeof globalThis !== 'undefined') { var s = ...; if (!s) ... }
+  let outerIf = t.ifStatement(
+    t.binaryExpression('!==', t.unaryExpression('typeof', t.identifier('globalThis')), t.stringLiteral('undefined')),
+    t.blockStatement([sharedVar, innerIf])
+  );
+
+  // return c;
+  let returnStmt = t.returnStatement(t.identifier('c'));
+
+  path.get('body').node.body = [configVar, outerIf, returnStmt];
 }

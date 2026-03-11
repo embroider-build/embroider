@@ -55,21 +55,34 @@ export function setTesting(isTesting) {
   runtimeConfig.global['@embroider/macros'].isTesting = Boolean(isTesting);
 }
 
-const runtimeConfig = initializeRuntimeMacrosConfig();
+let runtimeConfig = initializeRuntimeMacrosConfig();
 
-// In browser environments, share just the global config sub-object across all
-// instances of this module.  Vite dep-optimization can create separate bundles
-// for v2 addons, each with their own inlined copy of runtime.js. Without this
-// sharing, calling setTesting() in the app would not affect isTesting() in a
-// dep-optimized addon bundle (and vice-versa).
+// When Vite dep-optimizes addons, each bundle can get its own copy of this
+// module with its own runtimeConfig. We share the entire config via globalThis
+// so that:
+//   - setTesting()/isTesting() work consistently across all bundles
+//   - per-package configs from all bundles are accessible from any copy
+//   - global config (including runtime mutations) is unified
 //
-// We deliberately share only `global` and not the entire runtimeConfig so that
-// each bundle keeps its own per-package config (which is set at compile time).
-if (typeof window !== 'undefined') {
-  if (!window._embroider_macros_global_config) {
-    window._embroider_macros_global_config = runtimeConfig.global;
+// This code runs OUTSIDE initializeRuntimeMacrosConfig because the babel plugin
+// replaces that function's body with the compiled config literal at transform
+// time — any sharing logic inside it would be erased.
+//
+// Merge strategy when multiple copies exist:
+//   - packages: Object.assign into the shared instance. Each package root is a
+//     unique key (absolute path), so there are no conflicts.
+//   - global: Object.assign into the shared instance. All copies from the same
+//     build share the same babel-compiled global config, so values are
+//     identical. Runtime mutations (like setTesting) happen after all module
+//     copies have initialized, so they safely land on the shared object.
+if (typeof globalThis !== 'undefined') {
+  let shared = globalThis.__embroider_macros_runtime_config__;
+  if (!shared) {
+    globalThis.__embroider_macros_runtime_config__ = runtimeConfig;
   } else {
-    runtimeConfig.global = window._embroider_macros_global_config;
+    Object.assign(shared.packages, runtimeConfig.packages);
+    Object.assign(shared.global, runtimeConfig.global);
+    runtimeConfig = shared;
   }
 }
 

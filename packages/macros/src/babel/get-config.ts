@@ -109,54 +109,17 @@ function collapse(path: NodePath, config: unknown) {
 const GLOBAL_SHARED_KEY = '__embroider_macros_runtime_config__';
 
 export function inlineRuntimeConfig(path: NodePath<t.FunctionDeclaration>, state: State, context: typeof Babel) {
-  let t = context.types;
   let configLiteral = buildLiterals({ packages: state.opts.userConfigs, global: state.opts.globalConfig }, context);
 
-  function globalThisConfig() {
-    return t.memberExpression(t.identifier('globalThis'), t.identifier(GLOBAL_SHARED_KEY));
-  }
+  let buildBody = context.template.statements(`
+    var c = %%configLiteral%%;
+    globalThis.${GLOBAL_SHARED_KEY} ||= {};
+    globalThis.${GLOBAL_SHARED_KEY}.packages ||= {};
+    globalThis.${GLOBAL_SHARED_KEY}.global ||= {};
+    Object.assign(globalThis.${GLOBAL_SHARED_KEY}.packages, c.packages);
+    Object.assign(globalThis.${GLOBAL_SHARED_KEY}.global, c.global);
+    return globalThis.${GLOBAL_SHARED_KEY};
+  `);
 
-  // var c = { packages: {...}, global: {...} };
-  let configVar = t.variableDeclaration('var', [t.variableDeclarator(t.identifier('c'), configLiteral)]);
-
-  // var s = globalThis.__embroider_macros_runtime_config__;
-  let sharedVar = t.variableDeclaration('var', [t.variableDeclarator(t.identifier('s'), globalThisConfig())]);
-
-  // Object.assign(s.packages, c.packages);
-  let assignPackages = t.expressionStatement(
-    t.callExpression(t.memberExpression(t.identifier('Object'), t.identifier('assign')), [
-      t.memberExpression(t.identifier('s'), t.identifier('packages')),
-      t.memberExpression(t.identifier('c'), t.identifier('packages')),
-    ])
-  );
-
-  // Object.assign(s.global, c.global);
-  let assignGlobal = t.expressionStatement(
-    t.callExpression(t.memberExpression(t.identifier('Object'), t.identifier('assign')), [
-      t.memberExpression(t.identifier('s'), t.identifier('global')),
-      t.memberExpression(t.identifier('c'), t.identifier('global')),
-    ])
-  );
-
-  // if (!s) { globalThis.__embroider_macros_runtime_config__ = c; } else { merge; c = s; }
-  let innerIf = t.ifStatement(
-    t.unaryExpression('!', t.identifier('s')),
-    t.blockStatement([t.expressionStatement(t.assignmentExpression('=', globalThisConfig(), t.identifier('c')))]),
-    t.blockStatement([
-      assignPackages,
-      assignGlobal,
-      t.expressionStatement(t.assignmentExpression('=', t.identifier('c'), t.identifier('s'))),
-    ])
-  );
-
-  // if (typeof globalThis !== 'undefined') { var s = ...; if (!s) ... }
-  let outerIf = t.ifStatement(
-    t.binaryExpression('!==', t.unaryExpression('typeof', t.identifier('globalThis')), t.stringLiteral('undefined')),
-    t.blockStatement([sharedVar, innerIf])
-  );
-
-  // return c;
-  let returnStmt = t.returnStatement(t.identifier('c'));
-
-  path.get('body').node.body = [configVar, outerIf, returnStmt];
+  path.get('body').node.body = buildBody({ configLiteral });
 }

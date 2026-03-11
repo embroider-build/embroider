@@ -55,36 +55,7 @@ export function setTesting(isTesting) {
   runtimeConfig.global['@embroider/macros'].isTesting = Boolean(isTesting);
 }
 
-let runtimeConfig = initializeRuntimeMacrosConfig();
-
-// When Vite dep-optimizes addons, each bundle can get its own copy of this
-// module with its own runtimeConfig. We share the entire config via globalThis
-// so that:
-//   - setTesting()/isTesting() work consistently across all bundles
-//   - per-package configs from all bundles are accessible from any copy
-//   - global config (including runtime mutations) is unified
-//
-// This code runs OUTSIDE initializeRuntimeMacrosConfig because the babel plugin
-// replaces that function's body with the compiled config literal at transform
-// time — any sharing logic inside it would be erased.
-//
-// Merge strategy when multiple copies exist:
-//   - packages: Object.assign into the shared instance. Each package root is a
-//     unique key (absolute path), so there are no conflicts.
-//   - global: Object.assign into the shared instance. All copies from the same
-//     build share the same babel-compiled global config, so values are
-//     identical. Runtime mutations (like setTesting) happen after all module
-//     copies have initialized, so they safely land on the shared object.
-if (typeof globalThis !== 'undefined') {
-  let shared = globalThis.__embroider_macros_runtime_config__;
-  if (!shared) {
-    globalThis.__embroider_macros_runtime_config__ = runtimeConfig;
-  } else {
-    Object.assign(shared.packages, runtimeConfig.packages);
-    Object.assign(shared.global, runtimeConfig.global);
-    runtimeConfig = shared;
-  }
-}
+const runtimeConfig = initializeRuntimeMacrosConfig();
 
 // this exists to be targeted by our babel plugin.
 function initializeRuntimeMacrosConfig() {

@@ -221,20 +221,30 @@ appScenarios
       },
     });
 
-    let addonNoNamespace = baseV2Addon();
-    addonNoNamespace.pkg.name = 'v2-addon-no-namespace';
-    addonNoNamespace.pkg.scripts = {
+    let addonMultiPublicAssets = baseV2Addon();
+    addonMultiPublicAssets.pkg.name = 'v2-addon-multi-public-assets';
+    addonMultiPublicAssets.pkg.scripts = {
       build: 'node ./node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
     };
 
-    merge(addonNoNamespace.files, {
+    merge(addonMultiPublicAssets.files, {
       src: {
         components: {
           'hello.hbs': '<h1>hello</h1>',
         },
       },
-      public: {
-        'other.txt': 'we meet again',
+      public1: {
+        'other1.txt': 'we meet again',
+      },
+      public2: {
+        'other2.1.txt': 'we meet again',
+        'other2.2.txt': 'we meet again',
+      },
+      public3: {
+        'other3.txt': 'we meet again',
+      },
+      public4: {
+        'other4.txt': 'we meet again',
       },
       'babel.config.json': `
         {
@@ -273,7 +283,12 @@ appScenarios
 
             addon.hbs(),
 
-            addon.publicAssets('public', { namespace: '' }),
+            addon.publicAssets([
+              { path: 'public1' },
+              { path: 'public2', namespace: '' },
+              { path: 'public3', namespace: 'custom-namespace' },
+              { path: 'public4', namespace: 'custom-namespace' },
+            ]),
 
             addon.clean(),
           ],
@@ -349,11 +364,11 @@ appScenarios
     }
 
     linkDependencies(addon);
-    linkDependencies(addonNoNamespace);
+    linkDependencies(addonMultiPublicAssets);
     linkDependencies(addonRebuild);
 
     project.addDevDependency(addon);
-    project.addDependency(addonNoNamespace);
+    project.addDependency(addonMultiPublicAssets);
     project.addDevDependency(addonRebuild);
 
     merge(project.files, {
@@ -479,7 +494,7 @@ appScenarios
         if (result.exitCode !== 0) {
           throw new Error(result.output);
         }
-        await inDependency(app, 'v2-addon-no-namespace').execute('pnpm build');
+        await inDependency(app, 'v2-addon-multi-public-assets').execute('pnpm build');
       });
 
       hooks.beforeEach(assert => {
@@ -568,14 +583,20 @@ export { SingleFileComponent as default };
 //# sourceMappingURL=single-file-component.js.map`);
         });
 
-        test('publicAssets are namespaced correctly', async function (assert) {
-          let expectNoNamespaceFile = expectFilesAt(inDependency(app, 'v2-addon-no-namespace').dir, { qunit: assert });
+        test('publicAssets are copied & namespaced correctly', async function (assert) {
+          let expectMultiPublicAssetsFile = expectFilesAt(inDependency(app, 'v2-addon-multi-public-assets').dir, {
+            qunit: assert,
+          });
 
           expectFile('package.json').json('ember-addon.public-assets').deepEquals({
             './public/thing.txt': '/v2-addon/thing.txt',
           });
-          expectNoNamespaceFile('package.json').json('ember-addon.public-assets').deepEquals({
-            './public/other.txt': '/other.txt',
+          expectMultiPublicAssetsFile('package.json').json('ember-addon.public-assets').deepEquals({
+            './public1/other1.txt': '/v2-addon-multi-public-assets/other1.txt',
+            './public2/other2.1.txt': '/other2.1.txt',
+            './public2/other2.2.txt': '/other2.2.txt',
+            './public3/other3.txt': '/custom-namespace/other3.txt',
+            './public4/other4.txt': '/custom-namespace/other4.txt',
           });
         });
 

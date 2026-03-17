@@ -319,10 +319,10 @@ export function getAppFiles(appRoot: string): Set<string> {
   const files: string[] = walkSync(appRoot, {
     ignore: [
       '_babel_filter_.js',
-      ...resolvableExtensions().map(ext => `app.${ext}`),
-      ...resolvableExtensions().map(ext => `engine.${ext}`),
+      ...resolvableExtensions().map(ext => `app${ext}`),
+      ...resolvableExtensions().map(ext => `engine${ext}`),
       'assets',
-      ...resolvableExtensions().map(ext => `testem.${ext}`),
+      ...resolvableExtensions().map(ext => `testem${ext}`),
       'node_modules',
     ],
   });

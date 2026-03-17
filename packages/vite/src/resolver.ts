@@ -6,7 +6,7 @@ import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
 import { join, normalize, resolve } from 'path';
 import { writeStatus } from './backchannel.js';
-import type { PluginContext, ResolveIdResult } from 'rollup';
+import type { PluginContext, ResolveIdResult } from 'rolldown';
 import { externalName } from '@embroider/reverse-exports';
 import fs from 'fs-extra';
 import { createHash } from 'crypto';

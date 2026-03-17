@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite';
-import type { EmittedFile } from 'rollup';
+import type { EmittedFile } from 'rolldown';
 import { JSDOM } from 'jsdom';
 import fs from 'fs-extra';
 const { readFileSync, readJSONSync, existsSync } = fs;

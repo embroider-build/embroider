@@ -1,8 +1,8 @@
-import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
 import { Preprocessor } from 'content-tag';
+import { extFilter, supportsObjectHooks } from './build-id-filter.js';
 
-const gjsFilter = createFilter('**/*.{gjs,gts}?(\\?)*');
+export const gjsFilter = extFilter('gjs', 'gts');
 
 export function templateTag(): Plugin {
   let preprocessor = new Preprocessor();
@@ -11,13 +11,20 @@ export function templateTag(): Plugin {
     name: 'embroider-template-tag',
     enforce: 'pre',
 
-    transform(code: string, id: string) {
-      if (!gjsFilter(id)) {
-        return null;
-      }
-      return preprocessor.process(code, {
-        filename: id,
-      });
-    },
+    transform: supportsObjectHooks
+      ? {
+          filter: { id: gjsFilter },
+          handler(code: string, id: string) {
+            return preprocessor.process(code, {
+              filename: id,
+            });
+          },
+        }
+      : function (code: string, id: string) {
+          if (!gjsFilter.test(id)) return null;
+          return preprocessor.process(code, {
+            filename: id,
+          });
+        },
   };
 }

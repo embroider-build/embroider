@@ -56,6 +56,37 @@ async function lts_5_12(project: Project) {
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
 }
 
+async function lts_6_12(project: Project) {
+  project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-6.12' });
+  project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-6.12' });
+  project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
+  project.linkDevDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
+  project.linkDevDependency('ember-cli-htmlbars', { baseDir: __dirname, resolveName: 'ember-cli-htmlbars-7' });
+  project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+
+  project.mergeFiles({
+    'tsconfig.json': JSON.stringify(
+      {
+        extends: '@tsconfig/ember/tsconfig.json',
+        compilerOptions: {
+          baseUrl: '.',
+          skipLibCheck: true,
+          // This line is the important part of this custom tsconfig.json
+          types: ['ember-source/types'],
+          paths: {
+            'ts-app-template/tests/*': ['tests/*'],
+            'ts-app-template/*': ['app/*'],
+            '*': ['types/*'],
+          },
+        },
+        include: ['app/**/*', 'tests/**/*', 'types/**/*'],
+      },
+      null,
+      2
+    ),
+  });
+}
+
 async function release(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
@@ -90,6 +121,7 @@ export function supportMatrix(scenarios: Scenarios) {
         lts_3_28,
         lts_4_4,
         lts_5_12,
+        lts_6_12,
         release,
         canary,
       })
@@ -109,6 +141,7 @@ export function fullSupportMatrix(scenarios: Scenarios) {
     lts_5_4,
     lts_5_8,
     lts_5_12,
+    lts_6_12,
     release,
     beta,
     canary,

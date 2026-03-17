@@ -6,7 +6,7 @@
     "url": "https://github.com/embroider-build/embroider.git",
     "directory": "packages/vite"
   },
-  "keywords": ["vite-plugin", "vite", "ember", "emberjs"],
+  "keywords": ["vite-plugin", "vite", "ember", "emberjs", "productivity", "performance", "ember.js", "production", "spa"],
   "type": "module",
   "exports": {
     ".": {

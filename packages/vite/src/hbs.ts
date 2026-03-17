@@ -1,6 +1,7 @@
 import type { Plugin } from 'vite';
 import { hbsToJS, templateOnlyComponentSource } from '@embroider/core';
 import { extFilter, supportsObjectHooks } from './build-id-filter.js';
+import type { PluginContext } from 'rolldown';
 
 export const hbsFilter = extFilter('hbs');
 
@@ -35,7 +36,7 @@ type Meta = {
   type: 'template-only-component-js';
 };
 
-function getMeta(context: { getModuleInfo: any }, id: string): Meta | null {
+function getMeta(context: PluginContext, id: string): Meta | null {
   const meta = context.getModuleInfo(id)?.meta?.['rollup-hbs-plugin'];
   if (meta) {
     return meta as Meta;

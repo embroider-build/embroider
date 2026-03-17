@@ -5,7 +5,7 @@ import type { ConfigEnv, Plugin } from 'vite';
 
 import { esBuildResolver } from './esbuild-resolver.js';
 import { warnRootUrl } from './warn-root-url.js';
-import { ViteUserConfig as UserConfig } from './types.js';
+import { ViteUserConfig as UserConfig, Vite8UserConfig } from './types.js';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
@@ -15,6 +15,10 @@ export const defaultRolldownSharedPlugins = [
   'embroider-resolver',
   'babel',
 ];
+
+function hasRolldown(pluginContext: any, _config: unknown): _config is Vite8UserConfig {
+  return Boolean(pluginContext?.meta?.rolldownVersion);
+}
 
 export function ember(params?: {
   /**
@@ -34,21 +38,17 @@ export function ember(params?: {
       async config(config: UserConfig, env: ConfigEnv) {
         // Default vite resolve extensions, which the user can completely
         // override if they want
-        if (!config.resolve) {
-          config.resolve = {};
-        }
+        config.resolve ||= {};
+        config.build ||= {};
+        config.server ||= {};
+        config.optimizeDeps ||= {};
+        config.optimizeDeps.exclude ||= [];
+        config.optimizeDeps.extensions ||= [];
+
         if (!config.resolve.extensions) {
           config.resolve.extensions = extensions;
         }
 
-        // Our esbuild integration only works if these extensions are
-        // configured, so we force them in
-        if (!config.optimizeDeps) {
-          config.optimizeDeps = {};
-        }
-        if (!config.optimizeDeps.extensions) {
-          config.optimizeDeps.extensions = [];
-        }
         for (let requiredExt of ['.hbs', '.gjs', '.gts']) {
           if (!config.optimizeDeps.extensions.includes(requiredExt)) {
             config.optimizeDeps.extensions.push(requiredExt);
@@ -56,67 +56,63 @@ export function ember(params?: {
         }
 
         // @embroider/macros needs to not go through dep optimization
-        if (config.optimizeDeps.exclude) {
-          config.optimizeDeps.exclude.push('@embroider/macros');
+        config.optimizeDeps.exclude.push('@embroider/macros');
+
+        const emberRollupPlugins = sharedRolldownPlugins(
+          params?.rolldownSharedPlugins ?? defaultRolldownSharedPlugins,
+          config.plugins
+        );
+
+        if (hasRolldown(this, config)) {
+          /**
+           * Vite 8 and higher
+           */
+          config.optimizeDeps.rolldownOptions ||= {};
+          config.optimizeDeps.rolldownOptions.plugins ||= [];
+          if (!Array.isArray(config.optimizeDeps.rolldownOptions.plugins)) {
+            throw new Error(
+              'Could not automatically configure the Ember plugin for optimizeDeps. optimizeDeps.rolldownOptions.plugins must be an array.'
+            );
+          }
+          config.optimizeDeps.rolldownOptions.plugins.push(...emberRollupPlugins);
+
+          config.optimizeDeps.rolldownOptions.resolve ||= {};
+          config.optimizeDeps.rolldownOptions.resolve.extensions = extensions;
         } else {
-          config.optimizeDeps.exclude = ['@embroider/macros'];
-        }
-
-        // @ts-expect-error the types aren't finished yet it would seem
-        if (this?.meta?.rolldownVersion) {
-          // configure our embroider resolver for optimize deps
-          if (!config.optimizeDeps.rollupOptions) {
-            config.optimizeDeps.rollupOptions = {};
-          }
-
-          const emberRollupPlugins = sharedRolldownPlugins(
-            params?.rolldownSharedPlugins ?? defaultRolldownSharedPlugins,
-            config.plugins
-          );
-
-          if (config.optimizeDeps.rollupOptions.plugins) {
-            if (Array.isArray(config.optimizeDeps.rollupOptions.plugins)) {
-              config.optimizeDeps.rollupOptions.plugins.push(...emberRollupPlugins);
-            } else {
-              throw new Error('Could not automatically configure the Ember plugin for optimizeDeps');
-            }
-          } else {
-            config.optimizeDeps.rollupOptions.plugins = emberRollupPlugins;
-          }
-
-          if (!config.optimizeDeps.rollupOptions.resolve) {
-            config.optimizeDeps.rollupOptions.resolve = {};
-          }
-          config.optimizeDeps.rollupOptions.resolve.extensions = extensions;
-        } else {
-          // configure out esbuild resolver
-          if (!config.optimizeDeps.esbuildOptions) {
-            config.optimizeDeps.esbuildOptions = {};
-          }
-
-          if (config.optimizeDeps.esbuildOptions.plugins) {
-            config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
-          } else {
-            config.optimizeDeps.esbuildOptions.plugins = [esBuildResolver()];
-          }
-        }
-
-        if (!config.build) {
-          config.build = {};
-        }
-
-        if (!config.build.rollupOptions) {
-          config.build.rollupOptions = {};
+          /**
+           * Vite 7 and lower
+           */
+          config.optimizeDeps.esbuildOptions ||= {};
+          config.optimizeDeps.esbuildOptions.plugins ||= [];
+          config.optimizeDeps.esbuildOptions.plugins.push(esBuildResolver());
         }
 
         // we provide a default build.rollupOptions.input that builds index.html
         // and, in non-production or when forcing tests, tests/index.html. But
         // the user may choose to take charge of input entirely.
-        if (!config.build.rollupOptions.input) {
-          let hasRootEntry = existsSync('index.html');
-          let hasTestsEntry = existsSync('tests/index.html');
+        let hasRootEntry = existsSync('index.html');
+        let hasTestsEntry = existsSync('tests/index.html');
 
-          config.build.rollupOptions.input = {};
+        if (hasRolldown(this, config)) {
+          config.build.rolldownOptions ||= {};
+          config.build.rolldownOptions.input ||= {};
+
+          if (hasRootEntry) {
+            Object.assign(config.build.rolldownOptions.input, {
+              main: 'index.html',
+            });
+          }
+
+          if (hasTestsEntry) {
+            if (shouldBuildTests(env.mode)) {
+              Object.assign(config.build.rolldownOptions.input, {
+                tests: 'tests/index.html',
+              });
+            }
+          }
+        } else {
+          config.build.rollupOptions ||= {};
+          config.build.rollupOptions.input ||= {};
 
           if (hasRootEntry) {
             Object.assign(config.build.rollupOptions.input, {
@@ -131,10 +127,6 @@ export function ember(params?: {
               });
             }
           }
-        }
-
-        if (!config.server) {
-          config.server = {};
         }
 
         // Traditional ember development port as default.

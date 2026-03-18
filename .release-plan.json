@@ -13,30 +13,20 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.14",
-      "newVersion": "4.1.15",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.15"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.4.4",
-      "newVersion": "4.4.5",
+      "oldVersion": "4.4.5",
+      "newVersion": "4.4.6",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
@@ -48,17 +38,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.20.0",
-      "newVersion": "1.20.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.20.1"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -73,18 +53,22 @@
       "oldVersion": "1.3.5"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.6.0",
-      "newVersion": "1.6.1",
+      "impact": "minor",
+      "oldVersion": "1.6.1",
+      "newVersion": "1.7.0",
       "tagName": "latest",
       "constraints": [
         {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-03-04)\n\n* @embroider/compat 4.1.15 (patch)\n* @embroider/core 4.4.5 (patch)\n* @embroider/macros 1.20.1 (patch)\n* @embroider/vite 1.6.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2680](https://github.com/embroider-build/embroider/pull/2680) Fix types for setTesting ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-03-18)\n\n* @embroider/core 4.4.6 (patch)\n* @embroider/vite 1.7.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2687](https://github.com/embroider-build/embroider/pull/2687) rolldown-vite -> vite8 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/core`\n  * [#2685](https://github.com/embroider-build/embroider/pull/2685) Fix getAppFiles extensions ([@JezerM](https://github.com/JezerM))\n* `@embroider/vite`\n  * [#2686](https://github.com/embroider-build/embroider/pull/2686) Add keywords to package.json for vite ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :house: Internal\n* [#2679](https://github.com/embroider-build/embroider/pull/2679) Add scenarios for 6.12 + use-ember-modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Jezer Mejía ([@JezerM](https://github.com/JezerM))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

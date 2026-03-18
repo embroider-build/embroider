@@ -1,5 +1,27 @@
 # Embroider Changelog
 
+## Release (2026-03-18)
+
+* @embroider/core 4.4.6 (patch)
+* @embroider/vite 1.7.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2687](https://github.com/embroider-build/embroider/pull/2687) rolldown-vite -> vite8 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2685](https://github.com/embroider-build/embroider/pull/2685) Fix getAppFiles extensions ([@JezerM](https://github.com/JezerM))
+* `@embroider/vite`
+  * [#2686](https://github.com/embroider-build/embroider/pull/2686) Add keywords to package.json for vite ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* [#2679](https://github.com/embroider-build/embroider/pull/2679) Add scenarios for 6.12 + use-ember-modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Jezer Mejía ([@JezerM](https://github.com/JezerM))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-03-04)
 
 * @embroider/compat 4.1.15 (patch)

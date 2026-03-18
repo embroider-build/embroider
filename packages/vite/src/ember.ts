@@ -96,14 +96,14 @@ export function ember(params?: {
         if (!config.build.rolldownOptions?.input) {
           if (hasRolldown(this, config)) {
             config.build.rolldownOptions ||= {};
-  
+
             if (hasRootEntry) {
               config.build.rolldownOptions.input ||= {};
               Object.assign(config.build.rolldownOptions.input, {
                 main: 'index.html',
               });
             }
-  
+
             if (hasTestsEntry) {
               if (shouldBuildTests(env.mode)) {
                 config.build.rolldownOptions.input ||= {};
@@ -114,14 +114,14 @@ export function ember(params?: {
             }
           } else {
             config.build.rollupOptions ||= {};
-  
+
             if (hasRootEntry) {
               config.build.rollupOptions.input ||= {};
               Object.assign(config.build.rollupOptions.input, {
                 main: 'index.html',
               });
             }
-  
+
             if (hasTestsEntry) {
               if (shouldBuildTests(env.mode)) {
                 config.build.rollupOptions.input ||= {};

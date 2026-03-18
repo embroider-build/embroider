@@ -108,6 +108,10 @@ export function ember(params?: {
           config.build = {};
         }
 
+        if (!('reportCompressedSize' in config.build)) {
+          config.build.reportCompressedSize = false;
+        }
+
         if (!config.build.rollupOptions) {
           config.build.rollupOptions = {};
         }

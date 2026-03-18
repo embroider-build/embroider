@@ -93,40 +93,42 @@ export function ember(params?: {
         let hasRootEntry = existsSync('index.html');
         let hasTestsEntry = existsSync('tests/index.html');
 
-        if (hasRolldown(this, config)) {
-          config.build.rolldownOptions ||= {};
-
-          if (hasRootEntry) {
-            config.build.rolldownOptions.input ||= {};
-            Object.assign(config.build.rolldownOptions.input, {
-              main: 'index.html',
-            });
-          }
-
-          if (hasTestsEntry) {
-            if (shouldBuildTests(env.mode)) {
+        if (!config.build.rolldownOptions?.input) {
+          if (hasRolldown(this, config)) {
+            config.build.rolldownOptions ||= {};
+  
+            if (hasRootEntry) {
               config.build.rolldownOptions.input ||= {};
               Object.assign(config.build.rolldownOptions.input, {
-                tests: 'tests/index.html',
+                main: 'index.html',
               });
             }
-          }
-        } else {
-          config.build.rollupOptions ||= {};
-
-          if (hasRootEntry) {
-            config.build.rollupOptions.input ||= {};
-            Object.assign(config.build.rollupOptions.input, {
-              main: 'index.html',
-            });
-          }
-
-          if (hasTestsEntry) {
-            if (shouldBuildTests(env.mode)) {
+  
+            if (hasTestsEntry) {
+              if (shouldBuildTests(env.mode)) {
+                config.build.rolldownOptions.input ||= {};
+                Object.assign(config.build.rolldownOptions.input, {
+                  tests: 'tests/index.html',
+                });
+              }
+            }
+          } else {
+            config.build.rollupOptions ||= {};
+  
+            if (hasRootEntry) {
               config.build.rollupOptions.input ||= {};
               Object.assign(config.build.rollupOptions.input, {
-                tests: 'tests/index.html',
+                main: 'index.html',
               });
+            }
+  
+            if (hasTestsEntry) {
+              if (shouldBuildTests(env.mode)) {
+                config.build.rollupOptions.input ||= {};
+                Object.assign(config.build.rollupOptions.input, {
+                  tests: 'tests/index.html',
+                });
+              }
             }
           }
         }

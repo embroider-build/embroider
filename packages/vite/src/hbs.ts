@@ -1,7 +1,7 @@
-import type { PluginContext } from 'rollup';
 import type { Plugin } from 'vite';
 import { hbsToJS, templateOnlyComponentSource } from '@embroider/core';
 import { extFilter, supportsObjectHooks } from './build-id-filter.js';
+import type { PluginContext } from 'rolldown';
 
 export const hbsFilter = extFilter('hbs');
 

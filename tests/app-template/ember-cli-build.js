@@ -1,11 +1,16 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-const { compatBuild } = require('@embroider/compat');
+const { maybeEmbroider } = require('@embroider/test-setup');
 
-module.exports = async function (defaults) {
-  const { buildOnce } = await import('@embroider/vite');
+module.exports = function (defaults) {
   let app = new EmberApp(defaults, {});
 
-  return compatBuild(app, buildOnce);
+  return maybeEmbroider(app, {
+    skipBabel: [
+      {
+        package: 'qunit',
+      },
+    ],
+  });
 };

@@ -20,7 +20,6 @@ module.exports = {
       rules: {
         'prefer-const': 'off',
         'no-inner-declarations': 'off',
-        '@typescript-eslint/no-non-null-assertion': 'off',
       },
     },
     // node files

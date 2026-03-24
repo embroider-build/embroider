@@ -3,11 +3,7 @@ import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { loadFromFixtureData } from './helpers';
-import CommandWatcher from './helpers/command-watcher';
-import fetch from 'node-fetch';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
+import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
@@ -29,30 +25,13 @@ appScenarios
     });
   })
   .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
-      let app: PreparedApp;
-
-      hooks.before(async function () {
-        app = await scenario.prepare();
-      });
-
-      test(`css is transformed: build mode`, async function (assert) {
-        let result = await app.execute(`pnpm build`);
-        assert.strictEqual(result.exitCode, 0, result.output);
-        let text = readFileSync(join(app.dir, `dist/@embroider/virtual/app.css`), 'utf8');
-        assert.strictEqual(text, 'body { background: red; }');
-      });
-
-      test(`css is transformed: dev mode`, async function (assert) {
-        const server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        try {
-          const [, url] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-          let response = await fetch(`${url}/@embroider/virtual/app.css`);
-          let text = await response.text();
-          assert.strictEqual(text, 'body { background: red; }');
-        } finally {
-          await server.shutdown();
-        }
+    Qmodule(scenario.name, function () {
+      test(`pnpm test`, async function (assert) {
+        let app: PreparedApp = await scenario.prepare();
+        let result = await app.execute('node ./node_modules/ember-cli/bin/ember b');
+        assert.equal(result.exitCode, 0, result.output);
+        let expectFile = expectFilesAt(app.dir, { qunit: assert });
+        expectFile('./dist/assets/app-template.css').matches('body { background: red; }');
       });
     });
   });

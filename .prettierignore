@@ -13,8 +13,6 @@
 /packages/shared-internals/**/*.d.ts
 /packages/compat/**/*.js
 /packages/compat/**/*.d.ts
-/packages/config-meta-loader/**/*.js
-/packages/config-meta-loader/**/*.d.ts
 /packages/macros/**/*.js
 /packages/macros/**/*.d.ts
 /packages/util/src/**/*.js
@@ -31,7 +29,6 @@
 /test-packages/release/src/*.d.ts
 /tests/scenarios/**/*.js
 /tests/scenarios/**/*.d.ts
-/tests/scenarios/output/
 /packages/test-setup/**/*.js
 /packages/test-setup/**/*.d.ts
 /packages/addon-shim/**/*.js
@@ -39,12 +36,9 @@
 /packages/addon-dev/**/*.js
 /packages/addon-dev/**/*.d.ts
 /tests/fixtures/
-/tests/addon-template/
 /packages/vite/index.mjs
 /packages/vite/**/*.js
 /packages/vite/**/*.d.ts
-/packages/template-tag-codemod/**/*.js
-/packages/template-tag-codemod/**/*.d.ts
 /packages/reverse-exports/**/*.js
 /packages/reverse-exports/**/*.d.ts
 

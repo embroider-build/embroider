@@ -1,5 +1,5 @@
-import PackageCache, { type PackageCachePublicAPI } from './package-cache';
-import type { V2AddonPackage } from './package';
+import PackageCache from './package-cache';
+import type { V2AddonPackage, V2AppPackage, V2Package } from './package';
 import Package from './package';
 import { existsSync, readJSONSync, realpathSync } from 'fs-extra';
 import { resolve } from 'path';
@@ -25,9 +25,12 @@ export interface RewrittenPackageIndex {
   extraResolutions: Record<string, string[]>;
 }
 
+// without this, using a class as an interface forces you to have the same
+// private and protected methods too (since people trying to extend from you
+// could see all of those)
 type PublicAPI<T> = { [K in keyof T]: T[K] };
 
-export class RewrittenPackageCache implements PackageCachePublicAPI {
+export class RewrittenPackageCache implements PublicAPI<PackageCache> {
   constructor(private plainCache: PackageCache) {}
 
   get appRoot(): string {
@@ -226,8 +229,8 @@ class WrappedPackage implements PackageTheGoodParts {
     return this.plainPkg.meta;
   }
 
-  isEmberAddon() {
-    return this.plainPkg.isEmberAddon();
+  isEmberPackage() {
+    return this.plainPkg.isEmberPackage();
   }
 
   isEngine() {
@@ -238,20 +241,16 @@ class WrappedPackage implements PackageTheGoodParts {
     return this.plainPkg.isLazyEngine();
   }
 
-  isV2Ember(): boolean {
+  isV2Ember(): this is V2Package {
     return this.plainPkg.isV2Ember();
   }
 
-  isApp(): boolean {
-    return this.plainPkg.isApp();
+  isV2App(): this is V2AppPackage {
+    return this.plainPkg.isV2App();
   }
 
   isV2Addon(): this is V2AddonPackage {
     return this.plainPkg.isV2Addon();
-  }
-
-  needsLooseResolving(): boolean {
-    return this.plainPkg.needsLooseResolving();
   }
 
   // it's important that we're calling this.dependencies here at this level, not

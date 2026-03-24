@@ -24,7 +24,7 @@ module.exports = {
     {
       files: ['**/*.ts'],
       parserOptions: {
-        project: true,
+        project: './tsconfig.json',
       },
       rules: {
         '@typescript-eslint/consistent-type-imports': 'error',
@@ -62,7 +62,6 @@ module.exports = {
       files: ['tests/**/*'],
       rules: {
         'node/no-missing-require': 'off',
-        'import/no-extraneous-dependencies': 'off',
       },
     },
   ],

@@ -1,48 +1,16 @@
 import { Memoize } from 'typescript-memoize';
 import { readFileSync, existsSync } from 'fs-extra';
-import { join, extname, resolve } from 'path';
+import { join, extname } from 'path';
 import get from 'lodash/get';
-import type { AddonMeta, PackageInfo } from './metadata';
+import type { AddonMeta, AppMeta, PackageInfo } from './metadata';
 import type PackageCache from './package-cache';
 import flatMap from 'lodash/flatMap';
-import cloneDeep from 'lodash/cloneDeep';
-
-// This is controllable via env var because there are many different contexts
-// (babel/rollup/vite/webpack/handlebars plugins) that can all depend on
-// `@embroider/shared-internals` to help understand the structure of packages,
-// and we want one clear way to signal to all of those whether this feature is
-// configured.
-//
-// The initial motivating use case for this is that new-enough ember-source can
-// function as a v2 addon despite not declaring itself to be a v2 addon, because
-// that would be potentially-breaking for people who still consume it via AMD
-// and/or depend on the specific timng of the classic vendor.js file. We don't
-// want to break people but we also want people on the bleeding edge to be able
-// to take advantage of the capability.
-const forcedV2Packages = (() => {
-  let cached: string[] | undefined;
-  return () => {
-    if (!cached) {
-      if (
-        typeof process !== undefined &&
-        typeof process.env !== undefined &&
-        process.env.EMBROIDER_FORCED_V2_PACKAGES
-      ) {
-        cached = process.env.EMBROIDER_FORCED_V2_PACKAGES.split(',');
-      } else {
-        cached = [];
-      }
-    }
-    return cached;
-  };
-})();
-
 export default class Package {
   // order here matters because we rely on it in categorizeDependency
   private dependencyKeys: ('dependencies' | 'devDependencies' | 'peerDependencies')[];
 
-  constructor(readonly root: string, protected packageCache: PackageCache, private _isApp: boolean) {
-    this.dependencyKeys = _isApp
+  constructor(readonly root: string, protected packageCache: PackageCache, private isApp: boolean) {
+    this.dependencyKeys = isApp
       ? ['dependencies', 'devDependencies', 'peerDependencies']
       : ['dependencies', 'peerDependencies'];
   }
@@ -55,28 +23,9 @@ export default class Package {
     return this.packageJSON.version;
   }
 
-  private dummyAppOwnedByAddon: Package | undefined;
-
   @Memoize()
   protected get internalPackageJSON() {
-    try {
-      return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
-    } catch (err) {
-      if (err.code === 'ENOENT' && this.root === this.packageCache.appRoot) {
-        // if the app is missing it's package.json, we could be looking at a
-        // dummy app of a v1 addon.
-        let upPkg = this.packageCache.ownerOfFile(resolve(this.root, '..'));
-        if (upPkg?.isEmberAddon()) {
-          // found containing addon. Synthesize the dummy's app's virtual
-          // package.json
-          this.dummyAppOwnedByAddon = upPkg;
-          let pkg = cloneDeep(upPkg.packageJSON);
-          pkg.name = 'dummy';
-          return pkg;
-        }
-      }
-      throw err;
-    }
+    return JSON.parse(readFileSync(join(this.root, 'package.json'), 'utf8'));
   }
 
   @Memoize()
@@ -90,29 +39,26 @@ export default class Package {
         json.dependencies[dep.name] = dep.version || '*';
       }
     }
-    if (forcedV2Packages().includes(json.name)) {
-      let defaults: AddonMeta = {
-        version: 2,
-      };
-      json['ember-addon'] = Object.assign(defaults, json['ember-addon']);
-    }
     return json;
   }
 
-  get meta(): AddonMeta | undefined {
+  get meta(): AddonMeta | AppMeta | undefined {
     let m = this.packageJSON['ember-addon'];
+    if (this.isV2App()) {
+      return m as unknown as AppMeta;
+    }
     if (this.isV2Addon()) {
       return m as AddonMeta;
     }
   }
 
-  isEmberAddon(): boolean {
+  isEmberPackage(): boolean {
     let keywords = this.packageJSON.keywords;
     return Boolean(keywords && (keywords as string[]).includes('ember-addon'));
   }
 
   isEngine(): boolean {
-    if (this.isApp()) {
+    if (this.isApp) {
       // an app is implicitly an engine
       return true;
     }
@@ -124,20 +70,16 @@ export default class Package {
     return this.isEngine() && Boolean(get(this.packageJSON, 'ember-addon.lazy-engine'));
   }
 
-  isV2Ember(): boolean {
-    return this.isApp() || this.isV2Addon();
+  isV2Ember(): this is V2Package {
+    return this.isEmberPackage() && get(this.packageJSON, 'ember-addon.version') === 2;
   }
 
-  isApp(): boolean {
-    return this._isApp;
-  }
-
-  needsLooseResolving(): boolean {
-    return this.isApp() || ((this.isV2Addon() && this.meta['auto-upgraded']) ?? false);
+  isV2App(): this is V2AppPackage {
+    return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'app';
   }
 
   isV2Addon(): this is V2AddonPackage {
-    return this.isEmberAddon() && this.packageJSON['ember-addon']?.version === 2;
+    return this.isV2Ember() && this.packageJSON['ember-addon'].type === 'addon';
   }
 
   findDescendants(filter?: (pkg: Package) => boolean): Package[] {
@@ -182,10 +124,9 @@ export default class Package {
 
   @Memoize()
   get nonResolvableDeps(): Map<string, Package> | undefined {
-    let result: Map<string, Package> | undefined;
     let meta = this.internalPackageJSON['ember-addon'];
     if (meta && meta.paths) {
-      result = new Map(
+      return new Map(
         meta.paths
           .map((path: string) => {
             // ember-cli gives a warning if the path specifies an invalid, malformed or missing addon. the logic for invalidating an addon is:
@@ -220,14 +161,6 @@ export default class Package {
           .filter(Boolean)
       );
     }
-    if (this.dummyAppOwnedByAddon) {
-      if (!result) {
-        result = new Map();
-      }
-      // dummy apps magically depend on the containing addon.
-      result.set(this.dummyAppOwnedByAddon.name, this.dummyAppOwnedByAddon);
-    }
-    return result;
   }
 
   get dependencyNames(): string[] {
@@ -295,6 +228,14 @@ export interface PackageConstructor {
   new (root: string, mayUseDevDeps: boolean, packageCache: PackageCache): Package;
 }
 
+export interface V2Package extends Package {
+  meta: AddonMeta | AppMeta;
+}
+
 export interface V2AddonPackage extends Package {
   meta: AddonMeta;
+}
+
+export interface V2AppPackage extends Package {
+  meta: AppMeta;
 }

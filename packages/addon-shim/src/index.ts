@@ -26,7 +26,7 @@ export interface ShimOptions {
 
 function addonMeta(pkgJSON: PackageInfo): AddonMeta {
   let meta = pkgJSON['ember-addon'];
-  if (meta?.version !== 2) {
+  if (meta?.version !== 2 || meta?.type !== 'addon') {
     throw new Error(`did not find valid v2 addon metadata in ${pkgJSON.name}`);
   }
   return meta as AddonMeta;
@@ -101,6 +101,7 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
         parentOptions = this.app.options;
       }
 
+      this._eaiAssertions();
       this._internalRegisterV2Addon(
         this.name,
         directory,
@@ -141,12 +142,6 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       if (maybeAssets) {
         return treeFor(this, maybeAssets);
       }
-    },
-
-    postprocessTree(this: OwnType, _type: string, tree: any) {
-      this._eaiAssertions();
-
-      return tree;
     },
 
     cacheKeyForTree(this: AddonInstance, treeType: string): string {

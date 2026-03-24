@@ -1,295 +1,63 @@
-import { type Plugin, type ViteDevServer, normalizePath } from 'vite';
-import core, { ModuleRequest, type Package, type Resolver } from '@embroider/core';
-const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
-import { type ResponseMeta, RollupRequestAdapter } from './request.js';
-import { assertNever } from 'assert-never';
-import makeDebug from 'debug';
-import { join, normalize, resolve } from 'path';
-import { writeStatus } from './backchannel.js';
-import type { PluginContext, ResolveIdResult } from 'rolldown';
-import { externalName } from '@embroider/reverse-exports';
-import fs from 'fs-extra';
-import { createHash } from 'crypto';
-import { BackChannel } from './backchannel.js';
-import { existsSync, mkdtempSync } from 'node:fs';
+import type { PluginContext, ResolveIdResult } from 'rollup';
+import type { Plugin } from 'vite';
+import { join } from 'path';
+import type { Resolution, ResolverFunction, ResolverOptions } from '@embroider/core';
+import { Resolver, locateEmbroiderWorkingDir, virtualContent } from '@embroider/core';
+import { readJSONSync } from 'fs-extra';
+import { RollupModuleRequest, virtualPrefix } from './request';
+import assertNever from 'assert-never';
 
-const { ensureSymlinkSync, writeFileSync, renameSync } = fs;
-
-const debug = makeDebug('embroider:vite');
-
-export function resolver(params?: { rolldown?: boolean }): Plugin {
-  const resolverLoader = new ResolverLoader(process.cwd());
-  let server: ViteDevServer;
-  const virtualDeps: Map<string, string[]> = new Map();
-  const notViteDeps = new Set<string>();
-  const responseMetas: Map<string, ResponseMeta> = new Map();
-  const backChannel = params?.rolldown ? new BackChannel() : undefined;
-  let cacheDir = '';
-
-  async function resolveId(
-    context: PluginContext,
-    source: string,
-    importer: string | undefined,
-    options: { custom?: Record<string, unknown>; scan?: boolean }
-  ) {
-    // @ts-expect-error not included in upstream types
-    let isDepBundling = Boolean(context.outputOptions?.dir?.includes('.vite'));
-
-    // vite 5 exposes `custom.depscan`, vite 6 exposes `options.scan`
-    if (options.custom?.depScan || options.scan) {
-      return await observeDepScan(context, source, importer, options);
-    }
-
-    let request = ModuleRequest.create(RollupRequestAdapter.create, {
-      context,
-      source,
-      importer,
-      custom: options.custom,
-      backChannel,
-      isDepBundling,
-      packageCache: resolverLoader.resolver.packageCache,
-    });
-    if (!request) {
-      // fallthrough to other rollup plugins
-      return null;
-    }
-    let resolution = await resolverLoader.resolver.resolve(request);
-    switch (resolution.type) {
-      case 'found':
-        if (resolution.virtual) {
-          return resolution.result;
-        } else {
-          return await maybeCaptureNewOptimizedDep(
-            context,
-            resolverLoader.resolver,
-            resolution.result,
-            notViteDeps,
-            cacheDir
-          );
-        }
-      case 'not_found':
-        return null;
-      default:
-        throw assertNever(resolution);
-    }
-  }
-
-  async function ensureVirtualResolve(context: PluginContext, specifier: string): Promise<ResponseMeta> {
-    let result = await resolveId(
-      context,
-      specifier,
-      resolve(resolverLoader.resolver.options.appRoot, 'package.json'),
-      {}
-    );
-    if (!result) {
-      throw new Error(`bug: expected to resolve ${specifier}`);
-    }
-    if (typeof result === 'string') {
-      throw new Error(`bug: expected to get a PartialResolvedId`);
-    }
-    let meta = result.meta?.['embroider-resolver'] as ResponseMeta | undefined;
-    if (!meta) {
-      throw new Error(`bug: no response meta for ${specifier}`);
-    }
-    return meta;
-  }
-
-  async function emitVirtualFile(context: PluginContext, fileName: string): Promise<void> {
-    context.emitFile({
-      type: 'asset',
-      fileName,
-      source: virtualContent((await ensureVirtualResolve(context, fileName)).virtual, resolverLoader.resolver).src,
-    });
-  }
-
-  let mode = '';
+export function resolver(): Plugin {
+  let resolverOptions: ResolverOptions = readJSONSync(join(locateEmbroiderWorkingDir(process.cwd()), 'resolver.json'));
+  let resolver = new Resolver(resolverOptions);
 
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
-
-    configResolved(config) {
-      mode = config.mode;
-      cacheDir = normalize(config.cacheDir);
-    },
-
-    configureServer(s) {
-      server = s;
-      server.watcher.on('all', (_eventName, path) => {
-        for (let [id, watches] of virtualDeps) {
-          for (let watch of watches) {
-            if (path.startsWith(watch)) {
-              debug('Invalidate %s because %s', id, path);
-              server.moduleGraph.onFileChange(id);
-              let m = server.moduleGraph.getModuleById(id);
-              if (m) {
-                server.reloadModule(m);
-              }
-            }
-          }
-        }
-      });
-      return () => {
-        server.middlewares.use((req, _res, next) => {
-          const base = server.config.base || '/';
-          let originalUrl = req.originalUrl;
-          if (originalUrl?.startsWith(base)) {
-            originalUrl = req.originalUrl!.slice(base.length - 1);
-          }
-          if (originalUrl && originalUrl.length > 1) {
-            if (originalUrl?.match(/^\/tests($|\?)/)) {
-              req.url = `/tests/index.html`;
-              return next();
-            }
-          }
-          return next();
-        });
-      };
-    },
-
     async resolveId(source, importer, options) {
-      let resolution = await resolveId(this, source, importer, options);
-      if (typeof resolution === 'string') {
-        return resolution;
+      let request = RollupModuleRequest.from(source, importer, options.custom);
+      if (!request) {
+        // fallthrough to other rollup plugins
+        return null;
       }
-      if (resolution && resolution.meta?.['embroider-resolver']) {
-        responseMetas.set(normalizePath(resolution.id), resolution.meta['embroider-resolver'] as ResponseMeta);
+      let resolution = await resolver.resolve(request, defaultResolve(this));
+      switch (resolution.type) {
+        case 'found':
+          return resolution.result;
+        case 'not_found':
+          return null;
+        default:
+          throw assertNever(resolution);
       }
-      return resolution;
     },
-
     load(id) {
-      let meta = responseMetas.get(normalizePath(id));
-      if (meta?.virtual) {
-        let { src, watches } = virtualContent(meta.virtual, resolverLoader.resolver);
-        virtualDeps.set(id, watches);
-        server?.watcher.add(watches);
-        return src;
-      }
-    },
-    async buildEnd() {
-      emitVirtualFile(this, '@embroider/virtual/vendor.js');
-      emitVirtualFile(this, '@embroider/virtual/vendor.css');
-
-      if (mode !== 'production') {
-        emitVirtualFile(this, '@embroider/virtual/test-support.js');
-        emitVirtualFile(this, '@embroider/virtual/test-support.css');
+      if (id.startsWith(virtualPrefix)) {
+        return virtualContent(id.slice(virtualPrefix.length), resolver);
       }
     },
   };
 }
 
-// During depscan, we have a wildly different job than during normal
-// usage. Embroider's esbuild resolver plugin replaces this rollup
-// resolver plugin for actually doing resolving, so we don't do any of
-// that. But we are still well-positioned to observe what vite's rollup
-// resolver plugin is doing, and that is important because vite's
-// esbuild depscan plugin will always obscure the results before
-// embroider's esbuild resolver plugin can see them. It obscures the
-// results by marking *both* "not found" and "this is a third-party
-// package" as "external: true". We really care about the difference
-// between the two, since we have fallback behaviors that should apply
-// to "not found" that should not apply to successfully discovered
-// third-party packages.
-async function observeDepScan(context: PluginContext, source: string, importer: string | undefined, options: any) {
-  let result = await context.resolve(source, importer, {
-    ...options,
-    skipSelf: true,
-  });
-  writeStatus(source, importer ?? '', result ? { type: 'found', filename: result.id } : { type: 'not_found' });
-  return result;
-}
-
-function idFromResult(result: ResolveIdResult): string | undefined {
-  if (!result) {
-    return undefined;
-  }
-  if (typeof result === 'string') {
-    return cleanUrl(result);
-  }
-  return cleanUrl(result.id);
-}
-
-function hashed(path: string): string {
-  let h = createHash('sha1');
-  return h.update(path).digest('hex').slice(0, 8);
-}
-
-async function maybeCaptureNewOptimizedDep(
-  context: PluginContext,
-  resolver: Resolver,
-  result: ResolveIdResult,
-  notViteDeps: Set<string>,
-  cacheDir: string
-): Promise<ResolveIdResult> {
-  let foundFile = idFromResult(result);
-  if (!foundFile) {
-    return result;
-  }
-  if (normalize(foundFile).startsWith(cacheDir)) {
-    debug('maybeCaptureNewOptimizedDep: %s already in vite deps', foundFile);
-    return result;
-  }
-  let pkg = resolver.packageCache.ownerOfFile(foundFile);
-  if (!pkg?.isV2Addon()) {
-    debug('maybeCaptureNewOptimizedDep: %s not in v2 addon', foundFile);
-    return result;
-  }
-  let target = externalName(pkg.packageJSON, explicitRelative(pkg.root, foundFile));
-  if (!target) {
-    debug('maybeCaptureNewOptimizedDep: %s is not exported', foundFile);
-    return result;
-  }
-
-  if (notViteDeps.has(foundFile)) {
-    debug('maybeCaptureNewOptimizedDep: already attempted %s', foundFile);
-    return result;
-  }
-
-  debug('maybeCaptureNewOptimizedDep: doing re-resolve for %s ', foundFile);
-
-  let jumpRoot = join(tmpdir, 'embroider-vite-jump-' + hashed(pkg.root + '|' + pkg.name));
-  if (!existsSync(jumpRoot)) {
-    let tmp = buildViteJump(pkg);
-    try {
-      renameSync(tmp, jumpRoot);
-    } catch (err) {
-      if (err.code === 'EEXIST') {
-        // somebody raced us and made it first. It's content-addressable so
-        // that's fine.
-      } else {
-        throw err;
-      }
+function defaultResolve(context: PluginContext): ResolverFunction<RollupModuleRequest, Resolution<ResolveIdResult>> {
+  return async (request: RollupModuleRequest) => {
+    if (request.isVirtual) {
+      return {
+        type: 'found',
+        result: { id: request.specifier, resolvedBy: request.fromFile },
+      };
     }
-  }
-  let newResult = await context.resolve(target, join(jumpRoot, 'package.json'));
-  if (newResult) {
-    if (idFromResult(newResult) === foundFile) {
-      // This case is normal. For example, people could be using
-      // `optimizeDeps.exclude` or they might be working in a monorepo where an
-      // addon is not in node_modules. In both cases vite will decide not to
-      // optimize the file, even though we gave it a chance to.
-      //
-      // We cache that result so we don't keep trying.
-      debug('maybeCaptureNewOptimizedDep: %s did not become an optimized dep', foundFile);
-      notViteDeps.add(foundFile);
+    let result = await context.resolve(request.specifier, request.fromFile, {
+      skipSelf: true,
+      custom: {
+        embroider: {
+          meta: request.meta,
+        },
+      },
+    });
+    if (result) {
+      return { type: 'found', result };
+    } else {
+      return { type: 'not_found', err: undefined };
     }
-
-    return newResult;
-  } else {
-    return result;
-  }
-}
-
-function buildViteJump(pkg: Package) {
-  let tmp = mkdtempSync(join(tmpdir, 'embroider-vite-jump-tmp-'));
-  writeFileSync(
-    join(tmp, 'package.json'),
-    JSON.stringify({
-      name: 'jump-root',
-    }),
-    { flush: true }
-  );
-  ensureSymlinkSync(pkg.root, join(tmp, 'node_modules', pkg.name));
-  return tmp;
+  };
 }

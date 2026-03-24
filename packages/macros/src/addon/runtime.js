@@ -45,34 +45,7 @@ export function isTesting() {
   return Boolean(e && e.isTesting);
 }
 
-export function setTesting(isTesting) {
-  if (!runtimeConfig.global) {
-    runtimeConfig.global = {};
-  }
-  if (!runtimeConfig.global['@embroider/macros']) {
-    runtimeConfig.global['@embroider/macros'] = {};
-  }
-  runtimeConfig.global['@embroider/macros'].isTesting = Boolean(isTesting);
-}
-
-// Welcome intrepid developer!
-//
-// While this data is "global", this is a private variable.
-//
-// do not build features based off of its contents,
-// or assume it will have the same name in future releases.
-const runtimeConfig = globalThis.__embroider_macros__runtime_config__ ||= {};
-
-runtimeConfig.packages ||= {};
-runtimeConfig.global ||= {};
-
-// In the off chance there are duplicate copies of @embroider/macros in the dep graph
-// (due to the package manager messing up)
-// Let's try to merge them together via the above global well known variable
-const localConfig = initializeRuntimeMacrosConfig();
-
-Object.assign(runtimeConfig.packages, localConfig.packages);
-Object.assign(runtimeConfig.global, localConfig.global);
+const runtimeConfig = initializeRuntimeMacrosConfig();
 
 // this exists to be targeted by our babel plugin
 function initializeRuntimeMacrosConfig() {

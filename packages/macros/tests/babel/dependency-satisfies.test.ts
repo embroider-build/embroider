@@ -1,7 +1,7 @@
 import { allBabelVersions, runDefault } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { join } from 'path';
-import { buildMacros } from '../../src/babel';
+import { MacrosConfig } from '../../src/node';
 
 const ROOT = process.cwd();
 
@@ -20,15 +20,12 @@ describe(`dependencySatisfies`, function () {
   allBabelVersions({
     includePresetsTests: true,
     babelConfig() {
-      project.write();
-
-      let config = buildMacros({
-        dir: project.baseDir,
-      });
-
+      project.writeSync();
+      let config = MacrosConfig.for({}, project.baseDir);
+      config.finalize();
       return {
         filename: join(project.baseDir, 'sample.js'),
-        plugins: config.babelMacros,
+        plugins: config.babelPluginConfig(),
       };
     },
 
@@ -144,7 +141,7 @@ describe(`dependencySatisfies`, function () {
         import { dependencySatisfies } from '@embroider/macros';
 
         export default function() {
-          return {
+          return { 
             // specified in dependencies
             util: dependencySatisfies('@embroider/util', '*'),
 

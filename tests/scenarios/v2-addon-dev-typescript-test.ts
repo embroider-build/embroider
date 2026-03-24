@@ -8,7 +8,7 @@ import { pathExistsSync, readJsonSync, readFileSync } from 'fs-extra';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('canary')
+  .only('release')
   .map('v2-addon-dev-typescript', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';

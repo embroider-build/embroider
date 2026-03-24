@@ -1,6 +1,6 @@
 {
   "name": "@embroider/shared-internals",
-  "version": "3.0.2",
+  "version": "2.9.2",
   "private": false,
   "description": "Utilities shared among the other embroider packages",
   "repository": {
@@ -13,7 +13,9 @@
       "browser": "./src/browser-index.js",
       "default": "./src/index.js"
     },
-    "./src/*": "./src/*.js"
+    "./src/babel-plugin-cache-busting": "./src/babel-plugin-cache-busting.js",
+    "./src/babel-plugin-cache-busting.js": "./src/babel-plugin-cache-busting.js",
+    "./src/template-colocation-plugin": "./src/template-colocation-plugin.js"
   },
   "license": "MIT",
   "author": "Edward Faulkner",
@@ -26,8 +28,11 @@
   "scripts": {
     "test": "jest"
   },
+  "release-plan": {
+    "publishTag": "v2-x"
+  },
   "dependencies": {
-    "babel-import-util": "^3.0.1",
+    "babel-import-util": "^2.0.0",
     "debug": "^4.3.2",
     "ember-rfc176-data": "^0.3.17",
     "fs-extra": "^9.1.0",
@@ -35,8 +40,7 @@
     "js-string-escape": "^1.0.1",
     "lodash": "^4.17.21",
     "minimatch": "^3.0.4",
-    "pkg-entry-points": "^1.1.1",
-    "resolve.exports": "^2.0.2",
+    "pkg-entry-points": "^1.1.0",
     "resolve-package-path": "^4.0.1",
     "semver": "^7.3.5",
     "typescript-memoize": "^1.0.1"
@@ -56,7 +60,7 @@
     "fixturify": "^2.1.1",
     "scenario-tester": "^4.0.0",
     "tmp": "^0.1.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.1.6"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

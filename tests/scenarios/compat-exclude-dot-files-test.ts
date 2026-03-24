@@ -2,32 +2,18 @@ import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/qunit';
 import { throwOnWarnings } from '@embroider/core';
 import type { PreparedApp } from 'scenario-tester';
-import CommandWatcher from './helpers/command-watcher';
 import { appScenarios, baseAddon } from './scenarios';
-import fetch from 'node-fetch';
 import QUnit from 'qunit';
 import { merge } from 'lodash';
-import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .map('compat-exclude-dot-files', app => {
     merge(app.files, {
-      'ember-cli-build.js': `'use strict';
-
-      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-      const { maybeEmbroider } = require('@embroider/test-setup');
-
-      module.exports = function (defaults) {
-        let app = new EmberApp(defaults, {});
-
-        return maybeEmbroider(app);
-      };
-      `,
       app: {
-        '.foobar.js': `// foobar content\nexport {}`,
-        '.barbaz.js': `// barbaz content\nexport {}`,
-        'bizbiz.js': `// bizbiz content\nexport {}`,
+        '.foobar.js': `// foobar content`,
+        '.barbaz.js': `// barbaz content`,
+        'bizbiz.js': `// bizbiz content`,
       },
     });
 
@@ -35,8 +21,8 @@ appScenarios
     addon.pkg.name = 'my-addon';
     merge(addon.files, {
       addon: {
-        '.fooaddon.js': `// fooaddon content\nexport {}`,
-        'baraddon.js': `// bizbiz content\nexport {}`,
+        '.fooaddon.js': `// fooaddon content`,
+        'baraddon.js': `// bizbiz content`,
       },
     });
     app.addDevDependency(addon);
@@ -46,53 +32,40 @@ appScenarios
       throwOnWarnings(hooks);
 
       let app: PreparedApp;
-      let server: CommandWatcher;
-      let appURL: string;
+
       let expectFile: ExpectFile;
 
-      hooks.before(async () => {
+      hooks.before(async assert => {
         app = await scenario.prepare();
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
+        let result = await app.execute('ember build', { env: { STAGE2_ONLY: 'true' } });
+        assert.equal(result.exitCode, 0, result.output);
       });
 
-      hooks.beforeEach(async assert => {
+      hooks.beforeEach(assert => {
         expectFile = expectRewrittenFilesAt(app.dir, { qunit: assert });
       });
 
-      hooks.after(async () => {
-        await server?.shutdown();
+      test('dot files are not included as app modules', function () {
+        // dot files should exist on disk
+        expectFile('./.foobar.js').exists();
+        expectFile('./.barbaz.js').exists();
+        expectFile('./bizbiz.js').exists();
+
+        // dot files should not be included as modules
+        expectFile('./assets/app-template.js').doesNotMatch('app-template/.foobar');
+        expectFile('./assets/app-template.js').doesNotMatch('app-template/.barbaz');
+        expectFile('./assets/app-template.js').matches('app-template/bizbiz');
       });
 
-      let expectAudit = setupAuditTest(hooks, () => ({
-        appURL,
-        startingFrom: ['index.html'],
-        fetch: fetch as unknown as typeof globalThis.fetch,
-      }));
+      test('dot files are not included as addon implicit-modules', function () {
+        // Dot files should exist on disk
+        expectFile('./node_modules/my-addon/.fooaddon.js').exists();
+        expectFile('./node_modules/my-addon/baraddon.js').exists();
 
-      test('dot files are not included as app modules', function (assert) {
-        // dot files should exist on disk
-        expectFile('./app/.foobar.js').exists();
-        expectFile('./app/.barbaz.js').exists();
-        expectFile('./app/bizbiz.js').exists();
+        let myAddonPackage = expectFile('./node_modules/my-addon/package.json').json();
 
-        // but not be picked up in the entrypoint
-        expectAudit
-          .module('./index.html')
-          .resolves(/\/index.html.*/) // in-html app-boot script
-          .toModule()
-          .resolves(/\/app\.js.*/)
-          .toModule()
-          .resolves(/.*\/-embroider-entrypoint.js/)
-          .toModule()
-          .withContents(content => {
-            assert.notOk(/app-template\/\.foobar/.test(content), '.foobar is not in the entrypoint');
-            assert.notOk(/app-template\/\.barbaz/.test(content), '.barbaz is not in the entrypoint');
-            assert.ok(/app-template\/bizbiz/.test(content), 'bizbiz is in the entrypoint');
-
-            // we are relying on the assertinos here so we always return true
-            return true;
-          });
+        // dot files are not included as implicit-modules
+        myAddonPackage.get(['ember-addon', 'implicit-modules']).deepEquals(['./baraddon']);
       });
     });
   });

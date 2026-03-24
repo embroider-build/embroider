@@ -1,8 +1,6 @@
 import { posix } from 'path';
 import { exports as resolveExports } from 'resolve.exports';
-import memoize from 'mem';
 
-type PkgJSON = { name: string; version: string; exports?: Exports };
 type Exports = string | string[] | { [key: string]: Exports };
 
 /**
@@ -74,23 +72,24 @@ export function _findPathRecursively(
   throw new Error(`Unexpected type of obj: ${typeof exportsObj}`);
 }
 
-/*
-  Takes a relativePath that is relative to the package root and produces its
-  externally-addressable name.
-
-  Returns undefined for a relativePath that is forbidden to be accessed from the
-  outside.
-*/
-function _externalName(pkg: PkgJSON, relativePath: string): string | undefined {
-  let { exports } = pkg;
-  if (!exports) {
-    return posix.join(pkg.name, relativePath);
+export default function reversePackageExports(
+  { exports: exportsObj, name }: { exports?: Exports; name: string },
+  relativePath: string
+): string {
+  if (!exportsObj) {
+    return posix.join(name, relativePath);
   }
 
-  const maybeKeyValuePair = _findPathRecursively(exports, candidate => _matches(candidate, relativePath));
+  const maybeKeyValuePair = _findPathRecursively(exportsObj, candidate => {
+    const regex = new RegExp(_prepareStringForRegex(candidate));
+
+    return regex.test(relativePath);
+  });
 
   if (!maybeKeyValuePair) {
-    return undefined;
+    throw new Error(
+      `You tried to reverse exports for the file \`${relativePath}\` in package \`${name}\` but it does not match any of the exports rules defined in package.json. This means it should not be possible to access directly.`
+    );
   }
 
   const { key, value } = maybeKeyValuePair;
@@ -99,7 +98,7 @@ function _externalName(pkg: PkgJSON, relativePath: string): string | undefined {
     throw new Error('Expected value to be a string');
   }
 
-  const maybeResolvedPaths = resolveExports({ name: pkg.name, exports: { [value]: key } }, relativePath);
+  const maybeResolvedPaths = resolveExports({ name, exports: { [value]: key } }, relativePath);
 
   if (!maybeResolvedPaths) {
     throw new Error(
@@ -109,26 +108,18 @@ function _externalName(pkg: PkgJSON, relativePath: string): string | undefined {
 
   const [resolvedPath] = maybeResolvedPaths;
 
-  return posix.join(pkg.name, resolvedPath);
+  return resolvedPath.replace(/^./, name);
 }
 
-export const externalName = memoize(_externalName, {
-  cacheKey: ([pkg, relativePath]) => `${pkg.name}::${pkg.version}::${relativePath}`,
-});
+export function _prepareStringForRegex(input: string): string {
+  let result = input
+    .split('*')
+    .map(substr => substr.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&'))
+    .join('.*');
 
-function _regexEscape(input: string): string {
-  return input.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
-}
-const regexEscape = memoize(_regexEscape);
-
-export function _matches(candidate: string, relativePath: string): boolean {
-  let wildCardIndex = candidate.indexOf('*');
-
-  if (~wildCardIndex) {
-    return new RegExp(
-      `^${regexEscape(candidate.substring(0, wildCardIndex))}.*${regexEscape(candidate.substring(wildCardIndex + 1))}$`
-    ).test(relativePath);
-  } else {
-    return candidate === relativePath;
+  if (result.endsWith('/')) {
+    result += '.*';
   }
+
+  return `^${result}$`;
 }

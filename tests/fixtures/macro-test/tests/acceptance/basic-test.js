@@ -6,11 +6,7 @@ import ENV from 'app-template/config/environment';
 module('Acceptance | smoke tests', function (hooks) {
   setupApplicationTest(hooks);
 
-  // TODO: this currently fails on apple.js, which was added to test app.import
-  // custom outputPath support. It's unclear whether we want to keep that
-  // feature, and regardless this test suite was a bad place to test it, so I'm
-  // skipping this. -ef4
-  test.skip('ensure all scripts in index.html 200', async function (assert) {
+  test('ensure all scripts in index.html 200', async function (assert) {
     for (let { src } of document.scripts) {
       let { status } = await fetch(src);
       assert.equal(status, 200, `expected: '${src}' to be accessible`);
@@ -35,11 +31,7 @@ module('Acceptance | smoke tests', function (hooks) {
     assert.equal(this.element.querySelector('[data-test-testing]').textContent.trim(), 'true');
   });
 
-
-  // TODO: this tests app.import custom outputPath support. It's unclear whether
-  // we want to keep that feature, and regardless this test suite was a bad
-  // place to test it, so I'm skipping this. -ef4
-  test.skip('/ordered.js is ordered correctly', function (assert) {
+  test('/ordered.js is ordered correctly', function (assert) {
     assert.deepEqual(self.ORDER, [
       // these come via app.import(name, { prepend: true });
       // which ultimately end up in vendor.js

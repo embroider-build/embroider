@@ -75,11 +75,10 @@ export class Addon {
   // to leave those imports alone and to make sure the corresponding .css files
   // are kept in the same relative locations in the destDir as they were in the
   // srcDir.
-  keepAssets(patterns: string[], exports?: undefined | 'default' | '*') {
+  keepAssets(patterns: string[]) {
     return keepAssets({
       from: this.#srcDir,
       include: patterns,
-      exports: exports,
     });
   }
 
@@ -111,7 +110,7 @@ export class Addon {
     return publicAssets(path, opts);
   }
 
-  declarations(path: string, command?: string) {
-    return declarations(path, command);
+  declarations(path: string) {
+    return declarations(path);
   }
 }

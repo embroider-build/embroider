@@ -9,6 +9,7 @@ export interface RouteFiles {
 }
 
 export class AppFiles {
+  readonly tests: ReadonlyArray<string>;
   readonly components: ReadonlyArray<string>;
   readonly helpers: ReadonlyArray<string>;
   readonly modifiers: ReadonlyArray<string>;
@@ -22,63 +23,34 @@ export class AppFiles {
     appFiles: Set<string>,
     fastbootFiles: Set<string>,
     resolvableExtensions: RegExp,
-    staticAppPathsPattern: RegExp | undefined,
     podModulePrefix?: string
   ) {
+    let tests: string[] = [];
     let components: string[] = [];
     let helpers: string[] = [];
     let modifiers: string[] = [];
     let otherAppFiles: string[] = [];
     this.perRoute = { children: new Map() };
 
-    let combinedFiles = new Map<string, string>();
-    let combinedNonFastbootFiles = new Map<string, string>();
-
-    function add(map: Map<string, string>, filename: string): void {
-      if (!resolvableExtensions.test(filename)) {
-        return;
-      }
-
-      if (/\.d\.ts$/.test(filename)) {
-        // .d.ts files are technically "*.ts" files but aren't really and we
-        // don't want to include them when we crawl through the app.
-        return;
-      }
-
-      filename = filename.split(sep).join('/');
-
-      let extensionless = filename.replace(resolvableExtensions, '');
-      let prior = map.get(extensionless);
-
-      if (!prior) {
-        // no prior, so we win
-        map.set(extensionless, filename);
-      } else if (prior.startsWith('components/') && prior.endsWith('.hbs') && !prior.endsWith('/template.hbs')) {
-        // The prior entry in combinedFiles is a colocated hbs component. The
-        // name "template.hbs" is special in the template colocation rules due
-        // to earlier pods patterns.
-        //
-        // colocated hbs never wins over the corresponding other resolvable js
-        // or ts.
-        map.set(extensionless, filename);
-      }
-    }
+    let combinedFiles = new Set<string>();
+    let combinedNonFastbootFiles = new Set<string>();
+    let isFastbootOnly = new Map<string, boolean>();
 
     for (let f of appFiles) {
-      add(combinedFiles, f);
-      add(combinedNonFastbootFiles, f);
+      combinedFiles.add(f);
+      combinedNonFastbootFiles.add(f);
     }
     for (let f of fastbootFiles) {
-      add(combinedFiles, f);
+      combinedFiles.add(f);
     }
 
-    for (let addon of engine.addons.keys()) {
+    for (let addon of engine.addons) {
       let appJS = addon.meta['app-js'];
       if (appJS) {
         for (let filename of Object.keys(appJS)) {
           filename = filename.replace(/^\.\//, '');
-          add(combinedFiles, filename);
-          add(combinedNonFastbootFiles, filename);
+          combinedFiles.add(filename);
+          combinedNonFastbootFiles.add(filename);
         }
       }
 
@@ -86,36 +58,36 @@ export class AppFiles {
       if (fastbootJS) {
         for (let filename of Object.keys(fastbootJS)) {
           filename = filename.replace(/^\.\//, '');
-          add(combinedFiles, filename);
+          combinedFiles.add(filename);
         }
       }
     }
 
-    let isFastbootOnly = new Map<string, boolean>();
-    for (let [extensionless, relativePath] of combinedFiles) {
-      isFastbootOnly.set(relativePath, !combinedNonFastbootFiles.has(extensionless));
+    for (let relativePath of combinedFiles) {
+      isFastbootOnly.set(relativePath, !combinedNonFastbootFiles.has(relativePath));
+      relativePath = relativePath.split(sep).join('/');
+      if (!resolvableExtensions.test(relativePath)) {
+        continue;
+      }
+
+      if (/\.d\.ts$/.test(relativePath)) {
+        // .d.ts files are technically "*.ts" files but aren't really and we
+        // don't want to include them when we crawl through the app.
+        continue;
+      }
 
       if (relativePath.startsWith('tests/')) {
-        // skip tests because they are dealt with separately
+        tests.push(relativePath);
         continue;
       }
 
       if (relativePath.startsWith('components/')) {
-        // hbs files are not resolvable when they're used via co-location with
-        // an associated js file because it's the js that is resolvable.
+        // hbs files are resolvable, but not when they're used via co-location.
         // An hbs file is used via colocation when it's inside the components
         // directory, and also not named "template.hbs" (because that is an
         // older pattern used with pods-like layouts).
-        let isHbs = relativePath.endsWith('.hbs');
-        if (!isHbs || relativePath.endsWith('/template.hbs')) {
+        if (!relativePath.endsWith('.hbs') || relativePath.endsWith('/template.hbs')) {
           components.push(relativePath);
-        } else if (isHbs) {
-          // template-only components will be compiled as js files during the
-          // build process, so we push a virtual path to js in the list of files
-          // because the resolver will be able to recognize a template-only and
-          // give a correct answer in the end.
-          let jsPath = relativePath.replace(/\.hbs$/, '.js');
-          components.push(jsPath);
         }
         continue;
       }
@@ -142,14 +114,9 @@ export class AppFiles {
         continue;
       }
 
-      if (staticAppPathsPattern) {
-        if (!staticAppPathsPattern.test(relativePath)) {
-          otherAppFiles.push(relativePath);
-        }
-      } else {
-        otherAppFiles.push(relativePath);
-      }
+      otherAppFiles.push(relativePath);
     }
+    this.tests = tests;
     this.components = components;
     this.helpers = helpers;
     this.modifiers = modifiers;
@@ -235,12 +202,14 @@ export class AppFiles {
 export interface Engine {
   // the engine's own package
   package: Package;
-  // the set of active addons in the engine. For each one we keep track of a file that can resolve the addon, because we'll need that later.
-  addons: Map<AddonPackage, string>;
-  // is this the top-level engine?
-  isApp: boolean;
+  // the set of active addons in the engine
+  addons: Set<AddonPackage>;
+  // the parent engine, if any
+  parent: Engine | undefined;
+  // where the engine's own V2 code comes from
+  sourcePath: string;
   // runtime name for the engine's own module namespace
   modulePrefix: string;
-  // TODO: remove this after we remove the stage2 entrypoint
+  // this is destPath but relative to the app itself
   appRelativePath: string;
 }

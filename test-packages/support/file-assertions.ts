@@ -7,21 +7,16 @@ type ContentsResult = { result: true; data: string } | { result: false; actual: 
 type JSONResult = { result: true; data: any } | { result: false; actual: any; expected: any; message: string };
 
 export class BoundExpectFile {
-  protected consumed = false;
+  private consumed = false;
 
   constructor(readonly basePath: string, readonly path: string, readonly adapter: AssertionAdapter) {
-    (async () => {
-      // we wait two microtasks because callers may legitimately need to wait
-      // one microtask before consuming a TransformedExpectFile. They need to
-      // consume it there.
-      await Promise.resolve();
-      await Promise.resolve();
+    Promise.resolve().then(() => {
       if (!this.consumed) {
         this.adapter.fail(
-          `expectFile() was not consumed by another operation. You need to chain another call onto expectFile(), by itself it doesn't assert anything`
+          "expectFile() was not consumed by another operation. You need to chain another call onto expectFile(), by itself it doesn't assert anything"
         );
       }
-    })();
+    });
   }
 
   @Memoize()
@@ -133,40 +128,40 @@ export class BoundExpectFile {
       propertyPath
     );
   }
-  async transform(fn: (contents: string, file: BoundExpectFile) => Promise<string>) {
+  transform(fn: (contents: string, file: BoundExpectFile) => string) {
     this.consumed = true;
-
-    let transformed: ContentsResult;
-
-    let raw = this.contents;
-    if (!raw.result) {
-      transformed = raw;
-    } else {
-      try {
-        transformed = { result: true, data: await fn(raw.data, this) };
-      } catch (err) {
-        transformed = {
-          result: false,
-          actual: err,
-          expected: 'transformer to run',
-          message: err.stack,
-        };
-      }
-    }
-
-    return new TransformedFileExpect(this.basePath, this.path, this.adapter, transformed);
+    return new TransformedFileExpect(this.basePath, this.path, this.adapter, fn);
   }
 }
 
 export class TransformedFileExpect extends BoundExpectFile {
-  constructor(basePath: string, path: string, adapter: AssertionAdapter, private transformed: ContentsResult) {
+  constructor(
+    basePath: string,
+    path: string,
+    adapter: AssertionAdapter,
+    private transformer: (contents: string, file: BoundExpectFile) => string
+  ) {
     super(basePath, path, adapter);
   }
-
   @Memoize()
   protected get contents(): ContentsResult {
-    this.consumed = true;
-    return this.transformed;
+    let raw = super.contents;
+    if (!raw.result) {
+      return raw;
+    }
+    try {
+      return {
+        result: true,
+        data: this.transformer(raw.data, this),
+      };
+    } catch (err) {
+      return {
+        result: false,
+        actual: err,
+        expected: 'transformer to run',
+        message: err.stack,
+      };
+    }
   }
   failsToTransform(message: string) {
     if (this.contents.result) {

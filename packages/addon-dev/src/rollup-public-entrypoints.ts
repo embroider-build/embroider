@@ -13,33 +13,17 @@ export default function publicEntrypoints(args: {
   include: string[];
   exclude?: string[];
 }): Plugin {
-  const allEntryPoints: Set<string> = new Set();
-
   return {
     name: 'addon-modules',
-
     async buildStart() {
-      const include = [
-        ...args.include,
-        '**/*.hbs',
-        '**/*.ts',
-        '**/*.gts',
-        '**/*.gjs',
-      ];
-      // wait a bit first https://github.com/nodejs/node/issues/4760
-      await new Promise((resolve) => setTimeout(resolve, 50));
       let matches = walkSync(args.srcDir, {
-        globs: include,
+        globs: [...args.include, '**/*.hbs', '**/*.ts', '**/*.gts', '**/*.gjs'],
         ignore: args.exclude,
       });
 
-      matches.forEach((m) => allEntryPoints.add(m));
-
-      for (const name of allEntryPoints) {
-        this.addWatchFile(path.resolve(args.srcDir, name));
-      }
-
       for (let name of matches) {
+        this.addWatchFile(path.join(args.srcDir, name));
+
         // the matched file, but with the extension swapped with .js
         let normalizedName = normalizeFileExt(name);
 
@@ -74,7 +58,7 @@ export default function publicEntrypoints(args: {
 
         // additionally, we want to emit chunks where the pattern matches the supported
         // file extensions above (TS, GTS, etc) as if they were already the built JS.
-        let wouldMatchIfBuilt = include.some((pattern) =>
+        let wouldMatchIfBuilt = args.include.some((pattern) =>
           minimatch(normalizedName, pattern)
         );
 

@@ -4,23 +4,7 @@
 */
 import EmberRouter from '@ember/routing/router';
 import { buildWaiter } from '@ember/test-waiters';
-import { isDestroying, isDestroyed } from '@ember/destroyable';
-import { macroCondition, getGlobalConfig, appEmberSatisfies, importSync } from '@embroider/macros';
-import type Resolver from 'ember-resolver';
-import { type getOwner as getOwenerType } from '@ember/owner';
-let getOwner: typeof getOwenerType;
-
-if (macroCondition(appEmberSatisfies('>=4.12.0'))) {
-  // In no version of ember where `@ember/owner` tried to be imported did it exist
-  // if (macroCondition(false)) {
-  // Using 'any' here because importSync can't lookup types correctly
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getOwner = (importSync('@ember/owner') as any).getOwner;
-} else {
-  // Using 'any' here because importSync can't lookup types correctly
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getOwner = (importSync('@ember/application') as any).getOwner;
-}
+import { macroCondition, getGlobalConfig } from '@embroider/macros';
 
 interface GlobalConfig {
   '@embroider/core'?: { active: boolean };
@@ -29,7 +13,7 @@ interface GlobalConfig {
 let Router: typeof EmberRouter;
 
 interface GetRoute {
-  (name: string): ReturnType<EmberRouter['_routerMicrolib']['getRoute']>;
+  (name: string): unknown;
   isEmbroiderRouterHandler?: true;
 }
 
@@ -42,7 +26,8 @@ interface Internals {
 
 interface EmbroiderBundle {
   names: string[];
-  load: () => Promise<{ default: Record<string, unknown> }>;
+  loaded?: true;
+  load: () => Promise<void>;
 }
 
 if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ?? false)) {
@@ -57,7 +42,6 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
 
   class EmbroiderRouter extends EmberRouter {
     private seenByRoute = new Set<string>();
-    private registeredBundles = new Map<EmbroiderBundle, { promise: Promise<void>; loaded: boolean }>();
 
     private lazyRoute(this: this & Internals, routeName: string): EmbroiderBundle | undefined {
       let bundles = embroiderBundles();
@@ -95,7 +79,7 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
     // check what their previous QP values were.
     _getQPMeta(this: this & Internals, handlerInfo: { name: string }, ...rest: unknown[]) {
       let bundle = this.lazyRoute(handlerInfo.name);
-      if (bundle && !this.registeredBundles.get(bundle)?.loaded) {
+      if (bundle && !bundle.loaded) {
         // unloaded split routes
         return undefined;
       }
@@ -108,7 +92,7 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
       }
 
       bundle = this.lazyEngine(handlerInfo.name);
-      if (bundle && !this.registeredBundles.get(bundle)?.loaded) {
+      if (bundle && !bundle.loaded) {
         // unloaded lazy engines
         return undefined;
       }
@@ -129,57 +113,27 @@ if (macroCondition(getGlobalConfig<GlobalConfig>()['@embroider/core']?.active ??
       return isSetup;
     }
 
-    private registerBundle(bundle: EmbroiderBundle) {
-      let entry = this.registeredBundles.get(bundle);
-      if (entry) {
-        return entry.promise;
-      } else {
-        let resolve: (value: PromiseLike<void>) => void;
-        entry = {
-          promise: new Promise<void>(res => (resolve = res)),
-          loaded: false,
-        };
-        this.registeredBundles.set(bundle, entry);
-
-        /**
-         * SAFETY: `registerBundle` can *only* be called if an owner exists (normally it's potentially undefined)
-         */
-        const owner = getOwner(this)!;
-        resolve!(
-          (async () => {
-            let token = waiter.beginAsync();
-            let { default: modules } = await bundle.load();
-            waiter.endAsync(token);
-            /**
-             * The app was torn down while we were loading,
-             * so we don't need to proceed with what would otherwise be tossed work/effort.
-             */
-            if (isDestroyed(owner) || isDestroying(owner)) return;
-            let resolver = owner.lookup('resolver:current') as Resolver | undefined;
-            if (!resolver) {
-              throw new Error(`This version of @embroider/router requires ember-resolver >= 13.1.0`);
-            }
-            resolver.addModules(modules);
-            entry.loaded = true;
-          })()
-        );
-        return entry.promise;
-      }
-    }
-
     private _handlerResolver(this: this & Internals, original: (name: string) => unknown) {
       let handler = ((name: string) => {
         const bundle = this.lazyRoute(name) ?? this.lazyEngine(name);
         this.seenByRoute.add(name);
-        if (bundle) {
-          if (this.registeredBundles.get(bundle)?.loaded) {
-            return original(name);
-          } else {
-            return this.registerBundle(bundle).then(() => original(name));
-          }
-        } else {
+        if (!bundle || bundle.loaded) {
           return original(name);
         }
+
+        let token = waiter.beginAsync();
+
+        return bundle.load().then(
+          () => {
+            waiter.endAsync(token);
+            bundle.loaded = true;
+            return original(name);
+          },
+          err => {
+            waiter.endAsync(token);
+            throw err;
+          }
+        );
       }) as GetRoute;
       handler.isEmbroiderRouterHandler = true;
       return handler;

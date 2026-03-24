@@ -3,12 +3,6 @@ import { extname } from 'path';
 import minimatch from 'minimatch';
 import type { Plugin } from 'rollup';
 
-function symmetricDifference(arr1: any[], arr2: any[]) {
-  return arr1
-    .filter((x) => !arr2.includes(x))
-    .concat(arr2.filter((x) => !arr1.includes(x)));
-}
-
 export default function appReexports(opts: {
   from: string;
   to: string;
@@ -46,12 +40,9 @@ export default function appReexports(opts: {
           });
         }
       }
-      let originalAppJS = pkg['ember-addon']?.['app-js'] ?? {};
+      let originalAppJS = pkg['ember-addon']?.['app-js'];
 
-      let hasChanges = !!symmetricDifference(
-        Object.keys(originalAppJS),
-        Object.keys(appJS)
-      ).length;
+      let hasChanges = JSON.stringify(originalAppJS) !== JSON.stringify(appJS);
 
       // Don't cause a file i/o event unless something actually changed
       if (hasChanges) {

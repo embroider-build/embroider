@@ -1,5 +1,5 @@
 import { createFilter } from '@rollup/pluginutils';
-import type { LogLevel, Plugin, RollupLog } from 'rollup';
+import type { Plugin } from 'rollup';
 import { Preprocessor } from 'content-tag';
 
 const PLUGIN_NAME = 'rollup-gjs-plugin';
@@ -26,12 +26,6 @@ export default function rollupGjsPlugin(): Plugin {
           map,
         };
       },
-    },
-
-    onLog(_level: LogLevel, log: RollupLog): boolean | void {
-      if (log.code === 'EVAL' && gjsFilter(log.id)) {
-        return false;
-      }
     },
   };
 }

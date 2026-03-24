@@ -1,26 +1,26 @@
-import { tsAppScenarios, tsAppClassicScenarios } from './scenarios';
-import type { PreparedApp, Project } from 'scenario-tester';
+import { tsAppScenarios } from './scenarios';
+import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
+import { merge } from 'lodash';
 
 const { module: Qmodule, test } = QUnit;
 
-function setupScenario(project: Project) {
+let routerApp = tsAppScenarios.map('router', project => {
   project.linkDevDependency('@embroider/router', { baseDir: __dirname });
 
   // not strictly needed in the embroider case, but needed in the classic
   // case.
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
-  project.mergeFiles({
+  merge(project.files, {
     'ember-cli-build.js': `
-      'use strict';
+        'use strict';
 
-      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-      const { compatBuild } = require('@embroider/compat');
-
-      module.exports = async function (defaults) {
-        const { buildOnce } = await import('@embroider/vite');
-        const app = new EmberApp(defaults, {
+        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+        const { maybeEmbroider } = require('@embroider/test-setup');
+        
+        module.exports = function (defaults) {
+          let app = new EmberApp(defaults, {
             'ember-cli-babel': {
               enableTypeScriptTransform: true,
             },
@@ -30,10 +30,20 @@ function setupScenario(project: Project) {
               }
             }
           });
-
-        return compatBuild(app, buildOnce, { splitAtRoutes: ['split-me'] });
-      };
-    `,
+        
+          return maybeEmbroider(app, {
+            staticAddonTestSupportTrees: true,
+            staticAddonTrees: true,
+            staticInvokables: true,
+            splitAtRoutes: ['split-me'],
+            skipBabel: [
+              {
+                package: 'qunit',
+              },
+            ],
+          });
+        };
+      `,
     app: {
       components: {
         'used-in-child.hbs': `
@@ -41,18 +51,9 @@ function setupScenario(project: Project) {
           `,
       },
       controllers: {
-        'split-me.js': `
+        'split-me.ts': `
             import Controller from '@ember/controller';
-            import { tracked } from '@glimmer/tracking';
-            export default class SplitMeController extends Controller {
-              queryParams = ['name'];
-
-              @tracked name;
-
-              updateName = (event) => {
-                this.name = event.target.value;
-              }
-            }
+            export default class SplitMeController extends Controller {}
           `,
         'split-me': {
           'child.ts': `
@@ -76,16 +77,6 @@ function setupScenario(project: Project) {
               export default class SplitMeIndexRoute extends Route {}
             `,
         },
-        'slow.ts': `
-          import Route from "@ember/routing/route";
-          export default class SlowRoute extends Route {
-            async model() {
-              return await new Promise((resolve) => {
-                (globalThis as any).resolveSlowRoute = resolve;
-              });
-            }
-          }
-        `,
       },
       templates: {
         'application.hbs': `
@@ -93,21 +84,17 @@ function setupScenario(project: Project) {
 
             <h2 id='title'>Welcome to Ember</h2>
 
-            <LinkTo @route='index' data-test-index-link>Index</LinkTo>
-            <LinkTo @route='split-me' data-test-split-me-link>Split Index</LinkTo>
-            <LinkTo @route='split-me.child' data-test-split-me-child-link>Split Child</LinkTo>
+            <LinkTo @route='index'>Index</LinkTo>
+            <LinkTo @route='split-me'>Split Index</LinkTo>
+            <LinkTo @route='split-me.child'>Split Child</LinkTo>
 
             {{outlet}}
           `,
-        'split-me.hbs': `{{outlet}}
-                        <label for="name-input">Enter name to update query params</label>
-                        <input id="name-input" type="text" value={{this.name}} {{on "change" this.updateName}} />`,
+        'split-me.hbs': `{{outlet}}`,
         'split-me': {
           'child.hbs': `<UsedInChild />`,
           'index.hbs': `<div data-test-split-me-index>This is the split-me/index.</div>`,
         },
-        'slow.hbs': `<div data-slow>{{@model.message}}</div>`,
-        'slow-loading.hbs': `<div data-loading>loading</div>`,
       },
       'router.ts': `
           import EmberRouter from '@embroider/router';
@@ -122,270 +109,159 @@ function setupScenario(project: Project) {
             this.route('split-me', function () {
               this.route('child');
             });
-            this.route('slow');
           });
         `,
     },
     tests: {
       acceptance: {
         'lazy-routes-test.ts': `
-          import { module, test, only } from "qunit";
-          import { click, currentURL, fillIn, visit } from "@ember/test-helpers";
-          import { setupApplicationTest } from "ember-qunit";
-          import { getGlobalConfig, getOwnConfig } from "@embroider/macros";
-          import type Resolver from "ember-resolver";
 
-          declare global {
-            interface Assert {
-              containerHas(name: string, message?: string): void;
-              containerDoesNotHave(name: string, message?: string): void;
-            }
-          }
+          import { module, test } from 'qunit';
+          import { visit } from '@ember/test-helpers';
+          import { setupApplicationTest } from 'ember-qunit';
+          import ENV from 'ts-app-template/config/environment';
+          import { getGlobalConfig, getOwnConfig } from '@embroider/macros';
 
-          module("Acceptance | lazy routes", function (hooks) {
+          /* global requirejs */
+
+          module('Acceptance | lazy routes', function (hooks) {
             setupApplicationTest(hooks);
 
-            hooks.beforeEach(function (assert) {
-              // these assertions cannot do owner.lookup(name) because that permanently
-              // caches its result in the Registry, which is shared between tests.
+            function hasController(routeName: string) {
+              return Boolean(
+                (requirejs as any).entries[\`\${ENV.modulePrefix}/controllers/\${routeName}\`]
+              );
+            }
 
-              assert.containerHas = (name: \`\${string}:\${string}\`, message?: string) => {
-                let resolver = this.owner.lookup("resolver:current") as Resolver;
-                assert.ok(Boolean(resolver.resolve(name)), message);
-              };
+            function hasRoute(routeName: string) {
+              return Boolean(
+                (requirejs as any).entries[\`\${ENV.modulePrefix}/routes/\${routeName}\`]
+              );
+            }
 
-              assert.containerDoesNotHave = (
-                name: \`\${string}:\${string}\`,
-                message?: string,
-              ) => {
-                let resolver = this.owner.lookup("resolver:current") as Resolver;
-                assert.notOk(Boolean(resolver.resolve(name)), message);
-              };
-            });
+            function hasTemplate(routeName: string) {
+              return Boolean(
+                (requirejs as any).entries[\`\${ENV.modulePrefix}/templates/\${routeName}\`]
+              );
+            }
+
+            function hasComponent(name: string) {
+              return Boolean((requirejs as any).entries[\`\${ENV.modulePrefix}/components/\${name}\`]);
+            }
 
             if (getOwnConfig<{ expectClassic: boolean }>().expectClassic) {
-              test("lazy routes present", async function (assert) {
-                await visit("/");
-                assert.containerHas(
-                  "controller:split-me",
-                  "classic build has controller",
+              test('lazy routes present', async function (assert) {
+                await visit('/');
+                assert.ok(hasController('split-me'), 'classic build has controller');
+                assert.ok(hasRoute('split-me'), 'classic build has route');
+                assert.ok(hasTemplate('split-me'), 'classic build has template');
+                assert.ok(
+                  hasController('split-me/child'),
+                  'classic build has child controller'
                 );
-                assert.containerHas("route:split-me", "classic build has route");
-                assert.containerHas("template:split-me", "classic build has template");
-                assert.containerHas(
-                  "controller:split-me/child",
-                  "classic build has child controller",
+                assert.ok(hasRoute('split-me/child'), 'classic build has child route');
+                assert.ok(
+                  hasTemplate('split-me/child'),
+                  'classic build has child template'
                 );
-                assert.containerHas(
-                  "route:split-me/child",
-                  "classic build has child route",
-                );
-                assert.containerHas(
-                  "template:split-me/child",
-                  "classic build has child template",
-                );
-                assert.containerHas(
-                  "component:used-in-child",
-                  "classic build has all components",
+                assert.ok(
+                  hasComponent('used-in-child'),
+                  'classic build has all components'
                 );
               });
             } else {
-              test("lazy routes not yet present", async function (assert) {
-                await visit("/");
-                assert.containerDoesNotHave("controller:split-me", "controller is lazy");
-                assert.containerDoesNotHave("route:split-me", "route is lazy");
-                assert.containerDoesNotHave("template:split-me", "template is lazy");
-                assert.containerDoesNotHave(
-                  "controller:split-me/child",
-                  "child controller is lazy",
-                );
-                assert.containerDoesNotHave(
-                  "route:split-me/child",
-                  "child route is lazy",
-                );
-                assert.containerDoesNotHave(
-                  "template:split-me/child",
-                  "child template is lazy",
+              test('lazy routes not yet present', async function (assert) {
+                await visit('/');
+                assert.notOk(hasController('split-me'), 'controller is lazy');
+                assert.notOk(hasRoute('split-me'), 'route is lazy');
+                assert.notOk(hasTemplate('split-me'), 'template is lazy');
+                assert.notOk(hasController('split-me/child'), 'child controller is lazy');
+                assert.notOk(hasRoute('split-me/child'), 'child route is lazy');
+                assert.notOk(hasTemplate('split-me/child'), 'child template is lazy');
+                assert.notOk(
+                  hasComponent('used-in-child'),
+                  'descendant components are lazy'
                 );
               });
             }
 
             if (getOwnConfig<{ expectClassic: boolean }>().expectClassic) {
-              test("classic builds can not see @embroider/core config", async function (assert) {
-                let config = getGlobalConfig<{ "@embroider/core"?: { active: true } }>()[
-                  "@embroider/core"
-                ];
+              test('classic builds can not see @embroider/core config', async function (assert) {
+                let config = getGlobalConfig<{ '@embroider/core'?: { active: true} }>()['@embroider/core'];
                 assert.strictEqual(
                   config,
                   undefined,
-                  "expected no embroider core config",
+                  'expected no embroider core config'
                 );
               });
             } else {
-              test("can see @embroider/core config", async function (assert) {
-                let config = getGlobalConfig<{ "@embroider/core"?: { active: true } }>()[
-                  "@embroider/core"
-                ];
-                assert.true(config!.active, "expected to see active @embroider/core");
+              test('can see @embroider/core config', async function (assert) {
+                let config = getGlobalConfig<{ '@embroider/core'?: { active: true} }>()['@embroider/core'];
+                assert.true(config!.active, 'expected to see active @embroider/core');
               });
             }
 
-            test("can enter a lazy route", async function (assert) {
-              await visit("/split-me");
+            test('can enter a lazy route', async function (assert) {
+              await visit('/split-me');
               assert.ok(
-                document.querySelector("[data-test-split-me-index]"),
-                "split-me/index rendered",
+                document.querySelector('[data-test-split-me-index]'),
+                'split-me/index rendered'
               );
             });
 
-            test("can enter a child of a lazy route", async function (assert) {
-              await visit("/split-me/child");
+            test('can enter a child of a lazy route', async function (assert) {
+              await visit('/split-me/child');
               assert.ok(
-                document.querySelector("[data-test-used-in-child]"),
-                "split-me/child rendered",
+                document.querySelector('[data-test-used-in-child]'),
+                'split-me/child rendered'
               );
             });
           });
-          module("Acceptance | lazy routes query params", function (hooks) {
-            setupApplicationTest(hooks);
-
-            test("sticky params when re-entering route", async function (assert) {
-              await visit("/split-me");
-              await fillIn('#name-input','QueryValue');
-              assert.equal(currentURL(), '/split-me?name=QueryValue', "query param is updated in the url");
-              await click('[data-test-index-link]');
-              assert.equal(currentURL(), '/', "query param removed from url on navigation");
-              await click('[data-test-split-me-link]');
-              assert.equal(currentURL(), '/split-me?name=QueryValue', "query param is updated in the url");
-              assert.ok(
-                document.querySelector("[data-test-split-me-index]"),
-                "split-me/index rendered",
-              );
-            });
-          });
-
-        `,
-        'slow-test.js': `
-          import { module, test } from "qunit";
-          import { visit, waitFor, settled } from "@ember/test-helpers";
-          import { setupApplicationTest } from "ember-qunit";
-
-          module("Acceptance | slow", function (hooks) {
-            setupApplicationTest(hooks);
-
-            test("loading routes work", async function (assert) {
-              visit("/slow");
-              let element = await waitFor("[data-loading]");
-              assert.dom(element).containsText("loading");
-              globalThis.resolveSlowRoute({
-                message: "I'm slow",
-              });
-              await settled();
-              assert.dom("[data-slow]").containsText("I'm slow");
-            });
-          });
-        `,
+                  
+          `,
       },
     },
   });
-}
+});
 
-tsAppScenarios
-  .map('router-embroider', project => {
-    setupScenario(project);
-    project.mergeFiles({
-      'ember-cli-build.js': `
-        'use strict';
-
-          const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-          const { compatBuild } = require('@embroider/compat');
-
-          module.exports = async function (defaults) {
-            const { buildOnce } = await import('@embroider/vite');
-            const app = new EmberApp(defaults, {
-                'ember-cli-babel': {
-                  enableTypeScriptTransform: true,
-                },
-                '@embroider/macros': {
-                  setOwnConfig: {
-                    expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
-                  }
-                }
-              });
-
-            return compatBuild(app, buildOnce, { splitAtRoutes: ['split-me'] });
-          };
-        `,
+routerApp.forEachScenario(scenario => {
+  Qmodule(scenario.name, function (hooks) {
+    let app: PreparedApp;
+    hooks.before(async () => {
+      app = await scenario.prepare();
     });
-  })
-  .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
-      let app: PreparedApp;
-      hooks.before(async () => {
-        app = await scenario.prepare();
-      });
 
-      test(`type checks`, async function (assert) {
-        let result = await app.execute('pnpm tsc');
-        assert.equal(result.exitCode, 0, result.output);
-      });
-
-      test(`EMBROIDER pnpm test:ember`, async function (assert) {
-        let result = await app.execute('pnpm test:ember', {
-          env: {
-            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
-            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
-          },
-        });
-        assert.equal(result.exitCode, 0, result.output);
-      });
+    test(`type checks`, async function (assert) {
+      let result = await app.execute('pnpm tsc');
+      assert.equal(result.exitCode, 0, result.output);
     });
   });
+});
 
-tsAppClassicScenarios
-  .map('router-classic', project => {
-    setupScenario(project);
-    project.mergeFiles({
-      'ember-cli-build.js': `
-      'use strict';
-
-      const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-      const { maybeEmbroider } = require('@embroider/test-setup');
-
-      module.exports = function (defaults) {
-        let app = new EmberApp(defaults, {
-          'ember-cli-babel': {
-            enableTypeScriptTransform: true,
-          },
-          '@embroider/macros': {
-            setOwnConfig: {
-              expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
-            }
-          }
-        });
-
-        return maybeEmbroider(app, {
-          staticInvokables: true,
-          splitAtRoutes: ['split-me'],
-        });
-      };
-    `,
+routerApp.forEachScenario(scenario => {
+  Qmodule(scenario.name, function (hooks) {
+    let app: PreparedApp;
+    hooks.before(async () => {
+      app = await scenario.prepare();
     });
-  })
-  .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
-      let app: PreparedApp;
-      hooks.before(async () => {
-        app = await scenario.prepare();
-      });
 
-      test(`CLASSIC pnpm test:ember`, async function (assert) {
-        let result = await app.execute('pnpm ember test', {
-          env: {
-            EMBROIDER_TEST_SETUP_FORCE: 'classic',
-          },
-        });
-        assert.equal(result.exitCode, 0, result.output);
+    test(`CLASSIC pnpm test:ember`, async function (assert) {
+      let result = await app.execute('pnpm test:ember', {
+        env: {
+          EMBROIDER_TEST_SETUP_FORCE: 'classic',
+        },
       });
+      assert.equal(result.exitCode, 0, result.output);
+    });
+
+    test(`EMBROIDER pnpm test:ember`, async function (assert) {
+      let result = await app.execute('pnpm test:ember', {
+        env: {
+          EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+          EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+        },
+      });
+      assert.equal(result.exitCode, 0, result.output);
     });
   });
+});

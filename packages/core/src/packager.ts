@@ -1,4 +1,6 @@
+import type { AppMeta } from '@embroider/shared-internals';
 import { tmpdir } from '@embroider/shared-internals';
+import { readFileSync } from 'fs-extra';
 import { cloneDeep } from 'lodash';
 import { join } from 'path';
 
@@ -86,6 +88,14 @@ export function applyVariantToBabelConfig(variant: Variant, babelConfig: any) {
     }
   }
   return babelConfig;
+}
+
+/**
+ * Get the app meta-data for a package
+ */
+export function getAppMeta(pathToVanillaApp: string) {
+  let pkg = JSON.parse(readFileSync(join(pathToVanillaApp, 'package.json'), 'utf8'));
+  return pkg as unknown as { name: string; 'ember-addon': AppMeta };
 }
 
 /**

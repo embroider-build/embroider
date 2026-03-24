@@ -1,74 +1,45 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.3.0"
-    },
-    "@embroider/addon-shim": {
-      "oldVersion": "1.10.2"
+      "oldVersion": "7.1.6"
     },
     "@embroider/babel-loader-9": {
-      "oldVersion": "4.0.0"
-    },
-    "@embroider/broccoli-side-watch": {
-      "oldVersion": "1.1.0"
+      "oldVersion": "3.1.3"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.15"
-    },
-    "@embroider/config-meta-loader": {
-      "oldVersion": "1.0.0"
+      "oldVersion": "3.9.3"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.4.5",
-      "newVersion": "4.4.6",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "3.5.9"
     },
     "@embroider/hbs-loader": {
-      "oldVersion": "4.0.0"
-    },
-    "@embroider/legacy-inspector-support": {
-      "oldVersion": "0.1.3"
-    },
-    "@embroider/macros": {
-      "oldVersion": "1.20.1"
-    },
-    "@embroider/reverse-exports": {
-      "oldVersion": "0.2.0"
+      "oldVersion": "3.0.5"
     },
     "@embroider/router": {
-      "oldVersion": "3.0.6"
-    },
-    "@embroider/shared-internals": {
-      "oldVersion": "3.0.2"
-    },
-    "@embroider/template-tag-codemod": {
-      "oldVersion": "1.3.5"
-    },
-    "@embroider/vite": {
-      "impact": "minor",
-      "oldVersion": "1.6.1",
-      "newVersion": "1.7.0",
-      "tagName": "latest",
+      "impact": "patch",
+      "oldVersion": "2.1.11",
+      "newVersion": "2.1.12",
+      "tagName": "v2-x",
       "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "pkgJSONPath": "./packages/router/package.json"
+    },
+    "@embroider/shared-internals": {
+      "oldVersion": "2.9.2"
+    },
+    "@embroider/test-setup": {
+      "oldVersion": "4.0.0"
+    },
+    "@embroider/util": {
+      "oldVersion": "1.13.5"
+    },
+    "@embroider/webpack": {
+      "oldVersion": "4.1.2"
     }
   },
-  "description": "## Release (2026-03-18)\n\n* @embroider/core 4.4.6 (patch)\n* @embroider/vite 1.7.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2687](https://github.com/embroider-build/embroider/pull/2687) rolldown-vite -> vite8 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/core`\n  * [#2685](https://github.com/embroider-build/embroider/pull/2685) Fix getAppFiles extensions ([@JezerM](https://github.com/JezerM))\n* `@embroider/vite`\n  * [#2686](https://github.com/embroider-build/embroider/pull/2686) Add keywords to package.json for vite ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :house: Internal\n* [#2679](https://github.com/embroider-build/embroider/pull/2679) Add scenarios for 6.12 + use-ember-modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Jezer Mejía ([@JezerM](https://github.com/JezerM))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2025-12-02)\n\n* @embroider/router 2.1.12 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#2634](https://github.com/embroider-build/embroider/pull/2634) Widen test-waiters range in @embroider/router ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

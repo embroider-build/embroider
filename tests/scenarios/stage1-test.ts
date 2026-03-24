@@ -9,89 +9,20 @@ import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('canary')
+  .only('release')
   .map('stage-1-max-compat', project => {
     let addon = baseAddon();
-
-    merge(project.files, {
-      'ember-cli-build.js': `
-        'use strict';
-
-        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { maybeEmbroider } = require('@embroider/test-setup');
-
-        module.exports = function (defaults) {
-          let app = new EmberApp(defaults, {
-          });
-
-          return maybeEmbroider(app, {
-            staticComponents: false,
-            staticHelpers: false,
-            staticModifiers: false,
-          });
-        };
-      `,
-    });
 
     merge(addon.files, loadFromFixtureData('hello-world-addon'));
     addon.pkg.name = 'my-addon';
 
-    addon.linkDependency('embroider-sample-transforms', { baseDir: __dirname });
+    addon.linkDependency('@embroider/sample-transforms', { baseDir: __dirname });
     addon.linkDependency('@embroider/macros', { baseDir: __dirname });
     project.addDependency(addon);
 
     // our app will include an in-repo addon
     project.pkg['ember-addon'] = { paths: ['lib/in-repo-addon'] };
     merge(project.files, loadFromFixtureData('basic-in-repo-addon'));
-
-    let addonWithGTS = baseAddon();
-    addonWithGTS.pkg.name = 'addon-with-gts';
-    addonWithGTS.linkDependency('ember-template-imports', { baseDir: __dirname });
-    addonWithGTS.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
-    addonWithGTS.mergeFiles({
-      'index.js': `
-        'use strict';
-        module.exports = {
-          name: require('./package').name,
-          options: {
-            'ember-cli-babel': { enableTypeScriptTransform: true },
-          },
-        };`,
-      addon: {
-        components: {
-          'other.gts': `
-          import Component from '@glimmer/component';
-
-          export default class extends Component {
-            abc: string;
-            <template>
-              other
-            </template>
-          };
-          `,
-          'gts-component.gts': `
-          import Component from '@glimmer/component';
-          import OtherComponent from './other';
-
-          export default class extends Component {
-            get abc(): string {
-              return 'abs';
-            }
-            <template>
-              this is gts
-              with <OtherComponent />
-            </template>
-          };
-          `,
-        },
-      },
-      app: {
-        components: {
-          'gts-component.js': 'export { default } from "addon-with-gts/components/gts-component"',
-        },
-      },
-    });
-    project.addDependency(addonWithGTS);
   })
   .forEachScenario(async scenario => {
     Qmodule(`${scenario.name}`, function (hooks) {
@@ -104,7 +35,6 @@ appScenarios
         let result = await app.execute('node ./node_modules/ember-cli/bin/ember b', {
           env: {
             STAGE1_ONLY: 'true',
-            EMBROIDER_PREBUILD: 'true',
           },
         });
         assert.equal(result.exitCode, 0, result.output);
@@ -127,6 +57,20 @@ appScenarios
         myAddonPkg
           .get('ember-addon.app-js')
           .deepEquals({ './components/hello-world.js': './_app_/components/hello-world.js' });
+
+        myAddonPkg
+          .get('ember-addon.implicit-modules')
+          .includes(
+            './components/hello-world',
+            'staticAddonTrees is off so we should include the component implicitly'
+          );
+
+        myAddonPkg
+          .get('ember-addon.implicit-modules')
+          .includes(
+            './templates/components/hello-world.hbs',
+            'staticAddonTrees is off so we should include the template implicitly'
+          );
 
         myAddonPkg.get('ember-addon.version').deepEquals(2);
       });
@@ -187,31 +131,11 @@ appScenarios
           /return import\(['"]some-library['"]\)/
         );
       });
-
-      test('gts in addons has valid imports', function () {
-        expectFile('node_modules/addon-with-gts/components/gts-component.js').equalsCode(`
-          import Component from '@glimmer/component';
-          import OtherComponent from './other';
-          import { precompileTemplate } from "@ember/template-compilation";
-          import { setComponentTemplate } from "@ember/component";
-          export default class _Class extends Component {
-            get abc() {
-              return 'abs';
-            }
-          }
-          setComponentTemplate(precompileTemplate("this is gts\\nwith <OtherComponent />", {
-            strictMode: true,
-            scope: () => ({
-              OtherComponent
-            })
-          }), _Class);
-        `);
-      });
     });
   });
 
 appScenarios
-  .only('canary')
+  .only('release')
   .map('stage-1-inline-hbs', project => {
     let addon = baseAddon();
 
@@ -241,7 +165,7 @@ appScenarios
     });
     addon.pkg.name = 'my-addon';
 
-    addon.linkDependency('embroider-sample-transforms', { baseDir: __dirname });
+    addon.linkDependency('@embroider/sample-transforms', { baseDir: __dirname });
     addon.linkDependency('@embroider/macros', { baseDir: __dirname });
     project.addDependency(addon);
   })
@@ -255,7 +179,6 @@ appScenarios
         await app.execute('node ./node_modules/ember-cli/bin/ember b', {
           env: {
             STAGE1_ONLY: 'true',
-            EMBROIDER_PREBUILD: 'true',
           },
         });
       });
@@ -302,7 +225,7 @@ appScenarios
   });
 
 appScenarios
-  .only('canary')
+  .only('release')
   .map('stage-1-problematic-addon-zoo', project => {
     let addon = baseAddon();
 
@@ -506,7 +429,6 @@ appScenarios
         await app.execute('node ./node_modules/ember-cli/bin/ember b', {
           env: {
             STAGE1_ONLY: 'true',
-            EMBROIDER_PREBUILD: 'true',
           },
         });
       });

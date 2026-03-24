@@ -10,44 +10,6 @@ The [Embroider package spec](../../docs/spec.md) proposes fixing this by making 
 
 This package works in both Embroider and Classical builds, so that addon authors can switch to this newer pattern without disruption.
 
-## Setting Configuration: from a babel config
-
-1. Add `@embroider/macros` as `devDependency`.
-2. In your babel config, do:
-
-```js
-const { buildMacros } = require('@embroider/macros/babel'); 
-
-const macros = buildMacros({
-  // this is how you configure your own package
-  setOwnConfig: {
-    // your config goes here
-  },
-  // this is how you can optionally send configuration into your
-  // dependencies, if those dependencies choose to use
-  // @embroider/macros configs.
-  setConfig: {
-    'some-dependency': {
-      // config for some-dependency
-    },
-  },
-});
-
-module.exports = {
-  plugins: [
-   // ... 
-    [
-      "babel-plugin-ember-template-compilation",
-      {
-        transforms: [...macros.templateMacros],
-      },
-    ],
-    ...macros.babelMacros,
-  ],
-  // ...
-};
-```
-
 ## Setting Configuration: from an Ember app
 
 1. Add `@embroider/macros` as `devDependency`.
@@ -99,7 +61,7 @@ module.exports = {
 
 ### macroCondition
 
-The `macroCondition` macro allows branch level code isolation (and deletion in the case of production builds). Generally macroConditions are viewed as a foundation macro and are combined with other macros (detailed below) to create more complex scenarios. `macroCondition` takes a single argument which must be statically known or another macro which will compile down to a static value.
+The `macroCondition` macro allows branch level code isolation (and deletion in the case of production builds). Generally macroConditions are viewed as a foundation macro and are combined with others marcos (detailed below) to create more complex scenarios. `macroCondition` takes a single argument which must be statically known or another macro which will compile down to a static value.
 
 ```js
 import { macroCondition } from '@embroider/macros';
@@ -250,17 +212,6 @@ if (macroCondition(isDevelopingApp())) {
 
 Note that these can be used in combination - e.g. if you run tests in the production environment, `isTesting()` will be true, but `isDevelopingApp()` will be false.
 
-#### setTesting
-
-To enable test-only code paths at runtime, you can use the `setTesting()` function. This is particularly useful in test setup files to control the behavior of the `isTesting()` macro in development builds.
-
-```js
-import { setTesting } from '@embroider/macros';
-
-// In your test setup file (e.g., test-helper.js):
-setTesting(true);
-```
-
 ## Glint usage
 If you are using [Glint](https://typed-ember.gitbook.io/glint/) and `environment-ember-loose`, you can add all the macros to your app at once by adding
 
@@ -282,6 +233,6 @@ declare module '@glint/environment-ember-loose/registry' {
 
 Below are a list of addons that have started using `@embroider/macros` so that you can get a feel for common use cases that can be solved via the macro system.
 
+- [ember-exam](https://github.com/ember-cli/ember-exam)
 - [ember-bootstrap](https://github.com/kaliber5/ember-bootstrap)
-- [liquid-fire](https://github.com/ember-animation/liquid-fire)
-- [ember-qunit](https://github.com/emberjs/ember-qunit/)
+- [ember-stargate](https://github.com/kaliber5/ember-stargate)

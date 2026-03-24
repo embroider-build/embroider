@@ -1,7 +1,6 @@
 'use strict';
 
 const EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
-const { maybeEmbroider } = require('@embroider/test-setup');
 
 module.exports = function(defaults) {
   let app = new EmberAddon(defaults, {
@@ -15,5 +14,9 @@ module.exports = function(defaults) {
     behave. You most likely want to be modifying `./index.js` or app's build file
   */
 
-  return app.toTree();
+  if (process.env.CLASSIC) {
+    return app.toTree();
+  }
+  const Webpack = require('@embroider/webpack').Webpack;
+  return require('@embroider/compat').compatBuild(app, Webpack);
 };

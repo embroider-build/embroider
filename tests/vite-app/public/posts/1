@@ -1,0 +1,9 @@
+{
+  "data": {
+    "type": "post",
+    "id": "1",
+    "attributes": {
+      "message": "From Ember Data"
+    }
+  }
+}

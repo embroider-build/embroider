@@ -18,6 +18,10 @@ export default class extends V1Addon {
     return mergeTrees([super.v2Tree, buildFunnel(this.rootTree, { include: ['dist/ember-template-compiler.js'] })]);
   }
 
+  private get useStaticEmber(): boolean {
+    return this.app.options.staticEmberSource;
+  }
+
   // versions of ember-source prior to
   // https://github.com/emberjs/ember.js/pull/20675 ship dist/packages and
   // dist/dependencies separately and the imports between them are package-name
@@ -56,30 +60,37 @@ export default class extends V1Addon {
 
   get newPackageJSON() {
     let json = super.newPackageJSON;
-
-    for (let name of this.includedDependencies) {
-      // weirdly, many of the inlined dependency are still listed as real
-      // dependencies too. If we don't delete them here, they will take
-      // precedence over the inlined ones, because the embroider module-resolver
-      // tries to prioritize real deps.
-      delete json.dependencies?.[name];
+    if (this.useStaticEmber) {
+      for (let name of this.includedDependencies) {
+        // weirdly, many of the inlined dependency are still listed as real
+        // dependencies too. If we don't delete them here, they will take
+        // precedence over the inlined ones, because the embroider module-resolver
+        // tries to prioritize real deps.
+        delete json.dependencies?.[name];
+      }
     }
-
     return json;
   }
 
   customizes(treeName: string) {
-    // we are adding custom implementations of these
-    return treeName === 'treeForAddon' || treeName === 'treeForVendor' || super.customizes(treeName);
+    if (this.useStaticEmber) {
+      // we are adding custom implementations of these
+      return treeName === 'treeForAddon' || treeName === 'treeForVendor' || super.customizes(treeName);
+    } else {
+      return super.customizes(treeName);
+    }
   }
 
-  invokeOriginalTreeFor(name: string) {
-    if (name === 'addon') {
-      return this.customAddonTree();
+  invokeOriginalTreeFor(name: string, opts: { neuterPreprocessors: boolean } = { neuterPreprocessors: false }) {
+    if (this.useStaticEmber) {
+      if (name === 'addon') {
+        return this.customAddonTree();
+      }
+      if (name === 'vendor') {
+        return this.customVendorTree();
+      }
     }
-    if (name === 'vendor') {
-      return this.customVendorTree();
-    }
+    return super.invokeOriginalTreeFor(name, opts);
   }
 
   // Our addon tree is all of the "packages" we share. @embroider/compat already
@@ -102,17 +113,7 @@ export default class extends V1Addon {
       // top-level `ember` package tries to import it until 4.10. A
       // spec-compliant ES modules implementation will treat this as a parse
       // error.
-      trees.push(new ReplaceRequire([new FixStringLoc([packages])]));
-    } else if (satisfies(this.packageJSON.version, '<5.7.0')) {
-      trees.push(new ReplaceRequire([packages]));
-    }
-
-    if (satisfies(this.packageJSON.version, '<5.12.0')) {
-      trees.push(new FixDeprecateFunction([packages]));
-    }
-
-    if (satisfies(this.packageJSON.version, '<5.11.1')) {
-      trees.push(new FixCycleImports([packages]));
+      trees.push(new FixStringLoc([packages]));
     }
 
     return mergeTrees(trees, { overwrite: true });
@@ -136,22 +137,22 @@ export default class extends V1Addon {
 
   get packageMeta() {
     let meta = super.packageMeta;
-
-    if (!meta['implicit-modules']) {
-      meta['implicit-modules'] = [];
-    }
-    meta['implicit-modules'].push('./ember/index.js');
-    // before 5.6, Ember uses the AMD loader to decide if it's test-only parts
-    // are present, so we must ensure they're registered. After that it's
-    // enough to evaluate ember-testing, which @embroider/core is hard-coded
-    // to do in the backward-compatible tests bundle.
-    if (!satisfies(this.packageJSON.version, '>= 5.6.0-alpha.0', { includePrerelease: true })) {
-      if (!meta['implicit-test-modules']) {
-        meta['implicit-test-modules'] = [];
+    if (this.useStaticEmber) {
+      if (!meta['implicit-modules']) {
+        meta['implicit-modules'] = [];
       }
-      meta['implicit-test-modules'].push('./ember-testing/index.js');
+      meta['implicit-modules'].push('./ember/index.js');
+      // before 5.6, Ember uses the AMD loader to decide if it's test-only parts
+      // are present, so we must ensure they're registered. After that it's
+      // enough to evaluate ember-testing, which @embroider/core is hard-coded
+      // to do in the backward-compatible tests bundle.
+      if (!satisfies(this.packageJSON.version, '>= 5.6.0-alpha.0', { includePrerelease: true })) {
+        if (!meta['implicit-test-modules']) {
+          meta['implicit-test-modules'] = [];
+        }
+        meta['implicit-test-modules'].push('./ember-testing/index.js');
+      }
     }
-
     return meta;
   }
 }
@@ -165,395 +166,6 @@ class FixStringLoc extends Plugin {
     })!.code!;
     outputFileSync(resolve(this.outputPath, 'ember', 'index.js'), outSource, 'utf8');
   }
-}
-
-class ReplaceRequire extends Plugin {
-  build() {
-    updateFileWithTransform(this, 'ember/index.js', function (babel: typeof Babel) {
-      const { types: t } = babel;
-
-      function createLoader() {
-        return t.objectExpression([
-          t.objectMethod(
-            'get',
-            t.identifier('require'),
-            [],
-            t.blockStatement([
-              t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('require'))),
-            ])
-          ),
-          t.objectMethod(
-            'get',
-            t.identifier('define'),
-            [],
-            t.blockStatement([
-              t.returnStatement(t.memberExpression(t.identifier('globalThis'), t.identifier('define'))),
-            ])
-          ),
-          t.objectMethod(
-            'get',
-            t.identifier('registry'),
-            [],
-
-            t.blockStatement([
-              t.returnStatement(
-                t.logicalExpression(
-                  '??',
-                  t.optionalMemberExpression(
-                    t.memberExpression(t.identifier('globalThis'), t.identifier('requirejs')),
-                    t.identifier('entries'),
-                    false,
-                    true
-                  ),
-                  t.optionalMemberExpression(
-                    t.memberExpression(t.identifier('globalThis'), t.identifier('require')),
-                    t.identifier('entries'),
-                    false,
-                    true
-                  )
-                )
-              ),
-            ])
-          ),
-        ]);
-      }
-
-      return {
-        visitor: {
-          CallExpression(path: NodePath<Babel.types.CallExpression>) {
-            if (
-              path.node.callee.type === 'Identifier' &&
-              (path.node.callee.name === 'has' || path.node.callee.name === 'require') &&
-              path.node.arguments[0].type === 'StringLiteral' &&
-              path.node.arguments[0].value === 'ember-testing'
-            ) {
-              path.replaceWith(t.identifier('EmberTestingImpl'));
-            }
-          },
-          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
-            if (path.node.source.value === 'require') {
-              path.replaceWith(
-                t.importDeclaration(
-                  [t.importSpecifier(t.identifier('EmberTestingImpl'), t.identifier('_impl'))],
-                  t.stringLiteral('@ember/test')
-                )
-              );
-            }
-          },
-          VariableDeclaration(path: NodePath<Babel.types.VariableDeclaration>) {
-            if (
-              path.node.declarations[0].id.type === 'Identifier' &&
-              path.node.declarations[0].id.name === 'PartialEmber' &&
-              path.node.declarations[0].init!.type === 'ObjectExpression'
-            ) {
-              const declaration = path.node.declarations[0];
-              const loader = (declaration.init! as Babel.types.ObjectExpression).properties.find(
-                p => (p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name) === '__loader'
-              );
-              (loader as Babel.types.ObjectProperty).value = createLoader();
-            }
-          },
-          AssignmentExpression(path: NodePath<Babel.types.AssignmentExpression>) {
-            if (
-              path.node.left.type === 'MemberExpression' &&
-              path.node.left.object.type === 'Identifier' &&
-              path.node.left.object.name === 'Ember' &&
-              path.node.left.property.type === 'Identifier' &&
-              path.node.left.property.name === '__loader'
-            ) {
-              path.node.right = createLoader();
-            }
-          },
-        },
-      };
-    });
-
-    replaceFile(
-      this,
-      '@ember/test/adapter.js',
-      `import { Adapter } from 'ember-testing';
-      export default Adapter;`
-    );
-
-    replaceFile(
-      this,
-      '@ember/test/index.js',
-      `export let registerAsyncHelper;
-export let registerHelper;
-export let registerWaiter;
-export let unregisterHelper;
-export let unregisterWaiter;
-export let _impl;
-
-let testingNotAvailableMessage = () => {
-  throw new Error('Attempted to use test utilities, but \`ember-testing\` was not included');
-};
-
-registerAsyncHelper = testingNotAvailableMessage;
-registerHelper = testingNotAvailableMessage;
-registerWaiter = testingNotAvailableMessage;
-unregisterHelper = testingNotAvailableMessage;
-unregisterWaiter = testingNotAvailableMessage;
-
-export function registerTestImplementaiton(impl) {
-  let { Test } = impl;
-  registerAsyncHelper = Test.registerAsyncHelper;
-  registerHelper = Test.registerHelper;
-  registerWaiter = Test.registerWaiter;
-  unregisterHelper = Test.unregisterHelper;
-  unregisterWaiter = Test.unregisterWaiter;
-  _impl = impl;
-}`
-    );
-
-    replaceFile(
-      this,
-      'ember-testing/index.js',
-      `export * from './lib/public-api';
-import * as EmberTesting from './lib/public-api';
-import { registerTestImplementaiton } from '@ember/test';
-
-
-registerTestImplementaiton(EmberTesting);`
-    );
-
-    replaceFile(
-      this,
-      'ember-testing/lib/public-api.js',
-      `
-export { default as Test } from './test';
-export { default as Adapter } from './adapters/adapter';
-export { default as setupForTesting } from './setup_for_testing';
-export { default as QUnitAdapter } from './adapters/qunit';
-
-import './ext/application';
-import './ext/rsvp'; // setup RSVP + run loop integration
-import './helpers'; // adds helpers to helpers object in Test
-import './initializers'; // to setup initializer`
-    );
-  }
-}
-
-class FixDeprecateFunction extends Plugin {
-  build() {
-    let inSource = readFileSync(resolve(this.inputPaths[0], '@ember', 'debug', 'index.js'), 'utf8');
-    let outSource = transform(inSource, {
-      plugins: [fixDeprecate],
-      configFile: false,
-    })!.code!;
-    outputFileSync(resolve(this.outputPath, '@ember', 'debug', 'index.js'), outSource, 'utf8');
-  }
-}
-
-function fixDeprecate(babel: typeof Babel) {
-  const { types: t } = babel;
-
-  return {
-    name: 'ast-transform', // not required
-    visitor: {
-      Program(path: NodePath<Babel.types.Program>) {
-        path.node.body.unshift(
-          t.functionDeclaration(
-            t.identifier('newDeprecate'),
-            [t.restElement(t.identifier('rest'))],
-            t.blockStatement([
-              t.returnStatement(
-                t.callExpression(
-                  t.logicalExpression('??', t.identifier('currentDeprecate'), t.identifier('_deprecate')),
-                  [t.spreadElement(t.identifier('rest'))]
-                )
-              ),
-            ])
-          )
-        );
-      },
-      AssignmentExpression(path: NodePath<Babel.types.AssignmentExpression>) {
-        if (path.node.left.type === 'Identifier' && path.node.left.name === 'deprecate') {
-          path.node.left.name = 'currentDeprecate';
-        }
-      },
-
-      ReturnStatement(path: NodePath<Babel.types.ReturnStatement>) {
-        if (path.node.argument?.type === 'Identifier' && path.node.argument.name === 'deprecate') {
-          path.node.argument.name = 'newDeprecate';
-        }
-      },
-
-      CallExpression(path: NodePath<Babel.types.CallExpression>) {
-        if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'deprecate') {
-          path.node.callee.name = 'newDeprecate';
-        }
-        if (
-          path.node.callee.type === 'Identifier' &&
-          path.node.callee.name === 'setDebugFunction' &&
-          path.node.arguments[0].type === 'StringLiteral' &&
-          path.node.arguments[0].value === 'deprecate'
-        ) {
-          path.remove();
-        }
-      },
-      ExportSpecifier(path: NodePath<Babel.types.ExportSpecifier>) {
-        if (path.node.local.name === 'deprecate') {
-          path.node.local = t.identifier('newDeprecate');
-        }
-      },
-      VariableDeclarator(path: NodePath<Babel.types.VariableDeclarator>) {
-        if (path.node.id.type === 'Identifier' && path.node.id.name === 'deprecate') {
-          path.node.id.name = 'currentDeprecate';
-          path.node.init = null; // leave undefined for newDeprecate's (currentDeprecate ?? _deprecated) expression
-        }
-      },
-    },
-  };
-}
-
-function updateFileWithTransform(
-  context: Plugin,
-  file: string,
-  transformFunction: Babel.PluginItem | Babel.PluginItem[]
-) {
-  // only update the file if it exists - this helps the codemods to work across many different versions
-  if (!existsSync(resolve(context.inputPaths[0], file))) {
-    return;
-  }
-  let inSource = readFileSync(resolve(context.inputPaths[0], file), 'utf8');
-
-  let plugins = Array.isArray(transformFunction) ? transformFunction : [transformFunction];
-  let outSource = transform(inSource, {
-    plugins,
-    configFile: false,
-  })!.code!;
-  outputFileSync(resolve(context.outputPath, file), outSource, 'utf8');
-}
-
-function replaceFile(context: Plugin, file: string, content: string) {
-  outputFileSync(resolve(context.outputPath, file), content, 'utf8');
-}
-
-class FixCycleImports extends Plugin {
-  build() {
-    for (let file of ['@ember/object/observable.js', '@ember/utils/lib/is_empty.js']) {
-      updateFileWithTransform(this, file, moveObjectSpecifiersToMetal);
-    }
-
-    updateFileWithTransform(this, '@ember/array/index.js', [
-      moveObjectSpecifiersToMetal,
-      function (babel: typeof Babel) {
-        const { types: t } = babel;
-        return {
-          visitor: {
-            ExportNamedDeclaration(path: NodePath<Babel.types.ExportNamedDeclaration>) {
-              if (path.node.source?.value === './lib/make-array') {
-                path.node.source = t.stringLiteral('./make');
-              }
-            },
-          },
-        };
-      },
-    ]);
-
-    updateFileWithTransform(this, '@ember/runloop/index.js', function (babel: typeof Babel) {
-      const { types: t } = babel;
-
-      return {
-        visitor: {
-          CallExpression(path: NodePath<Babel.types.CallExpression>) {
-            if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'flushAsyncObservers') {
-              path.node.arguments = [t.identifier('schedule')];
-            }
-          },
-        },
-      };
-    });
-
-    updateFileWithTransform(this, '@ember/object/core.js', function (babel: typeof Babel) {
-      const { types: t } = babel;
-
-      return {
-        visitor: {
-          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
-            if (path.node.source.value === '@ember/array') {
-              path.node.source = t.stringLiteral('@ember/array/make');
-              path.node.specifiers = [t.importDefaultSpecifier(t.identifier('makeArray'))];
-            }
-
-            if (path.node.source.value === '@ember/-internals/runtime') {
-              path.replaceWith(
-                t.importDeclaration(
-                  [t.importSpecifier(t.identifier('ActionHandler'), t.identifier('default'))],
-                  t.stringLiteral('@ember/-internals/runtime/lib/mixins/action_handler')
-                )
-              );
-            }
-          },
-        },
-      };
-    });
-
-    outputFileSync(
-      resolve(this.outputPath, '@ember/array/make.js'),
-      `export { default } from './lib/make-array';`,
-      'utf8'
-    );
-
-    updateFileWithTransform(this, '@ember/-internals/metal/index.js', function (babel: typeof Babel) {
-      const { types: t } = babel;
-
-      return {
-        visitor: {
-          FunctionDeclaration(path: NodePath<Babel.types.FunctionDeclaration>) {
-            if (path.node.id?.name === 'flushAsyncObservers') {
-              path.node.params = [t.identifier('_schedule')];
-            }
-          },
-          IfStatement(path: NodePath<Babel.types.IfStatement>) {
-            if (path.node.test.type === 'Identifier' && path.node.test.name === 'shouldSchedule') {
-              path.node.test.name = '_schedule';
-            }
-          },
-          CallExpression(path: NodePath<Babel.types.CallExpression>) {
-            if (path.node.callee.type === 'Identifier' && path.node.callee.name === 'schedule') {
-              path.node.callee.name = '_schedule';
-            }
-          },
-          ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
-            if (path.node.source.value === '@ember/runloop') {
-              path.remove();
-            }
-          },
-        },
-      };
-    });
-  }
-}
-
-function moveObjectSpecifiersToMetal() {
-  let done = false;
-
-  return {
-    visitor: {
-      ImportDeclaration(path: NodePath<Babel.types.ImportDeclaration>) {
-        if (path.node.source.value === '@ember/-internals/metal') {
-          if (done) {
-            return;
-          }
-
-          /**
-           * I need to use getAllPRevSiblings and getAllNextSiblings here because I need the siblings
-           * to be paths and path.container only holds nodes (for some strange reason).
-           */
-          const objectimport = [...path.getAllPrevSiblings(), ...path.getAllNextSiblings()].find(
-            p => p.node.type === 'ImportDeclaration' && p.node.source.value === '@ember/object'
-          ) as NodePath<Babel.types.ImportDeclaration>;
-
-          path.node.specifiers.push(...objectimport!.node.specifiers);
-          objectimport.remove();
-
-          done = true;
-        }
-      },
-    },
-  };
 }
 
 function fixStringLoc(babel: typeof Babel) {

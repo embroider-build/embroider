@@ -8,31 +8,6 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
   merge(project.files, {
     app: {
       components: {
-        'test-gts.gts': `
-            import Component from '@glimmer/component';
-            import { tracked } from '@glimmer/tracking';
-            import { action } from '@ember/object';
-            import { on } from '@ember/modifier';
-
-            interface Signature {
-              Element: HTMLDivElement;
-              Blocks: {
-                default: [number]
-              }
-            }
-
-            export default class Incrementer extends Component<Signature> {
-              @tracked count = 0;
-
-              @action increment() { this.count++ }
-              <template>
-                <div ...attributes>
-                  <button {{on 'click' this.increment}}>increment</button>
-                  {{yield this.count}}
-                </div>
-              </template>
-            }
-        `,
         'special-message': {
           'index.ts': `
             import Component from '@glimmer/component';
@@ -77,29 +52,6 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
     },
     tests: {
       rendering: {
-        'gts-test.gts': `
-            import { module, test } from 'qunit';
-            import { setupRenderingTest } from 'ember-qunit';
-            import { render, click } from '@ember/test-helpers';
-            import TestGts from '/app/components/test-gts';
-
-            module('Rendering', function (hooks) {
-              setupRenderingTest(hooks);
-
-              test('TestGts', async function (assert) {
-                await render(<template>
-                  <TestGts as |count|>
-                    <out>{{count}}</out>
-                  </TestGts>
-                </template>);
-
-                assert.dom('out').hasText('0');
-
-                await click('button');
-                assert.dom('out').hasText('1');
-              });
-            });
-          `,
         'incrementer-test.ts': `
             import { module, test } from 'qunit';
             import { setupRenderingTest } from 'ember-qunit';
@@ -109,7 +61,7 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
             module('Rendering', function (hooks) {
               setupRenderingTest(hooks);
 
-              test('Incrementer', async function (assert) {
+              test('increments', async function (assert) {
                 await render(hbs\`
                   <Incrementer as |count|>
                     <out>{{count}}</out>
@@ -151,11 +103,6 @@ typescriptApp.forEachScenario(scenario => {
     let app: PreparedApp;
     hooks.before(async () => {
       app = await scenario.prepare();
-    });
-
-    test(`pnpm ember test`, async function (assert) {
-      let result = await app.execute(`ember test`);
-      assert.equal(result.exitCode, 0, result.output);
     });
 
     test(`check types`, async function (assert) {

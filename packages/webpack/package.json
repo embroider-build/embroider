@@ -1,7 +1,7 @@
 {
   "name": "@embroider/webpack",
-  "version": "4.1.0",
-  "private": true,
+  "version": "4.1.2",
+  "private": false,
   "description": "Builds EmberJS apps with Webpack",
   "repository": {
     "type": "git",
@@ -48,9 +48,9 @@
     "@types/fs-extra": "^9.0.12",
     "@types/lodash": "^4.14.170",
     "@types/mini-css-extract-plugin": "^1.4.3",
-    "@types/node": "^22.9.3",
+    "@types/node": "^15.12.2",
     "@types/semver": "^7.3.6",
-    "typescript": "^5.4.5",
+    "typescript": "^5.1.6",
     "webpack": "^5.38.1"
   },
   "peerDependencies": {

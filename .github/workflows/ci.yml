@@ -1,67 +1,25 @@
 name: CI
 
+env:
+  VOLTA_FEATURE_PNPM: 1
+
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 7 * * *" # daily, 7am
+    - cron: '0 7 * * *' # daily, 7am
 
   push:
     branches:
-      - main
-  pull_request: {}
+      - stable
+  pull_request:
+    branches: [stable]
 
 concurrency:
   group: ci-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  jest-suites:
-    runs-on: ${{matrix.os}}
-    timeout-minutes: 5
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ["20", "22", "24"]
-        os: [ubuntu-latest, "macos-latest"] # TODO add windows here
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: remove pinned node version
-        run: echo "auto-install-peers=false" > .npmrc
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{matrix.node}}
-          cache: pnpm
-      - run: pnpm install --no-lockfile
-      - run: pnpm --filter "@embroider/*" test
-
-  extended-node-support:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ["12.22.12", "14.21.3", "16.20.2", "18.20.8", "20.19.5", "22.20.0", "24.9.0"]
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22 # this is only used for the pnpm install, the user-node-version above will be used in tests
-          cache: pnpm
-      - run: pnpm install --no-lockfile
-      - name: downgrade Node Version in .npmrc
-        run: printf "auto-install-peers=false\nuse-node-version=${{matrix.node}}" > .npmrc
-      - run: pnpm node -v
-      - run: cat .npmrc
-      - run: pnpm --filter "@embroider/macros" test:smoke
-      - run: pnpm --filter "@embroider/reverse-exports" test:smoke
-
-  preflight-ubuntu:
+  preflight:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -78,58 +36,16 @@ jobs:
           matrix_json=$(node ./suite-setup-util --matrix)
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
 
-  test-ubuntu:
-    needs: ["preflight-ubuntu", "jest-suites"]
+  test:
+    needs: ['preflight']
     name: ${{ matrix.name }}
-    runs-on: 'ubuntu-latest'
-    timeout-minutes: 10
-
-    strategy:
-      fail-fast: false
-      max-parallel: 25 # this is trying to avoid hitting API rate limits when too many tests are hitting the github API at once.
-      matrix: ${{fromJson(needs.preflight-ubuntu.outputs.matrix)}}
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-        with:
-          use_lockfile: false
-      - name: Work around windows short path alias # https://github.com/actions/runner-images/issues/712
-        if: runner.os == 'Windows'
-        run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV
-      - name: suite
-        run: ${{ matrix.command }}
-        working-directory: tests/scenarios
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
-
-  preflight-windows:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-      - name: lint
-        run: pnpm lint
-      - id: set-matrix
-        working-directory: test-packages/support
-        run: |
-          matrix_json=$(node ./suite-setup-util --matrix --windows)
-          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
-
-  test-windows:
-    needs: ["preflight-windows", "jest-suites"]
-    name: ${{ matrix.name }}
-    runs-on: 'windows-latest'
+    runs-on: '${{ matrix.os }}-latest'
     timeout-minutes: 60
 
     strategy:
       fail-fast: false
-      max-parallel: 25 # this is trying to avoid hitting API rate limits when too many tests are hitting the github API at once.
-      matrix: ${{fromJson(needs.preflight-windows.outputs.matrix)}}
+      max-parallel: 50 # this is trying to avoid hitting API rate limits when too many tests are hitting the github API at once.
+      matrix: ${{fromJson(needs.preflight.outputs.matrix)}}
 
     steps:
       - uses: actions/checkout@v4
@@ -141,6 +57,4 @@ jobs:
         run: new-item D:\temp -ItemType Directory; echo "TEMP=D:\temp" >> $env:GITHUB_ENV
       - name: suite
         run: ${{ matrix.command }}
-        working-directory: tests/scenarios
-        env:
-          NODE_OPTIONS: "--max-old-space-size=8192"
+        working-directory: ${{ matrix.dir }}

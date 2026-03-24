@@ -1,7 +1,7 @@
 import type { NodePath, Node } from '@babel/traverse';
 import traverse from '@babel/traverse';
 import type { TransformOptions } from '@babel/core';
-import { transformAsync, types as t } from '@babel/core';
+import { transformSync, types as t } from '@babel/core';
 import type { SourceLocation } from '@babel/code-frame';
 import { codeFrameColumns } from '@babel/code-frame';
 
@@ -29,16 +29,8 @@ export interface ExportAll {
   all: string;
 }
 
-export async function auditJS(
-  rawSource: string,
-  filename: string,
-  babelConfig: TransformOptions,
-  frames: CodeFrameStorage
-) {
-  if (!babelConfig.ast) {
-    throw new Error(`module auditing requires a babel config with ast: true`);
-  }
-
+// babelConfig must include { ast: true }
+export function auditJS(rawSource: string, filename: string, babelConfig: TransformOptions, frames: CodeFrameStorage) {
   let imports = [] as InternalImport[];
   let exports = new Set<string | ExportAll>();
   let problems = [] as { message: string; detail: string; codeFrameIndex: number | undefined }[];
@@ -52,7 +44,7 @@ export async function auditJS(
   let sawDefine: boolean = false;
   /* eslint-enable @typescript-eslint/no-inferrable-types */
 
-  let { ast, code } = (await transformAsync(rawSource, Object.assign({ filename: filename }, babelConfig)))!;
+  let { ast, code } = transformSync(rawSource, Object.assign({ filename: filename }, babelConfig))!;
   let saveCodeFrame = frames.forSource(rawSource);
 
   traverse(ast!, {
@@ -78,8 +70,6 @@ export async function auditJS(
             codeFrameIndex: saveCodeFrame(arg),
             specifiers: [],
           });
-        } else if (arg.leadingComments?.find(c => /@vite-ignore/.test(c.value))) {
-          // this is vite internals that we should ignore too
         } else {
           problems.push({
             message: `audit tool is unable to understand this usage of ${

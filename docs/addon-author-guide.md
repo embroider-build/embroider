@@ -1,6 +1,6 @@
 # Addon Author Guide
 
-This document lays out the recommended best practices for addon authors who want their addons to work in apps built with Embroider. For a step by step guide on how to convert an addon from v1 to v2, see [Guide: Porting an Addon to V2](./porting-addons-to-v2.md)
+This document lays out the recommended best practices for addon authors who want their addons to work in apps built with Embroider.
 
 ## Give me the tl;dr: what should I do?
 
@@ -67,7 +67,7 @@ Another good way to learn about v2 addons is to look at some examples:
 - [ember-stargate](https://github.com/simonihmig/ember-stargate)
 - [glimmer-apollo](https://github.com/josemarluedke/glimmer-apollo)
 
-These examples use a monorepo as a way to keep a clean separation between the addon and the application that holds their test suite. This is currently the recommended solution.
+Several of these examples use a monorepo as a way to keep a clean separation between the addon and the application that holds their test suite. If you're comfortable working with monorepos this is a good solution. On the other hand, monorepos have some tradeoffs and are not always well-supported by all tools, so it's also OK to keep your test app in a subdirectory of your addon. This is closer to how V1 addons work, where `tests/dummy` serves this purpose. See [ember-welcome-page](https://github.com/ember-cli/ember-welcome-page) for an example of not using a monorepo -- instead it has a `test-app` subdirectory and uses the `addon-dev` command from `@embroider/addon-dev` to manage linkage between the addon and the test-app and to manage combining of dependencies from both into a single top-level package.json
 
 We support some tools to make v2 addon development more convenient:
 

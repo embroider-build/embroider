@@ -4,22 +4,20 @@ import type State from './state';
 import { initState } from './state';
 import type { Mode as GetConfigMode } from './get-config';
 import { inlineRuntimeConfig, insertConfig } from './get-config';
-import macroCondition, { identifyMacroConditionPath } from './macro-condition';
+import macroCondition, { isMacroConditionPath } from './macro-condition';
 import { isEachPath, insertEach } from './each';
 
 import error from './error';
 import failBuild from './fail-build';
 import { Evaluator, buildLiterals } from './evaluate-json';
 import type * as Babel from '@babel/core';
-import { existsSync, readdirSync } from 'fs';
-import { resolve, dirname, join } from 'path';
 
 export default function main(context: typeof Babel): unknown {
   let t = context.types;
   let visitor = {
     Program: {
       enter(path: NodePath<t.Program>, state: State) {
-        initState(context, path, state);
+        initState(t, path, state);
       },
       exit(_: NodePath<t.Program>, state: State) {
         // @embroider/macros itself has no runtime behaviors and should always be removed
@@ -31,10 +29,9 @@ export default function main(context: typeof Babel): unknown {
     },
     'IfStatement|ConditionalExpression': {
       enter(path: NodePath<t.IfStatement | t.ConditionalExpression>, state: State) {
-        let found = identifyMacroConditionPath(path);
-        if (found) {
-          state.calledIdentifiers.add(found.callExpression.get('callee').node);
-          macroCondition(found, state);
+        if (isMacroConditionPath(path)) {
+          state.calledIdentifiers.add(path.get('test').get('callee').node);
+          macroCondition(path, state);
         }
       },
     },
@@ -107,46 +104,6 @@ export default function main(context: typeof Babel): unknown {
           return;
         }
 
-        if (callee.referencesImport('@embroider/macros', 'setTesting')) {
-          state.calledIdentifiers.add(callee.node);
-
-          if (state.opts.mode === 'run-time') {
-            callee.replaceWith(state.importUtil.import(callee, state.pathToOurAddon('runtime'), 'setTesting'));
-          } else {
-            let args = path.get('arguments');
-            if (args.length === 0) {
-              throw error(path, `setTesting() requires a boolean argument`);
-            }
-
-            let arg = args[0];
-            let evaluator = new Evaluator({ state });
-            let result = evaluator.evaluate(arg);
-
-            if (!result.confident) {
-              throw error(
-                arg,
-                `setTesting() can only be called with a statically analyzable value in compile-time mode. The argument must be a literal boolean or other macro that can resolves to a boolean at compile-time.`
-              );
-            }
-
-            let macrosConfig = (state.opts.globalConfig['@embroider/macros'] as any) || {};
-            let currentIsTesting = Boolean(macrosConfig.isTesting);
-            let newIsTesting = Boolean(result.value);
-
-            if (currentIsTesting !== newIsTesting) {
-              throw error(
-                path,
-                `setTesting(${newIsTesting}) cannot change the testing state in compile-time mode. The current global config has isTesting=${currentIsTesting}. ` +
-                  `setTesting() calls are compiled away at build time, so they cannot change the testing state. ` +
-                  `If you need to change the testing state at runtime, use runtime mode instead.`
-              );
-            }
-
-            path.remove();
-          }
-          return;
-        }
-
         let result = new Evaluator({ state }).evaluateMacroCall(path);
         if (result.confident) {
           state.calledIdentifiers.add(callee.node);
@@ -167,60 +124,10 @@ export default function main(context: typeof Babel): unknown {
           if (state.opts.importSyncImplementation === 'eager') {
             let specifier = path.node.arguments[0];
             if (specifier?.type !== 'StringLiteral') {
-              let relativePath = '';
-              let property;
-              if (specifier.type === 'TemplateLiteral') {
-                relativePath = specifier.quasis[0].value.cooked!;
-                property = specifier.expressions[0] as t.Expression;
-              }
-              // babel might transform template form `../my-path/${id}` to '../my-path/'.concat(id)
-              if (
-                specifier.type === 'CallExpression' &&
-                specifier.callee.type === 'MemberExpression' &&
-                specifier.callee.property.type === 'Identifier' &&
-                specifier.callee.property.name === 'concat' &&
-                specifier.callee.object.type === 'StringLiteral'
-              ) {
-                relativePath = specifier.callee.object.value;
-                property = specifier.arguments[0] as t.Expression;
-              }
-              if (property && relativePath && relativePath.startsWith('.')) {
-                const resolvedPath = resolve(dirname((state as any).filename), relativePath);
-                let entries: string[] = [];
-                if (existsSync(resolvedPath)) {
-                  entries = readdirSync(resolvedPath).filter(e => !e.startsWith('.'));
-                }
-                const obj = t.objectExpression(
-                  entries.map(e => {
-                    let key = e.split('.')[0];
-                    const rest = e.split('.').slice(1, -1);
-                    if (rest.length) {
-                      key += `.${rest}`;
-                    }
-                    const id = t.callExpression(
-                      state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
-                      [state.importUtil.import(path, join(relativePath, key).replace(/\\/g, '/'), '*')]
-                    );
-                    return t.objectProperty(t.stringLiteral(key), id);
-                  })
-                );
-                const memberExpr = t.memberExpression(obj, property, true);
-                path.replaceWith(memberExpr);
-                state.calledIdentifiers.add(callee.node);
-                return;
-              } else {
-                throw new Error(
-                  `importSync eager mode only supports dynamic paths which are relative, must start with a '.', had ${specifier.type}`
-                );
-              }
+              throw new Error(`importSync eager mode doesn't implement non string literal arguments yet`);
             }
-            path.replaceWith(
-              t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
-                state.importUtil.import(path, specifier.value, '*'),
-              ])
-            );
+            path.replaceWith(state.importUtil.import(path, specifier.value, '*'));
             state.calledIdentifiers.add(callee.node);
-            return;
           } else {
             if (path.scope.hasBinding('require')) {
               path.scope.rename('require');
@@ -233,13 +140,13 @@ export default function main(context: typeof Babel): unknown {
               ])
             );
           }
+          return;
         }
       },
     },
     ReferencedIdentifier(path: NodePath<t.Identifier>, state: State) {
       for (let candidate of [
         'dependencySatisfies',
-        'appEmberSatisfies',
         'moduleExists',
         'getConfig',
         'getOwnConfig',
@@ -249,7 +156,6 @@ export default function main(context: typeof Babel): unknown {
         'isDevelopingApp',
         'isDevelopingThisPackage',
         'isTesting',
-        'setTesting',
       ]) {
         if (path.referencesImport('@embroider/macros', candidate) && !state.calledIdentifiers.has(path.node)) {
           throw error(path, `You can only use ${candidate} as a function call`);
@@ -281,10 +187,11 @@ export default function main(context: typeof Babel): unknown {
       }
 
       if (
+        state.opts.importSyncImplementation === 'cjs' &&
         path.node.name === 'require' &&
         !state.generatedRequires.has(path.node) &&
         !path.scope.hasBinding('require') &&
-        state.owningPackage().isEmberAddon()
+        state.owningPackage().isEmberPackage()
       ) {
         // Our importSync macro has been compiled to `require`. But we want to
         // distinguish that from any pre-existing, user-written `require` in an

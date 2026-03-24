@@ -22,7 +22,6 @@
 /npm-debug.log*
 /testem.log
 /yarn-error.log
-/tsconfig.tsbuildinfo
 
 # ember-try
 /.node_modules.ember-try/

@@ -8,7 +8,7 @@ export interface Options {
   };
 }
 
-export default function hbsLoader(this: LoaderContext<Options>, templateContent: string): string | undefined {
+export default function hbsLoader(this: LoaderContext<Options>, templateContent: string) {
   let { compatModuleNaming } = this.getOptions();
   try {
     return hbsToJS(templateContent, { filename: this.resourcePath, compatModuleNaming });

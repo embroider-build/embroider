@@ -3,48 +3,26 @@ import { Project } from 'scenario-tester';
 import { MacrosConfig } from '../../src/node';
 import { join, resolve } from 'path';
 import { hbsToJS } from '@embroider/shared-internals';
-import { transformAsync } from '@babel/core';
+import { transformSync } from '@babel/core';
 import type { Options as EtcOptions, Transform } from 'babel-plugin-ember-template-compilation';
 
 const compilerPath = emberTemplateCompiler().path;
 
 export { Project };
 
-type CreateTests = (
-  transform: (templateContents: string, options?: TemplateTransformOptions) => Promise<string>
-) => void;
+type CreateTestsWithConfig = (transform: (templateContents: string) => string, config: MacrosConfig) => void;
+type CreateTests = (transform: (templateContents: string) => string) => void;
 
 export interface TemplateTransformOptions {
-  /**
-   * The path to the source we are transforming
-   */
   filename?: string;
-  /**
-   * Customize the app root for this macros run.
-   * Defaults to the `@embroider/macros` package directory
-   */
-  appRoot?: string;
-
-  /**
-   * Allow further customization of the macros config before finalization and invocation of the transform callback.
-   *
-   * If this option is passed you must call `config.finalize()` yourself in this callback.
-   */
-  configure?: (config: MacrosConfig) => void;
 }
 
-export function templateTests(createTests: CreateTests) {
-  let transform = async (templateContents: string, options: TemplateTransformOptions = {}) => {
-    let { plugins, setConfig } = MacrosConfig.transforms();
-    let config = MacrosConfig.for({}, options.appRoot ?? resolve(__dirname, '..', '..'));
-    setConfig(config);
+export function templateTests(createTests: CreateTestsWithConfig | CreateTests) {
+  let { plugins, setConfig } = MacrosConfig.transforms();
+  let config = MacrosConfig.for({}, resolve(__dirname, '..', '..'));
+  setConfig(config);
 
-    if (options.configure) {
-      options.configure(config);
-    } else {
-      config.finalize();
-    }
-
+  let transform = (templateContents: string, options: TemplateTransformOptions = {}) => {
     let filename = options.filename ?? join(__dirname, 'sample.hbs');
 
     let etcOptions: EtcOptions = {
@@ -53,13 +31,13 @@ export function templateTests(createTests: CreateTests) {
       targetFormat: 'hbs',
     };
 
-    let js = (await transformAsync(hbsToJS(templateContents, { filename: filename }), {
+    let js = transformSync(hbsToJS(templateContents, { filename: filename }), {
       plugins: [
         [require.resolve('babel-plugin-ember-template-compilation'), etcOptions],
         require.resolve('@babel/plugin-transform-modules-amd'),
       ],
       filename,
-    }))!.code!;
+    })!.code!;
 
     let deps: string[];
     let impl: Function;
@@ -92,6 +70,10 @@ export function templateTests(createTests: CreateTests) {
     );
     return hbs ?? `no hbs found`;
   };
-
-  createTests(transform);
+  if (createTests.length === 2) {
+    (createTests as CreateTestsWithConfig)(transform, config);
+  } else {
+    config.finalize();
+    (createTests as CreateTests)(transform);
+  }
 }

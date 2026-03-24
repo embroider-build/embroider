@@ -3,98 +3,106 @@ import {
   emberVirtualPeerDeps,
   extensionsPattern,
   packageName as getPackageName,
-  isInComponents,
-  needsSyntheticComponentJS,
   packageName,
-  syntheticJStoHBS,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix, basename } from 'path';
-import type { Package } from '@embroider/shared-internals';
+import { dirname, resolve } from 'path';
+import type { Package, V2Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
 import assertNever from 'assert-never';
-import { externalName } from '@embroider/reverse-exports';
-import { exports as resolveExports } from 'resolve.exports';
+import {
+  virtualExternalESModule,
+  virtualExternalCJSModule,
+  virtualPairComponent,
+  virtualContent,
+  fastbootSwitch,
+  decodeFastbootSwitch,
+  decodeImplicitModules,
+} from './virtual-content';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
 import { readFileSync } from 'fs';
-import { nodeResolve, type NodeResolveOpts } from './node-resolve';
-import type { Options, EngineConfig } from './module-resolver-options';
+import type UserOptions from './options';
 import { satisfies } from 'semver';
-import { extractResolution, type ModuleRequest, type Resolution } from './module-request';
+import { resolve as nodeResolve } from './node-resolve';
 
 const debug = makeDebug('embroider:resolver');
-
-// Using a formatter makes this work lazy so nothing happens when we aren't
-// logging. It is unfortunate that formatters are a globally mutable config and
-// you can only use single character names, but oh well.
-makeDebug.formatters.p = (s: string) => {
-  let cwd = process.cwd();
-  if (s.startsWith(cwd)) {
-    return s.slice(cwd.length + 1);
-  }
-  return s;
-};
-
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
-  if (after.resolvedTo) {
-    debug(`[%s:resolvedTo] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
+  if (after.isVirtual) {
+    debug(`virtualized %s in %s because %s`, before.specifier, before.fromFile, reason);
   } else if (before.specifier !== after.specifier) {
     if (before.fromFile !== after.fromFile) {
       debug(
-        `[%s:aliased and rehomed] %s to %s\n  because %s\n  from    %p\n  to      %p`,
-        before.debugType,
+        `aliased and rehomed: %s to %s, from %s to %s because %s`,
         before.specifier,
         after.specifier,
-        reason,
         before.fromFile,
-        after.fromFile
+        after.fromFile,
+        reason
       );
     } else {
-      debug(`[%s:aliased] %s to %s\n  because %s`, before.debugType, before.specifier, after.specifier, reason);
+      debug(`aliased: %s to %s in %s because`, before.specifier, after.specifier, before.fromFile, reason);
     }
   } else if (before.fromFile !== after.fromFile) {
-    debug(
-      `[%s:rehomed] %s, because %s\n  from    %p\n  to      %p`,
-      before.debugType,
-      before.specifier,
-      reason,
-      before.fromFile,
-      after.fromFile
-    );
+    debug(`rehomed: %s from %s to %s because`, before.specifier, before.fromFile, after.fromFile, reason);
   } else {
-    debug(`[%s:unchanged] %s because %s\n  in    %p`, before.debugType, before.specifier, reason, before.fromFile);
+    debug(`unchanged: %s in %s because %s`, before.specifier, before.fromFile, reason);
   }
   return after;
+}
+
+export interface Options {
+  renamePackages: {
+    [fromName: string]: string;
+  };
+  renameModules: {
+    [fromName: string]: string;
+  };
+  activeAddons: {
+    [packageName: string]: string;
+  };
+  resolvableExtensions: string[];
+  appRoot: string;
+  engines: EngineConfig[];
+  modulePrefix: string;
+  podModulePrefix?: string;
+  amdCompatibility: Required<UserOptions['amdCompatibility']>;
+}
+
+interface EngineConfig {
+  packageName: string;
+  activeAddons: { name: string; root: string }[];
+  fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
+  root: string;
 }
 
 type MergeEntry =
   | {
       type: 'app-only';
       'app-js': {
-        specifier: string;
-        fromFile: string;
+        localPath: string;
+        packageRoot: string;
         fromPackageName: string;
       };
     }
   | {
       type: 'fastboot-only';
       'fastboot-js': {
-        specifier: string;
-        fromFile: string;
+        localPath: string;
+        packageRoot: string;
         fromPackageName: string;
       };
     }
   | {
       type: 'both';
       'app-js': {
-        specifier: string;
-        fromFile: string;
+        localPath: string;
+        packageRoot: string;
         fromPackageName: string;
       };
       'fastboot-js': {
-        specifier: string;
-        fromFile: string;
+        localPath: string;
+        packageRoot: string;
         fromPackageName: string;
       };
     };
@@ -102,12 +110,60 @@ type MergeEntry =
 type MergeMap = Map</* engine root dir */ string, Map</* withinEngineModuleName */ string, MergeEntry>>;
 type ReverseMergeMap = Map</* filename */ string, { inEngineName: string; owningPackageRoot: string }>;
 
-const compatPattern = /@embroider\/virtual\/(?<type>[^\/]+)\/(?<rest>.*)/;
+const compatPattern = /#embroider_compat\/(?<type>[^\/]+)\/(?<rest>.*)/;
+
+export interface ModuleRequest {
+  readonly specifier: string;
+  readonly fromFile: string;
+  readonly isVirtual: boolean;
+  readonly meta: Record<string, unknown> | undefined;
+  alias(newSpecifier: string): this;
+  rehome(newFromFile: string): this;
+  virtualize(virtualFilename: string): this;
+  withMeta(meta: Record<string, any> | undefined): this;
+}
+
+class NodeModuleRequest implements ModuleRequest {
+  constructor(
+    readonly specifier: string,
+    readonly fromFile: string,
+    readonly isVirtual: boolean,
+    readonly meta: Record<string, any> | undefined
+  ) {}
+  alias(specifier: string): this {
+    return new NodeModuleRequest(specifier, this.fromFile, false, this.meta) as this;
+  }
+  rehome(fromFile: string): this {
+    if (this.fromFile === fromFile) {
+      return this;
+    } else {
+      return new NodeModuleRequest(this.specifier, fromFile, false, this.meta) as this;
+    }
+  }
+  virtualize(filename: string): this {
+    return new NodeModuleRequest(filename, this.fromFile, true, this.meta) as this;
+  }
+  withMeta(meta: Record<string, any> | undefined): this {
+    return new NodeModuleRequest(this.specifier, this.fromFile, this.isVirtual, meta) as this;
+  }
+}
+
+// This is generic because different build systems have different ways of
+// representing a found module, and we just pass those values through.
+export type Resolution<T = unknown, E = unknown> = { type: 'found'; result: T } | { type: 'not_found'; err: E };
+
+export type ResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
+  request: R
+) => Promise<Res>;
+
+export type SyncResolverFunction<R extends ModuleRequest = ModuleRequest, Res extends Resolution = Resolution> = (
+  request: R
+) => Res;
 
 export class Resolver {
   constructor(readonly options: Options) {}
 
-  private async beforeResolve<R extends ModuleRequest>(request: R): Promise<R> {
+  beforeResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -117,15 +173,9 @@ export class Resolver {
     }
 
     request = this.handleFastbootSwitch(request);
-    request = await this.handleGlobalsCompat(request);
+    request = this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
-    request = this.handleImplicitTestScripts(request);
-    request = this.handleVendorStyles(request);
-    request = this.handleTestSupportStyles(request);
-    request = this.handleEntrypoint(request);
-    request = this.handleRouteEntrypoint(request);
     request = this.handleRenaming(request);
-    request = this.handleVendor(request);
     // we expect the specifier to be app relative at this point - must be after handleRenaming
     request = this.generateFastbootSwitch(request);
     request = this.preHandleExternal(request);
@@ -141,20 +191,45 @@ export class Resolver {
   // that calls your build system's normal module resolver, this does both pre-
   // and post-resolution adjustments as needed to implement our compatibility
   // rules.
-  async resolve<ResolveResolution extends Resolution>(
-    request: ModuleRequest<ResolveResolution>
-  ): Promise<ResolveResolution> {
-    request = await this.beforeResolve(request);
-
-    let resolution: ResolveResolution;
-
-    if (request.resolvedTo) {
-      resolution = await extractResolution(request.resolvedTo);
-    } else {
-      resolution = await request.defaultResolve();
+  //
+  // Depending on the plugin architecture you're working in, it may be easier to
+  // call beforeResolve and fallbackResolve directly, in which case matching the
+  // details of the recursion to what this method does are your responsibility.
+  async resolve<Req extends ModuleRequest, Res extends Resolution>(
+    request: Req,
+    defaultResolve: ResolverFunction<Req, Res>
+  ): Promise<Res> {
+    let gen = this.internalResolve<Req, Res, Promise<Res>>(request, defaultResolve);
+    let out = gen.next();
+    while (!out.done) {
+      out = gen.next(await out.value);
     }
+    return out.value;
+  }
 
-    resolution = await this.afterResolve(request, resolution);
+  // synchronous alternative to resolve() above. Because our own internals are
+  // all synchronous, you can use this if your defaultResolve function is
+  // synchronous.
+  resolveSync<Req extends ModuleRequest, Res extends Resolution>(
+    request: Req,
+    defaultResolve: SyncResolverFunction<Req, Res>
+  ): Res {
+    let gen = this.internalResolve<Req, Res, Res>(request, defaultResolve);
+    let out = gen.next();
+    while (!out.done) {
+      out = gen.next(out.value);
+    }
+    return out.value;
+  }
+
+  // Our core implementation is a generator so it can power both resolve() and
+  // resolveSync()
+  private *internalResolve<Req extends ModuleRequest, Res extends Resolution, Yielded>(
+    request: Req,
+    defaultResolve: (req: Req) => Yielded
+  ): Generator<Yielded, Res, Res> {
+    request = this.beforeResolve(request);
+    let resolution = yield defaultResolve(request);
 
     switch (resolution.type) {
       case 'found':
@@ -164,17 +239,10 @@ export class Resolver {
       default:
         throw assertNever(resolution);
     }
-
-    request = request.clone();
-
-    let nextRequest = await this.fallbackResolve(request);
+    let nextRequest = this.fallbackResolve(request);
     if (nextRequest === request) {
       // no additional fallback is available.
       return resolution;
-    }
-
-    if (nextRequest.resolvedTo) {
-      return await extractResolution(nextRequest.resolvedTo);
     }
 
     if (nextRequest.fromFile === request.fromFile && nextRequest.specifier === request.specifier) {
@@ -183,68 +251,54 @@ export class Resolver {
       );
     }
 
-    return this.resolve(nextRequest);
+    if (nextRequest.isVirtual) {
+      // virtual requests are terminal, there is no more beforeResolve or
+      // fallbackResolve around them. The defaultResolve is expected to know how
+      // to implement them.
+      return yield defaultResolve(nextRequest);
+    }
+    return yield* this.internalResolve(nextRequest, defaultResolve);
   }
 
   // Use standard NodeJS resolving, with our required compatibility rules on
   // top. This is a convenience method for calling resolveSync with the
   // defaultResolve already configured to be "do the normal node thing".
-  async nodeResolve(
+  nodeResolve(
     specifier: string,
-    fromFile: string,
-    opts?: NodeResolveOpts
-  ): Promise<
+    fromFile: string
+  ):
     | { type: 'virtual'; filename: string; content: string }
     | { type: 'real'; filename: string }
-    | { type: 'not_found'; err: Error }
-  > {
-    return nodeResolve(this, specifier, fromFile, opts);
+    | { type: 'not_found'; err: Error } {
+    let resolution = this.resolveSync(new NodeModuleRequest(specifier, fromFile, false, undefined), request => {
+      if (request.isVirtual) {
+        return {
+          type: 'found',
+          result: {
+            type: 'virtual' as 'virtual',
+            content: virtualContent(request.specifier, this),
+            filename: request.specifier,
+          },
+        };
+      }
+      return nodeResolve(request.specifier, request.fromFile, this.options.resolvableExtensions);
+    });
+
+    switch (resolution.type) {
+      case 'not_found':
+        return resolution;
+      case 'found':
+        return resolution.result;
+      default:
+        throw assertNever(resolution);
+    }
   }
 
   get packageCache() {
     return RewrittenPackageCache.shared('embroider', this.options.appRoot);
   }
 
-  private async afterResolve<Res extends Resolution>(request: ModuleRequest<Res>, resolution: Res): Promise<Res> {
-    resolution = await this.handleSyntheticComponents(request, resolution);
-    return resolution;
-  }
-
-  private async handleSyntheticComponents<Res extends Resolution>(
-    request: ModuleRequest<Res>,
-    resolution: Res
-  ): Promise<Res> {
-    // Key assumption: the system's defaultResolve performs extension search for
-    // extensionless requests, with JS at a higher priority than HBS.
-
-    // When the request had an explicit ".js" extension, the system default
-    // extension search doesn't help us locate an HBS, so we need to check for
-    // it ourselves here.
-    if (resolution.type === 'not_found') {
-      let hbsSpecifier = syntheticJStoHBS(request.specifier);
-      if (hbsSpecifier) {
-        resolution = await this.resolve(request.alias(hbsSpecifier));
-      }
-    }
-
-    // At this point, we might have resolved an HBS file (either because the
-    // request was extensionless and the default search found it, or because of
-    // our own code above) when the request was for a JS file.
-    if (resolution.type === 'found') {
-      let syntheticId = needsSyntheticComponentJS(request.specifier, resolution.filename);
-      if (syntheticId && isInComponents(resolution.filename, this.packageCache)) {
-        let newRequest = logTransition(
-          `synthetic component JS`,
-          request,
-          request.virtualize({ type: 'template-only-component-js', specifier: syntheticId })
-        );
-        return await extractResolution(newRequest.resolvedTo!);
-      }
-    }
-    return resolution;
-  }
-
-  private logicalPackage(owningPackage: Package, file: string): Package {
+  private logicalPackage(owningPackage: V2Package, file: string): V2Package {
     let logicalLocation = this.reverseSearchAppTree(file);
     if (logicalLocation) {
       let pkg = this.packageCache.get(logicalLocation.owningEngine.root);
@@ -257,9 +311,6 @@ export class Resolver {
   }
 
   private generateFastbootSwitch<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
-      return request;
-    }
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
 
     if (!pkg) {
@@ -280,11 +331,9 @@ export class Resolver {
         let fastbootFile = engineConfig.fastbootFiles[candidate];
         if (fastbootFile) {
           if (fastbootFile.shadowedFilename) {
-            let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {
-              configFile: false,
-            });
+            let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {});
             let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
-            if (switchFile.specifier === request.fromFile) {
+            if (switchFile === request.fromFile) {
               return logTransition('internal lookup from fastbootSwitch', request);
             } else {
               return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
@@ -304,9 +353,6 @@ export class Resolver {
   }
 
   private handleFastbootSwitch<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
-      return request;
-    }
     let match = decodeFastbootSwitch(request.fromFile);
     if (!match) {
       return request;
@@ -354,7 +400,7 @@ export class Resolver {
         return logTransition(
           'matched addon entry',
           request,
-          request.alias(entry[section].specifier).rehome(entry[section].fromFile)
+          request.alias(entry[section].localPath).rehome(resolve(entry[section].packageRoot, 'package.json'))
         );
       }
     }
@@ -363,162 +409,34 @@ export class Resolver {
   }
 
   private handleImplicitModules<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
+    let im = decodeImplicitModules(request.specifier);
+    if (!im) {
       return request;
     }
 
-    for (let variant of ['', 'test-'] as const) {
-      let suffix = `-embroider-implicit-${variant}modules.js`;
-      if (!request.specifier.endsWith(suffix)) {
-        continue;
-      }
-      let filename = request.specifier.slice(0, -1 * suffix.length);
-      if (!filename.endsWith('/') && filename.endsWith('\\')) {
-        continue;
-      }
-      filename = filename.slice(0, -1);
-      let pkg = this.packageCache.ownerOfFile(request.fromFile);
-      if (!pkg?.isV2Ember()) {
-        throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
-      }
-      let type = `implicit-${variant}modules` as const;
-      let packageName = getPackageName(filename);
-      if (packageName) {
-        let dep = this.packageCache.resolve(packageName, pkg);
-        return logTransition(
-          `dep's implicit modules`,
-          request,
-          request.virtualize({ type, specifier: resolve(dep.root, `-embroider-${type}.js`), fromFile: dep.root })
-        );
-      } else {
-        return logTransition(
-          `own implicit modules`,
-          request,
-          request.virtualize({ type, specifier: resolve(pkg.root, `-embroider-${type}.js`), fromFile: pkg.root })
-        );
-      }
-    }
-    return request;
-  }
-
-  private handleEntrypoint<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
-      return request;
-    }
-
-    const compatModulesSpecifier = '@embroider/virtual/compat-modules';
-
-    let isCompatModules =
-      request.specifier === compatModulesSpecifier || request.specifier.startsWith(compatModulesSpecifier + '/');
-
-    if (!isCompatModules) {
-      return request;
-    }
-
-    const requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
-
-    if (!requestingPkg?.isV2Ember()) {
-      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
-    }
-
-    let pkg: Package;
-    if (request.specifier === compatModulesSpecifier) {
-      pkg = requestingPkg;
-    } else {
-      let packageName = request.specifier.slice(compatModulesSpecifier.length + 1);
-      pkg = this.packageCache.resolve(packageName, requestingPkg);
-    }
-
-    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
-    let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
-    return logTransition(
-      'entrypoint',
-      request,
-      request.virtualize({
-        type: 'entrypoint',
-        specifier,
-        fromDir: dirname(specifier),
-      })
-    );
-  }
-
-  private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
-      return request;
-    }
-    const publicPrefix = '@embroider/core/route/';
-    if (!request.specifier.startsWith(publicPrefix)) {
-      return request;
-    }
-    let routeName = request.specifier.slice(publicPrefix.length);
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
-
     if (!pkg?.isV2Ember()) {
-      throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
+      throw new Error(`bug: found implicit modules import in non-ember package at ${request.fromFile}`);
     }
 
-    let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
-    let target = matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`;
-    let specifier = resolve(pkg.root, target);
-
-    return logTransition(
-      'route entrypoint',
-      request,
-      request.virtualize({ type: 'route-entrypoint', specifier, route: routeName, fromDir: dirname(specifier) })
-    );
-  }
-
-  private handleImplicitTestScripts<R extends ModuleRequest>(request: R): R {
-    if (request.specifier !== '@embroider/virtual/test-support.js') {
-      return request;
-    }
-
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (pkg?.root !== this.options.engines[0].root) {
-      throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/virtual/test-support.js. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+    let packageName = getPackageName(im.fromFile);
+    if (packageName) {
+      let dep = this.packageCache.resolve(packageName, pkg);
+      return logTransition(
+        `dep's implicit modules`,
+        request,
+        request.virtualize(resolve(dep.root, `-embroider-${im.type}.js`))
+      );
+    } else {
+      return logTransition(
+        `own implicit modules`,
+        request,
+        request.virtualize(resolve(pkg.root, `-embroider-${im.type}.js`))
       );
     }
-
-    return logTransition(
-      'test-support',
-      request,
-      request.virtualize({ type: 'test-support-js', specifier: resolve(pkg.root, '-embroider-test-support.js') })
-    );
   }
 
-  private handleTestSupportStyles<R extends ModuleRequest>(request: R): R {
-    if (request.specifier !== '@embroider/virtual/test-support.css') {
-      return request;
-    }
-
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (pkg?.root !== this.options.engines[0].root) {
-      throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/virtual/test-support.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
-      );
-    }
-
-    return logTransition(
-      'test-support-styles',
-      request,
-      request.virtualize({
-        type: 'test-support-css',
-        specifier: resolve(pkg.root, '-embroider-test-support-styles.css'),
-      })
-    );
-  }
-
-  private async handleGlobalsCompat<R extends ModuleRequest>(request: R): Promise<R> {
-    if (request.resolvedTo) {
-      return request;
-    }
+  private handleGlobalsCompat<R extends ModuleRequest>(request: R): R {
     let match = compatPattern.exec(request.specifier);
     if (!match) {
       return request;
@@ -539,30 +457,9 @@ export class Resolver {
         return this.resolveModifier(rest, engine, request);
       case 'ambiguous':
         return this.resolveHelperOrComponent(rest, engine, request);
-      case 'compat-modules':
-        return request;
       default:
-        throw new Error(`bug: unexepected @embroider/virtual specifier: ${request.specifier}`);
+        throw new Error(`bug: unexepected #embroider_compat specifier: ${request.specifier}`);
     }
-  }
-
-  private handleVendorStyles<R extends ModuleRequest>(request: R): R {
-    if (request.specifier !== '@embroider/virtual/vendor.css') {
-      return request;
-    }
-
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (!pkg || !this.options.engines.some(e => e.root === pkg?.root)) {
-      throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app or Engine. The top-level Ember app is the only one that has support for @embroider/virtual/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
-      );
-    }
-
-    return logTransition(
-      'vendor-styles',
-      request,
-      request.virtualize({ type: 'vendor-css', specifier: resolve(pkg.root, '-embroider-vendor-styles.css') })
-    );
   }
 
   private resolveHelper<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
@@ -574,39 +471,35 @@ export class Resolver {
     );
   }
 
-  private async resolveComponent<R extends ModuleRequest>(
-    path: string,
-    inEngine: EngineConfig,
-    request: R
-  ): Promise<R> {
+  private resolveComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     let target = this.parseGlobalPath(path, inEngine);
 
-    let hbsModule: Resolution | null = null;
-    let jsModule: Resolution | null = null;
+    let hbsModule: string | null = null;
+    let jsModule: string | null = null;
 
     // first, the various places our template might be.
     for (let candidate of this.componentTemplateCandidates(target.packageName)) {
-      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
-
-      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
-
-      if (resolution.type === 'found') {
-        hbsModule = resolution;
+      let resolution = this.nodeResolve(
+        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
+        target.from
+      );
+      if (resolution.type === 'real') {
+        hbsModule = resolution.filename;
         break;
       }
     }
 
     // then the various places our javascript might be.
     for (let candidate of this.componentJSCandidates(target.packageName)) {
-      let candidateSpecifier = `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`;
-
-      let resolution = await this.resolve(request.alias(candidateSpecifier).rehome(target.from));
-
+      let resolution = this.nodeResolve(
+        `${target.packageName}${candidate.prefix}${target.memberName}${candidate.suffix}`,
+        target.from
+      );
       // .hbs is a resolvable extension for us, so we need to exclude it here.
       // It matches as a priority lower than .js, so finding an .hbs means
       // there's definitely not a .js.
-      if (resolution.type === 'found' && !resolution.filename.endsWith('.hbs')) {
-        jsModule = resolution;
+      if (resolution.type === 'real' && !resolution.filename.endsWith('.hbs')) {
+        jsModule = resolution.filename;
         break;
       }
     }
@@ -614,49 +507,35 @@ export class Resolver {
     if (hbsModule) {
       if (!this.emberVersionSupportsSeparateTemplates) {
         throw new Error(
-          `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule.filename}.`
+          `Components with separately resolved templates were removed at Ember 6.0. Migrate to either co-located js/ts + hbs files or to gjs/gts. https://deprecations.emberjs.com/id/component-template-resolving/. Bad template was: ${hbsModule}.`
         );
       }
-
       return logTransition(
         `resolveComponent found legacy HBS`,
         request,
-        request.virtualize({
-          type: 'component-pair',
-          hbsModule: hbsModule.filename,
-          jsModule: jsModule?.filename ?? null,
-          debugName: basename(hbsModule.filename).replace(/\.(js|hbs)$/, ''),
-          specifier: `${this.options.appRoot}/embroider-pair-component/${encodeURIComponent(
-            hbsModule.filename
-          )}/__vpc__/${encodeURIComponent(jsModule?.filename ?? '')}`,
-        })
+        request.virtualize(virtualPairComponent(hbsModule, jsModule))
       );
     } else if (jsModule) {
-      return logTransition(`resolving to resolveComponent found only JS`, request, request.resolveTo(jsModule));
+      return logTransition(`resolveComponent found only JS`, request, request.alias(jsModule).rehome(target.from));
     } else {
       return logTransition(`resolveComponent failed`, request);
     }
   }
 
-  private async resolveHelperOrComponent<R extends ModuleRequest>(
-    path: string,
-    inEngine: EngineConfig,
-    request: R
-  ): Promise<R> {
+  private resolveHelperOrComponent<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {
     // resolveHelper just rewrites our request to one that should target the
     // component, so here to resolve the ambiguity we need to actually resolve
     // that candidate to see if it works.
     let helperCandidate = this.resolveHelper(path, inEngine, request);
-    let helperMatch = await this.resolve(request.alias(helperCandidate.specifier).rehome(helperCandidate.fromFile));
-
-    if (helperMatch.type === 'found') {
-      return logTransition('resolve to ambiguous case matched a helper', request, request.resolveTo(helperMatch));
+    let helperMatch = this.nodeResolve(helperCandidate.specifier, helperCandidate.fromFile);
+    if (helperMatch.type === 'real') {
+      return logTransition('ambiguous case matched a helper', request, helperCandidate);
     }
 
     // unlike resolveHelper, resolveComponent already does pre-resolution in
     // order to deal with its own internal ambiguity around JS vs HBS vs
     // colocation.≥
-    let componentMatch = await this.resolveComponent(path, inEngine, request);
+    let componentMatch = this.resolveComponent(path, inEngine, request);
     if (componentMatch !== request) {
       return logTransition('ambiguous case matched a cmoponent', request, componentMatch);
     }
@@ -690,7 +569,6 @@ export class Resolver {
 
   private *componentJSCandidates(inPackageName: string) {
     yield { prefix: '/components/', suffix: '' };
-    yield { prefix: '/components/', suffix: '/index' };
     yield { prefix: '/components/', suffix: '/component' };
 
     let pods = this.podPrefix(inPackageName);
@@ -714,9 +592,9 @@ export class Resolver {
   private parseGlobalPath(path: string, inEngine: EngineConfig) {
     let parts = path.split('@');
     if (parts.length > 1 && parts[0].length > 0) {
-      return { packageName: parts[0], memberName: parts[1], from: resolve(inEngine.root, 'package.json') };
+      return { packageName: parts[0], memberName: parts[1], from: resolve(inEngine.root, 'pacakge.json') };
     } else {
-      return { packageName: inEngine.packageName, memberName: path, from: resolve(inEngine.root, 'package.json') };
+      return { packageName: inEngine.packageName, memberName: path, from: resolve(inEngine.root, 'pacakge.json') };
     }
   }
 
@@ -759,12 +637,6 @@ export class Resolver {
                 `addon ${addon.name} declares app-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            let specifier = externalName(addon.packageJSON, inAddonName);
-            if (!specifier) {
-              throw new Error(
-                `${addon.name}'s package.json app-js refers to ${inAddonName}, but that module is not accessible from outside the package`
-              );
-            }
             reverse.set(resolve(addon.root, inAddonName), { inEngineName, owningPackageRoot: addon.root });
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
@@ -772,8 +644,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'app-only',
                   'app-js': {
-                    specifier,
-                    fromFile: addonConfig.canResolveFromFile,
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
                     fromPackageName: addon.name,
                   },
                 });
@@ -786,8 +658,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'both',
                   'app-js': {
-                    specifier,
-                    fromFile: addonConfig.canResolveFromFile,
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
                     fromPackageName: addon.name,
                   },
                   'fastboot-js': prevEntry['fastboot-js'],
@@ -810,12 +682,6 @@ export class Resolver {
                 `addon ${addon.name} declares fastboot-js in its package.json with the illegal name "${inAddonName}". It must start with "./" to make it clear that it's relative to the addon`
               );
             }
-            let specifier = externalName(addon.packageJSON, inAddonName);
-            if (!specifier) {
-              throw new Error(
-                `${addon.name}'s package.json fastboot-js refers to ${inAddonName}, but that module is not accessible from outside the package`
-              );
-            }
             reverse.set(resolve(addon.root, inAddonName), { inEngineName, owningPackageRoot: addon.root });
             let prevEntry = engineModules.get(inEngineName);
             switch (prevEntry?.type) {
@@ -823,8 +689,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'fastboot-only',
                   'fastboot-js': {
-                    specifier,
-                    fromFile: addonConfig.canResolveFromFile,
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
                     fromPackageName: addon.name,
                   },
                 });
@@ -837,8 +703,8 @@ export class Resolver {
                 engineModules.set(inEngineName, {
                   type: 'both',
                   'fastboot-js': {
-                    specifier,
-                    fromFile: addonConfig.canResolveFromFile,
+                    localPath: inAddonName,
+                    packageRoot: addon.root,
                     fromPackageName: addon.name,
                   },
                   'app-js': prevEntry['app-js'],
@@ -877,7 +743,7 @@ export class Resolver {
   }
 
   private handleRewrittenPackages<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
+    if (request.isVirtual) {
       return request;
     }
     let requestingPkg = this.packageCache.ownerOfFile(request.fromFile);
@@ -896,6 +762,10 @@ export class Resolver {
       try {
         targetPkg = this.packageCache.resolve(packageName, requestingPkg);
       } catch (err) {
+        // this is not the place to report resolution failures. If the thing
+        // doesn't resolve, we're just not interested in redirecting it for
+        // backward-compat, that's all. The rest of the system will take care of
+        // reporting a failure to resolve (or handling it a different way)
         if (err.code !== 'MODULE_NOT_FOUND') {
           throw err;
         }
@@ -916,31 +786,20 @@ export class Resolver {
         this.resolveWithinMovedPackage(request, targetPkg)
       );
     } else if (originalRequestingPkg !== requestingPkg) {
-      if (targetPkg) {
-        // in this case, the requesting package is moved but its destination is
-        // not, so we need to rehome the request back to the original location.
-        return logTransition(
-          'outbound request from moved package',
-          request,
-          request
-            // setting meta here because if this fails, we want the fallback
-            // logic to revert our rehome and continue from the *moved* package.
-            .withMeta({ originalFromFile: request.fromFile })
-            .rehome(resolve(originalRequestingPkg.root, 'package.json'))
-        );
-      } else {
-        // requesting package was moved and we failed to find its target. We
-        // can't let that accidentally succeed in the defaultResolve because we
-        // could escape the moved package system.
-        return logTransition('missing outbound request from moved package', request, request.notFound());
-      }
+      // in this case, the requesting package is moved but its destination is
+      // not, so we need to rehome the request back to the original location.
+      return logTransition(
+        'outbound request from moved package',
+        request,
+        request.withMeta({ wasMovedTo: request.fromFile }).rehome(resolve(originalRequestingPkg.root, 'package.json'))
+      );
     }
 
     return request;
   }
 
   private handleRenaming<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
+    if (request.isVirtual) {
       return request;
     }
     let packageName = getPackageName(request.specifier);
@@ -949,13 +808,15 @@ export class Resolver {
     }
 
     let pkg = this.packageCache.ownerOfFile(request.fromFile);
+    if (!pkg || !pkg.isV2Ember()) {
+      return request;
+    }
 
     // real deps take precedence over renaming rules. That is, a package like
     // ember-source might provide backburner via module renaming, but if you
     // have an explicit dependency on backburner you should still get that real
     // copy.
-
-    if (!pkg?.hasDependency(packageName)) {
+    if (!pkg.hasDependency(packageName)) {
       for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
         if (candidate === request.specifier) {
           return logTransition(`renameModules`, request, request.alias(replacement));
@@ -979,81 +840,19 @@ export class Resolver {
       }
     }
 
-    if (!pkg || !pkg.isV2Ember()) {
-      return request;
-    }
-
-    if (pkg.name === packageName) {
-      // we found a self-import
-      if (pkg.meta?.['auto-upgraded'] && !pkg.isEngine()) {
-        // auto-upgraded packages always get automatically adjusted. They never
-        // supported fancy package.json exports features so this direct mapping
-        // to the root is always right.
-
-        // "my-app/foo" -> "./foo" from app's package.json
-        // "my-addon/foo" -> "my-addon/foo" from a package that's guaranteed to be able to resolve my-addon
-
-        let owningEngine = this.owningEngine(pkg);
-        let addonConfig = owningEngine.activeAddons.find(a => a.root === pkg.root);
-        if (addonConfig) {
-          // auto-upgraded addons get special support for self-resolving here.
-          return logTransition(`v1 addon self-import`, request, request.rehome(addonConfig.canResolveFromFile));
-        } else if (owningEngine.root === pkg.root) {
-          for (let engineConfig of this.options.engines) {
-            for (let activeAddon of engineConfig.activeAddons) {
-              if (activeAddon.root === pkg.root) {
-                return logTransition(`v1 engine self-import`, request, request.rehome(activeAddon.canResolveFromFile));
-              }
-            }
-          }
-        } else {
-          // auto-upgraded apps will necessarily have packageJSON.exports
-          // because we insert them, so for that support we can fall through to
-          // that support below.
-        }
-      }
-
-      // v2 packages are supposed to use package.json `exports` to enable
-      // self-imports, but not all build tools actually follow the spec. This
-      // is a workaround for badly behaved packagers.
-      //
-      // Known upstream bugs this works around:
-      // - https://github.com/vitejs/vite/issues/9731
-      if (pkg.packageJSON.exports) {
-        let found = resolveExports(pkg.packageJSON, request.specifier, {
-          browser: true,
-          conditions: ['default', 'imports'],
-        });
-        if (found?.[0]) {
-          return logTransition(
-            `v2 self-import with package.json exports`,
-            request,
-            request.alias(found?.[0]).rehome(resolve(pkg.root, 'package.json'))
-          );
-        }
-      }
-    }
-
-    return request;
-  }
-
-  private handleVendor<R extends ModuleRequest>(request: R): R {
-    if (request.specifier !== '@embroider/virtual/vendor.js') {
-      return request;
-    }
-
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (pkg?.root !== this.options.engines[0].root) {
-      throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app. The top-level Ember app is the only one that has support for @embroider/virtual/vendor.js. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
+    if (pkg.meta['auto-upgraded'] && pkg.name === packageName) {
+      // we found a self-import, resolve it for them. Only auto-upgraded
+      // packages get this help, v2 packages are natively supposed to make their
+      // own modules resolvable, and we want to push them all to do that
+      // correctly.
+      return logTransition(
+        `v1 self-import`,
+        request,
+        request.alias(request.specifier.replace(pkg.name, '.')).rehome(resolve(pkg.root, 'package.json'))
       );
     }
 
-    return logTransition(
-      'vendor',
-      request,
-      request.virtualize({ type: 'vendor-js', specifier: resolve(pkg.root, '-embroider-vendor.js') })
-    );
+    return request;
   }
 
   private resolveWithinMovedPackage<R extends ModuleRequest>(request: R, pkg: Package): R {
@@ -1061,20 +860,19 @@ export class Resolver {
     if (pkg.name.startsWith('@')) {
       levels.push('..');
     }
-    let originalFromFile = request.fromFile;
     let newRequest = request.rehome(resolve(pkg.root, ...levels, 'moved-package-target.js'));
 
     if (newRequest === request) {
       return request;
     }
 
-    // setting meta because if this fails, we want the fallback to pick up back
-    // in the original requesting package.
-    return newRequest.withMeta({ originalFromFile });
+    return newRequest.withMeta({
+      resolvedWithinPackage: pkg.root,
+    });
   }
 
   private preHandleExternal<R extends ModuleRequest>(request: R): R {
-    if (request.resolvedTo) {
+    if (request.isVirtual) {
       return request;
     }
     let { specifier, fromFile } = request;
@@ -1085,6 +883,11 @@ export class Resolver {
 
     let packageName = getPackageName(specifier);
     if (!packageName) {
+      // This is a relative import. We don't automatically externalize those
+      // because it's rare, and by keeping them static we give better errors. But
+      // we do allow them to be explicitly externalized by the package author (or
+      // a compat adapter). In the metadata, they would be listed in
+      // package-relative form, so we need to convert this specifier to that.
       let absoluteSpecifier = resolve(dirname(fromFile), specifier);
 
       if (!absoluteSpecifier.startsWith(pkg.root)) {
@@ -1095,33 +898,48 @@ export class Resolver {
         return logTransition('beforeResolve: relative path escapes its package', request);
       }
 
+      let packageRelativeSpecifier = explicitRelative(pkg.root, absoluteSpecifier);
+      if (isExplicitlyExternal(packageRelativeSpecifier, pkg)) {
+        let publicSpecifier = absoluteSpecifier.replace(pkg.root, pkg.name);
+        return this.external('beforeResolve', request, publicSpecifier);
+      }
+
       // if the requesting file is in an addon's app-js, the relative request
       // should really be understood as a request for a module in the containing
-      // engine.
+      // engine
       let logicalLocation = this.reverseSearchAppTree(request.fromFile);
       if (logicalLocation) {
         return logTransition(
           'beforeResolve: relative import in app-js',
           request,
-          request.alias(
-            posix.join(logicalLocation.owningEngine.packageName, dirname(logicalLocation.inAppName), request.specifier)
-          )
+          request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
         );
       }
 
       return request;
     }
 
+    // absolute package imports can also be explicitly external based on their
+    // full specifier name
+    if (isExplicitlyExternal(specifier, pkg)) {
+      return this.external('beforeResolve', request, specifier);
+    }
+
+    if (emberVirtualPackages.has(packageName) && !pkg.hasDependency(packageName)) {
+      return this.external('beforeResolve emberVirtualPackages', request, specifier);
+    }
+
     if (emberVirtualPeerDeps.has(packageName) && !pkg.hasDependency(packageName)) {
       // addons (whether auto-upgraded or not) may use the app's
       // emberVirtualPeerDeps, like "@glimmer/component" etc.
-      let addon = this.locateActiveAddon(packageName);
-      if (!addon) {
-        throw new Error(
-          `${pkg.name} is trying to import the emberVirtualPeerDep "${packageName}", but it seems to be missing`
-        );
+      if (!this.options.activeAddons[packageName]) {
+        throw new Error(`${pkg.name} is trying to import the app's ${packageName} package, but it seems to be missing`);
       }
-      return logTransition(`emberVirtualPeerDeps`, request, request.rehome(addon.canResolveFromFile));
+      let newHome = resolve(
+        this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root,
+        'package.json'
+      );
+      return logTransition(`emberVirtualPeerDeps in v2 addon`, request, request.rehome(newHome));
     }
 
     // if this file is part of an addon's app-js, it's really the logical
@@ -1129,13 +947,13 @@ export class Resolver {
     // choices about what it can import
     let logicalPackage = this.logicalPackage(pkg, fromFile);
 
-    if (logicalPackage.meta?.['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
+    if (logicalPackage.meta['auto-upgraded'] && !logicalPackage.hasDependency('ember-auto-import')) {
       try {
         let dep = this.packageCache.resolve(packageName, logicalPackage);
-        if (!dep.isEmberAddon()) {
+        if (!dep.isEmberPackage()) {
           // classic ember addons can only import non-ember dependencies if they
           // have ember-auto-import.
-          return logTransition('v1 package without auto-import', request, request.notFound());
+          return this.external('v1 package without auto-import', request, specifier);
         }
       } catch (err) {
         if (err.code !== 'MODULE_NOT_FOUND') {
@@ -1145,44 +963,58 @@ export class Resolver {
     }
 
     // assertions on what native v2 addons can import
-    if (
-      !pkg.needsLooseResolving() &&
-      !appImportInAppTree(pkg, logicalPackage, packageName) &&
-      !reliablyResolvable(pkg, packageName)
-    ) {
-      throw new Error(
-        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
-      );
+    if (!pkg.meta['auto-upgraded']) {
+      if (
+        !pkg.meta['auto-upgraded'] &&
+        !appImportInAppTree(pkg, logicalPackage, packageName) &&
+        !reliablyResolvable(pkg, packageName)
+      ) {
+        throw new Error(
+          `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+        );
+      }
     }
-
     return request;
   }
 
-  private locateActiveAddon(packageName: string): { root: string; canResolveFromFile: string } | undefined {
-    if (packageName === this.options.modulePrefix) {
-      // the app itself is something that addon's can classically resolve if they know it's name.
-      return {
-        root: this.options.appRoot,
-        canResolveFromFile: resolve(
-          this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root,
-          'package.json'
-        ),
-      };
-    }
-    for (let engine of this.options.engines) {
-      for (let addon of engine.activeAddons) {
-        if (addon.name === packageName) {
-          return addon;
-        }
+  private external<R extends ModuleRequest>(label: string, request: R, specifier: string): R {
+    if (this.options.amdCompatibility === 'cjs') {
+      let filename = virtualExternalCJSModule(specifier);
+      return logTransition(label, request, request.virtualize(filename));
+    } else if (this.options.amdCompatibility) {
+      let entry = this.options.amdCompatibility.es.find(
+        entry => entry[0] === specifier || entry[0] + '/index' === specifier
+      );
+      if (!entry && request.specifier === 'require') {
+        entry = ['require', ['default', 'has']];
       }
+      if (!entry) {
+        throw new Error(
+          `A module tried to resolve "${request.specifier}" and didn't find it (${label}).
+
+ - Maybe a dependency declaration is missing?
+ - Remember that v1 addons can only import non-Ember-addon NPM dependencies if they include ember-auto-import in their dependencies.
+ - If this dependency is available in the AMD loader (because someone manually called "define()" for it), you can configure a shim like:
+
+  amdCompatibility: {
+    es: [
+      ["${request.specifier}", ["default", "yourNamedExportsGoHere"]],
+    ]
+  }
+
+`
+        );
+      }
+      let filename = virtualExternalESModule(specifier, entry[1]);
+      return logTransition(label, request, request.virtualize(filename));
+    } else {
+      throw new Error(
+        `Embroider's amdCompatibility option is disabled, but something tried to use it to access "${request.specifier}"`
+      );
     }
   }
 
-  private async fallbackResolve<R extends ModuleRequest>(request: R): Promise<R> {
-    if (request.resolvedTo) {
-      throw new Error('Build tool bug detected! Fallback resolve should never see an already-resolved request.');
-    }
-
+  fallbackResolve<R extends ModuleRequest>(request: R): R {
     if (request.specifier === '@embroider/macros') {
       // the macros package is always handled directly within babel (not
       // necessarily as a real resolvable package), so we should not mess with it.
@@ -1191,16 +1023,18 @@ export class Resolver {
       return logTransition('fallback early exit', request);
     }
 
-    if (compatPattern.test(request.specifier)) {
+    let { specifier, fromFile } = request;
+
+    if (compatPattern.test(specifier)) {
       // Some kinds of compat requests get rewritten into other things
-      // deterministically. For example, "@embroider/virtual/helpers/whatever"
+      // deterministically. For example, "#embroider_compat/helpers/whatever"
       // means only "the-current-engine/helpers/whatever", and if that doesn't
       // actually exist it's that path that will show up as a missing import.
       //
       // But others have an ambiguous meaning. For example,
-      // @embroider/virtual/components/whatever can mean several different
+      // #embroider_compat/components/whatever can mean several different
       // things. If we're unable to find any of them, the actual
-      // "@embroider/virtual" request will fall through all the way to here.
+      // "#embroider_compat" request will fall through all the way to here.
       //
       // In that case, we don't want to externalize that failure. We know it's
       // not a classic runtime thing. It's better to let it be a build error
@@ -1208,54 +1042,72 @@ export class Resolver {
       return request;
     }
 
-    let abortFallback = (() => {
-      const unmodified = request;
-      // Whenever fallbackResolve gives up, it should return the original
-      // unmodifiedRequest so that we communicate clearly that no further
-      // fallbacks should be attempted. Internally, we track a modifiedRequest
-      // that has been adjusted to compensate for rehoming.
-      return (desc: string) => logTransition(desc, unmodified);
-    })();
-
-    request = this.restoreRehomedRequest(request);
-
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-
-    if (!pkg?.isV2Ember()) {
-      // this request is coming from a file that appears to be owned by no ember
-      // package. We offer one fallback behavior for such files. They're allowed
-      // to resolve from the app's namespace.
-      //
-      // This makes it possible for integrations like vite to leave references
-      // to the app in their pre-bundled dependencies, which will end up in an
-      // arbitrary cache that is not inside any particular package.
-      let description = pkg ? 'non-ember package' : 'unowned module';
-
-      let packageName = getPackageName(request.specifier);
-      if (packageName === this.options.modulePrefix) {
-        return logTransition(
-          `fallbackResolver: ${description} resolved app namespace`,
-          request,
-          request.rehome(this.packageCache.maybeMoved(this.packageCache.get(this.options.appRoot)).root)
-        );
+    if (fromFile.endsWith('moved-package-target.js')) {
+      if (!request.meta?.resolvedWithinPackage) {
+        throw new Error(`bug: embroider resolver's meta is not propagating`);
       }
-      return abortFallback(`fallbackResolver: ${description}`);
+      fromFile = resolve(request.meta?.resolvedWithinPackage as string, 'package.json');
     }
 
-    let packageName = getPackageName(request.specifier);
+    let pkg = this.packageCache.ownerOfFile(fromFile);
+    if (!pkg) {
+      return logTransition('no identifiable owningPackage', request);
+    }
+
+    // if we rehomed this request to its un-rewritten location in order to try
+    // to do the defaultResolve from there, now we refer back to the rewritten
+    // location because that's what we want to use when asking things like
+    // isV2Ember()
+    let movedPkg = this.packageCache.maybeMoved(pkg);
+    if (movedPkg !== pkg) {
+      if (!request.meta?.wasMovedTo) {
+        throw new Error(`bug: embroider resolver's meta is not propagating`);
+      }
+      fromFile = request.meta.wasMovedTo as string;
+      pkg = movedPkg;
+    }
+
+    if (!pkg.isV2Ember()) {
+      return logTransition('fallbackResolve: not in an ember package', request);
+    }
+
+    let packageName = getPackageName(specifier);
     if (!packageName) {
       // this is a relative import
-      return this.relativeFallbackResolve(pkg, request, abortFallback);
-    }
 
-    if (pkg.needsLooseResolving()) {
-      let activeAddon = this.maybeFallbackToActiveAddon(request, packageName);
-      if (activeAddon) {
-        return activeAddon;
+      let withinEngine = this.engineConfig(pkg.name);
+      if (withinEngine) {
+        // it's a relative import inside an engine (which also means app), which
+        // means we may need to satisfy the request via app tree merging.
+        let appJSMatch = this.searchAppTree(
+          request,
+          withinEngine,
+          explicitRelative(pkg.root, resolve(dirname(fromFile), specifier))
+        );
+        if (appJSMatch) {
+          return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
+        } else {
+          return logTransition('fallbackResolve: relative appJs search failure', request);
+        }
+      } else {
+        // nothing else to do for relative imports
+        return logTransition('fallbackResolve: relative failure', request);
       }
     }
 
-    let logicalLocation = this.reverseSearchAppTree(request.fromFile);
+    // auto-upgraded packages can fall back to the set of known active addons
+    if (pkg.meta['auto-upgraded'] && this.options.activeAddons[packageName]) {
+      const rehomed = this.resolveWithinMovedPackage(
+        request,
+        this.packageCache.get(this.options.activeAddons[packageName])
+      );
+
+      if (rehomed !== request) {
+        return logTransition(`activeAddons`, request, rehomed);
+      }
+    }
+
+    let logicalLocation = this.reverseSearchAppTree(fromFile);
     if (logicalLocation) {
       // the requesting file is in an addon's appTree. We didn't succeed in
       // resolving this (non-relative) request from inside the actual addon, so
@@ -1264,74 +1116,36 @@ export class Resolver {
       return logTransition(
         'fallbackResolve: retry from logical home of app-js file',
         request,
-        // it might look more precise to rehome into logicalLocation.inAppName
-        // rather than package.json. But that logical location may not actually
-        // exist, and some systems (including node's require.resolve) will be
-        // mad about trying to resolve from notional paths that don't really
-        // exist.
-        request.rehome(resolve(logicalLocation.owningEngine.root, 'package.json'))
+        request.rehome(resolve(logicalLocation.owningEngine.root, logicalLocation.inAppName))
       );
     }
 
     let targetingEngine = this.engineConfig(packageName);
     if (targetingEngine) {
-      let appJSMatch = await this.searchAppTree(request, targetingEngine, request.specifier.replace(packageName, '.'));
+      let appJSMatch = this.searchAppTree(request, targetingEngine, specifier.replace(packageName, '.'));
       if (appJSMatch) {
         return logTransition('fallbackResolve: non-relative appJsMatch', request, appJSMatch);
       }
     }
 
+    if (pkg.meta['auto-upgraded']) {
+      // auto-upgraded packages can fall back to attempting to find dependencies at
+      // runtime. Native v2 packages can only get this behavior in the
+      // isExplicitlyExternal case above because they need to explicitly ask for
+      // externals.
+      return this.external('v1 catch-all fallback', request, specifier);
+    } else {
+      // native v2 packages don't automatically externalize *everything* the way
+      // auto-upgraded packages do, but they still externalize known and approved
+      // ember virtual packages (like @ember/component)
+      if (emberVirtualPackages.has(packageName)) {
+        return this.external('emberVirtualPackages', request, specifier);
+      }
+    }
+
     // this is falling through with the original specifier which was
     // non-resolvable, which will presumably cause a static build error in stage3.
-    return abortFallback('fallbackResolve final exit');
-  }
-
-  private restoreRehomedRequest<R extends ModuleRequest>(request: R): R {
-    // meta.originalFromFile gets set when we want to try to rehome a request
-    // but then come back to the original location here in the fallback when the
-    // rehomed request fails
-    let originalFromFile = request.meta?.originalFromFile;
-    if (typeof originalFromFile === 'string') {
-      return request.rehome(originalFromFile);
-    }
-    return request;
-  }
-
-  private async relativeFallbackResolve<R extends ModuleRequest>(
-    pkg: Package,
-    request: R,
-    abortFallback: (desc: string) => R
-  ): Promise<R> {
-    let withinEngine = this.engineConfig(pkg.name);
-    if (withinEngine) {
-      // it's a relative import inside an engine (which also means app), which
-      // means we may need to satisfy the request via app tree merging.
-
-      let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
-      if (!logicalName) {
-        return abortFallback('fallbackResolve: relative failure because this file is not externally accessible');
-      }
-      let appJSMatch = await this.searchAppTree(request, withinEngine, logicalName);
-      if (appJSMatch) {
-        return logTransition('fallbackResolve: relative appJsMatch', request, appJSMatch);
-      } else {
-        return abortFallback('fallbackResolve: relative appJs search failure');
-      }
-    } else {
-      // nothing else to do for relative imports
-      return abortFallback('fallbackResolve: relative failure');
-    }
-  }
-
-  private maybeFallbackToActiveAddon<R extends ModuleRequest>(request: R, requestedPackageName: string): R | undefined {
-    // auto-upgraded packages can fall back to the set of known active addons
-    let addon = this.locateActiveAddon(requestedPackageName);
-    if (addon) {
-      const rehomed = request.rehome(addon.canResolveFromFile);
-      if (rehomed !== request) {
-        return logTransition(`activeAddons`, request, rehomed);
-      }
-    }
+    return logTransition('fallbackResolve final exit', request);
   }
 
   private getEntryFromMergeMap(
@@ -1357,30 +1171,35 @@ export class Resolver {
     }
   }
 
-  private async searchAppTree<R extends ModuleRequest>(
+  private searchAppTree<R extends ModuleRequest>(
     request: R,
     engine: EngineConfig,
     inEngineSpecifier: string
-  ): Promise<R | undefined> {
+  ): R | undefined {
     let matched = this.getEntryFromMergeMap(inEngineSpecifier, engine.root);
 
     switch (matched?.entry.type) {
       case undefined:
         return undefined;
       case 'app-only':
-        return request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile);
+        return request
+          .alias(matched.entry['app-js'].localPath)
+          .rehome(resolve(matched.entry['app-js'].packageRoot, 'package.json'));
       case 'fastboot-only':
-        return request.alias(matched.entry['fastboot-js'].specifier).rehome(matched.entry['fastboot-js'].fromFile);
+        return request
+          .alias(matched.entry['fastboot-js'].localPath)
+          .rehome(resolve(matched.entry['fastboot-js'].packageRoot, 'package.json'));
       case 'both':
-        let foundAppJS = await this.resolve(
-          request.alias(matched.entry['app-js'].specifier).rehome(matched.entry['app-js'].fromFile)
+        let foundAppJS = this.nodeResolve(
+          matched.entry['app-js'].localPath,
+          resolve(matched.entry['app-js'].packageRoot, 'package.json')
         );
-        if (foundAppJS.type !== 'found') {
+        if (foundAppJS.type !== 'real') {
           throw new Error(
             `${matched.entry['app-js'].fromPackageName} declared ${inEngineSpecifier} in packageJSON.ember-addon.app-js, but that module does not exist`
           );
         }
-        let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), { configFile: false });
+        let { names } = describeExports(readFileSync(foundAppJS.filename, 'utf8'), {});
         return request.virtualize(fastbootSwitch(matched.matched, resolve(engine.root, 'package.json'), names));
     }
   }
@@ -1388,7 +1207,7 @@ export class Resolver {
   // check whether the given file with the given owningPackage is an addon's
   // appTree, and if so return the notional location within the app (or owning
   // engine) that it "logically" lives at.
-  reverseSearchAppTree(fromFile: string): { owningEngine: EngineConfig; inAppName: string } | undefined {
+  private reverseSearchAppTree(fromFile: string): { owningEngine: EngineConfig; inAppName: string } | undefined {
     let match = this.reverseMergeMap.get(fromFile);
     if (match) {
       return {
@@ -1409,10 +1228,16 @@ export class Resolver {
     if (engineConfig) {
       // we're directly inside an engine, so we're potentially resolvable as a
       // global component
-      let inAppName = engineRelativeName(owningPackage, filename);
-      if (inAppName) {
-        return this.tryReverseComponent(engineConfig.packageName, inAppName);
-      }
+
+      // this kind of mapping is not true in general for all packages, but it
+      // *is* true for all classical engines (which includes apps) since they
+      // don't support package.json `exports`. As for a future v2 engine or app:
+      // this whole method is only relevant for implementing packageRules, which
+      // should only be for classic stuff. v2 packages should do the right
+      // things from the beginning and not need packageRules about themselves.
+      let inAppName = explicitRelative(engineConfig.root, filename);
+
+      return this.tryReverseComponent(engineConfig.packageName, inAppName);
     }
 
     let engineInfo = this.reverseSearchAppTree(filename);
@@ -1435,12 +1260,16 @@ export class Resolver {
   }
 }
 
+function isExplicitlyExternal(specifier: string, fromPkg: V2Package): boolean {
+  return Boolean(fromPkg.isV2Addon() && fromPkg.meta['externals'] && fromPkg.meta['externals'].includes(specifier));
+}
+
 // we don't want to allow things that resolve only by accident that are likely
 // to break in other setups. For example: import your dependencies'
 // dependencies, or importing your own name from within a monorepo (which will
 // work because of the symlinking) without setting up "exports" (which makes
 // your own name reliably resolvable)
-function reliablyResolvable(pkg: Package, packageName: string) {
+function reliablyResolvable(pkg: V2Package, packageName: string) {
   if (pkg.hasDependency(packageName)) {
     return true;
   }
@@ -1459,36 +1288,4 @@ function reliablyResolvable(pkg: Package, packageName: string) {
 //
 function appImportInAppTree(inPackage: Package, inLogicalPackage: Package, importedPackageName: string): boolean {
   return inPackage !== inLogicalPackage && importedPackageName === inLogicalPackage.name;
-}
-
-function engineRelativeName(pkg: Package, filename: string): string | undefined {
-  let outsideName = externalName(pkg.packageJSON, explicitRelative(pkg.root, filename));
-  if (outsideName) {
-    return '.' + outsideName.slice(pkg.name.length);
-  }
-}
-
-const fastbootSwitchSuffix = '/embroider_fastboot_switch';
-
-function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>) {
-  let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;
-  let virtualSpecifier: string;
-  if (names.size > 0) {
-    virtualSpecifier = `${filename}?names=${[...names].join(',')}`;
-  } else {
-    virtualSpecifier = filename;
-  }
-  return {
-    type: 'fastboot-switch' as const,
-    specifier: virtualSpecifier,
-    names,
-    hasDefaultExport: 'x',
-  };
-}
-
-function decodeFastbootSwitch(filename: string) {
-  let index = filename.indexOf(fastbootSwitchSuffix);
-  if (index >= 0) {
-    return { filename: filename.slice(0, index) };
-  }
 }

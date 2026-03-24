@@ -1,25 +1,16 @@
 {
   "name": "@embroider/reverse-exports",
-  "version": "0.2.0",
+  "version": "0.1.0",
+  "private": true,
   "description": "",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/embroider-build/embroider.git",
-    "directory": "packages/reverse-exports"
-  },
-  "main": "dist/src/index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "jest",
-    "test:smoke": "node ./dist/tests/smoke.js"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "ISC",
   "dependencies": {
-    "mem": "^8.0.0",
     "resolve.exports": "^2.0.2"
-  },
-  "engines": {
-    "node": "12.* || 14.* || >= 16"
   }
 }

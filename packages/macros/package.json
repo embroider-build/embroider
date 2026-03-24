@@ -1,7 +1,7 @@
 {
   "name": "@embroider/macros",
-  "version": "1.20.1",
-  "private": false,
+  "version": "1.16.13",
+  "private": true,
   "description": "Standardized build-time macros for ember apps.",
   "keywords": [
     "ember-addon"
@@ -14,26 +14,19 @@
   "license": "MIT",
   "author": "Edward Faulkner",
   "main": "src/index.js",
-  "exports": {
-    ".": "./src/index.js",
-    "./babel": "./src/babel.js",
-    "./src/*": "./src/*.js",
-    "./src/*.js": "./src/*.js"
-  },
   "files": [
     "src/**/*.js",
     "src/**/*.d.ts",
     "src/**/*.js.map"
   ],
   "scripts": {
-    "test": "vitest",
-    "test:smoke": "node smoke-test.js"
+    "test": "jest"
   },
   "dependencies": {
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
-    "babel-import-util": "^3.0.1",
-    "ember-cli-babel": "^7.26.6 || ^8.3.1",
+    "babel-import-util": "^2.0.0",
+    "ember-cli-babel": "^7.26.6",
     "find-up": "^5.0.0",
     "lodash": "^4.17.21",
     "resolve": "^1.20.0",
@@ -41,7 +34,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.14.5",
-    "@babel/plugin-transform-class-properties": "^7.27.1",
     "@babel/plugin-transform-modules-amd": "^7.19.6",
     "@babel/traverse": "^7.14.5",
     "@embroider/core": "workspace:*",
@@ -52,14 +44,13 @@
     "@types/babel__template": "^7.4.0",
     "@types/babel__traverse": "^7.18.5",
     "@types/lodash": "^4.14.170",
-    "@types/node": "^22.9.3",
+    "@types/node": "^15.12.2",
     "@types/resolve": "^1.20.0",
     "@types/semver": "^7.3.6",
-    "babel-plugin-ember-template-compilation": "^3.1.0",
-    "code-equality-assertions": "^1.0.1",
-    "scenario-tester": "^3.0.1",
-    "typescript": "^5.4.5",
-    "vitest": "^3.2.4"
+    "babel-plugin-ember-template-compilation": "~2.3.0",
+    "code-equality-assertions": "^0.9.0",
+    "scenario-tester": "^2.1.2",
+    "typescript": "^5.1.6"
   },
   "peerDependencies": {
     "@glint/template": "^1.0.0"

@@ -20,10 +20,6 @@ export function dependencySatisfies(packageName: string, semverRange: string): b
   throw new Oops(packageName, semverRange);
 }
 
-export function appEmberSatisfies(semverRange: string): boolean {
-  throw new Oops(semverRange);
-}
-
 export function macroCondition(predicate: boolean): boolean {
   throw new Oops(predicate);
 }
@@ -57,10 +53,6 @@ export function isDevelopingApp(): boolean {
 
 export function isTesting(): boolean {
   throw new Oops();
-}
-
-export function setTesting(value: boolean): boolean {
-  throw new Oops(value);
 }
 
 export function failBuild(message: string): void {
@@ -99,10 +91,6 @@ export interface EmbroiderMacrosRegistry {
   macroDependencySatisfies: HelperLike<{
     Args: { Positional: Parameters<typeof dependencySatisfies> };
     Return: ReturnType<typeof dependencySatisfies>;
-  }>;
-  macroAppEmberSatisfies: HelperLike<{
-    Args: { Positional: Parameters<typeof appEmberSatisfies> };
-    Return: ReturnType<typeof appEmberSatisfies>;
   }>;
   macroMaybeAttrs: HelperLike<{
     Args: { Positional: [predicate: boolean, ...bareAttrs: unknown[]] };

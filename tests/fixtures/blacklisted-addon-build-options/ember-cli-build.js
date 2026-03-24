@@ -1,14 +1,21 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-const { maybeEmbroider } = require('@embroider/test-setup');
 
 module.exports = function (defaults) {
   let app = new EmberApp(defaults, {
+    // Add options here
     addons: {
       exclude: ['blacklisted-in-repo-addon'],
     },
   });
 
-  return maybeEmbroider(app);
+  const { Webpack } = require('@embroider/webpack');
+  return require('@embroider/compat').compatBuild(app, Webpack, {
+    skipBabel: [
+      {
+        package: 'qunit',
+      },
+    ],
+  });
 };

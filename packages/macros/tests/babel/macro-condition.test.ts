@@ -12,7 +12,7 @@ describe('macroCondition', function () {
   beforeAll(() => {
     project = new Project('test-app');
     project.addDependency('qunit', '2.0.0');
-    project.write();
+    project.writeSync();
     filename = join(project.baseDir, 'sample.js');
   });
 
@@ -384,37 +384,6 @@ describe('macroCondition', function () {
       `);
         expect(run(code, { filename })).toBe('beta');
         expect(code).not.toMatch(/alpha/);
-      });
-
-      // adding this because some other babel plugins can introduce this as part
-      // of their "optimization".
-      test('tolerates negation between IfStatement and macroCondition CallExpression (build time)', () => {
-        let code = transform(`
-      import { macroCondition, getConfig } from '@embroider/macros';
-      export default function() {
-        if (!macroCondition(getConfig('qunit').items[0]["approved"])) {
-          return 'alpha';
-        } else {
-          return 'beta';
-        }
-      }
-      `);
-        expect(run(code, { filename })).toBe('beta');
-        expect(code).not.toMatch(/alpha/);
-      });
-
-      runTimeTest('tolerates negation between IfStatement and macroCondition CallExpression (runtime))', () => {
-        let code = transform(`
-          import { macroCondition, isTesting } from '@embroider/macros';
-          export default function() {
-            if (!macroCondition(isTesting())) {
-              return 'alpha';
-            } else {
-              return 'beta';
-            }
-          }
-      `);
-        expect(run(code, { filename })).toBe('beta');
       });
 
       if (transform.babelMajorVersion === 7) {

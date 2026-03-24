@@ -1,8 +1,7 @@
 import type { Resolver } from '@embroider/core';
 import { getOrCreate } from '@embroider/core';
-import { resolve as pathResolve, dirname } from 'path';
+import { resolve } from 'path';
 import { satisfies } from 'semver';
-import { resolve as resolveExports } from 'resolve.exports';
 
 export interface PackageRules {
   // This whole set of rules will only apply when the given addon package
@@ -168,7 +167,6 @@ export interface PreprocessedComponentRule {
   safeToIgnore: boolean;
   safeInteriorPaths: string[];
   disambiguate: Record<string, 'component' | 'helper' | 'data'>;
-  invokes: Required<ComponentRules>['invokes'];
 }
 
 // take a component rule from the authoring format to a format more optimized
@@ -206,7 +204,6 @@ export function preprocessComponentRule(componentRules: ComponentRules): Preproc
     yieldsSafeComponents: componentRules.yieldsSafeComponents || [],
     yieldsArguments: componentRules.yieldsArguments || [],
     disambiguate: componentRules?.disambiguate ?? {},
-    invokes: componentRules?.invokes ?? {},
   };
 }
 
@@ -235,20 +232,14 @@ export function activePackageRules(
 
 export function appTreeRulesDir(root: string, resolver: Resolver) {
   let pkg = resolver.packageCache.ownerOfFile(root);
-  if (pkg) {
-    if (pkg.isV2Addon()) {
-      // in general v2 addons can keep their app tree stuff in other places than
-      // "_app_" and we would need to check their package.json to see. But this code
-      // is only for applying packageRules to auto-upgraded v1 addons and apps, and
-      // those we always organize predictably.
-      return pathResolve(root, '_app_');
-    } else {
-      // this is an app
-      let matched = resolveExports(pkg.packageJSON, './index.js');
-      if (matched) {
-        return dirname(pathResolve(root, matched[0]));
-      }
-    }
+  if (pkg?.isV2Addon()) {
+    // in general v2 addons can keep their app tree stuff in other places than
+    // "_app_" and we would need to check their package.json to see. But this code
+    // is only for applying packageRules to auto-upgraded v1 addons and apps, and
+    // those we always organize predictably.
+    return resolve(root, '_app_');
+  } else {
+    // auto-upgraded apps don't get an exist _app_ dir.
+    return root;
   }
-  return root;
 }

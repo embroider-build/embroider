@@ -3,6 +3,7 @@ import { join } from 'path';
 import tmp from 'tmp';
 import { writeFileSync } from 'fs';
 import { writeJSONSync } from 'fs-extra';
+import type { AppMeta } from '../src';
 
 tmp.setGracefulCleanup();
 
@@ -40,6 +41,12 @@ describe('template-colocation-plugin', () => {
         ];
         writeJSONSync(join(name, 'package.json'), {
           name: 'sample-package',
+          keywords: ['ember-addon'],
+          'ember-addon': {
+            version: 2,
+            type: 'app',
+            'auto-upgraded': true,
+          } as AppMeta,
         });
       });
 

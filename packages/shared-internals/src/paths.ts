@@ -46,16 +46,8 @@ const postfixRE = /[?#].*$/s;
 
 // this is the same implementation Vite uses internally to keep its
 // cache-busting query params from leaking where they shouldn't.
-// includeHashSign true means #my-specifier is considered part of the pathname
 export function cleanUrl(url: string): string {
-  const regexp = postfixRE;
-  return url.replace(regexp, '');
-}
-
-// includeHashSign true means #my-specifier is considered part of the pathname
-export function getUrlQueryParams(url: string): string {
-  const regexp = postfixRE;
-  return url.match(regexp)?.[0] ?? '';
+  return url.replace(postfixRE, '');
 }
 
 // given a filename, returns it with the hbs extension

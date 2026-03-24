@@ -16,7 +16,7 @@ If your addon is a mix of both build-time and run-time features, consider replac
 
 Traditionally, an Ember addon is a single NPM package that combines both the actual addon code _and_ a "dummy" app for hosting tests and docs. This was [problematic for several reasons](https://github.com/ember-cli/rfcs/issues/119). V2 addons instead require clean separation between addon and app, so you're going to be working with more than one distinct NPM package: one for the addon, one for the test-app, and optionally one for the documentation site.
 
-Our recommended way to manage these multiple packages is using a monorepo, via pnpm, Yarn, or npm workspaces. The example in this guide assumes a pnpm workspaces monorepo because it's a good solution to work with Embroider in general.
+Our recommended way to manage these multiple packages is using a monorepo, via Yarn, NPM, or PNPM Workspaces. The example in this guide assumes a Yarn Workspaces monorepo.
 
 ## Part 1: Separate Addon from Dummy App
 
@@ -26,7 +26,7 @@ For a complete example of a PR that performed these steps on a real addon, see h
 
 The steps:
 
-1. Delete `pnpm-lock.yaml`.
+1. Delete yarn.lock.
 
 1. At the top-level of your repo, make new directories named `test-app` and `_addon`
 
@@ -65,15 +65,6 @@ The steps:
    }
    ```
 
-   With pnpm, the workspace packages must also be described in [`pnpm-workspace.yaml`](https://pnpm.io/pnpm-workspace_yaml):
-
-   ```yaml
-   packages:
-     - 'addon'
-     - 'test-app'
-   ```
-
-
 1. Make a new top-level .gitignore:
 
    ```
@@ -81,7 +72,7 @@ The steps:
    node_modules
 
    # and you can put in anything else that tends to accumulate in your environment:
-   .pnpm-debug.log
+   yarn-error.log
    .DS_Store
    ```
 
@@ -104,11 +95,8 @@ The steps:
    }
    ```
 
-1. In  `test-app/package.json`, change the top-level "name" to "test-app", remove the "ember-addon" section, and remove "ember-addon" from keywords.
-
-1. In  `test-app/package.json`, add the field `"private": true` because this package is not meant to be published on npm.
-
-1. At the top-level of the project, run `pnpm install`.
+1. `In test-app/package.json`, change the top-level "name" to "test-app", remove the "ember-addon" section, and remove "ember-addon" from keywords.
+1. At the top-level of the project, run `yarn install`.
 1. In `test-app/ember-cli-build.js` switch from the dummy app build pipeline to the normal app build pipeline:
 
    ```diff
@@ -128,14 +116,6 @@ The steps:
    ember s
    ember test
    ```
-
-1. The lint scripts are expected to work the same way as before inside the test-app. However, there's one common issue you may encounter when running the linter if you use `eslint-plugin-n` or `eslint-plugin-node`: 
-   ```sh
-   error  "@embroider/test-setup" is not published  n/no-unpublished-require
-   error  "ember-cli" is not published  n/no-unpublished-require
-   ```
-   The [lint rule](https://github.com/eslint-community/eslint-plugin-n/blob/master/docs/rules/no-unpublished-require.md) tells that `"@embroider/test-setup"` and `"ember-cli"` are `devDependencies` being imported with `require()`. It's not a problem since the test-app is a private package. To solve the issue, make sure you use an up-to-date version of `eslint-plugin-n` (at least `15.4.0`). If you don't want to update the lint tools right now, you can also deactivate the rule.
-
 1. At this point all tests and lint scripts work the same way as before inside the test-app. But we will also want linting, prettier, etc for the newly-separated addon workspace too.
 
    > You could create one unified config at the top of the monorepo if you want, but I think it's simpler over the long run to manage each workspace separately. It's nice that the test-app is a totally stock Ember app that can be updated by ember-cli-update -- including all the default linting setup.
@@ -148,7 +128,7 @@ The steps:
 
    Copy the lint-related scripts from `test-app/package.json` to `addon/package.json`.
 
-   Test that `pnpm lint` works inside the `addon` workspace.
+   Test that `yarn lint` works inside the `addon` workspace.
 
 1. Remove `test-app/config/ember-cli-update.json` because it still says you're using the **addon** blueprint and next time you run ember-cli-update in `test-app` it uses the **app** blueprint instead.
 
@@ -156,7 +136,7 @@ The steps:
 
    ```diff
     - name: Test
-      run: pnpm test:ember --launch ${{ matrix.browser }}
+      run: yarn test:ember --launch ${{ matrix.browser }}
    +  working-directory: test-app
    ```
 
@@ -164,12 +144,12 @@ The steps:
 
    ```diff
    -    - name: Lint
-   -      run: pnpm lint
+   -      run: yarn lint
    +    - name: Lint Addon
-   +      run: pnpm lint
+   +      run: yarn lint
    +      working-directory: addon
    +    - name: Lint Test App
-   +      run: pnpm lint
+   +      run: yarn lint
    +      working-directory: test-app
    ```
 
@@ -202,13 +182,11 @@ In this part, we address potential blockers before we actually switch to V2. Thi
 
 1. Make sure your test-app (and docs app if you have one) has `ember-auto-import` >= 2. Once you convert your addon to v2 format, it can only be consumed by apps that have ember-auto-import >= 2. This also means you should plan to make a semver major release to communicate this new requirement to your users.
 
-1. Make sure all the files in the `addon/app` contain _only_ reexport statements. If there's anything that's not a reexport statement, move that code into somewhere in the `addon/addon` directory and reexport it from `addon/app`. This was already best practice, but we're about to enforce it.
+2. Make sure all the files in the `addon/app` contain _only_ reexport statements. If there's anything that's not a reexport statement, move that code into somewhere in the `addon/addon` directory and reexport it from `addon/app`. This was already best practice, but we're about to enforce it.
 
-1. Make sure all the reexports in `addon/app` follow the default naming convention, such that `addon/app/components/whatever.js` contains only a reexport of `your-addon-name/components/whatever`. If the names don't align, move files around inside `addon/addon` until they do.
+3. Make sure all the reexports in `addon/app` follow the default naming convention, such that `addon/app/components/whatever.js` contains only a reexport of `your-addon-name/components/whatever`. If the names don't align, move files around inside `addon/addon` until they do.
 
-1. Make sure your addon has [co-located templates](https://rfcs.emberjs.com/id/0481-component-templates-co-location/). By default, the build tools expect to find the component's `.js` and `.hbs` in the same folder. If your addon used to have an `addon/templates/components` folder, move to co-location. Note that a [codemod](https://www.npmjs.com/package/ember-component-template-colocation-migrator) has been released when co-location has become the recommended structure.
-
-1. Make sure your `addon/index.js` file isn't trying to do anything "interesting". Ideally it contains nothing other than your addon's name.
+4. Make sure your `addon/index.js` file isn't trying to do anything "interesting". Ideally it contains nothing other than your addon's name.
    - if it was using `app.import()` or `this.import()`, port those usages to `ember-auto-import` instead
    - if you're trying to modify your own source code based on the presence of other packages or based on development vs testing vs production, switch to `@embroider/macros` instead
    - if you have other cases you're not sure what to do with, ask in an issue on this repo, or https://discuss.emberjs.com, or the #dev-embroider channel in the Ember community discord.
@@ -232,25 +210,24 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
 
    All of these implement standard features of V2 addons that don't need to come as dependencies.
 
-4. `pnpm add @embroider/addon-shim`. This is the only dependency a v2 addon needs (in order to interoperate with ember-cli.
+4. `yarn add @embroider/addon-shim`. This is the only dependency a v2 addon needs (in order to interoperate with ember-cli.
 5. We're going to set up a default build pipeline for things like template colocation and decorator support. Install these dev dependencies:
 
-   `pnpm add --save-dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-transform-class-properties @babel/plugin-proposal-decorators`
+   `yarn add --dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-transform-class-properties @babel/plugin-proposal-decorators`
 
 6. Grab the [example babel config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.json) and save it as `addon/babel.config.json`
    - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using the `babel-plugin-ember-template-compilation`. View how to use this in the [example babel.config.js](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.js)
 7. Grab the [example rollup config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-rollup.config.js) and save it as `addon/rollup.config.js`.
 8. Identify your **app reexports**. This is the list of modules from your addon that get reexported by files in the `addon/app` directory.
-9. Edit `addon/rollup.config.js`. Customize the `publicEntrypoints` so it includes
+9. Delete the `addon/app` directory. You aren't going to need it anymore.
+10. Edit `addon/rollup.config.js`. Customize the `publicEntrypoints` so it includes
 
 - every module that users should be allowed to import from your addon
 - every module in the **app reexports** you identified in the previous step
 
-10. Delete the `addon/app` directory. You aren't going to need it anymore.
 11. Still editing `addon/rollup.config.js`, customize the `appReexports` to match all your **app reexports** as identified above.
-12. If your addon contains `.gjs` files, add `addon.gjs()`  to `addon/rollup.config.js`.
-13. Delete your `addon/index.js` file.
-14. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
+12. Delete your `addon/index.js` file.
+13. Create a new `addon/addon-main.js` file (this replaces `addon/index.js`) with this exact content:
 
 ```js
 const { addonV1Shim } = require('@embroider/addon-shim');
@@ -281,8 +258,7 @@ module.exports = addonV1Shim(__dirname);
       "version": 2
     }
     ```
-16. In the `addon` directory, run `pnpm start` to start building the addon.
-17. In a separate shell, you should be able to go into the `test-app` directory and run `pnpm start` or `pnpm test` and see your tests passing.
-18. when running the `addon` and `test-app` together, the addon will automatically rebuild for changes. if using vite, the new build is automatically picked up by the test-app too. However, if using non-embroider, you need to configure [autoImport.watchDependencies]([embroider-build/ember-auto-import#customizing-build-behavior](https://github.com/embroider-build/ember-auto-import#customizing-build-behavior)). If using embroider-webpack, you need to configure the [broccoli-side-watch](https://www.npmjs.com/package/@embroider/broccoli-side-watch) tool.
+16. In the `addon` directory, run `yarn start` to start building the addon.
+17. In a separate shell, you should be able to go into the `test-app` directory and run `yarn start` or `yarn test` and see your tests passing.
 
 When all tests are passing, you have a fully-working V2 addon and you're ready to release it. To publish, you will run `npm publish` in the `addon` directory.

@@ -3,9 +3,10 @@ import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import type { types as t } from '@babel/core';
 import { ImportUtil } from 'babel-import-util';
+import { readJSONSync } from 'fs-extra';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { Package } from '@embroider/core';
-import { cleanUrl, packageName, type Resolver, ResolverLoader, unrelativize } from '@embroider/core';
+import { locateEmbroiderWorkingDir, packageName, Resolver, unrelativize } from '@embroider/core';
 import { snippetToDasherizedName } from './dasherize-component-name';
 import type { ActivePackageRules, ComponentRules, ModuleRules, TemplateRules } from './dependency-rules';
 import { appTreeRulesDir } from './dependency-rules';
@@ -26,7 +27,8 @@ interface ExtraImports {
 }
 
 type InternalConfig = {
-  loader: ResolverLoader;
+  resolverOptions: CompatResolverOptions;
+  resolver: Resolver;
 
   // rule-based extra dependencies, indexed by filename
   extraImports: ExtraImports;
@@ -36,17 +38,21 @@ type InternalConfig = {
 };
 
 export default function main(babel: typeof Babel) {
+  let t = babel.types;
   let cached: InternalConfig | undefined;
   function getConfig(appRoot: string) {
     if (cached) {
       return cached;
     }
-    let loader = new ResolverLoader(appRoot);
-
+    let resolverOptions: CompatResolverOptions = readJSONSync(
+      join(locateEmbroiderWorkingDir(appRoot), 'resolver.json')
+    );
+    let resolver = new Resolver(resolverOptions);
     cached = {
-      loader,
-      extraImports: preprocessExtraImports(loader),
-      componentExtraImports: preprocessComponentExtraImports(loader),
+      resolverOptions,
+      resolver,
+      extraImports: preprocessExtraImports(resolverOptions, resolver),
+      componentExtraImports: preprocessComponentExtraImports(resolverOptions),
     };
     return cached;
   }
@@ -55,7 +61,7 @@ export default function main(babel: typeof Babel) {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
-          addExtraImports(babel, path, getConfig(state.opts.appRoot));
+          addExtraImports(t, path, getConfig(state.opts.appRoot));
         },
       },
     },
@@ -66,19 +72,19 @@ export default function main(babel: typeof Babel) {
   return join(__dirname, '..');
 };
 
-function addExtraImports(babel: typeof Babel, path: NodePath<t.Program>, config: InternalConfig) {
-  let filename: string = cleanUrl((path.hub as any).file.opts.filename);
+function addExtraImports(t: BabelTypes, path: NodePath<t.Program>, config: InternalConfig) {
+  let filename: string = (path.hub as any).file.opts.filename;
   let entry = config.extraImports[filename];
-  let adder = new ImportUtil(babel, path);
+  let adder = new ImportUtil(t, path);
   if (entry) {
-    applyRules(babel.types, path, entry, adder, config, filename);
+    applyRules(t, path, entry, adder, config, filename);
   }
 
-  let componentName = config.loader.resolver.reverseComponentLookup(filename);
+  let componentName = config.resolver.reverseComponentLookup(filename);
   if (componentName) {
     let rules = config.componentExtraImports[componentName];
     if (rules) {
-      applyRules(babel.types, path, rules, adder, config, filename);
+      applyRules(t, path, rules, adder, config, filename);
     }
   }
 }
@@ -113,7 +119,7 @@ function applyRules(
             t,
             adder,
             path,
-            `@embroider/virtual/components/${dasherizedName}`,
+            `#embroider_compat/components/${dasherizedName}`,
             `${lookup.owningEngine.packageName}/components/${dasherizedName}`
           )
         );
@@ -132,10 +138,9 @@ function amdDefine(t: BabelTypes, adder: ImportUtil, path: NodePath<t.Program>, 
   );
 }
 
-function preprocessExtraImports(loader: ResolverLoader): ExtraImports {
+function preprocessExtraImports(config: CompatResolverOptions, resolver: Resolver): ExtraImports {
   let extraImports: ExtraImports = {};
-  let config = loader.resolver.options as CompatResolverOptions;
-  for (let rule of config.activePackageRules ?? []) {
+  for (let rule of config.activePackageRules) {
     if (rule.addonModules) {
       for (let [filename, moduleRules] of Object.entries(rule.addonModules)) {
         for (let root of rule.roots) {
@@ -151,7 +156,7 @@ function preprocessExtraImports(loader: ResolverLoader): ExtraImports {
           // But this code is only for applying packageRules to auto-upgraded v1
           // addons, and those we always organize with their treeForApp output
           // in _app_.
-          expandDependsOnRules(appTreeRulesDir(root, loader.resolver), filename, moduleRules, extraImports);
+          expandDependsOnRules(appTreeRulesDir(root, resolver), filename, moduleRules, extraImports);
         }
       }
     }
@@ -165,7 +170,7 @@ function preprocessExtraImports(loader: ResolverLoader): ExtraImports {
     if (rule.appTemplates) {
       for (let [filename, moduleRules] of Object.entries(rule.appTemplates)) {
         for (let root of rule.roots) {
-          expandInvokesRules(appTreeRulesDir(root, loader.resolver), filename, moduleRules, extraImports);
+          expandInvokesRules(appTreeRulesDir(root, resolver), filename, moduleRules, extraImports);
         }
       }
     }
@@ -179,7 +184,7 @@ function lazyPackageLookup(config: InternalConfig, filename: string) {
   return {
     get owningPackage() {
       if (!owningPackage) {
-        owningPackage = { result: config.loader.resolver.packageCache.ownerOfFile(filename) };
+        owningPackage = { result: config.resolver.packageCache.ownerOfFile(filename) };
       }
       return owningPackage.result;
     },
@@ -188,7 +193,7 @@ function lazyPackageLookup(config: InternalConfig, filename: string) {
         owningEngine = { result: undefined };
         let p = this.owningPackage;
         if (p) {
-          owningEngine.result = config.loader.resolver.owningEngine(p);
+          owningEngine.result = config.resolver.owningEngine(p);
         }
       }
       return owningEngine.result;
@@ -196,10 +201,9 @@ function lazyPackageLookup(config: InternalConfig, filename: string) {
   };
 }
 
-function preprocessComponentExtraImports(loader: ResolverLoader): ExtraImports {
+function preprocessComponentExtraImports(config: CompatResolverOptions): ExtraImports {
   let extraImports: ExtraImports = {};
-  let config = loader.resolver.options as CompatResolverOptions;
-  for (let rule of config.activePackageRules ?? []) {
+  for (let rule of config.activePackageRules) {
     if (rule.components) {
       for (let [componentName, rules] of Object.entries(rule.components)) {
         if (rules.invokes) {

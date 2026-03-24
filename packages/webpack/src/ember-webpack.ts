@@ -9,8 +9,8 @@
   getting script vs module context correct).
 */
 
-import type { BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
-import { HTMLEntrypoint, getPackagerCacheDir, getOrCreate } from '@embroider/core';
+import type { AppMeta, BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
+import { HTMLEntrypoint, getAppMeta, getPackagerCacheDir, getOrCreate } from '@embroider/core';
 import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
 import type { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
 import webpack from 'webpack';
@@ -34,18 +34,16 @@ import { EmbroiderPlugin } from './webpack-resolver-plugin';
 
 const debug = makeDebug('embroider:debug');
 
-// this function is never called. It exists to workaround typescript being
-// obtuse. https://github.com/microsoft/TypeScript/pull/53426
-async function loadTerser() {
-  let Terser = await import('terser');
-  return Terser.minify;
-}
-type MinifyOptions = NonNullable<Parameters<Awaited<ReturnType<typeof loadTerser>>>[1]>;
+// This is a type-only import, so it gets compiled away. At runtime, we load
+// terser lazily so it's only loaded for production builds that use it. Don't
+// add any non-type-only imports here.
+import type { MinifyOptions } from 'terser';
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
   otherAssets: string[];
-  rootURL: string;
+  babel: AppMeta['babel'];
+  rootURL: AppMeta['root-url'];
   publicAssetURL: string;
   resolverConfig: ResolverOptions;
   packageName: string;
@@ -54,6 +52,7 @@ interface AppInfo {
 // AppInfos are equal if they result in the same webpack config.
 function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
   return (
+    isEqual(left.babel, right.babel) &&
     left.entrypoints.length === right.entrypoints.length &&
     left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules))
   );
@@ -162,9 +161,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
   }
 
   private examineApp(): AppInfo {
-    // @ts-expect-error webpack is not updated to work on @embroider/core 4.x
     let meta = getAppMeta(this.pathToVanillaApp);
     let rootURL = meta['ember-addon']['root-url'];
+    let babel = meta['ember-addon']['babel'];
     let entrypoints = [];
     let otherAssets = [];
     let publicAssetURL = this.publicAssetURL || rootURL;
@@ -181,11 +180,11 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       join(locateEmbroiderWorkingDir(this.appRoot), 'resolver.json')
     );
 
-    return { entrypoints, otherAssets, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };
+    return { entrypoints, otherAssets, babel, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };
   }
 
   private configureWebpack(appInfo: AppInfo, variant: Variant, variantIndex: number): Configuration {
-    const { entrypoints, publicAssetURL, packageName, resolverConfig } = appInfo;
+    const { entrypoints, babel, publicAssetURL, packageName, resolverConfig } = appInfo;
 
     let entry: { [name: string]: string } = {};
     for (let entrypoint of entrypoints) {
@@ -197,8 +196,9 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
 
     let babelLoaderOptions = makeBabelLoaderOptions(
+      babel.majorVersion,
       variant,
-      join(this.appRoot, 'babel.config.cjs'),
+      join(this.pathToVanillaApp, babel.filename),
       this.extraBabelLoaderOptions
     );
 
@@ -227,7 +227,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           {
             test: /\.hbs$/,
             use: nonNullArray([
-              maybeThreadLoader(this.extraThreadLoaderOptions),
+              maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
               babelLoaderOptions,
               {
                 loader: require.resolve('@embroider/hbs-loader'),
@@ -244,9 +244,16 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
             ]),
           },
           {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            test: require(join(this.pathToVanillaApp, babel.fileFilter)),
             use: nonNullArray([
-              maybeThreadLoader(this.extraThreadLoaderOptions),
-              makeBabelLoaderOptions(variant, join(this.appRoot, 'babel.config.cjs'), this.extraBabelLoaderOptions),
+              maybeThreadLoader(babel.isParallelSafe, this.extraThreadLoaderOptions),
+              makeBabelLoaderOptions(
+                babel.majorVersion,
+                variant,
+                join(this.pathToVanillaApp, babel.filename),
+                this.extraBabelLoaderOptions
+              ),
             ]),
           },
           {
@@ -280,10 +287,6 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
           'style-loader': require.resolve('style-loader'),
         },
       },
-      experiments: {
-        // this is needed because fasboot-only modules need to use await import()
-        topLevelAwait: true,
-      },
     };
   }
 
@@ -306,7 +309,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       mergeWith({}, this.configureWebpack(appInfo, variant, variantIndex), this.extraConfig, appendArrays)
     );
     this.lastAppInfo = appInfo;
-    return (this.lastWebpack = webpack(config as any)! as any);
+    return (this.lastWebpack = webpack(config));
   }
 
   private async writeScript(script: string, written: Set<string>, variant: Variant) {
@@ -337,7 +340,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = await Terser.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
     let finalFilename = this.getFingerprintedFilename(script, outCode!);
     outputFileSync(join(this.outputPath, finalFilename), outCode!);
     written.add(script);
@@ -678,8 +681,8 @@ function warmUp(extraOptions: object | false | undefined) {
   ]);
 }
 
-function maybeThreadLoader(extraOptions: object | false | undefined) {
-  if (!canUseThreadLoader(extraOptions)) {
+function maybeThreadLoader(isParallelSafe: boolean, extraOptions: object | false | undefined) {
+  if (!canUseThreadLoader(extraOptions) || !isParallelSafe) {
     return null;
   }
 
@@ -706,6 +709,7 @@ function nonNullArray<T>(array: T[]): NonNullable<T>[] {
 }
 
 function makeBabelLoaderOptions(
+  _majorVersion: 7,
   variant: Variant,
   appBabelConfigPath: string,
   extraOptions: BabelLoaderOptions | undefined

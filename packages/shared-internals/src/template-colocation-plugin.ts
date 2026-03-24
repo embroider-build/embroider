@@ -64,12 +64,12 @@ export default function main(babel: typeof Babel) {
     visitor: {
       Program: {
         enter(path: NodePath<t.Program>, state: State) {
-          state.adder = new ImportUtil(babel, path);
+          state.adder = new ImportUtil(t, path);
           let filename = cleanUrl((path.hub as any).file.opts.filename);
 
           if (state.opts.packageGuard) {
             let owningPackage = PackageCache.shared('embroider', state.opts.appRoot).ownerOfFile(filename);
-            if (!owningPackage || !owningPackage.needsLooseResolving()) {
+            if (!owningPackage || !owningPackage.isV2Ember() || !owningPackage.meta['auto-upgraded']) {
               debug('not handling colocation for %s', filename);
               return;
             }

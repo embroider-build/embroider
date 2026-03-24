@@ -45,13 +45,13 @@ export default interface State {
 
     embroiderMacrosConfigMarker: true;
 
-    importSyncImplementation: 'cjs' | 'eager';
-
     mode: 'compile-time' | 'run-time';
+
+    importSyncImplementation: 'cjs' | 'eager';
   };
 }
 
-export function initState(t: typeof Babel, path: NodePath<Babel.types.Program>, state: State) {
+export function initState(t: typeof Babel.types, path: NodePath<Babel.types.Program>, state: State) {
   state.importUtil = new ImportUtil(t, path);
   state.generatedRequires = new Set();
   state.jobs = [];

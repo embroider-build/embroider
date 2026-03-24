@@ -1,5 +1,4 @@
 import {
-  appEmberSatisfies,
   dependencySatisfies,
   macroCondition,
   each,
@@ -8,7 +7,6 @@ import {
   getOwnConfig,
   failBuild,
   moduleExists,
-  setTesting,
 } from '../src/index';
 
 const ERROR_REGEX =
@@ -18,11 +16,6 @@ describe(`type-only exports`, function () {
   test('dependencySatisfies exists', function () {
     expect(dependencySatisfies).toBeDefined();
     expect(dependencySatisfies).toThrow(ERROR_REGEX);
-  });
-
-  test('appEmberSatisfies exists', function () {
-    expect(appEmberSatisfies).toBeDefined();
-    expect(appEmberSatisfies).toThrow(ERROR_REGEX);
   });
 
   test('macroCondition exists', function () {
@@ -58,10 +51,5 @@ describe(`type-only exports`, function () {
   test('moduleExists exists', function () {
     expect(moduleExists).toBeDefined();
     expect(moduleExists).toThrow(ERROR_REGEX);
-  });
-
-  test('setTesting exists', function () {
-    expect(setTesting).toBeDefined();
-    expect(typeof setTesting).toBe('function');
   });
 });

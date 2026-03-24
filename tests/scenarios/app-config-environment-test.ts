@@ -6,7 +6,7 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('canary')
+  .only('release')
   .map('app-config-environment', project => {
     merge(project.files, {
       'ember-cli-build.js': `
@@ -27,7 +27,7 @@ appScenarios
         'environment.js': `module.exports = function(environment) {
           // DEFAULT config/environment.js
           let ENV = {
-            modulePrefix: 'app-template',
+            modulePrefix: 'my-app',
             environment,
             rootURL: '/',
             locationType: 'history',
@@ -67,10 +67,6 @@ appScenarios
       },
     });
   })
-  // PR https://github.com/embroider-build/embroider/pull/1953 breaks !storeConfigInMeta feature
-  // because the new format to retrieve the environment always reads the meta in the document.
-  // TODO: reactivate this test once !storeConfigInMeta is reimplemented for the new config format.
-  .skip('canary-app-config-environment')
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
@@ -84,7 +80,7 @@ appScenarios
         // later. This difference in environment is important because it's the
         // only way for us to test ember-cli-build.js' `tests: true` behavior,
         // and is equivalent to visiting the app's /tests page
-        let devBuildResult = await app.execute(`pnpm build`);
+        let devBuildResult = await app.execute(`pnpm build --environment=development`);
         assert.equal(devBuildResult.exitCode, 0, devBuildResult.output);
         let testRunResult = await app.execute(`pnpm test:ember --path dist`);
         assert.equal(testRunResult.exitCode, 0, testRunResult.output);

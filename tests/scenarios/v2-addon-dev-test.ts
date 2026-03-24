@@ -1,18 +1,17 @@
-import path, { resolve } from 'path';
+import path from 'path';
 import { appScenarios, baseV2Addon } from './scenarios';
 import { PreparedApp, type Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import type { ExpectFile } from '@embroider/test-support/file-assertions/qunit';
 import { expectFilesAt } from '@embroider/test-support/file-assertions/qunit';
-import { writeFileSync } from 'fs';
 
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   // we are primarily interested in the v2 addon build, we don't need to repeat
   // it per host-app version
-  .only('canary')
+  .only('release')
   .map('v2-addon-dev-js', async project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'v2-addon';
@@ -48,7 +47,6 @@ appScenarios
       'rollup.config.mjs': `
         import { babel } from '@rollup/plugin-babel';
         import { Addon } from '@embroider/addon-dev/rollup';
-        import { resolve, dirname } from 'path';
 
         const addon = new Addon({
           srcDir: 'src',
@@ -65,7 +63,6 @@ appScenarios
           plugins: [
             addon.publicEntrypoints([
               'components/**/*.js',
-              'asset-examples/**/*.js',
             ], {
               exclude: ['**/-excluded/**/*'],
             }),
@@ -82,42 +79,12 @@ appScenarios
             addon.hbs({
               excludeColocation: ['**/just-a-template.hbs'],
             }),
+
             addon.gjs(),
-            addon.dependencies(),
+
             addon.publicAssets('public'),
 
-            {
-              name: 'virtual-css',
-              resolveId(source, importer) {
-                if (source.endsWith('virtual.css')) {
-                  return { id: resolve(dirname(importer), source) }
-                }
-              },
-              load(id) {
-                if (id.endsWith('virtual.css')) {
-                  return '.my-blue-example { color: blue }'
-                }
-              }
-            },
-            {
-              name: 'custom-plugin',
-              resolveId(source, importer) {
-                if (source.endsWith('.xyz')) {
-                  return { id: resolve(dirname(importer), source) }
-                }
-              },
-              load(id) {
-                if (id.endsWith('.xyz')) {
-                  return 'Custom Content';
-                }
-              }
-            },
-
-            addon.keepAssets(["**/*.css"]),
-
-            // this works with custom-asset plugin above to exercise whether we can keepAssets
-            // for generated files that have exports
-            addon.keepAssets(["**/*.{xyz,png}"], "default"),
+            addon.clean(),
           ],
         };
       `,
@@ -191,29 +158,6 @@ appScenarios
             `,
           },
         },
-        'asset-examples': {
-          'has-css-import.js': `
-          import "./styles.css";
-          `,
-          'styles.css': `
-            .my-red-example { color: red }
-          `,
-          'has-virtual-css-import.js': `
-            import "./my-virtual.css";
-          `,
-          'has-custom-asset-import.js': `
-            import value from './custom.xyz';
-            export function example() {
-              return value;
-            }
-          `,
-          'has-binary-import.js': `
-            import helloURL from './hello.png';
-            export default function() {
-              return helloURL;
-            }
-          `,
-        },
       },
       public: {
         'thing.txt': 'hello there',
@@ -279,60 +223,6 @@ appScenarios
       `,
     });
 
-    let addonRebuild = baseV2Addon();
-    addonRebuild.pkg.name = 'v2-addon-rebuild';
-    addonRebuild.pkg.scripts = {
-      build: 'node ./node_modules/rollup/dist/bin/rollup -c ./rollup.config.mjs',
-    };
-
-    merge(addonRebuild.files, {
-      src: {
-        'entry.js': 'console.log("hello world");',
-      },
-      dist: {
-        'old-file.js': 'console.log("i am old");',
-        subdir: {
-          'old-file.js': 'console.log("i am old too");',
-        },
-      },
-      'babel.config.json': `
-        {
-          "plugins": [
-            "@embroider/addon-dev/template-colocation-plugin",
-            "@babel/plugin-transform-class-static-block",
-            ["babel-plugin-ember-template-compilation", {
-              targetFormat: 'hbs',
-            }],
-            ["@babel/plugin-proposal-decorators", { "legacy": true }],
-            [ "@babel/plugin-transform-class-properties" ]
-          ]
-        }
-      `,
-      'rollup.config.mjs': `
-        import { babel } from '@rollup/plugin-babel';
-        import { Addon } from '@embroider/addon-dev/rollup';
-
-        const addon = new Addon({
-          srcDir: 'src',
-          destDir: 'dist',
-        });
-
-        export default {
-          output: addon.output(),
-
-          plugins: [
-            addon.publicEntrypoints(['entry.js']),
-
-            babel({ babelHelpers: 'bundled', extensions: ['.js', '.hbs', '.gjs'] }),
-
-            addon.hbs(),
-
-            addon.clean(),
-          ],
-        };
-      `,
-    });
-
     function linkDependencies(addon: Project) {
       addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
       addon.linkDependency('@embroider/addon-dev', { baseDir: __dirname });
@@ -347,11 +237,9 @@ appScenarios
 
     linkDependencies(addon);
     linkDependencies(addonNoNamespace);
-    linkDependencies(addonRebuild);
 
     project.addDevDependency(addon);
     project.addDependency(addonNoNamespace);
-    project.addDevDependency(addonRebuild);
 
     merge(project.files, {
       tests: {
@@ -398,61 +286,10 @@ appScenarios
 
               assert.dom().containsText('namespaced component');
             });
-
-            test('valid image asset is kept in addon', async function (assert) {
-              let module = await import('v2-addon/asset-examples/has-binary-import');
-              this.url = module.default();
-              await render(hbs\`<img alt="hello" src={{this.url}}>\`);
-              assert.dom('img').hasStyle({'width': '30px'});
-            })
           });
-        `,
-        'asset-test.js': `
-          import { module, test } from 'qunit';
-
-          module('keepAsset', function (hooks) {
-            let initialClassList;
-            hooks.beforeEach(function() {
-              initialClassList = document.body.classList;
-            });
-
-            hooks.afterEach(function() {
-              document.body.classList = initialClassList;
-            });
-
-            test('Normal CSS', async function (assert) {
-              await import("v2-addon/asset-examples/has-css-import");
-              document.body.classList.add('my-red-example');
-              assert.strictEqual(getComputedStyle(document.querySelector('body')).color, 'rgb(255, 0, 0)');
-            });
-
-            test("Virtual CSS", async function (assert) {
-              await import("v2-addon/asset-examples/has-virtual-css-import");
-              document.body.classList.add('my-blue-example');
-              assert.strictEqual(getComputedStyle(document.querySelector('body')).color, 'rgb(0, 0, 255)');
-            });
-
-            test("custom asset with export", async function(assert) {
-              let { example } = await import("v2-addon/asset-examples/has-custom-asset-import");
-              assert.strictEqual(example(), "Custom Content");
-            });
-          })
         `,
       },
     });
-
-    project.files['vite.config.mjs'] = (project.files['vite.config.mjs'] as string).replace(
-      '// extra plugins here',
-      `{
-        name: "xyz-handler",
-        transform(code, id) {
-          if (id.endsWith('.xyz')) {
-            return \`export default "\${code}"\`
-          }
-        }
-      },
-    `
-    );
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
@@ -461,17 +298,6 @@ appScenarios
 
       hooks.before(async () => {
         app = await scenario.prepare();
-        // fixturify (via scenario-tester) has no binary output support
-        let v2AddonPath = path.dirname(require.resolve(`v2-addon/package.json`, { paths: [app.dir] }));
-        console.log(`v2addonpath`, v2AddonPath);
-        console.log(`resolved`, resolve(v2AddonPath, 'src/asset-examples/hello.png'));
-        writeFileSync(
-          resolve(v2AddonPath, 'src/asset-examples/hello.png'),
-          Buffer.from(
-            'iVBORw0KGgoAAAANSUhEUgAAAB4AAAALCAYAAABoKz2KAAACYElEQVQ4y8WU3UuTYRjGf8+77d2XuplL5vdMI0QzwhTRLEgUEqIQwg76Oo7ypD+goIPO60Q6DTq2giAKAiHNvoaRijNDrYk606Fuc9v7Pk8Hs+k6CI/ygvvkgvu5bq7rfm5RVVWl2Ado7BM0gNZqPx6HTnd9gOPlvn83CMGVtgb6u5qpPegBwG7RuNHZxK2uZlw2696Eyzxurp9pRhPQUltBfXkxhlTs9t9UClNmGKUUE+EINf4iAj4vAIZUfJlfoqHSj1vfEVYK0n+99QfW3uY6pheWWUukAKir8PPwWiWfZ37yePgrpw6X0dNUhyYEg+/HGZ5Z4NPcEn1pI2ew0e8L9LU1Zjm3buVmdwv+wgJC4WUevQliqp0RtKOBUp5+mMwS8WSKJ0NBTtZVU+jUuXy6iZGpOUan57nUfgybZW9r0XviCF6Xk4GX72gMlNJaU5JrdfhXlJmV9SwxH1kjtLiKpgm8Ljv5DjtNNeU0BkqJxrewamJPwsWefL4trjC1HGU5ukFt8YGM/dtlffZxMicDtcuOrZRBPJVm4NUo4WicQqdOIm1mcjUlvnwXQmSyVEohpaLEm8dKbIvNRBJfvhuLJshz2lmNJQC4c6ED3WbFGvwRyQpJJZEqswxSKjZTBkPjM9y92EkybRBZj3FvcAilYCQ0x/mWBg75i7j//C2GVIzNLtDf087YbJgXwRC3z3Xw4OpZEimD1xOzCKDA5UC32RC7D4ghFZrIfJmkKbFv52nRNAqcOpGNRI7VSVMiBOialrUxaUosQmDTBKYCn9vBSiyBRWT6UlKCIlf4f+I3ZibyifAuOoEAAAAASUVORK5CYII=',
-            'base64'
-          )
-        );
         let result = await inDependency(app, 'v2-addon').execute('pnpm build');
         if (result.exitCode !== 0) {
           throw new Error(result.output);
@@ -575,53 +401,12 @@ export { SingleFileComponent as default };
             './public/other.txt': '/other.txt',
           });
         });
-
-        test('keepAssets works for real css files', async function () {
-          expectFile('dist/asset-examples/has-css-import.js').equalsCode(`import './styles.css'`);
-          expectFile('dist/asset-examples/styles.css').matches('.my-red-example { color: red }');
-        });
-
-        test('keepAssets works for css generated by another plugin', async function () {
-          expectFile('dist/asset-examples/has-virtual-css-import.js').equalsCode(`import './my-virtual.css'`);
-          expectFile('dist/asset-examples/my-virtual.css').matches('.my-blue-example { color: blue }');
-        });
-
-        test('keepAssets tolerates non-JS content that is interpreted as having a default export', async function () {
-          expectFile('dist/asset-examples/has-custom-asset-import.js').equalsCode(`
-            import _asset_0_ from './custom.xyz'
-            var value = _asset_0_;
-            function example() {
-              return value;
-            }
-            export { example }
-          `);
-          expectFile('dist/asset-examples/custom.xyz').matches(`Custom Content`);
-        });
       });
 
       Qmodule('Consuming app', function () {
         test(`pnpm test`, async function (assert) {
           let result = await app.execute('pnpm test');
           assert.equal(result.exitCode, 0, result.output);
-        });
-      });
-
-      Qmodule('Rebuilds', function (hooks) {
-        hooks.beforeEach(assert => {
-          expectFile = expectFilesAt(inDependency(app, 'v2-addon-rebuild').dir, { qunit: assert });
-        });
-
-        test('remove old files', async function () {
-          expectFile('dist/old-file.js').exists();
-          expectFile('dist/subdir/old-file.js').exists();
-
-          const result = await inDependency(app, 'v2-addon-rebuild').execute('pnpm build');
-          if (result.exitCode !== 0) {
-            throw new Error(result.output);
-          }
-
-          expectFile('dist/old-file.js').doesNotExist();
-          expectFile('dist/subdir/old-file.js').doesNotExist();
         });
       });
     });

@@ -8,11 +8,10 @@
     "@babel/plugin-transform-typescript": "^7.8.7",
     "@babel/preset-env": "^7.9.0",
     "@ember/string": "^3.1.1",
-    "@embroider/core": "workspace:*",
     "@glimmer/component": "^1.0.0",
     "babel-preset-env": "^1.7.0",
     "broccoli": "^3.4.2",
-    "code-equality-assertions": "^1.0.1",
+    "code-equality-assertions": "^0.9.0",
     "console-ui": "^3.0.0",
     "ember-auto-import": "^2.2.0",
     "ember-cli": "~3.28.0",
@@ -22,28 +21,18 @@
     "execa": "^4.0.3",
     "fastest-levenshtein": "^1.0.16",
     "fs-extra": "^7.0.0",
-    "http-proxy": "^1.18.1",
     "loader.js": "^4.7.0",
     "lodash": "^4.17.10",
     "qunit": "^2.16.0",
-    "scenario-tester": "^4.1.1",
     "typescript-memoize": "^1.0.1",
     "webpack": "^5"
   },
   "devDependencies": {
-    "@glimmer/syntax": "^0.94.9",
+    "@glimmer/syntax": "^0.84.2",
     "@types/babel__core": "^7.1.14",
     "@types/babel__traverse": "^7.18.5",
-    "@types/express": "^4.17.21",
     "@types/fs-extra": "^9.0.12",
-    "@types/http-proxy": "^1.17.15",
     "@types/lodash": "^4.14.170",
-    "@types/node": "^22.9.3",
-    "@types/qunit": "^2.19.12"
-  },
-  "files": [
-    "**/*.js",
-    "**/*.d.ts",
-    "**/*.js.map"
-  ]
+    "@types/node": "^10.5.2"
+  }
 }

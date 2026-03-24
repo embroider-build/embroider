@@ -1,30 +1,53 @@
+import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
+import { readFileSync } from 'fs';
 import { Preprocessor } from 'content-tag';
-import { extFilter, supportsObjectHooks } from './build-id-filter.js';
 
-export const gjsFilter = extFilter('gjs', 'gts');
+const gjsFilter = createFilter('**/*.gjs');
 
-export function templateTag(): Plugin {
+export function templateTag({ inline_source_map } = { inline_source_map: false }): Plugin {
   let preprocessor = new Preprocessor();
+
+  function candidates(id: string) {
+    return [id + '.gjs'];
+  }
 
   return {
     name: 'embroider-template-tag',
     enforce: 'pre',
 
-    transform: supportsObjectHooks
-      ? {
-          filter: { id: gjsFilter },
-          handler(code: string, id: string) {
-            return preprocessor.process(code, {
-              filename: id,
-            });
+    async resolveId(id: string, importer: string | undefined) {
+      let resolution = await this.resolve(id, importer, {
+        skipSelf: true,
+      });
+      if (resolution) {
+        return resolution;
+      }
+      for (let candidate of candidates(id)) {
+        resolution = await this.resolve(candidate, importer, {
+          skipSelf: true,
+          custom: {
+            embroider: {
+              enableCustomResolver: false,
+            },
           },
+        });
+        if (resolution) {
+          return {
+            id: resolution.id,
+          };
         }
-      : function (code: string, id: string) {
-          if (!gjsFilter.test(id)) return null;
-          return preprocessor.process(code, {
-            filename: id,
-          });
-        },
+      }
+    },
+
+    load(id: string) {
+      if (!gjsFilter(id)) {
+        return null;
+      }
+      return preprocessor.process(readFileSync(id, 'utf8'), {
+        filename: id,
+        inline_source_map: inline_source_map,
+      });
+    },
   };
 }

@@ -1,8 +1,7 @@
 import type { Plugin } from 'vite';
-import type { EmittedFile } from 'rolldown';
+import type { EmittedFile } from 'rollup';
 import { JSDOM } from 'jsdom';
-import fs from 'fs-extra';
-const { readFileSync, readJSONSync, existsSync } = fs;
+import { readFileSync, readJSONSync } from 'fs-extra';
 import { dirname, posix, resolve } from 'path';
 
 // This is a type-only import, so it gets compiled away. At runtime, we load
@@ -26,14 +25,11 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
       }
     });
 
-  let config: any = null;
-
   return {
     name: 'embroider-scripts',
     enforce: 'pre',
 
     configResolved(resolvedConfig) {
-      config = resolvedConfig;
       optimizer = new ScriptOptimizer(resolvedConfig.root);
     },
 
@@ -50,7 +46,7 @@ export function scripts(params?: { include?: string[]; exclude?: string[] }): Pl
       // we don't do anything in `vite dev`, we only need to work in `vite
       // build`
       if (!context.server) {
-        return optimizer.transformHTML(htmlIn, config.base);
+        return optimizer.transformHTML(htmlIn);
       }
     },
   };
@@ -69,17 +65,11 @@ class ScriptOptimizer {
   constructor(private rootDir: string) {}
 
   async optimizedScript(script: string): Promise<EmittedFile[]> {
-    let fullName = resolve(this.rootDir, script.slice(1));
-    if (!existsSync(fullName)) {
-      // in prod builds, test-support.js isn't going to exist (for example)
-      return [];
-    }
-
     // loading these lazily here so they never load in non-production builds.
     // The node cache will ensures we only load them once.
     const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
 
-    let inCode = readFileSync(fullName, 'utf8');
+    let inCode = readFileSync(resolve(this.rootDir, script.slice(1)), 'utf8');
     let terserOpts: MinifyOptions = {};
     let fileRelativeSourceMapURL;
     let appRelativeSourceMapURL;
@@ -97,7 +87,7 @@ class ScriptOptimizer {
         terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
       }
     }
-    let { code: outCode, map: outMap } = await Terser.minify(inCode, terserOpts);
+    let { code: outCode, map: outMap } = await Terser.default.minify(inCode, terserOpts);
     let finalFilename = await this.getFingerprintedFilename(script, outCode!);
     let emit: EmittedFile[] = [];
     emit.push({
@@ -126,24 +116,15 @@ class ScriptOptimizer {
     return fileParts.join('.');
   }
 
-  transformHTML(htmlIn: string, baseUrl: string) {
+  transformHTML(htmlIn: string) {
     if (this.transformState?.htmlIn !== htmlIn) {
       let parsed = new JSDOM(htmlIn);
-      let linkTags = [...parsed.window.document.querySelectorAll('link')] as HTMLLinkElement[];
-      for (const linkTag of linkTags) {
-        if (linkTag.href.startsWith('/@embroider/virtual')) {
-          linkTag.href = baseUrl + linkTag.href.slice(1);
-        }
-      }
       let scriptTags = [...parsed.window.document.querySelectorAll('script')] as HTMLScriptElement[];
       for (let scriptTag of scriptTags) {
         if (scriptTag.type !== 'module') {
           let fingerprinted = this.emitted.get(scriptTag.src);
           if (fingerprinted) {
             scriptTag.src = fingerprinted;
-          }
-          if (scriptTag.src.startsWith('/@embroider/virtual')) {
-            scriptTag.src = baseUrl + scriptTag.src.slice(1);
           }
         }
       }

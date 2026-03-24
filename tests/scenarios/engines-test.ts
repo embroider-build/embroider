@@ -90,7 +90,7 @@ engineScenarios
 
       hooks.before(async assert => {
         app = await scenario.prepare();
-        let result = await app.execute('pnpm run build', { env: { EMBROIDER_PREBUILD: 'true' } });
+        let result = await app.execute('pnpm run build', { env: { STAGE2_ONLY: 'true' } });
         assert.equal(result.exitCode, 0, result.output);
       });
 
@@ -99,7 +99,7 @@ engineScenarios
       });
 
       test(`pnpm test safe`, async function (assert) {
-        let result = await app.execute("pnpm run test --filter='!@optimized'", {
+        let result = await app.execute('pnpm test --filter=!@optimized', {
           env: {
             EMBROIDER_TEST_SETUP_OPTIONS: 'safe',
             EMBROIDER_TEST_SETUP_FORCE: 'embroider',

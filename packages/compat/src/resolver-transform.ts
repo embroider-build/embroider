@@ -11,9 +11,10 @@ import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
 import { join, sep } from 'path';
+import { readJSONSync } from 'fs-extra';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import type { ResolverOptions as CoreResolverOptions } from '@embroider/core';
-import { Resolver, ResolverLoader, cleanUrl } from '@embroider/core';
+import { Resolver, locateEmbroiderWorkingDir } from '@embroider/core';
 import type CompatOptions from './options';
 import type { AuditMessage, Loc } from './audit';
 import { camelCase, mergeWith } from 'lodash';
@@ -29,7 +30,10 @@ type Env = WithJSUtils<ASTPluginEnvironment> & {
 // this is a subset of the full Options. We care about serializability, and we
 // only needs parts that are easily serializable, which is why we don't keep the
 // whole thing.
-type UserConfig = Pick<Required<CompatOptions>, 'staticInvokables' | 'allowUnsafeDynamicComponents'>;
+type UserConfig = Pick<
+  Required<CompatOptions>,
+  'staticHelpers' | 'staticModifiers' | 'staticComponents' | 'allowUnsafeDynamicComponents'
+>;
 
 export interface CompatResolverOptions extends CoreResolverOptions {
   activePackageRules: ActivePackageRules[];
@@ -37,16 +41,13 @@ export interface CompatResolverOptions extends CoreResolverOptions {
 }
 
 export interface ExternalNameHint {
-  (path: string, kind: 'component' | 'helper' | 'modifier' | 'ambiguous-component-or-helper'): string | null;
+  (path: string): string | null;
 }
-
-export type ExternalResolver = (module: string) => string;
 
 export interface Options {
   appRoot: string;
   emberVersion: string;
   externalNameHint?: ExternalNameHint;
-  externalResolve?: (module: string) => string;
 }
 
 type BuiltIn = {
@@ -188,8 +189,7 @@ class TemplateResolver implements ASTPlugin {
     private config: CompatResolverOptions,
     private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>,
     private supportsThisFallback: boolean,
-    private externalNameHint?: ExternalNameHint,
-    private externalResolve?: ExternalResolver
+    private externalNameHint?: ExternalNameHint
   ) {
     this.moduleResolver = new Resolver(config);
     if ((globalThis as any).embroider_audit) {
@@ -209,15 +209,10 @@ class TemplateResolver implements ASTPlugin {
       case 'component':
       case 'modifier':
       case 'helper': {
-        let specifier = resolution.specifier;
-        if (this.externalResolve) {
-          specifier = this.externalResolve(specifier);
-        }
-        let name = this.env.meta.jsutils.bindImport(specifier, resolution.importedName, parentPath, {
+        let name = this.env.meta.jsutils.bindImport(resolution.specifier, resolution.importedName, parentPath, {
           nameHint: resolution.nameHint,
         });
         setter(parentPath.node, this.env.syntax.builders.path(name));
-        this.scopeStack.emittedResolution(name, resolution);
         return;
       }
       case undefined:
@@ -333,11 +328,16 @@ class TemplateResolver implements ASTPlugin {
     }
   }
 
-  private get staticInvokablesEnabled(): boolean {
-    if (!this.config?.options) {
-      return true;
-    }
-    return this.config.options.staticInvokables || Boolean(this.auditHandler);
+  private get staticComponentsEnabled(): boolean {
+    return this.config.options.staticComponents || Boolean(this.auditHandler);
+  }
+
+  private get staticHelpersEnabled(): boolean {
+    return this.config.options.staticHelpers || Boolean(this.auditHandler);
+  }
+
+  private get staticModifiersEnabled(): boolean {
+    return this.config.options.staticModifiers || Boolean(this.auditHandler);
   }
 
   private isIgnoredComponent(dasherizedName: string) {
@@ -355,7 +355,7 @@ class TemplateResolver implements ASTPlugin {
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
     // force.
-    for (let rule of this.config?.activePackageRules ?? []) {
+    for (let rule of this.config.activePackageRules) {
       if (rule.components) {
         for (let [snippet, rules] of Object.entries(rule.components)) {
           let processedRules = preprocessComponentRule(rules);
@@ -394,10 +394,6 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private findRules(absPath: string): PreprocessedComponentRule | undefined {
-    // when babel is invoked by vite our filenames can have query params still
-    // hanging off them. That would break rule matching.
-    absPath = cleanUrl(absPath);
-
     let fileRules = this.rules.files.get(absPath);
     let componentRules: PreprocessedComponentRule | undefined;
 
@@ -421,8 +417,8 @@ class TemplateResolver implements ASTPlugin {
     return name;
   }
 
-  private targetComponent(name: string, nameHint: string): ComponentResolution | null {
-    if (!this.staticInvokablesEnabled) {
+  private targetComponent(name: string): ComponentResolution | null {
+    if (!this.staticComponentsEnabled) {
       return null;
     }
 
@@ -451,12 +447,12 @@ class TemplateResolver implements ASTPlugin {
     let componentRules = this.rules.components.get(name);
     return {
       type: 'component',
-      specifier: `@embroider/virtual/components/${name}`,
+      specifier: `#embroider_compat/components/${name}`,
       importedName: 'default',
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(nameHint, 'component'),
+      nameHint: this.nameHint(name),
     };
   }
 
@@ -465,7 +461,7 @@ class TemplateResolver implements ASTPlugin {
     loc: Loc,
     impliedBecause?: { componentName: string; argumentName: string }
   ): ComponentResolution | ResolutionFail | null {
-    if (!this.staticInvokablesEnabled) {
+    if (!this.staticComponentsEnabled) {
       return null;
     }
 
@@ -485,7 +481,8 @@ class TemplateResolver implements ASTPlugin {
       };
     }
     if (component.type === 'path') {
-      if (this.ownRules?.safeInteriorPaths.includes(component.path)) {
+      let ownComponentRules = this.findRules(this.env.filename);
+      if (ownComponentRules && ownComponentRules.safeInteriorPaths.includes(component.path)) {
         return null;
       }
       return {
@@ -496,11 +493,11 @@ class TemplateResolver implements ASTPlugin {
       };
     }
 
-    return this.targetComponent(component.path, component.path);
+    return this.targetComponent(component.path);
   }
 
   private targetHelper(path: string): HelperResolution | null {
-    if (!this.staticInvokablesEnabled) {
+    if (!this.staticHelpersEnabled) {
       return null;
     }
 
@@ -526,9 +523,9 @@ class TemplateResolver implements ASTPlugin {
 
     return {
       type: 'helper',
-      specifier: `@embroider/virtual/helpers/${path}`,
+      specifier: `#embroider_compat/helpers/${path}`,
       importedName: 'default',
-      nameHint: this.nameHint(path, 'helper'),
+      nameHint: this.nameHint(path),
     };
   }
 
@@ -589,7 +586,7 @@ class TemplateResolver implements ASTPlugin {
     */
 
     // first, bail out on all the stuff we can obviously ignore
-    if (!this.staticInvokablesEnabled || this.isIgnoredComponent(path)) {
+    if ((!this.staticHelpersEnabled && !this.staticComponentsEnabled) || this.isIgnoredComponent(path)) {
       return null;
     }
 
@@ -626,7 +623,7 @@ class TemplateResolver implements ASTPlugin {
     if (ownComponentRules?.disambiguate[path]) {
       switch (ownComponentRules.disambiguate[path]) {
         case 'component':
-          return this.targetComponent(path, path);
+          return this.targetComponent(path);
         case 'helper':
           return this.targetHelper(path);
         case 'data':
@@ -650,20 +647,35 @@ class TemplateResolver implements ASTPlugin {
       return null;
     }
 
+    // Above we already bailed out if both of these were disabled, so we know at
+    // least one is turned on. If both aren't turned on, we're stuck, because we
+    // can't even tell if this *is* a component vs a helper.
+    if (!this.staticHelpersEnabled || !this.staticComponentsEnabled) {
+      this.reportError({
+        type: 'error',
+        message: 'unsupported ambiguity between helper and component',
+        detail: `this use of "{{${path}}}" could be helper "{{ (${path}) }}" or component "<${capitalize(
+          camelCase(path)
+        )} />", and your settings for staticHelpers and staticComponents do not agree. Either switch to one of the unambiguous forms, or make staticHelpers and staticComponents agree, or use a "disambiguate" packageRule to work around the problem if its in third-party code you cannot easily fix.`,
+        loc,
+      });
+      return null;
+    }
+
     let componentRules = this.rules.components.get(path);
     return {
       type: 'component',
-      specifier: `@embroider/virtual/ambiguous/${path}`,
+      specifier: `#embroider_compat/ambiguous/${path}`,
       importedName: 'default',
       yieldsComponents: componentRules ? componentRules.yieldsSafeComponents : [],
       yieldsArguments: componentRules ? componentRules.yieldsArguments : [],
       argumentsAreComponents: componentRules ? componentRules.argumentsAreComponents : [],
-      nameHint: this.nameHint(path, 'ambiguous-component-or-helper'),
+      nameHint: this.nameHint(path),
     };
   }
 
   private targetElementModifier(path: string): ModifierResolution | null {
-    if (!this.staticInvokablesEnabled) {
+    if (!this.staticModifiersEnabled) {
       return null;
     }
 
@@ -684,14 +696,14 @@ class TemplateResolver implements ASTPlugin {
 
     return {
       type: 'modifier',
-      specifier: `@embroider/virtual/modifiers/${path}`,
+      specifier: `#embroider_compat/modifiers/${path}`,
       importedName: 'default',
-      nameHint: this.nameHint(path, 'modifier'),
+      nameHint: this.nameHint(path),
     };
   }
 
   targetDynamicModifier(modifier: ComponentLocator, loc: Loc): ModifierResolution | ResolutionFail | null {
-    if (!this.staticInvokablesEnabled) {
+    if (!this.staticModifiersEnabled) {
       return null;
     }
 
@@ -708,7 +720,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private targetDynamicHelper(helper: ComponentLocator): HelperResolution | null {
-    if (!this.staticInvokablesEnabled) {
+    if (!this.staticHelpersEnabled) {
       return null;
     }
 
@@ -722,21 +734,12 @@ class TemplateResolver implements ASTPlugin {
     return null;
   }
 
-  private nameHint(path: string, kind: 'component' | 'helper' | 'modifier' | 'ambiguous-component-or-helper'): string {
-    let hint = this.externalNameHint?.(path, kind);
-    if (hint != null) {
-      return hint;
-    }
-
+  private nameHint(path: string) {
     let parts = path.split('@');
-    hint = parts[parts.length - 1];
 
-    // if our name is going to be entirely lower case letter, we add an
-    // underscore to avoid any possible HTML element collision.
-    if (/^[a-z]+$/.test(hint)) {
-      hint += '_';
-    }
-    return hint;
+    // the extra underscore here guarantees that we will never collide with an
+    // HTML element.
+    return this.externalNameHint?.(path) ?? parts[parts.length - 1] + '_';
   }
 
   private handleDynamicModifier(param: ASTv1.Expression): ModifierResolution | ResolutionFail | null {
@@ -760,43 +763,11 @@ class TemplateResolver implements ASTPlugin {
     return null;
   }
 
-  private ownRules: PreprocessedComponentRule | undefined;
-
-  private implementInvokesRule(node: ASTv1.Template, path: WalkerPath<ASTv1.Template>) {
-    if (!this.ownRules?.invokes) {
-      return;
-    }
-    let registrations: ASTv1.HashPair[] = [];
-    for (let snippets of Object.values(this.ownRules.invokes)) {
-      for (let snippet of snippets) {
-        let dasherizedName = snippetToDasherizedName(snippet);
-        if (!dasherizedName) {
-          throw new Error(`Package rule contains unparseable component snippet: ${snippet}`);
-        }
-        let resolution = this.targetComponentHelper({ type: 'literal', path: dasherizedName }, node.loc);
-        this.emit(path, resolution, (_target, id) => {
-          registrations.push(this.env.syntax.builders.pair(dasherizedName, id));
-        });
-      }
-    }
-    if (registrations.length > 0) {
-      node.body.unshift(
-        this.env.syntax.builders.mustache(
-          this.env.meta.jsutils.bindExpression(registrationHelper, path, { nameHint: 'registerComponents' }),
-          [],
-          this.env.syntax.builders.hash(registrations)
-        )
-      );
-    }
-  }
-
   visitor: ASTPlugin['visitor'] = {
     Template: {
-      enter: (node, path) => {
-        this.ownRules = this.findRules(this.env.filename);
-        this.implementInvokesRule(node, path);
+      enter: () => {
         if (this.env.locals) {
-          this.scopeStack.pushMustacheBlock(this.env.locals, { top: true });
+          this.scopeStack.pushMustacheBlock(this.env.locals);
         }
       },
       exit: () => {
@@ -838,7 +809,7 @@ class TemplateResolver implements ASTPlugin {
         });
         return;
       }
-      let resolution = this.targetComponent(node.path.original, node.path.original);
+      let resolution = this.targetComponent(node.path.original);
       this.emit(path, resolution, (node, newId) => {
         node.path = newId;
       });
@@ -897,14 +868,6 @@ class TemplateResolver implements ASTPlugin {
         }
         let rootName = headOf(node.path);
         if (this.scopeStack.inScope(rootName, path)) {
-          let resolution = this.scopeStack.resolutionInScope(rootName, path);
-          if (resolution?.type === 'component') {
-            this.handleDynamicComponentArguments(
-              node.path.original,
-              resolution.argumentsAreComponents,
-              extendPath(extendPath(path, 'hash'), 'pairs')
-            );
-          }
           return;
         }
         if (isThisHead(node.path)) {
@@ -991,20 +954,13 @@ class TemplateResolver implements ASTPlugin {
     ElementNode: {
       enter: (node, path) => {
         let rootName = node.tag.split('.')[0];
-        if (this.scopeStack.inScope(rootName, path)) {
-          let existingResolution = this.scopeStack.resolutionInScope(rootName, path);
-          if (existingResolution?.type === 'component') {
-            this.scopeStack.enteringComponentBlock(existingResolution, ({ argumentsAreComponents }) => {
-              this.handleDynamicComponentArguments(node.tag, argumentsAreComponents, extendPath(path, 'attributes'));
-            });
-          }
-        } else {
+        if (!this.scopeStack.inScope(rootName, path)) {
           let resolution: ComponentResolution | null = null;
 
           // if it starts with lower case, it can't be a component we need to
           // globally resolve
           if (node.tag[0] !== node.tag[0].toLowerCase()) {
-            resolution = this.targetComponent(dasherize(node.tag), node.tag);
+            resolution = this.targetComponent(dasherize(node.tag));
           }
 
           this.emit(path, resolution, (node, newId) => {
@@ -1026,9 +982,8 @@ class TemplateResolver implements ASTPlugin {
 }
 
 // This is the AST transform that resolves components, helpers and modifiers at build time
-export default function makeResolverTransform({ appRoot, emberVersion, externalNameHint, externalResolve }: Options) {
-  let loader = new ResolverLoader(appRoot);
-  let config = loader.resolver.options as CompatResolverOptions;
+export default function makeResolverTransform({ appRoot, emberVersion, externalNameHint }: Options) {
+  let config: CompatResolverOptions = readJSONSync(join(locateEmbroiderWorkingDir(appRoot), 'resolver.json'));
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     if (env.strictMode) {
       return {
@@ -1041,8 +996,7 @@ export default function makeResolverTransform({ appRoot, emberVersion, externalN
       config,
       builtInKeywords(emberVersion),
       supportsThisFallback(emberVersion),
-      externalNameHint,
-      externalResolve
+      externalNameHint
     );
   };
   (resolverTransform as any).parallelBabel = {
@@ -1061,17 +1015,7 @@ interface ComponentBlockMarker {
 }
 
 type ScopeEntry =
-  | {
-      type: 'mustache';
-      blockParams: string[];
-
-      // our top-level scope entry is a 'mustache' entry whose block params
-      // represent the scope bag coming in from Javascript. When we emit new
-      // javascript bindings, they up in this top-level scope entry's
-      // blockParams. We also track their original ResolutionResults here so
-      // that we can consistently apply any custom rules that they contain.
-      emittedResolutions?: Map<string, ResolutionResult>;
-    }
+  | { type: 'mustache'; blockParams: string[] }
   | { type: 'element'; blockParams: string[]; childrenOf: ASTv1.ElementNode }
   | ComponentBlockMarker;
 
@@ -1084,12 +1028,8 @@ class ScopeStack {
   //
   // are relatively simple for us because there's a dedicated `Block` AST node
   // that exactly covers the range in which the variables are in scope.
-  pushMustacheBlock(blockParams: string[], params?: { top?: boolean }) {
-    let entry: ScopeEntry = { type: 'mustache', blockParams };
-    if (params?.top) {
-      entry.emittedResolutions = new Map();
-    }
-    this.stack.unshift(entry);
+  pushMustacheBlock(blockParams: string[]) {
+    this.stack.unshift({ type: 'mustache', blockParams });
   }
 
   // element blocks like:
@@ -1141,33 +1081,6 @@ class ScopeStack {
       }
     }
     return false;
-  }
-
-  // some names in scope are things that this transform itself has already
-  // emitted. This identifies them.
-  resolutionInScope(name: string, fromPath: WalkerPath<ASTv1.Node>): ResolutionResult | undefined {
-    for (let scope of this.stack) {
-      if (scope.type === 'mustache' && scope.blockParams.includes(name)) {
-        if (scope.emittedResolutions) {
-          return scope.emittedResolutions.get(name);
-        }
-      }
-      if (
-        scope.type === 'element' &&
-        scope.blockParams.includes(name) &&
-        withinElementBlock(fromPath, scope.childrenOf)
-      ) {
-        return;
-      }
-    }
-    return;
-  }
-
-  emittedResolution(name: string, resolution: ResolutionResult) {
-    let top = this.stack[0];
-    if (top?.type === 'mustache' && top.emittedResolutions) {
-      top.emittedResolutions.set(name, resolution);
-    }
   }
 
   safeComponentInScope(name: string): boolean {
@@ -1292,19 +1205,4 @@ function parts(path: any) {
   if (!path) return;
 
   return 'original' in path ? path.original.split('.') : path.parts;
-}
-
-function registrationHelper(context: { import: (module: string, name: string, hint?: string) => string }) {
-  let Helper = context.import('@ember/component/helper', 'default', 'Helper');
-  let getOwner = context.import('@ember/owner', 'getOwner');
-  return `
-    (class extends ${Helper} {
-      compute(_positional, registrations) {
-        let owner = ${getOwner}(this);
-        for (let [name, definition] of Object.entries(registrations)) {
-          owner.register(\`component:\${name}\`, definition);
-        }
-      }
-    })
-  `;
 }

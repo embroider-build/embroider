@@ -1,5 +1,23 @@
 # Embroider Changelog
 
+## Release (2026-03-24)
+
+* @embroider/compat 4.1.16 (patch)
+* @embroider/core 4.4.7 (patch)
+* @embroider/macros 1.20.2 (patch)
+* @embroider/template-tag-codemod 1.3.6 (patch)
+* @embroider/vite 1.7.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/template-tag-codemod`
+  * [#2661](https://github.com/embroider-build/embroider/pull/2661) cleaning up AMD template compiler deprecation ([@ef4](https://github.com/ef4))
+* `@embroider/macros`
+  * [#2688](https://github.com/embroider-build/embroider/pull/2688) Robustify the global macros variable ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-03-18)
 
 * @embroider/core 4.4.6 (patch)

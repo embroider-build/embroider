@@ -356,13 +356,9 @@ export default class CompatApp {
       // them there, so @embroider/compat will fill in defaults. The bundles are
       // empty because we're just trying to keep the build from blowing up, the
       // actual ember modules get loaded as modules instead.
-      //
-      // The template compiler is still here so that apps using a V2 ember can
-      // still app.import the traditional runtime template compiler.
       trees.push(writeFile('vendor/ember/ember.js', () => ''));
       trees.push(writeFile('vendor/ember/ember-testing.js', () => ''));
-      const templateCompilerSrc = readFileSync(join(emberSource.root, 'dist/ember-template-compiler.js'), 'utf8');
-      trees.push(writeFile('vendor/ember/ember-template-compiler.js', () => templateCompilerSrc));
+      trees.push(writeFile('vendor/ember/ember-template-compiler.js', () => ''));
     }
 
     if (this.vendorTree) {

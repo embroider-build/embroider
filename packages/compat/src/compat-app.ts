@@ -289,10 +289,17 @@ export default class CompatApp {
       //
       // The template compiler is still here so that apps using a V2 ember can
       // still app.import the traditional runtime template compiler.
-      trees.push(writeFile('vendor/ember/ember.js', () => ''));
-      trees.push(writeFile('vendor/ember/ember-testing.js', () => ''));
-      const templateCompilerSrc = readFileSync(join(emberSource.root, 'dist/ember-template-compiler.js'), 'utf8');
-      trees.push(writeFile('vendor/ember/ember-template-compiler.js', () => templateCompilerSrc));
+      if (emberSource.paths['vendor/ember/ember.js']) {
+        trees.push(writeFile('vendor/ember/ember.js', () => ''));
+      }
+      if (emberSource.paths['vendor/ember/ember-testing.js']) {
+        trees.push(writeFile('vendor/ember/ember-testing.js', () => ''));
+      }
+
+      if (emberSource.paths['vendor/ember/ember-template-compiler.js']) {
+        const templateCompilerSrc = readFileSync(join(emberSource.root, 'dist/ember-template-compiler.js'), 'utf8');
+        trees.push(writeFile('vendor/ember/ember-template-compiler.js', () => templateCompilerSrc));
+      }
     }
 
     if (this.vendorTree) {

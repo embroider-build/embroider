@@ -1,5 +1,5 @@
 import { type Plugin, type ViteDevServer, normalizePath } from 'vite';
-import core, { ModuleRequest, type Package, type Resolver } from '@embroider/core';
+import core, { ModuleRequest, type Package, type Resolver, type ResolverLoaderOverrides } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
 import { assertNever } from 'assert-never';
@@ -17,8 +17,8 @@ const { ensureSymlinkSync, writeFileSync, renameSync } = fs;
 
 const debug = makeDebug('embroider:vite');
 
-export function resolver(params?: { rolldown?: boolean }): Plugin {
-  const resolverLoader = new ResolverLoader(process.cwd());
+export function resolver(params?: { rolldown?: boolean; overrides?: ResolverLoaderOverrides }): Plugin {
+  const resolverLoader = new ResolverLoader(process.cwd(), false, params?.overrides);
   let server: ViteDevServer;
   const virtualDeps: Map<string, string[]> = new Map();
   const notViteDeps = new Set<string>();

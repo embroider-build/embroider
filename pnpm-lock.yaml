@@ -1032,7 +1032,7 @@ importers:
         specifier: ^7.2.0
         version: 7.2.0
       rolldown:
-        specifier: 1.0.0-rc.9
+        specifier: ^1.0.0-rc.9
         version: 1.0.0-rc.9
       vite:
         specifier: ^8.0.0

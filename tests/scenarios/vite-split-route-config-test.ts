@@ -19,12 +19,11 @@ minimalAppScenarios
     app.mergeFiles({
       'vite.config.mjs': `
         import { defineConfig } from 'vite';
-        import { extensions, ember, hbs } from '@embroider/vite';
+        import { extensions, ember } from '@embroider/vite';
         import { babel } from '@rollup/plugin-babel';
 
         export default defineConfig({
           plugins: [
-            hbs(),
             ember({
               splitAtRoutes: ['people'],
             }),

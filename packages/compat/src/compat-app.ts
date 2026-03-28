@@ -281,7 +281,7 @@ export default class CompatApp {
 
     let emberSource = this.legacyEmberAppInstance.project.addons.find(a => a.name === 'ember-source');
     if (emberSource && (emberSource.pkg['ember-addon']?.['version'] ?? 1) >= 2) {
-      let paths = (emberSource as any).paths;
+      let paths = (emberSource as any).paths || {};
       // there's stuff in the ecosystem that assumes these files will always be
       // present in the vendor tree. But when ember-source is V2, it cannot put
       // them there, so @embroider/compat will fill in defaults. The bundles are

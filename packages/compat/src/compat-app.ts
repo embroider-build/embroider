@@ -281,7 +281,6 @@ export default class CompatApp {
 
     let emberSource = this.legacyEmberAppInstance.project.addons.find(a => a.name === 'ember-source');
     if (emberSource && (emberSource.pkg['ember-addon']?.['version'] ?? 1) >= 2) {
-      let paths = (emberSource as any).paths || {};
       // there's stuff in the ecosystem that assumes these files will always be
       // present in the vendor tree. But when ember-source is V2, it cannot put
       // them there, so @embroider/compat will fill in defaults. The bundles are
@@ -290,14 +289,12 @@ export default class CompatApp {
       //
       // The template compiler is still here so that apps using a V2 ember can
       // still app.import the traditional runtime template compiler.
-      if (paths['vendor/ember/ember.js']) {
+      //
+      // When ember-source no longer provides `paths` (v7+), these legacy vendor
+      // files are not needed at all — ember-source is fully ESM.
+      if ((emberSource as any).paths) {
         trees.push(writeFile('vendor/ember/ember.js', () => ''));
-      }
-      if (paths['vendor/ember/ember-testing.js']) {
         trees.push(writeFile('vendor/ember/ember-testing.js', () => ''));
-      }
-
-      if (paths['vendor/ember/ember-template-compiler.js']) {
         const templateCompilerSrc = readFileSync(join(emberSource.root, 'dist/ember-template-compiler.js'), 'utf8');
         trees.push(writeFile('vendor/ember/ember-template-compiler.js', () => templateCompilerSrc));
       }

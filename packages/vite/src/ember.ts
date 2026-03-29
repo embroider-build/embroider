@@ -28,11 +28,22 @@ export function ember(params?: {
    * `defaultRolldownSharedPlugins`.
    */
   rolldownSharedPlugins?: string[];
+
+  /**
+   * Enables per-route code splitting. Any route names that match these patterns
+   * will be split out of the initial app payload. If you use this, you must
+   * also add @embroider/router to your app.
+   *
+   * This is especially useful for minimal apps that don't have an
+   * ember-cli-build.js where splitAtRoutes would traditionally be configured.
+   */
+  splitAtRoutes?: (RegExp | string)[];
 }) {
+  let overrides = params?.splitAtRoutes ? { splitAtRoutes: params.splitAtRoutes } : undefined;
   return [
     warnRootUrl(),
     templateTag(),
-    resolver(),
+    resolver({ overrides }),
     {
       name: 'vite-plugin-ember-config',
       async config(config: UserConfig, env: ConfigEnv) {
@@ -60,7 +71,8 @@ export function ember(params?: {
 
         const emberRollupPlugins = sharedRolldownPlugins(
           params?.rolldownSharedPlugins ?? defaultRolldownSharedPlugins,
-          config.plugins
+          config.plugins,
+          overrides
         );
 
         if (hasRolldown(this, config)) {
@@ -225,7 +237,8 @@ function findPlugin(plugins: UserConfig['plugins'], name: string): Plugin | unde
 
 function sharedRolldownPlugins<T extends { name: string }>(
   sharedPluginNames: string[],
-  plugins: UserConfig['plugins']
+  plugins: UserConfig['plugins'],
+  overrides?: { splitAtRoutes?: (RegExp | string)[] }
 ): NonNullable<UserConfig['plugins']> {
   return sharedPluginNames
     .map(name => {
@@ -233,7 +246,7 @@ function sharedRolldownPlugins<T extends { name: string }>(
       if (matched) {
         if (name === 'embroider-resolver') {
           // special case. Needs different config.
-          return resolver({ rolldown: true });
+          return resolver({ rolldown: true, overrides });
         }
         return matched;
       }

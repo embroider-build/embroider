@@ -8,12 +8,18 @@ import { watch as fsWatch } from 'fs';
 
 type SplitRouteConfigType = { type: 'string'; value: string } | { type: 'regex'; value: string };
 
+export interface ResolverLoaderOverrides {
+  splitAtRoutes?: (RegExp | string)[];
+}
+
 export class ResolverLoader {
   #resolver: Resolver | undefined;
   #configFile: string;
   #watcher: FSWatcher | undefined;
+  #overrides: ResolverLoaderOverrides;
 
-  constructor(readonly appRoot: string, watch = false) {
+  constructor(readonly appRoot: string, watch = false, overrides?: ResolverLoaderOverrides) {
+    this.#overrides = overrides ?? {};
     this.#configFile = join(locateEmbroiderWorkingDir(this.appRoot), 'resolver.json');
     if (watch) {
       this.#watcher = fsWatch(this.#configFile, { persistent: false }, () => {
@@ -46,7 +52,10 @@ export class ResolverLoader {
 
         config = rawConfig;
       } else {
-        config = buildResolverOptions({});
+        config = buildResolverOptions({ splitAtRoutes: this.#overrides.splitAtRoutes });
+      }
+      if (this.#overrides.splitAtRoutes) {
+        config.splitAtRoutes = this.#overrides.splitAtRoutes;
       }
       this.#resolver = new Resolver(config);
     }

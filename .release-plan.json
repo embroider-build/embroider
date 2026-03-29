@@ -14,17 +14,13 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.1.15",
-      "newVersion": "4.1.16",
+      "oldVersion": "4.1.16",
+      "newVersion": "4.1.17",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
@@ -33,21 +29,7 @@
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.4.6",
-      "newVersion": "4.4.7",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.4.7"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -56,17 +38,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.20.1",
-      "newVersion": "1.20.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.20.2"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -78,31 +50,21 @@
       "oldVersion": "3.0.2"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "patch",
-      "oldVersion": "1.3.5",
-      "newVersion": "1.3.6",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "1.3.6"
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.7.0",
-      "newVersion": "1.7.1",
+      "oldVersion": "1.7.1",
+      "newVersion": "1.7.2",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-03-24)\n\n* @embroider/compat 4.1.16 (patch)\n* @embroider/core 4.4.7 (patch)\n* @embroider/macros 1.20.2 (patch)\n* @embroider/template-tag-codemod 1.3.6 (patch)\n* @embroider/vite 1.7.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/template-tag-codemod`\n  * [#2661](https://github.com/embroider-build/embroider/pull/2661) cleaning up AMD template compiler deprecation ([@ef4](https://github.com/ef4))\n* `@embroider/macros`\n  * [#2688](https://github.com/embroider-build/embroider/pull/2688) Robustify the global macros variable ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-03-29)\n\n* @embroider/compat 4.1.17 (patch)\n* @embroider/vite 1.7.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2695](https://github.com/embroider-build/embroider/pull/2695) Conditional file writes for Ember modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#2696](https://github.com/embroider-build/embroider/pull/2696) Fix paths check to use existence rather than value-as-key lookup ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### :house: Internal\n* `@embroider/vite`\n  * [#2693](https://github.com/embroider-build/embroider/pull/2693) Fix CI: use caret range for rolldown devDependency ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### Committers: 2\n- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

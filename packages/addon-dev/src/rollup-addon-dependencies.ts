@@ -1,4 +1,5 @@
 import type { Plugin } from 'rollup';
+import { packageUpSync } from 'package-up';
 import { readJsonSync } from 'fs-extra';
 import {
   emberVirtualPackages,
@@ -13,6 +14,7 @@ const compilationModules = new Set(
 
 function resolvableDependencies(): Set<string> {
   let deps = new Set<string>();
+
   let pkg = readJsonSync('package.json');
   if (pkg.dependencies) {
     for (let name of Object.keys(pkg.dependencies)) {
@@ -22,6 +24,28 @@ function resolvableDependencies(): Set<string> {
   if (pkg.peerDependencies) {
     for (let name of Object.keys(pkg.peerDependencies)) {
       deps.add(name);
+    }
+  }
+
+  // well.. resolvable with embroider plugins
+  for (let dep of deps) {
+    let depEntry = require.resolve(dep);
+    if (!depEntry) continue;
+
+    let depManifestPath = packageUpSync({ cwd: depEntry });
+    if (!depManifestPath) continue;
+
+    let depPkg = readJsonSync(depManifestPath);
+    let renamedModules = depPkg['ember-addon']?.['renamed-modules'] || {};
+    for (let name of Object.keys(renamedModules)) {
+      let [first, second] = name.split('/');
+
+      if (first.startsWith('@')) {
+        deps.add(`${first}/${second}`);
+        continue;
+      }
+
+      deps.add(first);
     }
   }
   return deps;

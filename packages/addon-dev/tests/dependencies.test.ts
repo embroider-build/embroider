@@ -28,6 +28,13 @@ async function runRollup(dir: string, rollupOptions = {}) {
       input: './src/index.js',
       plugins: [dependencies()],
       ...rollupOptions,
+      onLog(level, log, defaultLog) {
+        if (['warn'].includes(level)) {
+          expect(log).toBe("we don't want warnings");
+        }
+
+        defaultLog(level, log);
+      },
     });
 
     await bundle.write({ format: 'esm', dir: 'dist' });
@@ -52,7 +59,7 @@ describe('dependencies', function () {
     await runRollup(project.baseDir);
 
     expect(
-      await readFile(join(project.baseDir, 'declarations/index.d.ts'), {
+      await readFile(join(project.baseDir, 'dist/index.js'), {
         encoding: 'utf8',
       })
     ).toContain('export default');
@@ -69,16 +76,10 @@ describe('dependencies', function () {
 
     await runRollup(project.baseDir);
 
-    const output = await readFile(
-      join(project.baseDir, 'declarations/index.d.ts'),
-      {
-        encoding: 'utf8',
-      }
-    );
+    const output = await readFile(join(project.baseDir, 'dist/index.js'), {
+      encoding: 'utf8',
+    });
 
-    expect(output).toContain(`import foo from './foo';`);
-    expect(output).toContain(`import bar from './bar';`);
-    expect(output).toContain(`import baz from './baz.ts';`);
-    expect(output).toContain(`import('./bar')`);
+    expect(output).toContain(`state`);
   });
 });

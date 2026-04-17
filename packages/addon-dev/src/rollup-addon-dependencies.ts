@@ -69,6 +69,7 @@ export default function emberExternals(): Plugin {
         // need to deal with.
         return;
       }
+      console.log(pkgName, deps.has(pkgName));
 
       if (
         deps.has(pkgName) ||

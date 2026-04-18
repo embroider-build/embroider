@@ -139,22 +139,40 @@ describe('audit', function () {
   test(`discovers html, js, and hbs`, async function () {
     let result = await audit();
     expect(result.findings).toEqual([]);
-    expect(Object.keys(result.modules)).toMatchInlineSnapshot(`
+
+    function cleanHashes(items: string[]) {
+      return items
+        .map(item => {
+          if (!item.startsWith('./node_modules/ember-source')) return item;
+          return item.replace(/-[A-Za-z0-9-]{8}.js/, '-XYZ.js');
+        })
+        .sort();
+    }
+
+    let modules = cleanHashes(Object.keys(result.modules));
+    expect(modules).toMatchInlineSnapshot(`
       [
-        "./index.html",
         "./app.js",
         "./hello.hbs",
+        "./index.html",
         "./node_modules/ember-source/dist/packages/@ember/template-factory/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/opcode-compiler/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/util/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/encoder/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/destroyable/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/global-context/index.js",
+        "./node_modules/ember-source/dist/packages/@glimmer/validator/index.js",
         "./node_modules/ember-source/dist/packages/@glimmer/vm/index.js",
         "./node_modules/ember-source/dist/packages/@glimmer/wire-format/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/manager/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/global-context/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/destroyable/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/reference/index.js",
-        "./node_modules/ember-source/dist/packages/@glimmer/validator/index.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/array-utils-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/assert-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/capabilities-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/collections-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/debug-to-string-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/encoder-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/flags-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/index-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/object-utils-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/present-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/reference-XYZ.js",
+        "./node_modules/ember-source/dist/packages/shared-chunks/registers-XYZ.js",
       ]
     `);
   });

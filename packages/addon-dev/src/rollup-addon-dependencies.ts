@@ -13,7 +13,6 @@ const compilationModules = new Set(
 
 function resolvableDependencies(): Set<string> {
   let deps = new Set<string>();
-
   let pkg = readJsonSync('package.json');
   if (pkg.dependencies) {
     for (let name of Object.keys(pkg.dependencies)) {
@@ -25,7 +24,6 @@ function resolvableDependencies(): Set<string> {
       deps.add(name);
     }
   }
-
   return deps;
 }
 

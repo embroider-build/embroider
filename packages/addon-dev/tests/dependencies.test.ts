@@ -12,7 +12,6 @@ async function generateProject(src: {}): Promise<Project> {
       src,
     },
   });
-  project.linkDevDependency('ember-source', { baseDir: __dirname });
 
   await project.write();
 

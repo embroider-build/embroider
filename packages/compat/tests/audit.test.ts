@@ -141,13 +141,15 @@ describe('audit', function () {
     expect(result.findings).toEqual([]);
 
     function cleanHashes(items: string[]) {
-      return items.map(item => {
-        if (!item.startsWith('./node_modules/ember-source')) return item;
-        return item.replace(/-[A-Za-z0-9-]{8}.js/, '-XYZ.js');
-      }).sort();
+      return items
+        .map(item => {
+          if (!item.startsWith('./node_modules/ember-source')) return item;
+          return item.replace(/-[A-Za-z0-9-]{8}.js/, '-XYZ.js');
+        })
+        .sort();
     }
 
-    let modules = cleanHashes(Object.keys(result.modules))
+    let modules = cleanHashes(Object.keys(result.modules));
     expect(modules).toMatchInlineSnapshot(`
       [
         "./app.js",

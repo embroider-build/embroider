@@ -1,5 +1,4 @@
 import type { Plugin } from 'rollup';
-import { packageUpSync } from 'package-up';
 import { readJsonSync } from 'fs-extra';
 import {
   emberVirtualPackages,
@@ -7,7 +6,6 @@ import {
   packageName,
   templateCompilationModules,
 } from '@embroider/core';
-import { resolve } from 'node:path';
 
 const compilationModules = new Set(
   templateCompilationModules.map((m) => m.module)

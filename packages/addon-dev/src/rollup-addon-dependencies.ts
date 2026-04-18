@@ -28,31 +28,6 @@ function resolvableDependencies(): Set<string> {
     }
   }
 
-  // well.. resolvable with embroider plugins
-  // this feels bad, to hard-code ember-source.
-  // but ember-source is always an implicit peer.
-  // how would rollup eever know of its existence?
-  for (let dep of [...deps.values(), 'ember-source']) {
-    let depEntry = resolve(dep);
-    if (!depEntry) continue;
-
-    let depManifestPath = packageUpSync({ cwd: depEntry });
-    if (!depManifestPath) continue;
-
-    debugger;
-    let depPkg = readJsonSync(depManifestPath);
-    let renamedModules = depPkg['ember-addon']?.['renamed-modules'] || {};
-    for (let name of Object.keys(renamedModules)) {
-      let [first, second] = name.split('/');
-
-      if (first.startsWith('@')) {
-        deps.add(`${first}/${second}`);
-        continue;
-      }
-
-      deps.add(first);
-    }
-  }
   return deps;
 }
 
@@ -64,7 +39,6 @@ export default function emberExternals(): Plugin {
 
     buildStart() {
       this.addWatchFile('package.json');
-      debugger;
       deps = resolvableDependencies();
     },
 
@@ -75,8 +49,6 @@ export default function emberExternals(): Plugin {
         // need to deal with.
         return;
       }
-      debugger;
-      console.log(pkgName, deps.has(pkgName));
 
       if (
         deps.has(pkgName) ||

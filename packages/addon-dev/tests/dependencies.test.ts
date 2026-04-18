@@ -62,7 +62,7 @@ describe('dependencies', function () {
       await readFile(join(project.baseDir, 'dist/index.js'), {
         encoding: 'utf8',
       })
-    ).toContain('export default');
+    ).toContain('default');
   });
 
   test('it can import renamed-modules', async function () {

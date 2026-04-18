@@ -1,0 +1,84 @@
+import { describe, test, afterEach, expect } from 'vitest';
+
+import dependencies from '../src/rollup-addon-dependencies';
+import { Project } from 'scenario-tester';
+import { rollup } from 'rollup';
+import { readFile } from 'fs-extra';
+import { join } from 'path';
+
+async function generateProject(src: {}): Promise<Project> {
+  const project = new Project('my-addon', {
+    files: {
+      src,
+    },
+  });
+
+  await project.write();
+
+  return project;
+}
+
+async function runRollup(dir: string, rollupOptions = {}) {
+  const currentDir = process.cwd();
+  process.chdir(dir);
+
+  try {
+    const bundle = await rollup({
+      input: './src/index.js',
+      plugins: [dependencies()],
+      ...rollupOptions,
+      onLog(level, log, defaultLog) {
+        if (['warn'].includes(level)) {
+          expect(log).toBe("we don't want warnings");
+        }
+
+        defaultLog(level, log);
+      },
+    });
+
+    await bundle.write({ format: 'esm', dir: 'dist' });
+  } finally {
+    process.chdir(currentDir);
+  }
+}
+
+describe('dependencies', function () {
+  let project: Project | null;
+
+  afterEach(() => {
+    project?.dispose();
+    project = null;
+  });
+
+  test('it works without imports', async function () {
+    project = await generateProject({
+      'index.js': 'export default 123',
+    });
+
+    await runRollup(project.baseDir);
+
+    expect(
+      await readFile(join(project.baseDir, 'dist/index.js'), {
+        encoding: 'utf8',
+      })
+    ).toContain('default');
+  });
+
+  test('it can import renamed-modules', async function () {
+    project = await generateProject({
+      'index.js': `
+        import { trackedObject } from '@ember/reactive/collections';
+
+        export const state = trackedObject();
+      `,
+    });
+
+    await runRollup(project.baseDir);
+
+    const output = await readFile(join(project.baseDir, 'dist/index.js'), {
+      encoding: 'utf8',
+    });
+
+    expect(output).toContain(`state`);
+  });
+});

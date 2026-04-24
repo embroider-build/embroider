@@ -1759,6 +1759,9 @@ importers:
       ember-cli-fastboot:
         specifier: ^4.1.1
         version: 4.1.5(ember-source@3.28.12)
+      ember-cli-htmlbars-7:
+        specifier: npm:ember-cli-htmlbars@^7.0.0
+        version: /ember-cli-htmlbars@7.0.1(@babel/core@7.29.0)(ember-source@3.28.12)
       ember-cli-latest:
         specifier: npm:ember-cli@latest
         version: /ember-cli@6.12.0(@babel/core@7.29.0)
@@ -13909,6 +13912,29 @@ packages:
       walk-sync: 2.2.0
     transitivePeerDependencies:
       - supports-color
+
+  /ember-cli-htmlbars@7.0.1(@babel/core@7.29.0)(ember-source@3.28.12):
+    resolution: {integrity: sha512-bNVAwTvBOmk7KjGCN0Vq81w8FAWQ1zXwCS1CUUHTeWdcFypRsv0qUEkTtwxho4H3BYaoqMCXPS45Js9WWtEXYw==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@babel/core': '>= 7'
+      ember-source: '>= 4.0.0'
+    dependencies:
+      '@babel/core': 7.29.0
+      '@ember/edition-utils': 1.2.0
+      babel-plugin-ember-template-compilation: 2.3.0
+      broccoli-debug: 0.6.5
+      broccoli-persistent-filter: 3.1.3
+      broccoli-plugin: 4.0.7
+      ember-source: 3.28.12(@babel/core@7.29.0)
+      fs-tree-diff: 2.0.1
+      heimdalljs-logger: 0.1.10
+      js-string-escape: 1.0.1
+      silent-error: 1.1.1
+      walk-sync: 4.0.1
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
 
   /ember-cli-inject-live-reload@1.10.2:
     resolution: {integrity: sha512-yFvZE4WFyWjzMJ6MTYIyjCXpcJNFMTaZP61JXITMkXhSkhuDkzMD/XfwR5+fr004TYcwrbNWpg1oGX5DbOgcaQ==}

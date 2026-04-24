@@ -29,7 +29,7 @@
     "@embroider/macros": "^1.18.1",
     "@embroider/shared-internals": "workspace:*",
     "assert-never": "^1.2.1",
-    "babel-plugin-ember-template-compilation": "~2.3.0",
+    "babel-plugin-ember-template-compilation": "^2.3.0",
     "broccoli-node-api": "^1.7.0",
     "broccoli-persistent-filter": "^3.1.2",
     "broccoli-plugin": "^4.0.7",

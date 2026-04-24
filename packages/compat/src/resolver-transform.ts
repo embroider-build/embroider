@@ -209,7 +209,7 @@ class TemplateResolver implements ASTPlugin {
       case 'component':
       case 'modifier':
       case 'helper': {
-        let name = this.env.meta.jsutils.bindImport(resolution.specifier, resolution.importedName, parentPath, {
+        let name = this.env.meta.jsutils.bindImport(resolution.specifier, resolution.importedName, parentPath as any, {
           nameHint: resolution.nameHint,
         });
         setter(parentPath.node, this.env.syntax.builders.path(name));

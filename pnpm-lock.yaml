@@ -6286,7 +6286,7 @@ packages:
     engines: {node: '>= 16.0.0'}
     dependencies:
       '@glimmer/interfaces': 0.92.0
-      '@glimmer/syntax': 0.92.0
+      '@glimmer/syntax': 0.92.3
       '@glimmer/util': 0.92.0
       '@glimmer/vm': 0.92.0
       '@glimmer/wire-format': 0.92.3

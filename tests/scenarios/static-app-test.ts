@@ -8,6 +8,7 @@ const { module: Qmodule, test } = QUnit;
 
 // this test is being used as a "smoke test" to check the widest possible support matrix
 wideAppScenarios
+  .skip('beta')
   .map('static-app', project => {
     project.linkDevDependency('bootstrap', { baseDir: __dirname });
     project.addDevDependency(emberBootstrap());

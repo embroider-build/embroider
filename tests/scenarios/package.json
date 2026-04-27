@@ -73,6 +73,7 @@
     "ember-cli-babel-latest": "npm:ember-cli-babel@latest",
     "ember-cli-beta": "npm:ember-cli@beta",
     "ember-cli-fastboot": "^4.1.1",
+    "ember-cli-htmlbars-7": "npm:ember-cli-htmlbars@^7.0.0",
     "ember-cli-latest": "npm:ember-cli@latest",
     "ember-composable-helpers": "^4.4.1",
     "ember-data": "~3.28.0",

@@ -4,6 +4,7 @@ import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { dirname } from 'path';
+import { sync as pkgUp } from 'pkg-up';
 const { module: Qmodule, test } = QUnit;
 
 // this test is being used as a "smoke test" to check the widest possible support matrix
@@ -405,7 +406,37 @@ function emberBootstrap() {
   // https://github.com/kaliber5/ember-bootstrap/pull/1750
   let modifiers = Project.fromDir(dirname(require.resolve('@ember/render-modifiers')), { linkDeps: true });
   modifiers.removeDependency('ember-source');
+
   let eb = Project.fromDir(dirname(require.resolve('ember-bootstrap')), { linkDeps: true });
   eb.addDependency(modifiers);
+
+  // update sub-dependencies
+  [
+    'ember-concurrency',
+    'ember-element-helper',
+    'ember-in-element-polyfill',
+    'ember-popper-modifier',
+    'ember-ref-bucket',
+  ].forEach(name => {
+    let project = eb.dependencyProjects().find(p => p.name === name);
+
+    if (!project) {
+      project = Project.fromDir(dirname(require.resolve(`${name}/package.json`)), { linkDeps: true });
+      eb.addDependency(project);
+    }
+
+    project.addDependency(
+      Project.fromDir(dirname(require.resolve('ember-cli-htmlbars-7/package.json')), { linkDeps: true })
+    );
+  });
+
+  // update ember bootstrap
+  eb.addDependency(Project.fromDir(dirname(require.resolve('ember-cli-htmlbars-7/package.json')), { linkDeps: true }));
+  eb.addDependency(
+    Project.fromDir(dirname(pkgUp({ cwd: require.resolve('babel-plugin-ember-template-compilation-3') })!), {
+      linkDeps: true,
+    })
+  );
+
   return eb;
 }

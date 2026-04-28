@@ -231,13 +231,10 @@ routerApp.forEachScenario(scenario => {
       app = await scenario.prepare();
     });
 
-    // type checks no longer pass on ember-release
-    if (scenario.name !== 'release-router') {
-      test(`type checks`, async function (assert) {
-        let result = await app.execute('pnpm tsc');
-        assert.equal(result.exitCode, 0, result.output);
-      });
-    }
+    test(`type checks`, async function (assert) {
+      let result = await app.execute('pnpm tsc');
+      assert.equal(result.exitCode, 0, result.output);
+    });
 
     test(`CLASSIC pnpm test:ember`, async function (assert) {
       let result = await app.execute('pnpm test:ember', {

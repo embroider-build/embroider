@@ -241,7 +241,7 @@ importers:
         specifier: ^2.0.0
         version: 2.1.1
       babel-plugin-ember-template-compilation:
-        specifier: ~2.3.0
+        specifier: ^2.3.0
         version: 2.3.0
       babel-plugin-syntax-dynamic-import:
         specifier: ^6.18.0
@@ -419,7 +419,7 @@ importers:
         specifier: ^1.2.1
         version: 1.4.0
       babel-plugin-ember-template-compilation:
-        specifier: ~2.3.0
+        specifier: ^2.3.0
         version: 2.3.0
       broccoli-node-api:
         specifier: ^1.7.0
@@ -616,7 +616,7 @@ importers:
         specifier: ^7.3.6
         version: 7.7.1
       babel-plugin-ember-template-compilation:
-        specifier: ~2.3.0
+        specifier: ^2.3.0
         version: 2.3.0
       code-equality-assertions:
         specifier: ^0.9.0
@@ -1709,7 +1709,7 @@ importers:
         specifier: ^7.3.6
         version: 7.7.1
       babel-plugin-ember-template-compilation:
-        specifier: ~2.3.0
+        specifier: ^2.3.0
         version: 2.3.0
       bootstrap:
         specifier: ^4.3.1
@@ -6286,7 +6286,7 @@ packages:
     engines: {node: '>= 16.0.0'}
     dependencies:
       '@glimmer/interfaces': 0.92.0
-      '@glimmer/syntax': 0.92.0
+      '@glimmer/syntax': 0.92.3
       '@glimmer/util': 0.92.0
       '@glimmer/vm': 0.92.0
       '@glimmer/wire-format': 0.92.3

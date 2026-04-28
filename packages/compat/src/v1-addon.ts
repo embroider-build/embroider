@@ -120,9 +120,13 @@ export default class V1Addon {
     // our macros don't run here in stage1
     plugins = plugins.filter((p: any) => !isEmbroiderMacrosPlugin(p));
     if (plugins.length > 0 || hasTemplateTag) {
-      let compilerPath = require.resolve('ember-source/dist/ember-template-compiler.js', {
-        paths: [findTopmostAddon(this.addonInstance).parent.root],
-      });
+      let compilerPath;
+      try {
+        compilerPath = require.resolve('ember-source/dist/ember-template-compiler.js', {
+          paths: [findTopmostAddon(this.addonInstance).parent.root],
+        });
+      } catch {}
+
       let opts: EtcOptions = {
         compilerPath,
         targetFormat: 'hbs',

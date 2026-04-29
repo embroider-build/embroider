@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2026-04-29)
+
+* @embroider/compat 3.9.4 (patch)
+* @embroider/core 3.5.10 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`
+  * [#2709](https://github.com/embroider-build/embroider/pull/2709) remove pin on babel-plugin-ember-template-compilation ([@mansona](https://github.com/mansona))
+
+#### :house: Internal
+* [#2714](https://github.com/embroider-build/embroider/pull/2714) update release plan ([@mansona](https://github.com/mansona))
+* [#2710](https://github.com/embroider-build/embroider/pull/2710) fix CI for stable branch ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2025-12-02)
 
 * @embroider/router 2.1.12 (patch)

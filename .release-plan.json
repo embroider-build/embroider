@@ -7,26 +7,36 @@
       "oldVersion": "3.1.3"
     },
     "@embroider/compat": {
-      "oldVersion": "3.9.3"
-    },
-    "@embroider/core": {
-      "oldVersion": "3.5.9"
-    },
-    "@embroider/hbs-loader": {
-      "oldVersion": "3.0.5"
-    },
-    "@embroider/router": {
       "impact": "patch",
-      "oldVersion": "2.1.11",
-      "newVersion": "2.1.12",
-      "tagName": "v2-x",
+      "oldVersion": "3.9.3",
+      "newVersion": "3.9.4",
+      "tagName": "v3-x",
       "constraints": [
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/router/package.json"
+      "pkgJSONPath": "./packages/compat/package.json"
+    },
+    "@embroider/core": {
+      "impact": "patch",
+      "oldVersion": "3.5.9",
+      "newVersion": "3.5.10",
+      "tagName": "v3-x",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
+    },
+    "@embroider/hbs-loader": {
+      "oldVersion": "3.0.5"
+    },
+    "@embroider/router": {
+      "oldVersion": "2.1.12"
     },
     "@embroider/shared-internals": {
       "oldVersion": "2.9.2"
@@ -41,5 +51,5 @@
       "oldVersion": "4.1.2"
     }
   },
-  "description": "## Release (2025-12-02)\n\n* @embroider/router 2.1.12 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/router`\n  * [#2634](https://github.com/embroider-build/embroider/pull/2634) Widen test-waiters range in @embroider/router ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-04-29)\n\n* @embroider/compat 3.9.4 (patch)\n* @embroider/core 3.5.10 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`, `@embroider/core`\n  * [#2709](https://github.com/embroider-build/embroider/pull/2709) remove pin on babel-plugin-ember-template-compilation ([@mansona](https://github.com/mansona))\n\n#### :house: Internal\n* [#2714](https://github.com/embroider-build/embroider/pull/2714) update release plan ([@mansona](https://github.com/mansona))\n* [#2710](https://github.com/embroider-build/embroider/pull/2710) fix CI for stable branch ([@mansona](https://github.com/mansona))\n\n#### Committers: 1\n- Chris Manson ([@mansona](https://github.com/mansona))\n"
 }

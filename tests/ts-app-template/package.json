@@ -15,7 +15,7 @@
     "./*": "./app/*"
   },
   "scripts": {
-    "build": "ember build --environment=production",
+    "build": "vite build",
     "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",
     "lint:css": "stylelint \"**/*.css\"",
     "lint:css:fix": "concurrently \"npm:lint:css -- --fix\"",
@@ -24,9 +24,9 @@
     "lint:hbs:fix": "ember-template-lint . --fix",
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
-    "start": "ember serve",
-    "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
-    "test:ember": "ember test"
+    "start": "vite",
+    "test": "vite build --mode test && ember test --path dist",
+    "test:ember": "vite build --mode test && ember test --path dist"
   },
   "devDependencies": {
     "@babel/core": "^7.22.20",

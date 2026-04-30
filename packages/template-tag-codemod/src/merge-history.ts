@@ -8,6 +8,12 @@ export interface MergeHistoryOptions {
   afterCommit: string;
   outputBranch: string;
   allowOverwrite: boolean;
+  //  when true, .git-blame-ignore-revs won't be modified when using merge-history.
+  // This is only useful if the change on this file causes a problem with your process.
+  // For instance, if your migration to template tags includes a lot of PRs that
+  // conflict with each other, and the platform that hosts your code doesn't manage
+  // automated ways to fix conflicts (e.g. no support for .gitattributes)
+  skipIgnoreRev: boolean;
 }
 
 function execSync(cmd: string, opts?: { cwd?: string }) {
@@ -177,7 +183,9 @@ export async function mergeHistory(opts: MergeHistoryOptions): Promise<void> {
   applyCodemod(workDir, changedFiles, endpoints);
   execSync(`git commit --no-verify -m "applied codemod"`, { cwd: workDir });
   let codemodCommit = head({ cwd: workDir });
-  addBlameIgnoreFile(workDir, codemodCommit);
+  if (!opts.skipIgnoreRev) {
+    addBlameIgnoreFile(workDir, codemodCommit);
+  }
   execSync(`git checkout -b ${opts.outputBranch}`, { cwd: workDir });
   rmSync(workDir, { recursive: true });
   execSync(`git worktree prune`);

@@ -118,6 +118,7 @@ program
     'template-tag-codemod'
   )
   .option('--allowOverwrite <value>', 'Destructively replace the existing outputBranch', trueFalseOnly, false)
+  .option('--skipIgnoreRev', `Disables modification of .git-blame-ignore-revs when using merge-history.`, false)
   .action(async (beforeCommit, afterCommit, args) => {
     let { mergeHistory } = await import('./merge-history.js');
     await mergeHistory({ beforeCommit, afterCommit, ...args });

@@ -23,6 +23,7 @@
     "packages/core",
     "packages/reverse-exports",
     "packages/addon-shim",
+    "packages/broccoli-side-watch"
   ],
   "references": [
     { "path": "packages/reverse-exports" },
@@ -33,6 +34,7 @@
     { "path": "packages/template-tag-codemod" },
     { "path": "packages/legacy-inspector-support" },
     { "path": "packages/addon-shim" },
+    { "path": "packages/broccoli-side-watch" },
     { "path": "tests/scenarios" },
   ]
 }

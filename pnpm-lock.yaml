@@ -1350,8 +1350,8 @@ importers:
         specifier: ^7.26.11
         version: 7.26.11
       ember-cli-htmlbars:
-        specifier: ^6.1.0
-        version: 6.3.0
+        specifier: ^7.0.0
+        version: 7.0.1(@babel/core@7.29.0)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))
     devDependencies:
       '@babel/core':
         specifier: ^7.19.3
@@ -23104,6 +23104,23 @@ snapshots:
       semver: 7.7.4
       silent-error: 1.1.1
       walk-sync: 2.2.0
+    transitivePeerDependencies:
+      - supports-color
+
+  ember-cli-htmlbars@7.0.1(@babel/core@7.29.0)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2)):
+    dependencies:
+      '@babel/core': 7.29.0
+      '@ember/edition-utils': 1.2.0
+      babel-plugin-ember-template-compilation: 2.4.1
+      broccoli-debug: 0.6.5
+      broccoli-persistent-filter: 3.1.3
+      broccoli-plugin: 4.0.7
+      ember-source: 4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2)
+      fs-tree-diff: 2.0.1
+      heimdalljs-logger: 0.1.10
+      js-string-escape: 1.0.1
+      silent-error: 1.1.1
+      walk-sync: 4.0.1
     transitivePeerDependencies:
       - supports-color
 

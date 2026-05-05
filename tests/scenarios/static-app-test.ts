@@ -555,5 +555,28 @@ function emberBootstrap() {
   modifiers.removeDependency('ember-source');
   let eb = Project.fromDir(dirname(require.resolve('ember-bootstrap')), { linkDeps: true });
   eb.addDependency(modifiers);
+  // update ember bootstrap's version of ember-cli-htmlbars
+  eb.addDependency(Project.fromDir(dirname(require.resolve('ember-cli-htmlbars-7/package.json')), { linkDeps: true }));
+
+  // update ember-bootstrap sub-dependencies
+  [
+    'ember-concurrency',
+    'ember-element-helper',
+    'ember-in-element-polyfill',
+    'ember-popper-modifier',
+    'ember-ref-bucket',
+  ].forEach(name => {
+    let project = eb.dependencyProjects().find(p => p.name === name);
+
+    if (!project) {
+      project = Project.fromDir(dirname(require.resolve(`${name}/package.json`)), { linkDeps: true });
+      eb.addDependency(project);
+    }
+
+    project.addDependency(
+      Project.fromDir(dirname(require.resolve('ember-cli-htmlbars-7/package.json')), { linkDeps: true })
+    );
+  });
+
   return eb;
 }

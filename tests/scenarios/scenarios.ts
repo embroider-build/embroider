@@ -99,6 +99,26 @@ function patchTestWaiters(project: Project) {
   project.addDevDependency(testHelpers);
 }
 
+function updateEmberQunit(project: Project) {
+  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-9' });
+
+  (project.files['tests'] as any)['test-helper.js'] = `import Application from 'app-template/app';
+import config from 'app-template/config/environment';
+import * as QUnit from 'qunit';
+import { setApplication } from '@ember/test-helpers';
+import { setup } from 'qunit-dom';
+import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+export function start() {
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  // some test suites don't provide their own tests so we need to include at least one for CI to pass
+  setupEmberOnerrorValidation();
+  qunitStart({ loadTests: false });
+}
+`;
+}
+
 async function release(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
@@ -111,8 +131,8 @@ async function release(project: Project) {
   project.linkDevDependency('ember-page-title', { baseDir: __dirname, resolveName: 'ember-page-title-9' });
   project.removeDevDependency('ember-cli-app-version');
   project.linkDevDependency('@glimmer/component', { baseDir: __dirname });
-  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-9' });
 
+  updateEmberQunit(project);
   patchTestWaiters(project);
 }
 
@@ -130,8 +150,8 @@ async function beta(project: Project) {
   project.linkDevDependency('ember-page-title', { baseDir: __dirname, resolveName: 'ember-page-title-9' });
   project.removeDevDependency('ember-cli-app-version');
   project.linkDevDependency('@glimmer/component', { baseDir: __dirname });
-  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-9' });
 
+  updateEmberQunit(project);
   patchTestWaiters(project);
 }
 
@@ -149,8 +169,8 @@ async function canary(project: Project) {
   project.linkDevDependency('ember-page-title', { baseDir: __dirname, resolveName: 'ember-page-title-9' });
   project.removeDevDependency('ember-cli-app-version');
   project.linkDevDependency('@glimmer/component', { baseDir: __dirname });
-  project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-9' });
 
+  updateEmberQunit(project);
   patchTestWaiters(project);
 }
 

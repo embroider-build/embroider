@@ -4,6 +4,7 @@ import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { dirname } from 'path';
+import pkgUp from 'pkg-up';
 const { module: Qmodule, test } = QUnit;
 
 // this test is being used as a "smoke test" to check the widest possible support matrix
@@ -559,7 +560,7 @@ function emberBootstrap() {
     let project = eb.dependencyProjects().find(p => p.name === name);
 
     if (!project) {
-      project = Project.fromDir(dirname(require.resolve(`${name}/package.json`)), { linkDeps: true });
+      project = Project.fromDir(dirname(pkgUp.sync({ cwd: require.resolve(`${name}`) })!), { linkDeps: true });
       eb.addDependency(project);
     }
 

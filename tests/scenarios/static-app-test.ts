@@ -146,7 +146,9 @@ wideAppScenarios
         routes: {
           'ember-data-example.js': `
             import Route from '@ember/routing/route';
-            import { inject as service } from '@ember/service';
+            import * as emberService from '@ember/service';
+
+            const service = emberService.service ?? emberService.inject;
 
             export default class EmberDataExampleRoute extends Route {
               @service() store;
@@ -550,22 +552,10 @@ wideAppScenarios
   });
 
 function emberBootstrap() {
-  // https://github.com/kaliber5/ember-bootstrap/pull/1750
-  let modifiers = Project.fromDir(dirname(require.resolve('@ember/render-modifiers')), { linkDeps: true });
-  modifiers.removeDependency('ember-source');
   let eb = Project.fromDir(dirname(require.resolve('ember-bootstrap')), { linkDeps: true });
-  eb.addDependency(modifiers);
-  // update ember bootstrap's version of ember-cli-htmlbars
-  eb.addDependency(Project.fromDir(dirname(require.resolve('ember-cli-htmlbars-7/package.json')), { linkDeps: true }));
 
-  // update ember-bootstrap sub-dependencies
-  [
-    'ember-concurrency',
-    'ember-element-helper',
-    'ember-in-element-polyfill',
-    'ember-popper-modifier',
-    'ember-ref-bucket',
-  ].forEach(name => {
+  // update ember-cli-htmlbars in ember-bootstrap sub-dependencies
+  ['ember-concurrency', 'ember-element-helper', 'ember-popper-modifier', 'ember-ref-bucket'].forEach(name => {
     let project = eb.dependencyProjects().find(p => p.name === name);
 
     if (!project) {
@@ -576,6 +566,14 @@ function emberBootstrap() {
     project.addDependency(
       Project.fromDir(dirname(require.resolve('ember-cli-htmlbars-7/package.json')), { linkDeps: true })
     );
+
+    // because we use babel-plugin-ember-template-compilation-2 when ember-cli-babel is < 8 we need to make sure
+    // that all sub-dependencies have ember-cli-babel > 8 🫠
+    if (name === 'ember-ref-bucket') {
+      project.addDependency(
+        Project.fromDir(dirname(require.resolve('ember-cli-babel-latest/package.json')), { linkDeps: true })
+      );
+    }
   });
 
   return eb;

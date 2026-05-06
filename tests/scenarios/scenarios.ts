@@ -1,5 +1,6 @@
 import { Scenarios, Project } from 'scenario-tester';
-import { dirname, join } from 'path';
+import { dirname } from 'path';
+import pkgUp from 'pkg-up';
 
 export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.28' });
@@ -87,16 +88,21 @@ async function lts_6_12(project: Project) {
   });
 }
 
-function patchTestWaiters(project: Project) {
-  // this overrides the @ember/test-waiters dependency of @ember/test-helper to make sure it is @ember/test-waiters@4
+function patchTestWaiters(externalProject: Project) {
+  // this overrides the @ember/test-waiters dependency of @ember/test-helper and @embroider/router to make sure it is @ember/test-waiters@4
   // both versions are in-range as a depedency, but for some reason scenario tester will always pick the lower one
-  let testHelpers = Project.fromDir(dirname(join(require.resolve('ember-test-helpers-5'), '..')), {
-    linkDeps: true,
+  ['ember-test-helpers-5', '@embroider/router'].forEach(name => {
+    let project = externalProject.dependencyProjects().find(p => p.name === name);
+
+    if (!project) {
+      project = Project.fromDir(dirname(pkgUp.sync({ cwd: require.resolve(`${name}`) })!), { linkDeps: true });
+      externalProject.addDependency(project);
+    }
+
+    project.addDependency(
+      Project.fromDir(dirname(pkgUp.sync({ cwd: require.resolve('@ember/test-waiters-4') })!), { linkDeps: true })
+    );
   });
-  testHelpers.addDependency(
-    Project.fromDir(dirname(join(require.resolve('@ember/test-waiters-4'), '..')), { linkDeps: true })
-  );
-  project.addDevDependency(testHelpers);
 }
 
 function updateEmberQunit(project: Project) {

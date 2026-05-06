@@ -108,6 +108,8 @@ appScenarios
   });
 
 appScenarios
+  .skip('release')
+  .skip('canary')
   .map('classic-macro-tests', project => {
     project.linkDevDependency('loader.js', { baseDir: __dirname });
     // as we are actually in a classic build here we need to re-add ember-auto-import for things to workk

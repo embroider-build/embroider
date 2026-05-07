@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@embroider/config-meta-loader": "workspace:*",
+    "ember-auto-import": "^2.4.2",
     "@babel/core": "^7.0.0",
     "ember-cli-babel": "^8.0.0",
     "ember-cli-htmlbars": "^7.0.0"
@@ -46,7 +47,6 @@
     "@rollup/plugin-babel": "^5.3.1",
     "babel-eslint": "^10.1.0",
     "broccoli-asset-rev": "^3.0.0",
-    "ember-auto-import": "^2.4.2",
     "ember-cli": "~4.6.0",
     "ember-cli-dependency-checker": "^3.3.1",
     "ember-cli-inject-live-reload": "^2.1.0",

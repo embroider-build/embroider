@@ -166,7 +166,7 @@ appScenarios
 
 appScenarios
   .only('canary')
-  .map('macro-babel-cache-busting-classic', project => {
+  .map('classic-macro-babel-cache-busting', project => {
     project.linkDevDependency('loader.js', { baseDir: __dirname });
     // as we are actually in a classic build here we need to re-add ember-auto-import for things to workk
     project.linkDevDependency('ember-auto-import', { baseDir: __dirname });

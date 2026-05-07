@@ -108,8 +108,9 @@ function patchTestWaiters(externalProject: Project) {
 function updateEmberQunit(project: Project) {
   project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-9' });
 
-  (project.files['tests'] as any)['test-helper.js'] = `import Application from 'app-template/app';
-import config from 'app-template/config/environment';
+  (project.files['tests'] as any)['test-helper.js'] = `
+import Application from '${project.pkg.name}/app';
+import config from '${project.pkg.name}/config/environment';
 import * as QUnit from 'qunit';
 import { setApplication } from '@ember/test-helpers';
 import { setup } from 'qunit-dom';

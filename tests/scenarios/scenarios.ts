@@ -125,6 +125,15 @@ export function start() {
 `;
 }
 
+export function isUsingQunit9(project: Project): boolean {
+  // @ts-expect-error we are reaching into private stuff here to check what version ember-qunit is
+  const projectLinks = project.dependencyLinks.entries();
+  const projectLinkArray: [string, { resolveName: string }][] = Array.from(projectLinks);
+  const qunit = projectLinkArray.find(([name]) => name === 'ember-qunit');
+
+  return qunit?.[1].resolveName === 'ember-qunit-9';
+}
+
 async function release(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });

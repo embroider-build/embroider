@@ -1,4 +1,4 @@
-import { appScenarios, dummyAppScenarios, baseAddon, tsAppClassicScenarios } from './scenarios';
+import { appScenarios, dummyAppScenarios, baseAddon, tsAppClassicScenarios, isUsingQunit9 } from './scenarios';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -290,6 +290,22 @@ dummyAppScenarios
     dummyAppScenarioSetup(project);
     project.linkDependency('ember-cli-babel', { baseDir: __dirname, resolveName: 'ember-cli-babel-latest' });
     merge(project.files, loadFromFixtureData('macro-sample-addon-classic'));
+
+    if (isUsingQunit9(project)) {
+      (project.files['tests'] as any)['test-helper.js'] = `
+  import Application from 'dummy/app';
+  import config from 'dummy/config/environment';
+  import * as QUnit from 'qunit';
+  import { setApplication } from '@ember/test-helpers';
+  import { setup } from 'qunit-dom';
+  import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  setupEmberOnerrorValidation();
+  qunitStart({ loadTests: false });
+  `;
+    }
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

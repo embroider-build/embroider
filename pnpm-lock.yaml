@@ -1423,8 +1423,8 @@ importers:
         specifier: ^7.0.0
         version: 7.0.0(@ember/test-helpers@3.3.1(@babel/core@7.29.0)(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(webpack@5.106.2))(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(qunit@2.25.0)(webpack@5.106.2)
       ember-resolver:
-        specifier: ^10.1.0
-        version: 10.1.1(@ember/string@3.1.1)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))
+        specifier: ^13.0.0
+        version: 13.2.0
       ember-source:
         specifier: ~4.6.0
         version: 4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2)
@@ -25223,15 +25223,6 @@ snapshots:
       ember-cli-babel: 7.26.11
     optionalDependencies:
       ember-source: 3.26.2(@babel/core@7.29.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  ember-resolver@10.1.1(@ember/string@3.1.1)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2)):
-    dependencies:
-      '@ember/string': 3.1.1
-      ember-cli-babel: 7.26.11
-    optionalDependencies:
-      ember-source: 4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2)
     transitivePeerDependencies:
       - supports-color
 

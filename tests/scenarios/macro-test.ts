@@ -173,6 +173,18 @@ appScenarios
 
     scenarioSetup(project);
     merge(project.files, loadFromFixtureData('macro-test-classic'));
+    (project.files['tests'] as any)['test-helper.js'] = `import Application from 'app-template/app';
+import config from 'app-template/config/environment';
+import * as QUnit from 'qunit';
+import { setApplication } from '@ember/test-helpers';
+import { setup } from 'qunit-dom';
+import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  setupEmberOnerrorValidation();
+  qunitStart({ loadTests: false });
+`;
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

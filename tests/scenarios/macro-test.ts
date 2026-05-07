@@ -409,6 +409,22 @@ tsAppClassicScenarios
     },
   })
   .map('lazy-import-sync', project => {
+    if (isUsingQunit9(project)) {
+      (project.files['tests'] as any)['test-helper.ts'] = `
+  import Application from 'ts-app-template/app';
+  import config from 'ts-app-template/config/environment';
+  import * as QUnit from 'qunit';
+  import { setApplication } from '@ember/test-helpers';
+  import { setup } from 'qunit-dom';
+  import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  setupEmberOnerrorValidation();
+  qunitStart({ loadTests: false });
+  `;
+    }
+
     project.addDependency('my-target-library', {
       files: {
         'index.js': `

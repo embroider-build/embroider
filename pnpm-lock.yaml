@@ -1343,19 +1343,19 @@ importers:
 
   tests/addon-template:
     dependencies:
+      '@babel/core':
+        specifier: ^7.0.0
+        version: 7.29.0
       '@embroider/config-meta-loader':
         specifier: workspace:*
         version: link:../../packages/config-meta-loader
       ember-cli-babel:
-        specifier: ^7.26.11
-        version: 7.26.11
+        specifier: ^8.0.0
+        version: 8.3.1(@babel/core@7.29.0)
       ember-cli-htmlbars:
         specifier: ^7.0.0
         version: 7.0.1(@babel/core@7.29.0)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))
     devDependencies:
-      '@babel/core':
-        specifier: ^7.19.3
-        version: 7.29.0
       '@ember/optional-features':
         specifier: ^2.0.0
         version: 2.3.0

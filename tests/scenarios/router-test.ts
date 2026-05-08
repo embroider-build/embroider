@@ -1,4 +1,4 @@
-import { tsAppScenarios, tsAppClassicScenarios } from './scenarios';
+import { tsAppScenarios, tsAppClassicScenarios, isUsingQunit9 } from './scenarios';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 
@@ -345,6 +345,23 @@ tsAppScenarios
 tsAppClassicScenarios
   .map('router-classic', project => {
     setupScenario(project);
+
+    if (isUsingQunit9(project)) {
+      (project.files['tests'] as any)['test-helper.ts'] = `
+  import Application from 'ts-app-template/app';
+  import config from 'ts-app-template/config/environment';
+  import * as QUnit from 'qunit';
+  import { setApplication } from '@ember/test-helpers';
+  import { setup } from 'qunit-dom';
+  import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  setupEmberOnerrorValidation();
+  qunitStart({ loadTests: false });
+  `;
+    }
+
     project.mergeFiles({
       'ember-cli-build.js': `
       'use strict';

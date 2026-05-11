@@ -421,7 +421,7 @@ tsAppClassicScenarios
   setApplication(Application.create(config.APP));
   setup(QUnit.assert);
   setupEmberOnerrorValidation();
-  qunitStart({ loadTests: false });
+  qunitStart();
   `;
     }
 

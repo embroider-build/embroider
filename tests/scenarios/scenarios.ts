@@ -88,7 +88,7 @@ async function lts_6_12(project: Project) {
   });
 }
 
-function patchTestWaiters(externalProject: Project) {
+export function patchTestWaiters(externalProject: Project) {
   // this overrides the @ember/test-waiters dependency of @ember/test-helper and @embroider/router to make sure it is @ember/test-waiters@4
   // both versions are in-range as a depedency, but for some reason scenario tester will always pick the lower one
   ['ember-test-helpers-5', '@embroider/router'].forEach(name => {
@@ -121,18 +121,27 @@ export function start() {
   setup(QUnit.assert);
   // some test suites don't provide their own tests so we need to include at least one for CI to pass
   setupEmberOnerrorValidation();
-  qunitStart({ loadTests: false });
+  qunitStart();
 }
 `;
 }
 
-export function isUsingQunit9(project: Project): boolean {
+function checkLinkedVersion(project: Project, packageName: string): string | undefined {
   // @ts-expect-error we are reaching into private stuff here to check what version ember-qunit is
   const projectLinks = project.dependencyLinks.entries();
   const projectLinkArray: [string, { resolveName: string }][] = Array.from(projectLinks);
-  const qunit = projectLinkArray.find(([name]) => name === 'ember-qunit');
+  const pkg = projectLinkArray.find(([name]) => name === packageName);
+  return pkg?.[1].resolveName;
+}
 
-  return qunit?.[1].resolveName === 'ember-qunit-9';
+export function isUsingQunit9(project: Project): boolean {
+  return checkLinkedVersion(project, 'ember-qunit') === 'ember-qunit-9';
+}
+
+export function isUsingEmberGte7(project: Project): boolean {
+  const ember7ResolvedNames = ['ember-source-beta', 'ember-source-canary'];
+
+  return ember7ResolvedNames.includes(checkLinkedVersion(project, 'ember-source')!);
 }
 
 async function release(project: Project) {
@@ -150,6 +159,28 @@ async function release(project: Project) {
 
   updateEmberQunit(project);
   patchTestWaiters(project);
+
+  project.mergeFiles({
+    'tsconfig.json': JSON.stringify(
+      {
+        extends: '@tsconfig/ember/tsconfig.json',
+        compilerOptions: {
+          baseUrl: '.',
+          skipLibCheck: true,
+          // This line is the important part of this custom tsconfig.json
+          types: ['ember-source/types'],
+          paths: {
+            'ts-app-template/tests/*': ['tests/*'],
+            'ts-app-template/*': ['app/*'],
+            '*': ['types/*'],
+          },
+        },
+        include: ['app/**/*', 'tests/**/*', 'types/**/*'],
+      },
+      null,
+      2
+    ),
+  });
 }
 
 async function beta(project: Project) {

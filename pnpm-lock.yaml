@@ -1366,8 +1366,8 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1
       '@ember/test-helpers':
-        specifier: ^3.0.3
-        version: 3.3.1(@babel/core@7.29.0)(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(webpack@5.106.2)
+        specifier: ^5.0.0
+        version: 5.4.1(@babel/core@7.29.0)(@glint/template@1.7.7)
       '@embroider/compat':
         specifier: workspace:*
         version: link:../../packages/compat
@@ -1421,7 +1421,7 @@ importers:
         version: 7.0.0
       ember-qunit:
         specifier: ^7.0.0
-        version: 7.0.0(@ember/test-helpers@3.3.1(@babel/core@7.29.0)(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(webpack@5.106.2))(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(qunit@2.25.0)(webpack@5.106.2)
+        version: 7.0.0(@ember/test-helpers@5.4.1(@babel/core@7.29.0)(@glint/template@1.7.7))(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(qunit@2.25.0)(webpack@5.106.2)
       ember-resolver:
         specifier: ^13.0.0
         version: 13.2.0
@@ -17005,24 +17005,6 @@ snapshots:
       - supports-color
       - webpack
 
-  '@ember/test-helpers@3.3.1(@babel/core@7.29.0)(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(webpack@5.106.2)':
-    dependencies:
-      '@ember/test-waiters': 3.1.0
-      '@embroider/macros': 1.20.2(@glint/template@1.7.7)
-      '@simple-dom/interface': 1.4.0
-      broccoli-debug: 0.6.5
-      broccoli-funnel: 3.0.8
-      dom-element-descriptors: 0.5.1
-      ember-auto-import: 2.13.1(@glint/template@1.7.7)(webpack@5.106.2)
-      ember-cli-babel: 8.3.1(@babel/core@7.29.0)
-      ember-cli-htmlbars: 6.3.0
-      ember-source: 4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@glint/template'
-      - supports-color
-      - webpack
-
   '@ember/test-helpers@3.3.1(@babel/core@7.29.0)(@glint/template@1.7.7)(ember-source@5.3.0(@babel/core@7.29.0)(@glimmer/component@1.1.2(@babel/core@7.29.0))(@glint/template@1.7.7)(rsvp@4.8.5)(webpack@5.106.2))(webpack@5.106.2)':
     dependencies:
       '@ember/test-waiters': 3.1.0
@@ -25132,9 +25114,9 @@ snapshots:
       - supports-color
       - webpack
 
-  ember-qunit@7.0.0(@ember/test-helpers@3.3.1(@babel/core@7.29.0)(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(webpack@5.106.2))(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(qunit@2.25.0)(webpack@5.106.2):
+  ember-qunit@7.0.0(@ember/test-helpers@5.4.1(@babel/core@7.29.0)(@glint/template@1.7.7))(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(qunit@2.25.0)(webpack@5.106.2):
     dependencies:
-      '@ember/test-helpers': 3.3.1(@babel/core@7.29.0)(@glint/template@1.7.7)(ember-source@4.6.0(@babel/core@7.29.0)(@glint/template@1.7.7)(webpack@5.106.2))(webpack@5.106.2)
+      '@ember/test-helpers': 5.4.1(@babel/core@7.29.0)(@glint/template@1.7.7)
       broccoli-funnel: 3.0.8
       broccoli-merge-trees: 3.0.2
       common-tags: 1.8.2

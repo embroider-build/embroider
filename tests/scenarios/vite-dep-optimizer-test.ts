@@ -15,6 +15,8 @@ const rebuildTimeout = os.platform() === 'win32' ? 300000 : 5000;
 
 let app = appScenarios.map('vite-dep-optimizer', project => {
   let myServicesAddon = baseAddon();
+  // we need to use ember-page-title@9 for Ember@7 and having differing versions make these tests flaky
+  project.linkDevDependency('ember-page-title', { baseDir: __dirname, resolveName: 'ember-page-title-9' });
   myServicesAddon.pkg.name = 'my-services-addon';
   myServicesAddon.mergeFiles({
     app: {
@@ -164,7 +166,11 @@ app.forEachScenario(scenario => {
       test('should use optimized files for deps', function (assert) {
         expectAudit.module(/.*\/-embroider-entrypoint.js/).withContents((_src, imports) => {
           let pageTitleImports = imports.filter(imp => /page-title/.test(imp.source));
-          assert.strictEqual(pageTitleImports.length, 2, 'found two uses of page-title addon');
+          assert.strictEqual(
+            pageTitleImports.length,
+            1,
+            'found one uses of page-title addon in the embroider entrypoint'
+          );
           assert.ok(
             pageTitleImports.every(x => isOptimizedImport(x)),
             `every page-title module is optimized but we saw ${pageTitleImports.map(i => i.source).join(', ')}`

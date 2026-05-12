@@ -62,6 +62,10 @@
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/template-tag-codemod/package.json"
@@ -70,5 +74,5 @@
       "oldVersion": "1.7.2"
     }
   },
-  "description": "## Release (2026-05-12)\n\n* @embroider/compat 4.1.18 (patch)\n* @embroider/template-tag-codemod 1.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`\n  * [#2716](https://github.com/embroider-build/embroider/pull/2716) feat(template-tag-codemod): add a skipIgnoreRev option to merge-history ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2717](https://github.com/embroider-build/embroider/pull/2717) fix(template-tag-codemod): this becomes controller on component invokation ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :house: Internal\n* `@embroider/compat`\n  * [#2719](https://github.com/embroider-build/embroider/pull/2719) Fix CI for ember-source 7 ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
+  "description": "## Release (2026-05-12)\n\n* @embroider/compat 4.1.18 (patch)\n* @embroider/template-tag-codemod 1.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`\n  * [#2716](https://github.com/embroider-build/embroider/pull/2716) feat(template-tag-codemod): add a skipIgnoreRev option to merge-history ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2717](https://github.com/embroider-build/embroider/pull/2717) fix(template-tag-codemod): this becomes controller on component invokation ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :house: Internal\n* `@embroider/compat`, `@embroider/template-tag-codemod`\n  * [#2725](https://github.com/embroider-build/embroider/pull/2725) Fix release ([@mansona](https://github.com/mansona))\n* `@embroider/compat`\n  * [#2719](https://github.com/embroider-build/embroider/pull/2719) Fix CI for ember-source 7 ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
 }

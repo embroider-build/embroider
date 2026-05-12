@@ -20,7 +20,6 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
   app.linkDevDependency('testem', { baseDir: __dirname });
   app.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
 
-  app.linkDevDependency('ember-page-title', { baseDir: __dirname });
   app.linkDevDependency('ember-welcome-page', { baseDir: __dirname });
   app.mergeFiles({
     'testem-dev.js': `

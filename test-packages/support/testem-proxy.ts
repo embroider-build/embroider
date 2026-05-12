@@ -21,7 +21,7 @@ export function testemProxy(targetURL: string, base = '/') {
       res && res.status && res.status(500).json(err);
     });
 
-    app.all('*', (req, res, next) => {
+    app.all('*name', (req, res, next) => {
       let url = req.url;
       if (url === `${base}testem.js` || url.startsWith('/testem/')) {
         req.url = req.url.replace(base, '/');

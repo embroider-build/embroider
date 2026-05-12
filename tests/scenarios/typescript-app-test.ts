@@ -1,4 +1,4 @@
-import { tsAppScenarios } from './scenarios';
+import { isUsingQunit9, tsAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -144,6 +144,24 @@ let typescriptApp = tsAppScenarios.map('typescript-app', project => {
       },
     },
   });
+
+  if (isUsingQunit9(project)) {
+    (project.files['tests'] as any)['test-helper.ts'] = `
+    import Application from 'ts-app-template/app';
+import config from 'ts-app-template/config/environment';
+import * as QUnit from 'qunit';
+import { setApplication } from '@ember/test-helpers';
+import { setup } from 'qunit-dom';
+import { start as qunitStart } from 'ember-qunit';
+
+export function start() {
+  setApplication(Application.create(config.APP));
+
+  setup(QUnit.assert);
+
+  qunitStart();
+}`;
+  }
 });
 
 typescriptApp.forEachScenario(scenario => {

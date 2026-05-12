@@ -14,13 +14,13 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.1.16",
-      "newVersion": "4.1.17",
+      "oldVersion": "4.1.17",
+      "newVersion": "4.1.18",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/compat/package.json"
@@ -50,21 +50,25 @@
       "oldVersion": "3.0.2"
     },
     "@embroider/template-tag-codemod": {
-      "oldVersion": "1.3.6"
-    },
-    "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.7.1",
-      "newVersion": "1.7.2",
+      "impact": "minor",
+      "oldVersion": "1.3.6",
+      "newVersion": "1.4.0",
       "tagName": "latest",
       "constraints": [
         {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
           "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+    },
+    "@embroider/vite": {
+      "oldVersion": "1.7.2"
     }
   },
-  "description": "## Release (2026-03-29)\n\n* @embroider/compat 4.1.17 (patch)\n* @embroider/vite 1.7.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2695](https://github.com/embroider-build/embroider/pull/2695) Conditional file writes for Ember modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n  * [#2696](https://github.com/embroider-build/embroider/pull/2696) Fix paths check to use existence rather than value-as-key lookup ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### :house: Internal\n* `@embroider/vite`\n  * [#2693](https://github.com/embroider-build/embroider/pull/2693) Fix CI: use caret range for rolldown devDependency ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### Committers: 2\n- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-05-12)\n\n* @embroider/compat 4.1.18 (patch)\n* @embroider/template-tag-codemod 1.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`\n  * [#2716](https://github.com/embroider-build/embroider/pull/2716) feat(template-tag-codemod): add a skipIgnoreRev option to merge-history ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2717](https://github.com/embroider-build/embroider/pull/2717) fix(template-tag-codemod): this becomes controller on component invokation ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :house: Internal\n* `@embroider/compat`\n  * [#2719](https://github.com/embroider-build/embroider/pull/2719) Fix CI for ember-source 7 ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
 }

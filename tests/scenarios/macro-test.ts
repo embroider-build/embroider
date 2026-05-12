@@ -414,7 +414,7 @@ tsAppClassicScenarios
   })
   .map('lazy-import-sync', project => {
     if (isUsingQunit9(project)) {
-      (project.files['tests'] as any)['test-helper.js'] = `
+      (project.files['tests'] as any)['test-helper.ts'] = `
   import Application from 'ts-app-template/app';
   import config from 'ts-app-template/config/environment';
   import * as QUnit from 'qunit';

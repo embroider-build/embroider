@@ -7,7 +7,7 @@ import { dirname, join } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 tsAppScenarios
-  .only('release')
+  .only('lts_6_12')
   .map('template-tag-codemod', project => {
     project.linkDevDependency('@embroider/template-tag-codemod', { baseDir: __dirname });
     project.mergeFiles({

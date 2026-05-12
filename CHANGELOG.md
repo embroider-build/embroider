@@ -1,26 +1,5 @@
 # Embroider Changelog
 
-## Release (2026-05-12)
-
-* @embroider/compat 4.1.18 (patch)
-* @embroider/template-tag-codemod 1.4.0 (minor)
-
-#### :rocket: Enhancement
-* `@embroider/template-tag-codemod`
-  * [#2716](https://github.com/embroider-build/embroider/pull/2716) feat(template-tag-codemod): add a skipIgnoreRev option to merge-history ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
-
-#### :bug: Bug Fix
-* `@embroider/template-tag-codemod`
-  * [#2717](https://github.com/embroider-build/embroider/pull/2717) fix(template-tag-codemod): this becomes controller on component invokation ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
-
-#### :house: Internal
-* `@embroider/compat`
-  * [#2719](https://github.com/embroider-build/embroider/pull/2719) Fix CI for ember-source 7 ([@mansona](https://github.com/mansona))
-
-#### Committers: 2
-- Chris Manson ([@mansona](https://github.com/mansona))
-- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
-
 ## Release (2026-03-29)
 
 * @embroider/compat 4.1.17 (patch)

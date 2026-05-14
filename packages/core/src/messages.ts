@@ -35,6 +35,18 @@ export function warn(message: string, ...params: any[]) {
   }
 }
 
+/**
+ * This type is normally from QUnit as a global.
+ * But dependents on `@embroider/core` may not be testing with QUnit,
+ * so we can't rely on the global availability of the NestedHooks interface.
+ *
+ * Here, we define only what we use in a way that is compatible with QUnit's types.
+ */
+interface NestedHooks {
+  before: (callback: () => void | Promise<void>) => void;
+  after: (callback: () => void | Promise<void>) => void;
+}
+
 // for use in our test suites
 let hardFailMode = 0;
 export function throwOnWarnings(hooks?: NestedHooks) {
@@ -47,9 +59,12 @@ export function throwOnWarnings(hooks?: NestedHooks) {
       hardFailMode--;
     });
   } else {
-    // Jest mode
-    beforeAll(() => hardFailMode++);
-    afterAll(() => hardFailMode--);
+    /**
+     * Like with QUnit's NestedHooks, we can't be certain that our
+     * consuming environment will provide types for beforeAll and afterAll
+     */
+    (globalThis as any).beforeAll(() => hardFailMode++);
+    (globalThis as any).afterAll(() => hardFailMode--);
   }
 }
 

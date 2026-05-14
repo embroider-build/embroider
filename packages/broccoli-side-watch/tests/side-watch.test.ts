@@ -5,6 +5,7 @@ import sideWatch from '../src';
 import { Project } from 'scenario-tester';
 import { join } from 'path';
 import { createBuilder } from 'broccoli-test-helper';
+import { describe, test, expect } from 'vitest';
 
 async function generateProject() {
   const project = new Project('my-app', {

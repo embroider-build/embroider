@@ -10,14 +10,12 @@
     "url": "https://github.com/embroider-build/embroider.git",
     "directory": "packages/broccoli-side-watch"
   },
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "author": "Balint Erdi",
   "license": "MIT",
@@ -32,6 +30,7 @@
     "broccoli-node-api": "^1.7.0",
     "broccoli-test-helper": "^2.0.0",
     "scenario-tester": "^4.0.0",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "vitest": "^4.1.5"
   }
 }

@@ -44,7 +44,7 @@
     "fast-glob": "^3.3.2",
     "fs-extra": "^10.0.0",
     "jsdom": "^25.0.0",
-    "send": "^0.18.0",
+    "send": "^1.2.1",
     "source-map-url": "^0.4.1",
     "terser": "^5.7.0"
   },
@@ -55,7 +55,7 @@
     "@types/debug": "^4.1.5",
     "@types/fs-extra": "^9.0.12",
     "@types/jsdom": "^16.2.11",
-    "@types/send": "^0.17.4",
+    "@types/send": "^1.2.1",
     "esbuild": "^0.25.0",
     "html-minifier-terser": "^7.2.0",
     "rolldown": "^1.0.0-rc.9",

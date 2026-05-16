@@ -252,9 +252,6 @@ importers:
       bind-decorator:
         specifier: ^1.0.11
         version: 1.0.11
-      broccoli:
-        specifier: ^3.5.2
-        version: 3.5.2
       broccoli-concat:
         specifier: ^4.2.5
         version: 4.2.7

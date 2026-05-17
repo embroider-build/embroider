@@ -105,13 +105,10 @@ typescriptApp.forEachScenario(scenario => {
       app = await scenario.prepare();
     });
 
-    // type checks no longer pass on ember-release
-    if (scenario.name !== 'release-typescript-app') {
-      test(`check types`, async function (assert) {
-        let result = await app.execute(`pnpm tsc`);
-        assert.equal(result.exitCode, 0, result.output);
-      });
-    }
+    test(`check types`, async function (assert) {
+      let result = await app.execute(`pnpm tsc`);
+      assert.equal(result.exitCode, 0, result.output);
+    });
 
     test(`pnpm ember test safe`, async function (assert) {
       let result = await app.execute(`ember test`, {

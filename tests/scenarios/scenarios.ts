@@ -288,9 +288,15 @@ export function baseViteApp() {
   return Project.fromDir(dirname(require.resolve('../vite-app/package.json')), { linkDevDeps: true });
 }
 
+export function baseWebpackApp() {
+  return Project.fromDir(dirname(require.resolve('../app-template-webpack/package.json')), { linkDevDeps: true });
+}
+
 export const appScenarios = supportMatrix(Scenarios.fromProject(baseApp));
 
 export const wideAppScenarios = fullSupportMatrix(Scenarios.fromProject(baseApp));
+
+export const webpackAppScenarios = fullSupportMatrix(Scenarios.fromProject(baseWebpackApp));
 
 // we're standardizing on Ember's native types, which become available starting
 // at 4.8. So we're not going to run type tests on older releases that don't

@@ -1,5 +1,5 @@
 import type { PreparedApp } from 'scenario-tester';
-import { wideAppScenarios } from './scenarios';
+import { webpackAppScenarios } from './scenarios';
 import QUnit from 'qunit';
 import { readdirSync, readFileSync, existsSync } from 'fs-extra';
 import { join } from 'path';
@@ -9,51 +9,14 @@ const { module: Qmodule, test } = QUnit;
 // The modern @embroider/webpack mirrors @embroider/vite: the app keeps its real
 // index.html / tests/index.html, the compat prebuild produces the .embroider
 // working directory, and webpack does the bundling using @embroider/core's
-// Resolver + virtual content. This scenario swaps the default vite wiring of
-// the app-template for the webpack wiring and exercises a real build.
+// Resolver + virtual content. The webpack wiring (ember-cli-build.js,
+// webpack.config.js, scripts, and the @embroider/webpack + webpack + webpack-cli
+// devDependencies) now lives in the dedicated `app-template-webpack` template,
+// so this scenario only layers on the test fixtures it asserts against.
 // Expanded across the same Ember matrix as `vite-app-basics`
-// (wideAppScenarios / fullSupportMatrix), producing
-// `<emberVersion>-webpack-app-basics`.
-wideAppScenarios
+// (fullSupportMatrix), producing `<emberVersion>-webpack-app-basics`.
+webpackAppScenarios
   .map('webpack-app-basics', project => {
-    project.linkDevDependency('@embroider/webpack', { baseDir: __dirname });
-    project.linkDevDependency('webpack', { baseDir: __dirname });
-    project.linkDevDependency('webpack-cli', { baseDir: __dirname });
-
-    project.mergeFiles({
-      'ember-cli-build.js': `
-        'use strict';
-
-        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-        const { compatBuild } = require('@embroider/compat');
-
-        module.exports = async function (defaults) {
-          const { buildOnce } = await import('@embroider/webpack');
-          let app = new EmberApp(defaults, {});
-
-          return compatBuild(app, buildOnce);
-        };
-      `,
-      'webpack.config.js': `
-        'use strict';
-        const { classicEmberSupport, ember } = require('@embroider/webpack');
-
-        // mirrors the vite config: two plugins that mutate webpack's config,
-        // rather than one plugin owning the whole Configuration.
-        module.exports = {
-          plugins: [classicEmberSupport(), ember()],
-        };
-      `,
-    });
-
-    project.pkg.scripts = {
-      ...project.pkg.scripts,
-      build: 'webpack build --mode production',
-      'build:tests': 'webpack build --mode development',
-      test: 'webpack build --mode development && ember test --path dist',
-      'test:ember': 'webpack build --mode development && ember test --path dist',
-    };
-
     project.mergeFiles({
       app: {
         components: {

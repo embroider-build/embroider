@@ -18,6 +18,25 @@ import type { Compiler } from 'webpack';
 // contextDependencies added below).
 let prebuildPromise: Promise<void> | undefined;
 let watchChild: ChildProcess | undefined;
+let cleanupRegistered = false;
+
+// Ensure the `ember build --watch` tree dies even if webpack's shutdown hooks
+// don't run (e.g. the dev-server process is signalled directly). Without this,
+// `webpack serve` shutdown waits on a child tree that never exits and CI hangs.
+function registerProcessCleanup(): void {
+  if (cleanupRegistered) {
+    return;
+  }
+  cleanupRegistered = true;
+  process.once('exit', stopCompatPrebuild);
+  // Use addListener (not once) without re-raising: we only need to reap the
+  // watch tree quickly. webpack-dev-server installs its own SIGINT/SIGTERM
+  // handler that performs the actual graceful shutdown + process exit; ours
+  // just makes sure that shutdown isn't blocked waiting on the watcher tree.
+  for (let signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+    process.on(signal, stopCompatPrebuild);
+  }
+}
 
 function emberCLIBin(): string {
   let emberCLIMain = require.resolve('ember-cli', { paths: [process.cwd()] });
@@ -61,9 +80,15 @@ export function runCompatPrebuild(
     const child = fork(
       emberCLI,
       ['build', '--watch', '--environment', mode, '-o', 'tmp/compat-prebuild', '--suppress-sizes'],
-      { silent: true, env }
+      // `detached: true` makes the child its own process-group leader so we can
+      // later kill the *whole* tree (ember-cli forks broccoli watchers / sane /
+      // a shell). Without this, `child.kill()` only signals the ember node
+      // process and the watcher grandchildren are orphaned -> `webpack serve`
+      // never finishes shutting down and CI hangs until the job is killed.
+      { silent: true, env, detached: process.platform !== 'win32' }
     );
     watchChild = child;
+    registerProcessCleanup();
     child.on('exit', code => {
       if (code !== 0) {
         reject(new Error('ember compat prebuild (--watch) failed'));
@@ -88,13 +113,28 @@ export function runCompatPrebuild(
   return prebuildPromise;
 }
 
-// Tear down the long-lived `ember build --watch` child when webpack stops.
+// Tear down the long-lived `ember build --watch` child (and its broccoli /
+// sane / shell descendants) when webpack stops. We SIGKILL the whole process
+// group so this returns immediately and never blocks the dev server's
+// shutdown (a graceful SIGTERM lets ember-cli's watchers linger long enough
+// that CI times out).
 export function stopCompatPrebuild(): void {
-  if (watchChild) {
-    watchChild.kill();
-    watchChild = undefined;
-  }
+  let child = watchChild;
+  watchChild = undefined;
   prebuildPromise = undefined;
+  if (!child) {
+    return;
+  }
+  try {
+    if (process.platform !== 'win32' && typeof child.pid === 'number') {
+      // negative pid => the whole process group (child was spawned detached)
+      process.kill(-child.pid, 'SIGKILL');
+    } else {
+      child.kill('SIGKILL');
+    }
+  } catch {
+    // already gone (ESRCH) or not permitted; nothing more to do
+  }
 }
 
 // A webpack plugin so the prebuild is sequenced (and its logs flushed) before

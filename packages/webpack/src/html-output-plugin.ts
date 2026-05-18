@@ -267,14 +267,22 @@ export class HtmlOutputPlugin {
       );
     });
 
-    // Clean up the temporary generated entry files.
-    compiler.hooks.done.tap('embroider-html-output', () => {
+    // Clean up the temporary generated entry files. This must NOT run on
+    // `done` (which fires after every watch rebuild): in watch mode the files
+    // are still referenced by the entry across rebuilds, and deleting them
+    // each compile would thrash the build. We only remove them when the
+    // compiler actually stops: `shutdown` covers one-shot `webpack build`
+    // (webpack-cli calls compiler.close()), `watchClose` covers
+    // `webpack serve` / `webpack --watch`.
+    const cleanup = () => {
       for (let record of this.state.records) {
         for (let f of record.generatedFiles) {
           removeSync(f);
         }
       }
-    });
+    };
+    compiler.hooks.shutdown.tap('embroider-html-output', cleanup);
+    compiler.hooks.watchClose.tap('embroider-html-output', cleanup);
   }
 }
 

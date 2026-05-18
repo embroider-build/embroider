@@ -1,3 +1,3 @@
 import loadConfigFromMeta from '@embroider/config-meta-loader';
 
-export default loadConfigFromMeta('app-template');
+export default loadConfigFromMeta('app-template-webpack');

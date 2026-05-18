@@ -171,6 +171,54 @@ export function ember(options: Options = {}) {
       // fastboot-only modules use top-level await import()
       (opts.experiments as { topLevelAwait?: boolean }).topLevelAwait ??= true;
 
+      // ---- dev server (webpack serve) ----
+      //
+      // The webpack analog of @embroider/vite's dev server. We only set
+      // defaults (??=) so an app can still override anything in its own
+      // webpack.config.js. `webpack serve` reads compiler.options.devServer
+      // after the compiler is created, so mutating it here (just like we
+      // mutate output/entry above) is picked up.
+      //
+      // - historyApiFallback: the Ember app is an SPA; unknown routes must be
+      //   served the embroider-built index.html (emitted into the compilation
+      //   by HtmlOutputPlugin). /tests is its own emitted html page.
+      // - hot:false / liveReload:true: Ember doesn't support webpack HMR, so
+      //   we do a full reload when a rebuild (incl. the compat prebuild watch)
+      //   produces new output.
+      // - static:false: serve everything from the in-memory compilation, never
+      //   stale files from a previous `webpack build` in output.path.
+      // webpack-dev-server's types aren't a dependency of this package, so
+      // treat devServer structurally.
+      const optsAny = opts as unknown as { devServer?: Record<string, unknown> };
+      const devServer = optsAny.devServer ?? {};
+      devServer.historyApiFallback ??= {
+        index: '/index.html',
+        rewrites: [{ from: /^\/tests(\/|$|\?)/, to: '/tests/index.html' }],
+        disableDotRule: false,
+      };
+      devServer.hot ??= false;
+      devServer.liveReload ??= true;
+      devServer.static ??= false;
+      optsAny.devServer = devServer;
+
+      // discoverHtmlEntrypoints rewrites the `.embroider-webpack-*.js` entry
+      // shims on every compilation. They must never be part of the watch set
+      // or each rebuild would retrigger itself.
+      const ignoreGenerated = '**/.embroider-webpack-*.js';
+      const wo = opts.watchOptions;
+      if (Array.isArray(wo.ignored)) {
+        if (!wo.ignored.includes(ignoreGenerated)) {
+          wo.ignored.push(ignoreGenerated);
+        }
+      } else if (typeof wo.ignored === 'string') {
+        wo.ignored = [wo.ignored, ignoreGenerated];
+      } else {
+        // undefined, or a (rare) RegExp form we can't merge into webpack's
+        // string-array `ignored`: fall back to the conventional default plus
+        // our shim glob.
+        wo.ignored = ['**/node_modules/**', ignoreGenerated];
+      }
+
       const cssLoader = {
         loader: 'css-loader',
         options: {

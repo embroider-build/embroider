@@ -1,7 +1,7 @@
 import Router from './router.js';
 import PageTitleService from 'ember-page-title/services/page-title';
 
-const appName = `app-template-minimal`;
+const appName = `app-template-minimal-webpack`;
 
 function formatAsResolverEntries(imports) {
   return Object.fromEntries(

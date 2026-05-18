@@ -1,7 +1,7 @@
 import { setTesting } from '@embroider/macros';
 
 const ENV = {
-  modulePrefix: 'app-template-minimal',
+  modulePrefix: 'app-template-minimal-webpack',
   environment: import.meta.env.DEV ? 'development' : 'production',
   rootURL: '/',
   locationType: 'history',

@@ -76,11 +76,14 @@ function transformImportMetaGlob(code: string): string {
         }
       }
       let regex = exts.length ? `/\\.(?:${exts.join('|')})$/` : `/.*/`;
-      // exclude our own generated entry file so the context doesn't recurse
-      // into the very module it's being evaluated from.
-      return `(function(){var __g=require.context(${JSON.stringify(
+      // Use `import.meta.webpackContext` (not `require.context`): the entry
+      // shims run as ESM (always so when the app is `"type": "module"`), where
+      // CJS `require` doesn't exist. webpackContext returns the same
+      // context-function shape. We still exclude our own generated entry file
+      // so the context doesn't recurse into the very module evaluating it.
+      return `(function(){var __g=import.meta.webpackContext(${JSON.stringify(
         base
-      )},${recursive},${regex});__g.keys().filter(function(k){return k.indexOf('.embroider-webpack-')===-1;}).forEach(__g);return __g;})()`;
+      )},{recursive:${recursive},regExp:${regex}});__g.keys().filter(function(k){return k.indexOf('.embroider-webpack-')===-1;}).forEach(__g);return __g;})()`;
     }
   );
 }

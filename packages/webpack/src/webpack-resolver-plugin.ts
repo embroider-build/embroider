@@ -54,6 +54,21 @@ export class EmbroiderPlugin {
       nmf.hooks.resolve.tapAsync(
         { name: '@embroider/webpack', stage: 50 },
         (state: ExtendedResolveData, callback: CB) => {
+          // Snapshot the original request so that, if embroider's resolver
+          // declines (not_found), we can hand the *original* request back to
+          // webpack's own resolution. This mirrors @embroider/vite's resolver
+          // plugin, which returns `null` on not_found so rollup keeps
+          // resolving. It matters for fully-v2 apps that have no compat
+          // prebuild (hence no resolver.json): the core resolver can't resolve
+          // a plain relative app import like `./src/app`, but webpack itself
+          // can. If the module is genuinely missing, webpack's default resolve
+          // will still produce its own "Module not found".
+          let original = {
+            request: state.request,
+            context: state.context,
+            issuer: state.contextInfo.issuer,
+          };
+
           let request = ModuleRequest.create(WebpackRequestAdapter.create, {
             resolveFunction: defaultResolve,
             state,
@@ -69,7 +84,11 @@ export class EmbroiderPlugin {
             resolution => {
               switch (resolution.type) {
                 case 'not_found':
-                  callback(resolution.err);
+                  // restore the pristine request and let webpack resolve it
+                  state.request = original.request;
+                  state.context = original.context;
+                  state.contextInfo.issuer = original.issuer;
+                  defaultResolve(state, callback);
                   break;
                 case 'found':
                   callback(null, undefined);

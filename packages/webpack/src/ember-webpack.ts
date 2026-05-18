@@ -131,6 +131,18 @@ export function ember(options: Options = {}) {
         ? join(appRoot, process.env.EMBROIDER_WEBPACK_OUTDIR)
         : opts.output?.path || join(appRoot, 'dist');
 
+      // Align process.env.NODE_ENV with the build mode, the way vite does.
+      // @embroider/macros' `buildMacros()` (run by babel-loader-9 in this same
+      // process) only enables *runtime* macro mode when
+      // NODE_ENV === 'development'; that mode is what makes `setTesting()` /
+      // runtime `isTesting()` work. Vite sets this for its dev server and the
+      // vite app templates set it in their `build:test` script, but webpack
+      // doesn't set the real process.env.NODE_ENV, and `webpack serve` is
+      // launched directly (bypassing npm scripts), so do it here.
+      if (prebuildEnv !== 'production' && !process.env.NODE_ENV) {
+        process.env.NODE_ENV = 'development';
+      }
+
       // ---- mutate the user's config (like vite's config() hook) ----
 
       opts.context = appRoot;
@@ -153,6 +165,17 @@ export function ember(options: Options = {}) {
 
       if (!opts.resolve.extensions || opts.resolve.extensions.length === 0) {
         opts.resolve.extensions = extensions;
+      }
+
+      // Ember apps import without file extensions everywhere (e.g.
+      // `import Application from './src/app'`). In a fully-v2 app
+      // (`"type": "module"`) webpack would otherwise treat those as ESM and
+      // enforce `fullySpecified`, refusing to apply resolve.extensions and
+      // failing to find `./src/app.js`. Rollup/vite don't enforce this, so
+      // disable it to match (the classic app-template isn't `type: module`,
+      // which is why it never hit this).
+      if (opts.resolve.fullySpecified === undefined) {
+        opts.resolve.fullySpecified = false;
       }
 
       addLoaderAlias(compiler, 'babel-loader-9', require.resolve('@embroider/babel-loader-9'));
@@ -229,6 +252,17 @@ export function ember(options: Options = {}) {
         },
       };
       const rules: RuleSetRule[] = [
+        {
+          // Ember code imports without file extensions. In a fully-v2
+          // (`"type": "module"`) app webpack treats .js/.gjs/etc as ESM and
+          // forces `fullySpecified` *per module*, which the top-level
+          // resolve.fullySpecified can't override — it must be set on a module
+          // rule. Without this, an extensionless import like `./src/app`
+          // never gets `.js` appended and fails to resolve (rollup/vite don't
+          // enforce this).
+          test: /\.(?:[cm]?[jt]s|g[jt]s|hbs)$/,
+          resolve: { fullySpecified: false },
+        },
         {
           test: /\.g[jt]s$/,
           use: [

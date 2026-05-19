@@ -105,7 +105,7 @@ appScenarios
   });
 
 appScenarios
-  .only('release')
+  .only('lts_6_12')
   .map('macro-babel-cache-busting', project => {
     scenarioSetup(project);
   })

@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2026-05-19)
+
+* @embroider/vite 1.7.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2732](https://github.com/embroider-build/embroider/pull/2732) Fix emitFile warning ([@ef4](https://github.com/ef4))
+  * [#2727](https://github.com/embroider-build/embroider/pull/2727) Update `send` package to fix security vulnerability ([@mkszepp](https://github.com/mkszepp))
+
+#### :house: Internal
+* [#2718](https://github.com/embroider-build/embroider/pull/2718) fix(ts-app-template): use scripts for a Vite app ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
 ## Release (2026-05-12)
 
 * @embroider/compat 4.1.18 (patch)

@@ -13,17 +13,7 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.17",
-      "newVersion": "4.1.18",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.18"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
@@ -50,29 +40,21 @@
       "oldVersion": "3.0.2"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "minor",
-      "oldVersion": "1.3.6",
-      "newVersion": "1.4.0",
+      "oldVersion": "1.4.0"
+    },
+    "@embroider/vite": {
+      "impact": "patch",
+      "oldVersion": "1.7.2",
+      "newVersion": "1.7.3",
       "tagName": "latest",
       "constraints": [
         {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
         }
       ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
-    },
-    "@embroider/vite": {
-      "oldVersion": "1.7.2"
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-05-12)\n\n* @embroider/compat 4.1.18 (patch)\n* @embroider/template-tag-codemod 1.4.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/template-tag-codemod`\n  * [#2716](https://github.com/embroider-build/embroider/pull/2716) feat(template-tag-codemod): add a skipIgnoreRev option to merge-history ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :bug: Bug Fix\n* `@embroider/template-tag-codemod`\n  * [#2717](https://github.com/embroider-build/embroider/pull/2717) fix(template-tag-codemod): this becomes controller on component invokation ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### :house: Internal\n* `@embroider/compat`, `@embroider/template-tag-codemod`\n  * [#2725](https://github.com/embroider-build/embroider/pull/2725) Fix release ([@mansona](https://github.com/mansona))\n* `@embroider/compat`\n  * [#2719](https://github.com/embroider-build/embroider/pull/2719) Fix CI for ember-source 7 ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n"
+  "description": "## Release (2026-05-19)\n\n* @embroider/vite 1.7.3 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2732](https://github.com/embroider-build/embroider/pull/2732) Fix emitFile warning ([@ef4](https://github.com/ef4))\n  * [#2727](https://github.com/embroider-build/embroider/pull/2727) Update `send` package to fix security vulnerability ([@mkszepp](https://github.com/mkszepp))\n\n#### :house: Internal\n* [#2718](https://github.com/embroider-build/embroider/pull/2718) fix(ts-app-template): use scripts for a Vite app ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n\n#### Committers: 3\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))\n- Markus Sanin ([@mkszepp](https://github.com/mkszepp))\n"
 }

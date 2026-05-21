@@ -7,5 +7,6 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
+    "target": "es2022",
   },
 }

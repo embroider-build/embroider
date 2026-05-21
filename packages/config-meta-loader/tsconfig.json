@@ -6,7 +6,7 @@
     "composite": true,
     "outDir": "dist",
     "rootDir": "src",
-    "target": "es2019",
+    "target": "es2022",
     "module": "ESNext",
     "declaration": true,
     "typeRoots": ["types", "node_modules/@types"],

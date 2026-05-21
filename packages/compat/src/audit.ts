@@ -155,7 +155,10 @@ export class Audit {
     return readJSONSync(join(locateEmbroiderWorkingDir(this.originAppRoot), 'resolver.json'));
   }
 
-  private resolver = new Resolver(this.resolverParams);
+  @Memoize()
+  private get resolver() {
+    return new Resolver(this.resolverParams);
+  }
 
   async run(): Promise<AuditResults> {
     (globalThis as any).embroider_audit = this.handleResolverError.bind(this);

@@ -500,6 +500,48 @@ tsAppScenarios
         });
       });
 
+      test('component template using macroCondition with macroGetOwnConfig', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/own-config-example.hbs': `{{#if (macroCondition (macroGetOwnConfig "increment-twice"))}}Hello{{/if}}`,
+            'app/components/own-config-example.js': `
+              import Component from '@glimmer/component';
+
+              export default class OwnConfigExample extends Component {}
+            `,
+          },
+          to: {
+            'app/components/own-config-example.gjs': `
+              import Component from '@glimmer/component';
+              import { macroCondition } from "@embroider/macros";
+              export default class OwnConfigExample extends Component {<template>{{#if (macroCondition (macroGetOwnConfig "increment-twice"))}}Hello{{/if}}</template>}
+            `,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/own-config-example.hbs`,
+        });
+      });
+
+      test('component template using macroCondition with dependencySatisfies', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/dependency-example.hbs': `{{#if (macroCondition (dependencySatisfies "some-package" "*"))}}Hello{{/if}}`,
+            'app/components/dependency-example.js': `
+              import Component from '@glimmer/component';
+
+              export default class DependencyExample extends Component {}
+            `,
+          },
+          to: {
+            'app/components/dependency-example.gjs': `
+              import Component from '@glimmer/component';
+              import { macroCondition, dependencySatisfies } from "@embroider/macros";
+              export default class DependencyExample extends Component {<template>{{#if (macroCondition (dependencySatisfies "some-package" "*"))}}Hello{{/if}}</template>}
+            `,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/dependency-example.hbs`,
+        });
+      });
+
       test('basic route template - native js', async function (assert) {
         await assert.codeMod({
           from: {

@@ -120,6 +120,33 @@ function builtInKeywords(emberVersion: string): Record<string, BuiltIn | undefin
       importableHelper: ['uniqueId', '@ember/helper'],
     };
   }
+
+  // Template macro helpers from @embroider/macros.
+  //
+  // In app builds these helpers are normally handled by @embroider/macros'
+  // template transforms. The template-tag codemod needs to recognize them
+  // explicitly while generating scoped .gjs/.gts output, otherwise the
+  // resolver can produce unresolvable @embroider/virtual/helpers/* imports.
+  //
+  // Some of these names are real JS exports from @embroider/macros and need
+  // explicit imports in generated .gjs/.gts output:
+  //   macroCondition, dependencySatisfies
+  //
+  // Others are template-only macro helper names that are not JS exports.
+  // These must be treated as known keywords to suppress virtual imports,
+  // without generating import statements:
+  //   macroGetOwnConfig
+  const embroiderTemplateMacroHelpers: Record<string, BuiltIn> = {
+    dependencySatisfies: {
+      importableHelper: ['dependencySatisfies', '@embroider/macros'],
+    },
+    macroCondition: {
+      importableHelper: ['macroCondition', '@embroider/macros'],
+    },
+    macroGetOwnConfig: {},
+  };
+  Object.assign(builtInKeywords, embroiderTemplateMacroHelpers);
+
   return builtInKeywords;
 }
 

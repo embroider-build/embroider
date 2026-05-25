@@ -1,12 +1,10 @@
-import { tsAppScenarios, tsAppClassicScenarios } from './scenarios';
+import { tsAppScenarios, tsAppClassicScenarios, isUsingQunit9 } from './scenarios';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 
 const { module: Qmodule, test } = QUnit;
 
 function setupScenario(project: Project) {
-  project.linkDevDependency('@embroider/router', { baseDir: __dirname });
-
   // not strictly needed in the embroider case, but needed in the classic
   // case.
   project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
@@ -293,6 +291,25 @@ function setupScenario(project: Project) {
 tsAppScenarios
   .map('router-embroider', project => {
     setupScenario(project);
+
+    if (isUsingQunit9(project)) {
+      (project.files['tests'] as any)['test-helper.ts'] = `
+  import Application from 'ts-app-template/app';
+  import config from 'ts-app-template/config/environment';
+  import * as QUnit from 'qunit';
+  import { setApplication } from '@ember/test-helpers';
+  import { setup } from 'qunit-dom';
+  import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+  export function start() {
+
+    setApplication(Application.create(config.APP));
+    setup(QUnit.assert);
+    setupEmberOnerrorValidation();
+    qunitStart();
+  }
+  `;
+    }
     project.mergeFiles({
       'ember-cli-build.js': `
         'use strict';
@@ -345,6 +362,25 @@ tsAppScenarios
 tsAppClassicScenarios
   .map('router-classic', project => {
     setupScenario(project);
+
+    if (isUsingQunit9(project)) {
+      (project.files['tests'] as any)['test-helper.ts'] = `
+  import Application from 'ts-app-template/app';
+  import config from 'ts-app-template/config/environment';
+  import * as QUnit from 'qunit';
+  import { setApplication } from '@ember/test-helpers';
+  import { setup } from 'qunit-dom';
+  import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+  import { loadTests } from 'ember-qunit/test-loader';
+
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  setupEmberOnerrorValidation();
+  loadTests()
+  qunitStart();
+  `;
+    }
+
     project.mergeFiles({
       'ember-cli-build.js': `
       'use strict';

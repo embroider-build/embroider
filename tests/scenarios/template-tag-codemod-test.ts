@@ -7,7 +7,7 @@ import { dirname, join } from 'path';
 const { module: Qmodule, test } = QUnit;
 
 tsAppScenarios
-  .only('release')
+  .only('lts_6_12')
   .map('template-tag-codemod', project => {
     project.linkDevDependency('@embroider/template-tag-codemod', { baseDir: __dirname });
     project.mergeFiles({
@@ -566,12 +566,18 @@ tsAppScenarios
       test('route template rewrite this to @controller', async function (assert) {
         await assert.codeMod({
           from: {
-            'app/templates/example.hbs': `<div>{{t this.message}}</div>`,
+            'app/templates/example.hbs': `
+              <div>{{t this.message}}</div>
+              <this.greetingBoxComponent />
+            `,
           },
           to: {
             'app/templates/example.gjs': `
               import t from "../helpers/t.js";
-              <template><div>{{t @controller.message}}</div></template>
+              <template>
+                <div>{{t @controller.message}}</div>
+                <@controller.greetingBoxComponent />
+              </template>
             `,
           },
           via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates ./app/templates/example.hbs --components false`,

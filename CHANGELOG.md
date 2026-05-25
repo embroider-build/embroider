@@ -1,5 +1,133 @@
 # Embroider Changelog
 
+## Release (2026-05-19)
+
+* @embroider/vite 1.7.3 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2732](https://github.com/embroider-build/embroider/pull/2732) Fix emitFile warning ([@ef4](https://github.com/ef4))
+  * [#2727](https://github.com/embroider-build/embroider/pull/2727) Update `send` package to fix security vulnerability ([@mkszepp](https://github.com/mkszepp))
+
+#### :house: Internal
+* [#2718](https://github.com/embroider-build/embroider/pull/2718) fix(ts-app-template): use scripts for a Vite app ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### Committers: 3
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+- Markus Sanin ([@mkszepp](https://github.com/mkszepp))
+
+## Release (2026-05-12)
+
+* @embroider/compat 4.1.18 (patch)
+* @embroider/template-tag-codemod 1.4.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/template-tag-codemod`
+  * [#2716](https://github.com/embroider-build/embroider/pull/2716) feat(template-tag-codemod): add a skipIgnoreRev option to merge-history ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### :bug: Bug Fix
+* `@embroider/template-tag-codemod`
+  * [#2717](https://github.com/embroider-build/embroider/pull/2717) fix(template-tag-codemod): this becomes controller on component invokation ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+#### :house: Internal
+* `@embroider/compat`, `@embroider/template-tag-codemod`
+  * [#2725](https://github.com/embroider-build/embroider/pull/2725) Fix release ([@mansona](https://github.com/mansona))
+* `@embroider/compat`
+  * [#2719](https://github.com/embroider-build/embroider/pull/2719) Fix CI for ember-source 7 ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Marine Dunstetter ([@BlueCutOfficial](https://github.com/BlueCutOfficial))
+
+## Release (2026-03-29)
+
+* @embroider/compat 4.1.17 (patch)
+* @embroider/vite 1.7.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2695](https://github.com/embroider-build/embroider/pull/2695) Conditional file writes for Ember modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+  * [#2696](https://github.com/embroider-build/embroider/pull/2696) Fix paths check to use existence rather than value-as-key lookup ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### :house: Internal
+* `@embroider/vite`
+  * [#2693](https://github.com/embroider-build/embroider/pull/2693) Fix CI: use caret range for rolldown devDependency ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### Committers: 2
+- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2026-03-24)
+
+* @embroider/compat 4.1.16 (patch)
+* @embroider/core 4.4.7 (patch)
+* @embroider/macros 1.20.2 (patch)
+* @embroider/template-tag-codemod 1.3.6 (patch)
+* @embroider/vite 1.7.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/template-tag-codemod`
+  * [#2661](https://github.com/embroider-build/embroider/pull/2661) cleaning up AMD template compiler deprecation ([@ef4](https://github.com/ef4))
+* `@embroider/macros`
+  * [#2688](https://github.com/embroider-build/embroider/pull/2688) Robustify the global macros variable ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2026-03-18)
+
+* @embroider/core 4.4.6 (patch)
+* @embroider/vite 1.7.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2687](https://github.com/embroider-build/embroider/pull/2687) rolldown-vite -> vite8 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2685](https://github.com/embroider-build/embroider/pull/2685) Fix getAppFiles extensions ([@JezerM](https://github.com/JezerM))
+* `@embroider/vite`
+  * [#2686](https://github.com/embroider-build/embroider/pull/2686) Add keywords to package.json for vite ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* [#2679](https://github.com/embroider-build/embroider/pull/2679) Add scenarios for 6.12 + use-ember-modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Jezer Mejía ([@JezerM](https://github.com/JezerM))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2026-03-04)
+
+* @embroider/compat 4.1.15 (patch)
+* @embroider/core 4.4.5 (patch)
+* @embroider/macros 1.20.1 (patch)
+* @embroider/vite 1.6.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2680](https://github.com/embroider-build/embroider/pull/2680) Fix types for setTesting ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2026-02-24)
+
+* @embroider/compat 4.1.14 (patch)
+* @embroider/core 4.4.4 (patch)
+* @embroider/macros 1.20.0 (minor)
+* @embroider/vite 1.6.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/macros`
+  * [#2662](https://github.com/embroider-build/embroider/pull/2662) `setTesting()` from `@embroider/macros` ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/vite`
+  * [#2668](https://github.com/embroider-build/embroider/pull/2668) Rolldown + Rollup :: better filtering ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-02-07)
 
 * @embroider/vite 1.5.2 (patch)

@@ -10,7 +10,7 @@ import core from '@embroider/core';
 import { resolve } from 'path';
 
 const { cleanUrl, getUrlQueryParams, packageName } = core;
-import type { PluginContext, ResolveIdResult } from 'rollup';
+import type { PluginContext, ResolveIdResult } from 'rolldown';
 import type { BackChannel } from './backchannel.js';
 import { assertNever } from 'assert-never';
 import { externalName } from '@embroider/reverse-exports';
@@ -103,7 +103,7 @@ export class RollupRequestAdapter implements RequestAdapter<Resolution<ResolveId
   virtualResponse(
     request: ModuleRequest<Resolution<ResolveIdResult>>,
     virtual: VirtualResponse
-  ): Resolution<ResolveIdResult> {
+  ): Resolution<ResolveIdResult & { resolvedBy: string }> {
     return {
       type: 'found',
       filename: virtual.specifier,

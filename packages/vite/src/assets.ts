@@ -3,7 +3,7 @@ import * as core from '@embroider/core';
 const { ResolverLoader } = core;
 import type { Plugin } from 'vite';
 import * as process from 'process';
-import { join, posix } from 'path';
+import { join, posix, dirname, basename } from 'path';
 import fs from 'fs-extra';
 const { existsSync, readFileSync, lstatSync } = fs;
 import send from 'send';
@@ -50,7 +50,7 @@ export function assets(): Plugin {
           if (originalUrl && originalUrl.length > 1) {
             const assetUrl = findPublicAsset(originalUrl.split('?')[0], resolverLoader.resolver);
             if (assetUrl) {
-              return send(req, assetUrl).pipe(res as unknown as NodeJS.WritableStream);
+              return send(req, basename(assetUrl), { root: dirname(assetUrl) }).pipe(res);
             }
           }
           return next();

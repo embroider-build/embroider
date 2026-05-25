@@ -13,7 +13,7 @@ import semver from 'semver';
 import rewriteAddonTree from './rewrite-addon-tree';
 import { mergeWithAppend } from './merges';
 import type { AddonMeta, PackageCache, AddonInstance, AddonTreePath } from '@embroider/core';
-import { debug, findTopmostAddon } from '@embroider/core';
+import { debug } from '@embroider/core';
 import walkSync from 'walk-sync';
 import ObserveTree from './observe-tree';
 import { isEmbroiderMacrosPlugin } from '@embroider/macros/src/node';
@@ -120,11 +120,7 @@ export default class V1Addon {
     // our macros don't run here in stage1
     plugins = plugins.filter((p: any) => !isEmbroiderMacrosPlugin(p));
     if (plugins.length > 0 || hasTemplateTag) {
-      let compilerPath = require.resolve('ember-source/dist/ember-template-compiler.js', {
-        paths: [findTopmostAddon(this.addonInstance).parent.root],
-      });
       let opts: EtcOptions = {
-        compilerPath,
         targetFormat: 'hbs',
         enableLegacyModules: [
           'ember-cli-htmlbars',

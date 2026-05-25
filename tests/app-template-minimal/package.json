@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "build:test": "NODE_ENV=development vite build --mode test",
+    "build:test": "NODE_ENV=development vite build --mode development",
     "start": "vite",
     "test": "pnpm test:ember",
     "test:ember": "pnpm build:test && pnpm dist:ember:test",
@@ -37,7 +37,7 @@
     "@glimmer/component": "^2.0.0",
     "@glimmer/tracking": "^1.1.2",
     "@rollup/plugin-babel": "^5.3.1",
-    "babel-plugin-ember-template-compilation": "^3.0.0",
+    "babel-plugin-ember-template-compilation": "^3.1.0",
     "decorator-transforms": "^2.0.0",
     "ember-cli": "^6.2.2",
     "ember-modifier": "^4.1.0",

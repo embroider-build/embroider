@@ -23,8 +23,8 @@ minimalAppScenarios
     // because we're testing the development experience itself.
     app.linkDevDependency('testem', { baseDir: __dirname });
     app.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
+    app.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters-4' });
 
-    app.linkDevDependency('ember-page-title', { baseDir: __dirname });
     app.linkDevDependency('ember-welcome-page', { baseDir: __dirname });
     app.mergeFiles({
       'testem-dev.cjs': `
@@ -102,6 +102,56 @@ minimalAppScenarios
         },
       },
       tests: {
+        'test-helper.js': `import Application from '#/app';
+import config, { enterTestMode } from '#config';
+
+import * as QUnit from 'qunit';
+import { setApplication } from '@ember/test-helpers';
+import { setup } from 'qunit-dom';
+import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+export function start() {
+  enterTestMode();
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  setupEmberOnerrorValidation();
+  qunitStart();
+}`,
+        'debug-test.js': `
+          import { test, module } from 'qunit';
+          import { assert } from '@ember/debug';
+          import { DEBUG } from '@glimmer/env';
+          import { isDevelopingApp, isTesting } from '@embroider/macros';
+
+          module('debug utils remain in the build', function () {
+            test('assert', function(qAssert) {
+              // If we get the build mode wrong, e.g.: \`NODE_ENV\` != 'development'
+              //   then the assert won't exist, causing qAssert to not detect a thrown Error
+              qAssert.throws(() => {
+                assert('should throw');
+              }, /should throw/, \`The error "should throw" is thrown\`);
+            });
+
+            test('isTesting', function (assert) {
+              assert.strictEqual(isTesting(), true, \`isTesting() === true\`);
+            });
+
+            test('isDevelopingApp', function (assert) {
+              assert.strictEqual(isDevelopingApp(), true, \`isDevelopingApp() === true\`);
+            });
+
+
+            module('not supported', function () {
+              test('DEBUG', function (assert) {
+                if (DEBUG) {
+                  assert.step('DEBUG');
+                }
+
+                assert.verifySteps([]);
+              });
+            });
+          });
+          `,
         integration: {
           components: {
             'fancy-component-test.gjs': `
@@ -194,10 +244,24 @@ minimalAppScenarios
 
       Qmodule('vite build', function () {
         test('run tests suite against vite build output', async function (assert) {
-          let result = await app.execute('pnpm vite build --mode test');
+          let result = await app.execute('pnpm cross-env NODE_ENV=development vite build --mode development');
           assert.equal(result.exitCode, 0, result.output);
           result = await app.execute('pnpm ember test --path dist --config-file ./testem.cjs');
           assert.equal(result.exitCode, 0, result.output);
+
+          for (let output of [
+            'debug utils remain in the build: assert',
+            'debug utils remain in the build: isTesting',
+            'debug utils remain in the build: isDevelopingApp',
+            'debug utils remain in the build > not supported: DEBUG',
+            'fancy-component: it renders',
+          ]) {
+            let actual = result.stdout.includes(output);
+            if (!actual) {
+              console.log(result.stdout);
+            }
+            assert.ok(actual, `stdout includes \`${output}\``);
+          }
         });
       });
     });

@@ -6,7 +6,7 @@ import { assertNever } from 'assert-never';
 import makeDebug from 'debug';
 import { join, normalize, resolve } from 'path';
 import { writeStatus } from './backchannel.js';
-import type { PluginContext, ResolveIdResult } from 'rollup';
+import type { PluginContext, ResolveIdResult } from 'rolldown';
 import { externalName } from '@embroider/reverse-exports';
 import fs from 'fs-extra';
 import { createHash } from 'crypto';
@@ -103,6 +103,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
   }
 
   let mode = '';
+  let command = '';
 
   return {
     name: 'embroider-resolver',
@@ -110,6 +111,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
 
     configResolved(config) {
       mode = config.mode;
+      command = config.command;
       cacheDir = normalize(config.cacheDir);
     },
 
@@ -168,12 +170,14 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
       }
     },
     async buildEnd() {
-      emitVirtualFile(this, '@embroider/virtual/vendor.js');
-      emitVirtualFile(this, '@embroider/virtual/vendor.css');
+      if (command === 'build') {
+        emitVirtualFile(this, '@embroider/virtual/vendor.js');
+        emitVirtualFile(this, '@embroider/virtual/vendor.css');
 
-      if (mode !== 'production') {
-        emitVirtualFile(this, '@embroider/virtual/test-support.js');
-        emitVirtualFile(this, '@embroider/virtual/test-support.css');
+        if (mode !== 'production') {
+          emitVirtualFile(this, '@embroider/virtual/test-support.js');
+          emitVirtualFile(this, '@embroider/virtual/test-support.css');
+        }
       }
     },
   };

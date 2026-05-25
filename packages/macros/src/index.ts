@@ -59,6 +59,10 @@ export function isTesting(): boolean {
   throw new Oops();
 }
 
+export function setTesting(value: boolean): boolean {
+  throw new Oops(value);
+}
+
 export function failBuild(message: string): void {
   throw new Oops(message);
 }

@@ -4,6 +4,7 @@ import { Project } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
 import { dirname } from 'path';
+import pkgUp from 'pkg-up';
 const { module: Qmodule, test } = QUnit;
 
 // this test is being used as a "smoke test" to check the widest possible support matrix
@@ -146,7 +147,9 @@ wideAppScenarios
         routes: {
           'ember-data-example.js': `
             import Route from '@ember/routing/route';
-            import { inject as service } from '@ember/service';
+            import * as emberService from '@ember/service';
+
+            const service = emberService.service ?? emberService.inject;
 
             export default class EmberDataExampleRoute extends Route {
               @service() store;
@@ -550,10 +553,29 @@ wideAppScenarios
   });
 
 function emberBootstrap() {
-  // https://github.com/kaliber5/ember-bootstrap/pull/1750
-  let modifiers = Project.fromDir(dirname(require.resolve('@ember/render-modifiers')), { linkDeps: true });
-  modifiers.removeDependency('ember-source');
   let eb = Project.fromDir(dirname(require.resolve('ember-bootstrap')), { linkDeps: true });
-  eb.addDependency(modifiers);
+
+  // update ember-cli-htmlbars in ember-bootstrap sub-dependencies
+  ['ember-concurrency', 'ember-element-helper', 'ember-popper-modifier', 'ember-ref-bucket'].forEach(name => {
+    let project = eb.dependencyProjects().find(p => p.name === name);
+
+    if (!project) {
+      project = Project.fromDir(dirname(pkgUp.sync({ cwd: require.resolve(`${name}`) })!), { linkDeps: true });
+      eb.addDependency(project);
+    }
+
+    project.addDependency(
+      Project.fromDir(dirname(require.resolve('ember-cli-htmlbars-7/package.json')), { linkDeps: true })
+    );
+
+    // because we use babel-plugin-ember-template-compilation-2 when ember-cli-babel is < 8 we need to make sure
+    // that all sub-dependencies have ember-cli-babel > 8 🫠
+    if (name === 'ember-ref-bucket') {
+      project.addDependency(
+        Project.fromDir(dirname(require.resolve('ember-cli-babel-latest/package.json')), { linkDeps: true })
+      );
+    }
+  });
+
   return eb;
 }

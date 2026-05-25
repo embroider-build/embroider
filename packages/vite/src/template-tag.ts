@@ -1,15 +1,8 @@
-import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
 import { Preprocessor } from 'content-tag';
+import { extFilter, supportsObjectHooks } from './build-id-filter.js';
 
-const gjsPathFilter = createFilter('**/*.{gjs,gts}');
-
-export function gjsFilter(id: string): boolean {
-  // Vite ids can contain a query string. We intentionally ignore it so that
-  // `app/foo.gjs.js?pretend.gjs` doesn't count as a .gjs file.
-  let [path] = id.split('?');
-  return gjsPathFilter(path);
-}
+export const gjsFilter = extFilter('gjs', 'gts');
 
 export function templateTag(): Plugin {
   let preprocessor = new Preprocessor();
@@ -18,13 +11,20 @@ export function templateTag(): Plugin {
     name: 'embroider-template-tag',
     enforce: 'pre',
 
-    transform(code: string, id: string) {
-      if (!gjsFilter(id)) {
-        return null;
-      }
-      return preprocessor.process(code, {
-        filename: id,
-      });
-    },
+    transform: supportsObjectHooks
+      ? {
+          filter: { id: gjsFilter },
+          handler(code: string, id: string) {
+            return preprocessor.process(code, {
+              filename: id,
+            });
+          },
+        }
+      : function (code: string, id: string) {
+          if (!gjsFilter.test(id)) return null;
+          return preprocessor.process(code, {
+            filename: id,
+          });
+        },
   };
 }

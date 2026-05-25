@@ -1,5 +1,3 @@
-import type { Configuration } from 'webpack';
-
 // [babel-loader](https://webpack.js.org/loaders/babel-loader/#options) specific options.
 // This does not include the babel configuration, which is pulled from the app, only the
 // additional options that `babel-loader` supports.
@@ -11,10 +9,10 @@ export interface BabelLoaderOptions {
 }
 
 export interface Options {
-  // This allows you to extend the webpack config in arbitrary ways. Your
-  // changes will get applied on top of the defaults provided by
-  // @embroider/webpack.
-  webpackConfig: Configuration;
+  // Because `emberWebpack()` is a plugin you add to your own
+  // webpack.config.js, you extend the webpack config simply by editing that
+  // file directly (add rules/plugins/resolve there as usual). The options
+  // here are the embroider-specific knobs.
 
   // the base public URL for your assets in production. Use this when you want
   // to serve all your assets from a different origin (like a CDN) than your
@@ -28,34 +26,7 @@ export interface Options {
   // 2. And you set publicAssetURL to "https://cdn/"
   // 3. Browsers will try to locate the file at
   //    "https://cdn/assets/chunk.123.js".
-  //
-  // Notice that `publicAssetURL` gets applied relative to your whole built
-  // application -- not a particular subdirectory like "/assets". If you don't
-  // want a part of the path to show up in the public URLs, you should adjust the
-  // actual locations of the output files to remove that directory. For example:
-  //
-  // webpackConfig: {
-  //   output: {
-  //     // This overrides our default of "assets/chunk.[chunkhash].js"
-  //     // to move the chunks to the root of the app, eliminating the assets subdirectory.
-  //     filename: `mychunk.[chunkhash].js`,
-  //     chunkFilename: `mychunk.[chunkhash].js`,
-  //   },
-  // },
-  // publicAssetURL: "https://cdn/",
-  //
-  // The above example will result in CDN URLs like "https://cdn/mychunk.123.js".
-  //
   publicAssetURL?: string;
-
-  // [thread-loader](https://github.com/webpack-contrib/thread-loader) options.
-  // If set to false, `thread-loader` will not be used. If set to an object, it
-  // will be used to configure `thread-loader`. If not specified,
-  // `thread-loader` will be used with a default configuration.
-  //
-  // Note that setting `JOBS=0` in the environment will also disable
-  // `thread-loader`.
-  threadLoaderOptions?: object | false;
 
   babelLoaderOptions?: BabelLoaderOptions;
 

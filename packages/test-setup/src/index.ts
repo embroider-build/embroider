@@ -1,10 +1,7 @@
 import type { PipelineOptions } from '@embroider/compat';
-import type { PackagerConstructor } from '@embroider/core';
-import type { Webpack } from '@embroider/webpack';
+import type { Options as EmberWebpackOptions } from '@embroider/webpack';
 import Plugin from 'broccoli-plugin';
 import { spawn } from 'child_process';
-
-type EmberWebpackOptions = typeof Webpack extends PackagerConstructor<infer Options> ? Options : never;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ourPeerDeps = require('../package.json').peerDependencies;

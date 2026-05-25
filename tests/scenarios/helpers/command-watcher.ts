@@ -69,8 +69,16 @@ export default class CommandWatcher {
   }
 
   async waitFor(output: string | RegExp, timeout = DEFAULT_TIMEOUT): Promise<any> {
+    // This timer MUST be cleared once we stop waiting. Otherwise it stays a
+    // ref'd libuv handle that keeps the whole process alive until it fires.
+    // e.g. `server.waitFor(/Loopback:/, 10 * 60 * 1000)` would keep an
+    // already-finished (passing) test suite's process alive for ~10 minutes,
+    // which in CI looks like the job hanging and then being cancelled. The
+    // `finally` clears it; `.unref()` is belt-and-suspenders so even a missed
+    // path can't pin the event loop open.
+    let timer: ReturnType<typeof setTimeout> | undefined;
     let timedOut = new Promise<void>((_resolve, reject) => {
-      setTimeout(() => {
+      timer = setTimeout(() => {
         let err = new Error(
           'Timed out after ' +
             timeout +
@@ -83,23 +91,30 @@ export default class CommandWatcher {
         reject(err);
       }, timeout);
     });
-    while (true) {
-      if (this.exitCode != null) {
-        throw new Error(
-          'Process exited with code ' +
-            this.exitCode +
-            ' before output "' +
-            output +
-            '" was found. ' +
-            'Output:\n\n' +
-            this.lines.join('\n')
-        );
+    timer?.unref?.();
+    try {
+      while (true) {
+        if (this.exitCode != null) {
+          throw new Error(
+            'Process exited with code ' +
+              this.exitCode +
+              ' before output "' +
+              output +
+              '" was found. ' +
+              'Output:\n\n' +
+              this.lines.join('\n')
+          );
+        }
+        let result = this.searchLines(output);
+        if (result) {
+          return result;
+        }
+        await this.internalWait(timedOut);
       }
-      let result = this.searchLines(output);
-      if (result) {
-        return result;
+    } finally {
+      if (timer) {
+        clearTimeout(timer);
       }
-      await this.internalWait(timedOut);
     }
   }
 

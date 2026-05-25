@@ -1,726 +1,330 @@
 /*
-  Most of the work this module does is putting an HTML-oriented facade around
-  Webpack. That is, we want both the input and output to be primarily HTML files
-  with proper spec semantics, and we use webpack to optimize the assets referred
-  to by those files.
+  This is the modern @embroider/webpack. It mirrors the architecture of
+  @embroider/vite: the app keeps its real index.html / tests/index.html (with
+  {{content-for}} placeholders and /@embroider/virtual/* references), the
+  compat prebuild produces the .embroider working directory, and webpack
+  bundles using @embroider/core's Resolver + virtual content.
 
-  While there are webpack plugins for handling HTML, none of them handle
-  multiple HTML entrypoints and apply correct HTML semantics (for example,
-  getting script vs module context correct).
+  Just like vite, there are two plugins and they mutate the (webpack) config
+  rather than owning it:
+
+      const { classicEmberSupport, ember } = require('@embroider/webpack');
+      module.exports = {
+        plugins: [classicEmberSupport(), ember()],
+      };
+
+  - classicEmberSupport(): the compat prebuild, content-for, the public-assets
+    of v2 addons, and the .hbs rule (analogous to vite's classicEmberSupport()).
+  - ember(): the resolver, the template-tag/babel/css rules, the build config
+    mutation, and the html entrypoints (analogous to vite's ember()).
+
+  Apps wire `buildOnce` into ember-cli-build.js via @embroider/compat's
+  `compatBuild`.
 */
 
-import type { BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
-import { HTMLEntrypoint, getPackagerCacheDir, getOrCreate } from '@embroider/core';
-import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
-import type { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
-import webpack from 'webpack';
-import type { Stats } from 'fs-extra';
-import { readFileSync, outputFileSync, copySync, statSync, readJSONSync } from 'fs-extra';
-import { join, dirname, relative, sep } from 'path';
-import isEqual from 'lodash/isEqual';
-import mergeWith from 'lodash/mergeWith';
-import flatMap from 'lodash/flatMap';
+import { join } from 'path';
+import { getPackagerCacheDir, type Variant } from '@embroider/core';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import makeDebug from 'debug';
-import { format } from 'util';
-import { warmup as threadLoaderWarmup } from 'thread-loader';
-import type { Options, BabelLoaderOptions } from './options';
-import crypto from 'crypto';
-import semverSatisfies from 'semver/functions/satisfies';
-import supportsColor from 'supports-color';
-import type { Options as HbsLoaderOptions } from '@embroider/hbs-loader';
-import type { Options as EmbroiderPluginOptions } from './webpack-resolver-plugin';
+import type { Compiler, RuleSetRule } from 'webpack';
 import { EmbroiderPlugin } from './webpack-resolver-plugin';
+import { compatPrebuild, runCompatPrebuild } from './compat-prebuild';
+import { discoverHtmlEntrypoints, HtmlOutputPlugin, type HtmlState } from './html-output-plugin';
+import { AssetsPlugin } from './assets-plugin';
+import type { Options } from './options';
 
-const debug = makeDebug('embroider:debug');
+// Matches vite's `extensions` export.
+export const extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
 
-// this function is never called. It exists to workaround typescript being
-// obtuse. https://github.com/microsoft/TypeScript/pull/53426
-async function loadTerser() {
-  let Terser = await import('terser');
-  return Terser.minify;
-}
-type MinifyOptions = NonNullable<Parameters<Awaited<ReturnType<typeof loadTerser>>>[1]>;
-
-interface AppInfo {
-  entrypoints: HTMLEntrypoint[];
-  otherAssets: string[];
-  rootURL: string;
-  publicAssetURL: string;
-  resolverConfig: ResolverOptions;
-  packageName: string;
-}
-
-// AppInfos are equal if they result in the same webpack config.
-function equalAppInfo(left: AppInfo, right: AppInfo): boolean {
-  return (
-    left.entrypoints.length === right.entrypoints.length &&
-    left.entrypoints.every((e, index) => isEqual(e.modules, right.entrypoints[index].modules))
-  );
+function emberEnv(mode: string | undefined): 'development' | 'test' | 'production' {
+  let env = process.env.EMBER_ENV;
+  if (env === 'production' || env === 'test' || env === 'development') {
+    return env;
+  }
+  if (mode === 'production') {
+    return 'production';
+  }
+  return process.env.NODE_ENV === 'production' ? 'production' : 'development';
 }
 
-type BeginFn = (total: number) => void;
-type IncrementFn = () => Promise<void>;
-
-function createBarrier(): [BeginFn, IncrementFn] {
-  const barriers: Array<[() => void, (e: unknown) => void]> = [];
-  let done = true;
-  let limit = 0;
-  return [begin, increment];
-
-  function begin(newLimit: number) {
-    if (!done) flush(new Error('begin called before limit reached'));
-    done = false;
-    limit = newLimit;
+// Mirrors vite's `shouldBuildTests`.
+function shouldBuildTests(env: 'development' | 'test' | 'production'): boolean {
+  let build = env !== 'production' || Boolean(process.env.FORCE_BUILD_TESTS);
+  if (build) {
+    process.env.EMBER_CLI_TEST_COMMAND = 'true';
   }
-
-  async function increment() {
-    if (done) {
-      throw new Error('increment after limit reach');
-    }
-    const promise = new Promise<void>((resolve, reject) => {
-      barriers.push([resolve, reject]);
-    });
-    if (barriers.length === limit) {
-      flush();
-    }
-    await promise;
-  }
-
-  function flush(err?: Error) {
-    for (const [resolve, reject] of barriers) {
-      if (err) reject(err);
-      else resolve();
-    }
-    barriers.length = 0;
-    done = true;
-  }
+  return build;
 }
 
-// we want to ensure that not only does our instance conform to
-// PackagerInstance, but our constructor conforms to Packager. So instead of
-// just exporting our class directly, we export a const constructor of the
-// correct type.
-const Webpack: PackagerConstructor<Options> = class Webpack implements Packager {
-  static annotation = '@embroider/webpack';
+interface Shared {
+  appRoot: string;
+  prebuildEnv: 'development' | 'production';
+  includeTests: boolean;
+  htmlState: HtmlState;
+  // set by classicEmberSupport(); ember() reads it to decide whether to run
+  // the compat prebuild + apply content-for (a fully-v2 app uses only ember()).
+  classic: boolean;
+}
 
-  private pathToVanillaApp: string;
-  private extraConfig: Configuration | undefined;
-  private passthroughCache: Map<string, Stats> = new Map();
-  private publicAssetURL: string | undefined;
-  private extraThreadLoaderOptions: object | false | undefined;
-  private extraBabelLoaderOptions: BabelLoaderOptions | undefined;
-  private extraCssLoaderOptions: object | undefined;
-  private extraCssPluginOptions: object | undefined;
-  private extraStyleLoaderOptions: object | undefined;
-  private _bundleSummary: BundleSummary | undefined;
-  private beginBarrier: BeginFn;
-  private incrementBarrier: IncrementFn;
+// classicEmberSupport() and ember() coordinate through one Shared object per
+// compiler, regardless of the order they appear in the plugins array.
+const sharedByCompiler = new WeakMap<Compiler, Shared>();
 
-  constructor(
-    private appRoot: string,
-    private outputPath: string,
-    private variants: Variant[],
-    private consoleWrite: (msg: string) => void,
-    options?: Options
-  ) {
-    if (!semverSatisfies(webpack.version, '^5.0.0')) {
-      throw new Error(`@embroider/webpack requires webpack@^5.0.0, but found version ${webpack.version}`);
-    }
-
-    let packageCache = RewrittenPackageCache.shared('embroider', appRoot);
-    this.pathToVanillaApp = packageCache.maybeMoved(packageCache.get(appRoot)).root;
-    this.extraConfig = options?.webpackConfig;
-    this.publicAssetURL = options?.publicAssetURL;
-    this.extraThreadLoaderOptions = options?.threadLoaderOptions;
-    this.extraBabelLoaderOptions = options?.babelLoaderOptions;
-    this.extraCssLoaderOptions = options?.cssLoaderOptions;
-    this.extraCssPluginOptions = options?.cssPluginOptions;
-    this.extraStyleLoaderOptions = options?.styleLoaderOptions;
-    [this.beginBarrier, this.incrementBarrier] = createBarrier();
-    warmUp(this.extraThreadLoaderOptions);
+function getShared(compiler: Compiler, options: Options): Shared {
+  let existing = sharedByCompiler.get(compiler);
+  if (existing) {
+    return existing;
   }
+  const opts = compiler.options;
+  const appRoot = (opts.context as string) || process.cwd();
+  const env = emberEnv(opts.mode);
+  const publicAssetURL = options.publicAssetURL || '/';
+  const shared: Shared = {
+    appRoot,
+    prebuildEnv: env === 'production' ? 'production' : 'development',
+    includeTests: shouldBuildTests(env),
+    htmlState: { appRoot, publicAssetURL, records: [], applyContentFor: false },
+    classic: false,
+  };
+  sharedByCompiler.set(compiler, shared);
+  return shared;
+}
 
-  get bundleSummary(): BundleSummary {
-    let bundleSummary = this._bundleSummary;
-    if (bundleSummary === undefined) {
-      this._bundleSummary = bundleSummary = {
-        entrypoints: new Map(),
-        lazyBundles: new Map(),
-        variants: this.variants,
+export function classicEmberSupport(options: Options = {}) {
+  return {
+    apply(compiler: Compiler) {
+      const shared = getShared(compiler, options);
+      shared.classic = true;
+      shared.htmlState.applyContentFor = true;
+
+      const { appRoot, prebuildEnv } = shared;
+
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const appName: string = require(join(appRoot, 'package.json')).name;
+
+      const opts = compiler.options;
+      addLoaderAlias(compiler, 'embroider-hbs-loader', require.resolve('@embroider/hbs-loader'));
+      opts.module.rules.push({
+        test: /\.hbs$/,
+        use: [
+          { loader: 'babel-loader-9', options: babelLoaderOptions(shared, options) },
+          {
+            loader: 'embroider-hbs-loader',
+            options: { compatModuleNaming: { rootDir: appRoot, modulePrefix: appName } },
+          },
+        ],
+      });
+
+      compatPrebuild(prebuildEnv, extensions).apply(compiler);
+      new AssetsPlugin(appRoot).apply(compiler);
+    },
+  };
+}
+
+export function ember(options: Options = {}) {
+  return {
+    apply(compiler: Compiler) {
+      const shared = getShared(compiler, options);
+      const { appRoot, prebuildEnv, includeTests, htmlState } = shared;
+      const opts = compiler.options;
+      const publicAssetURL = options.publicAssetURL || '/';
+      const outputPath = process.env.EMBROIDER_WEBPACK_OUTDIR
+        ? join(appRoot, process.env.EMBROIDER_WEBPACK_OUTDIR)
+        : opts.output?.path || join(appRoot, 'dist');
+
+      // Align process.env.NODE_ENV with the build mode, the way vite does.
+      // @embroider/macros' `buildMacros()` (run by babel-loader-9 in this same
+      // process) only enables *runtime* macro mode when
+      // NODE_ENV === 'development'; that mode is what makes `setTesting()` /
+      // runtime `isTesting()` work. Vite sets this for its dev server and the
+      // vite app templates set it in their `build:test` script, but webpack
+      // doesn't set the real process.env.NODE_ENV, and `webpack serve` is
+      // launched directly (bypassing npm scripts), so do it here.
+      if (prebuildEnv !== 'production' && !process.env.NODE_ENV) {
+        process.env.NODE_ENV = 'development';
+      }
+
+      // ---- mutate the user's config (like vite's config() hook) ----
+
+      opts.context = appRoot;
+      if (opts.node === undefined) {
+        opts.node = false;
+      }
+      if (opts.performance && typeof opts.performance === 'object') {
+        opts.performance.hints ??= false;
+      }
+
+      // embroider owns entry. We set it to an async function (webpack supports
+      // this) so the compat prebuild has produced resolver.json /
+      // content-for.json before we discover the html entrypoints.
+      opts.entry = (async () => {
+        if (shared.classic) {
+          await runCompatPrebuild(prebuildEnv, extensions);
+        }
+        return discoverHtmlEntrypoints(htmlState, includeTests);
+      }) as unknown as typeof opts.entry;
+
+      if (!opts.resolve.extensions || opts.resolve.extensions.length === 0) {
+        opts.resolve.extensions = extensions;
+      }
+
+      // Ember apps import without file extensions everywhere (e.g.
+      // `import Application from './src/app'`). In a fully-v2 app
+      // (`"type": "module"`) webpack would otherwise treat those as ESM and
+      // enforce `fullySpecified`, refusing to apply resolve.extensions and
+      // failing to find `./src/app.js`. Rollup/vite don't enforce this, so
+      // disable it to match (the classic app-template isn't `type: module`,
+      // which is why it never hit this).
+      if (opts.resolve.fullySpecified === undefined) {
+        opts.resolve.fullySpecified = false;
+      }
+
+      addLoaderAlias(compiler, 'babel-loader-9', require.resolve('@embroider/babel-loader-9'));
+      addLoaderAlias(compiler, 'css-loader', require.resolve('css-loader'));
+      addLoaderAlias(compiler, 'style-loader', require.resolve('style-loader'));
+      addLoaderAlias(compiler, 'embroider-template-tag-loader', require.resolve('./template-tag-loader.js'));
+
+      opts.optimization.splitChunks ??= { chunks: 'all' };
+
+      opts.output.path = outputPath;
+      opts.output.filename ??= 'assets/chunk.[contenthash].js';
+      opts.output.chunkFilename ??= 'assets/chunk.[contenthash].js';
+      opts.output.publicPath ??= publicAssetURL;
+      opts.output.clean ??= true;
+
+      // fastboot-only modules use top-level await import()
+      (opts.experiments as { topLevelAwait?: boolean }).topLevelAwait ??= true;
+
+      // ---- dev server (webpack serve) ----
+      //
+      // The webpack analog of @embroider/vite's dev server. We only set
+      // defaults (??=) so an app can still override anything in its own
+      // webpack.config.js. `webpack serve` reads compiler.options.devServer
+      // after the compiler is created, so mutating it here (just like we
+      // mutate output/entry above) is picked up.
+      //
+      // - historyApiFallback: the Ember app is an SPA; unknown routes must be
+      //   served the embroider-built index.html (emitted into the compilation
+      //   by HtmlOutputPlugin). /tests is its own emitted html page.
+      // - hot:false / liveReload:true: Ember doesn't support webpack HMR, so
+      //   we do a full reload when a rebuild (incl. the compat prebuild watch)
+      //   produces new output.
+      // - static:false: serve everything from the in-memory compilation, never
+      //   stale files from a previous `webpack build` in output.path.
+      // webpack-dev-server's types aren't a dependency of this package, so
+      // treat devServer structurally.
+      const optsAny = opts as unknown as { devServer?: Record<string, unknown> };
+      const devServer = optsAny.devServer ?? {};
+      devServer.historyApiFallback ??= {
+        index: '/index.html',
+        rewrites: [{ from: /^\/tests(\/|$|\?)/, to: '/tests/index.html' }],
+        disableDotRule: false,
       };
-    }
-    return bundleSummary;
-  }
+      devServer.hot ??= false;
+      devServer.liveReload ??= true;
+      devServer.static ??= false;
+      optsAny.devServer = devServer;
 
-  async build(): Promise<void> {
-    this._bundleSummary = undefined;
-    this.beginBarrier(this.variants.length);
-    let appInfo = this.examineApp();
-    let webpack = this.getWebpack(appInfo);
-    await this.runWebpack(webpack);
-  }
-
-  private examineApp(): AppInfo {
-    // @ts-expect-error webpack is not updated to work on @embroider/core 4.x
-    let meta = getAppMeta(this.pathToVanillaApp);
-    let rootURL = meta['ember-addon']['root-url'];
-    let entrypoints = [];
-    let otherAssets = [];
-    let publicAssetURL = this.publicAssetURL || rootURL;
-
-    for (let relativePath of meta['ember-addon'].assets) {
-      if (/\.html/i.test(relativePath)) {
-        entrypoints.push(new HTMLEntrypoint(this.pathToVanillaApp, rootURL, publicAssetURL, relativePath));
+      // discoverHtmlEntrypoints rewrites the `.embroider-webpack-*.js` entry
+      // shims on every compilation. They must never be part of the watch set
+      // or each rebuild would retrigger itself.
+      const ignoreGenerated = '**/.embroider-webpack-*.js';
+      const wo = opts.watchOptions;
+      if (Array.isArray(wo.ignored)) {
+        if (!wo.ignored.includes(ignoreGenerated)) {
+          wo.ignored.push(ignoreGenerated);
+        }
+      } else if (typeof wo.ignored === 'string') {
+        wo.ignored = [wo.ignored, ignoreGenerated];
       } else {
-        otherAssets.push(relativePath);
+        // undefined, or a (rare) RegExp form we can't merge into webpack's
+        // string-array `ignored`: fall back to the conventional default plus
+        // our shim glob.
+        wo.ignored = ['**/node_modules/**', ignoreGenerated];
       }
-    }
 
-    let resolverConfig: EmbroiderPluginOptions = readJSONSync(
-      join(locateEmbroiderWorkingDir(this.appRoot), 'resolver.json')
-    );
-
-    return { entrypoints, otherAssets, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };
-  }
-
-  private configureWebpack(appInfo: AppInfo, variant: Variant, variantIndex: number): Configuration {
-    const { entrypoints, publicAssetURL, packageName, resolverConfig } = appInfo;
-
-    let entry: { [name: string]: string } = {};
-    for (let entrypoint of entrypoints) {
-      for (let moduleName of entrypoint.modules) {
-        entry[moduleName] = './' + moduleName;
-      }
-    }
-
-    let { plugins: stylePlugins, loaders: styleLoaders } = this.setupStyleConfig(variant);
-
-    let babelLoaderOptions = makeBabelLoaderOptions(
-      variant,
-      join(this.appRoot, 'babel.config.cjs'),
-      this.extraBabelLoaderOptions
-    );
-
-    let babelLoaderPrefix = `babel-loader-9?${JSON.stringify(babelLoaderOptions.options)}!`;
-
-    return {
-      mode: variant.optimizeForProduction ? 'production' : 'development',
-      context: this.pathToVanillaApp,
-      entry,
-      performance: {
-        hints: false,
-      },
-      plugins: [
-        ...stylePlugins,
-        new EmbroiderPlugin(resolverConfig, babelLoaderPrefix),
-        compiler => {
-          compiler.hooks.done.tapPromise('EmbroiderPlugin', async stats => {
-            this.summarizeStats(stats, variant, variantIndex);
-            await this.writeFiles(this.bundleSummary, this.lastAppInfo!, variantIndex);
-          });
+      const cssLoader = {
+        loader: 'css-loader',
+        options: {
+          url: true,
+          import: true,
+          modules: 'global',
+          ...options.cssLoaderOptions,
         },
-      ],
-      node: false,
-      module: {
-        rules: [
-          {
-            test: /\.hbs$/,
-            use: nonNullArray([
-              maybeThreadLoader(this.extraThreadLoaderOptions),
-              babelLoaderOptions,
-              {
-                loader: require.resolve('@embroider/hbs-loader'),
-                options: (() => {
-                  let options: HbsLoaderOptions = {
-                    compatModuleNaming: {
-                      rootDir: this.pathToVanillaApp,
-                      modulePrefix: packageName,
-                    },
-                  };
-                  return options;
-                })(),
-              },
-            ]),
-          },
-          {
-            use: nonNullArray([
-              maybeThreadLoader(this.extraThreadLoaderOptions),
-              makeBabelLoaderOptions(variant, join(this.appRoot, 'babel.config.cjs'), this.extraBabelLoaderOptions),
-            ]),
-          },
-          {
-            test: isCSS,
-            use: styleLoaders,
-          },
-        ],
-      },
-      output: {
-        path: join(this.outputPath),
-        filename: `assets/chunk.[chunkhash].js`,
-        chunkFilename: `assets/chunk.[chunkhash].js`,
-        publicPath: publicAssetURL,
-      },
-      optimization: {
-        splitChunks: {
-          chunks: 'all',
-        },
-      },
-      resolve: {
-        extensions: resolverConfig.resolvableExtensions,
-      },
-      resolveLoader: {
-        alias: {
-          // these loaders are our dependencies, not the app's dependencies. I'm
-          // not overriding the default loader resolution rules in case the app also
-          // wants to control those.
-          'thread-loader': require.resolve('thread-loader'),
-          'babel-loader-9': require.resolve('@embroider/babel-loader-9'),
-          'css-loader': require.resolve('css-loader'),
-          'style-loader': require.resolve('style-loader'),
-        },
-      },
-      experiments: {
-        // this is needed because fasboot-only modules need to use await import()
-        topLevelAwait: true,
-      },
-    };
-  }
-
-  private lastAppInfo: AppInfo | undefined;
-  private lastWebpack: webpack.MultiCompiler | undefined;
-
-  private getWebpack(appInfo: AppInfo) {
-    if (this.lastWebpack && this.lastAppInfo && equalAppInfo(appInfo, this.lastAppInfo)) {
-      debug(`reusing webpack config`);
-      // the appInfos result in equal webpack configs so we don't need to
-      // reconfigure webpack. But they may contain other changes (like HTML
-      // content changes that don't alter the webpack config) so we still want
-      // lastAppInfo to update so that the latest one will be seen in the
-      // webpack post-build.
-      this.lastAppInfo = appInfo;
-      return this.lastWebpack;
-    }
-    debug(`configuring webpack`);
-    let config = this.variants.map((variant, variantIndex) =>
-      mergeWith({}, this.configureWebpack(appInfo, variant, variantIndex), this.extraConfig, appendArrays)
-    );
-    this.lastAppInfo = appInfo;
-    return (this.lastWebpack = webpack(config as any)! as any);
-  }
-
-  private async writeScript(script: string, written: Set<string>, variant: Variant) {
-    if (!variant.optimizeForProduction) {
-      this.copyThrough(script);
-      return script;
-    }
-
-    // loading these lazily here so they never load in non-production builds.
-    // The node cache will ensures we only load them once.
-    const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
-
-    let inCode = readFileSync(join(this.pathToVanillaApp, script), 'utf8');
-    let terserOpts: MinifyOptions = {};
-    let fileRelativeSourceMapURL;
-    let appRelativeSourceMapURL;
-    if (srcURL.default.existsIn(inCode)) {
-      fileRelativeSourceMapURL = srcURL.default.getFrom(inCode)!;
-      appRelativeSourceMapURL = join(dirname(script), fileRelativeSourceMapURL);
-      let content;
-      try {
-        content = readJSONSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
-      } catch (err) {
-        // the script refers to a sourcemap that doesn't exist, so we just leave
-        // the map out.
-      }
-      if (content) {
-        terserOpts.sourceMap = { content, url: fileRelativeSourceMapURL };
-      }
-    }
-    let { code: outCode, map: outMap } = await Terser.minify(inCode, terserOpts);
-    let finalFilename = this.getFingerprintedFilename(script, outCode!);
-    outputFileSync(join(this.outputPath, finalFilename), outCode!);
-    written.add(script);
-    if (appRelativeSourceMapURL && outMap) {
-      outputFileSync(join(this.outputPath, appRelativeSourceMapURL), outMap);
-      written.add(appRelativeSourceMapURL);
-    }
-    return finalFilename;
-  }
-
-  private async writeStyle(style: string, written: Set<string>, variant: Variant) {
-    if (!variant.optimizeForProduction) {
-      this.copyThrough(style);
-      written.add(style);
-      return style;
-    }
-
-    const csso = await import('csso');
-    const cssContent = readFileSync(join(this.pathToVanillaApp, style), 'utf8');
-    const minifiedCss = csso.minify(cssContent).css;
-
-    let finalFilename = this.getFingerprintedFilename(style, minifiedCss);
-    outputFileSync(join(this.outputPath, finalFilename), minifiedCss);
-    written.add(style);
-    return finalFilename;
-  }
-
-  private async provideErrorContext(message: string, messageParams: any[], fn: () => Promise<void>) {
-    try {
-      return await fn();
-    } catch (err) {
-      let context = format(message, ...messageParams);
-      err.message = context + ': ' + err.message;
-      throw err;
-    }
-  }
-
-  private async writeFiles(stats: BundleSummary, { entrypoints, otherAssets }: AppInfo, variantIndex: number) {
-    // we're doing this ourselves because I haven't seen a webpack 4 HTML plugin
-    // that handles multiple HTML entrypoints correctly.
-
-    let written: Set<string> = new Set();
-    // scripts (as opposed to modules) and stylesheets (as opposed to CSS
-    // modules that are imported from JS modules) get passed through without
-    // going through webpack.
-    for (let entrypoint of entrypoints) {
-      await this.provideErrorContext('needed by %s', [entrypoint.filename], async () => {
-        for (let script of entrypoint.scripts) {
-          if (!stats.entrypoints.has(script)) {
-            const mapping = [] as string[];
-            try {
-              // zero here means we always attribute passthrough scripts to the
-              // first build variant
-              stats.entrypoints.set(script, new Map([[0, mapping]]));
-              mapping.push(await this.writeScript(script, written, this.variants[0]));
-            } catch (err) {
-              if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, script)) {
-                this.consoleWrite(
-                  `warning: in ${entrypoint.filename} <script src="${script
-                    .split(sep)
-                    .join(
-                      '/'
-                    )}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
-                );
-              } else {
-                throw err;
-              }
-            }
-          }
-        }
-        for (let style of entrypoint.styles) {
-          if (!stats.entrypoints.has(style)) {
-            const mapping = [] as string[];
-            try {
-              // zero here means we always attribute passthrough styles to the
-              // first build variant
-              stats.entrypoints.set(style, new Map([[0, mapping]]));
-              mapping.push(await this.writeStyle(style, written, this.variants[0]));
-            } catch (err) {
-              if (err.code === 'ENOENT' && err.path === join(this.pathToVanillaApp, style)) {
-                this.consoleWrite(
-                  `warning: in ${entrypoint.filename}  <link rel="stylesheet" href="${style
-                    .split(sep)
-                    .join(
-                      '/'
-                    )}"> does not exist on disk. If this is intentional, use a data-embroider-ignore attribute.`
-                );
-              } else {
-                throw err;
-              }
-            }
-          }
-        }
-      });
-    }
-    // we need to wait for both compilers before writing html entrypoint
-    await this.incrementBarrier();
-    // only the first variant should write it.
-    if (variantIndex === 0) {
-      for (let entrypoint of entrypoints) {
-        this.writeIfChanged(join(this.outputPath, entrypoint.filename), entrypoint.render(stats));
-        written.add(entrypoint.filename);
-      }
-    }
-
-    for (let relativePath of otherAssets) {
-      if (!written.has(relativePath)) {
-        written.add(relativePath);
-        await this.provideErrorContext(`while copying app's assets`, [], async () => {
-          this.copyThrough(relativePath);
-        });
-      }
-    }
-  }
-
-  private lastContents = new Map<string, string>();
-
-  // The point of this caching isn't really performance (we generate the
-  // contents either way, and the actual write is unlikely to be expensive).
-  // It's helping ember-cli's traditional livereload system to avoid triggering
-  // a full page reload when that wasn't really necessary.
-  private writeIfChanged(filename: string, content: string) {
-    if (this.lastContents.get(filename) !== content) {
-      outputFileSync(filename, content, 'utf8');
-      this.lastContents.set(filename, content);
-    }
-  }
-
-  private copyThrough(relativePath: string) {
-    let sourcePath = join(this.pathToVanillaApp, relativePath);
-    let newStats = statSync(sourcePath);
-    let oldStats = this.passthroughCache.get(sourcePath);
-    if (!oldStats || oldStats.mtimeMs !== newStats.mtimeMs || oldStats.size !== newStats.size) {
-      debug(`emitting ${relativePath}`);
-      copySync(sourcePath, join(this.outputPath, relativePath));
-      this.passthroughCache.set(sourcePath, newStats);
-    }
-  }
-
-  private getFingerprintedFilename(filename: string, content: string): string {
-    let md5 = crypto.createHash('md5');
-    md5.update(content);
-    let hash = md5.digest('hex');
-
-    let fileParts = filename.split('.');
-    fileParts.splice(fileParts.length - 1, 0, hash);
-    return fileParts.join('.');
-  }
-
-  private summarizeStats(stats: webpack.Stats, variant: Variant, variantIndex: number): void {
-    let output = this.bundleSummary;
-    let { entrypoints, chunks } = stats.toJson({
-      all: false,
-      entrypoints: true,
-      chunks: true,
-    });
-
-    // webpack's types are written rather loosely, implying that these two
-    // properties may not be present. They really always are, as far as I can
-    // tell, but we need to check here anyway to satisfy the type checker.
-    if (!entrypoints) {
-      throw new Error(`unexpected webpack output: no entrypoints`);
-    }
-    if (!chunks) {
-      throw new Error(`unexpected webpack output: no chunks`);
-    }
-
-    for (let id of Object.keys(entrypoints)) {
-      let { assets: entrypointAssets } = entrypoints[id];
-      if (!entrypointAssets) {
-        throw new Error(`unexpected webpack output: no entrypoint.assets`);
-      }
-
-      getOrCreate(output.entrypoints, id, () => new Map()).set(
-        variantIndex,
-        entrypointAssets.map(asset => asset.name)
-      );
-      if (variant.runtime !== 'browser') {
-        // in the browser we don't need to worry about lazy assets (they will be
-        // handled automatically by webpack as needed), but in any other runtime
-        // we need the ability to preload them
-        output.lazyBundles.set(
-          id,
-          flatMap(
-            chunks.filter(chunk => chunk.runtime?.includes(id)),
-            chunk => chunk.files
-          ).filter(file => !entrypointAssets?.find(a => a.name === file)) as string[]
-        );
-      }
-    }
-  }
-
-  private runWebpack(webpack: webpack.MultiCompiler): Promise<webpack.MultiStats> {
-    return new Promise((resolve, reject) => {
-      webpack.run((err, stats) => {
-        try {
-          if (err) {
-            if (stats) {
-              this.consoleWrite(stats.toString());
-            }
-            throw err;
-          }
-          if (!stats) {
-            // this doesn't really happen, but webpack's types imply that it
-            // could, so we just satisfy typescript here
-            throw new Error('bug: no stats and no err');
-          }
-          if (stats.hasErrors()) {
-            // write all the stats output to the console
-            this.consoleWrite(
-              stats.toString({
-                colors: Boolean(supportsColor.stdout),
-              })
-            );
-
-            // the typing for MultiCompiler are all foobared.
-            throw this.findBestError(flatMap((stats as any).stats, s => s.compilation.errors));
-          }
-          if (stats.hasWarnings() || process.env.VANILLA_VERBOSE) {
-            this.consoleWrite(
-              stats.toString({
-                colors: Boolean(supportsColor.stdout),
-              })
-            );
-          }
-          resolve(stats);
-        } catch (e) {
-          reject(e);
-        }
-      });
-    });
-  }
-
-  private setupStyleConfig(variant: Variant): {
-    loaders: RuleSetUseItem[];
-    plugins: WebpackPluginInstance[];
-  } {
-    let cssLoader = {
-      loader: 'css-loader',
-      options: {
-        url: true,
-        import: true,
-        modules: 'global',
-        ...this.extraCssLoaderOptions,
-      },
-    };
-
-    if (!variant.optimizeForProduction && variant.runtime === 'browser') {
-      // in development builds that only need to work in the browser (not
-      // fastboot), we can use style-loader because it's fast
-      return {
-        loaders: [
-          { loader: 'style-loader', options: { injectType: 'styleTag', ...this.extraStyleLoaderOptions } },
-          cssLoader,
-        ],
-        plugins: [],
       };
-    } else {
-      // in any other build, we separate the CSS into its own bundles
-      return {
-        loaders: [MiniCssExtractPlugin.loader, cssLoader],
-        plugins: [
-          new MiniCssExtractPlugin({
-            filename: `assets/chunk.[chunkhash].css`,
-            chunkFilename: `assets/chunk.[chunkhash].css`,
-            // in the browser, MiniCssExtractPlugin can manage it's own runtime
-            // lazy loading of stylesheets.
-            //
-            // but in fastboot, we need to disable that in favor of doing our
-            // own insertion of `<link>` tags in the HTML
-            runtime: variant.runtime === 'browser',
-            // It's not reasonable to make assumptions about order when doing CSS via modules
-            ignoreOrder: true,
-            ...this.extraCssPluginOptions,
-          }),
-        ],
-      };
-    }
-  }
+      const rules: RuleSetRule[] = [
+        {
+          // Ember code imports without file extensions. In a fully-v2
+          // (`"type": "module"`) app webpack treats .js/.gjs/etc as ESM and
+          // forces `fullySpecified` *per module*, which the top-level
+          // resolve.fullySpecified can't override — it must be set on a module
+          // rule. Without this, an extensionless import like `./src/app`
+          // never gets `.js` appended and fails to resolve (rollup/vite don't
+          // enforce this).
+          test: /\.(?:[cm]?[jt]s|g[jt]s|hbs)$/,
+          resolve: { fullySpecified: false },
+        },
+        {
+          test: /\.g[jt]s$/,
+          use: [
+            { loader: 'babel-loader-9', options: babelLoaderOptions(shared, options) },
+            { loader: 'embroider-template-tag-loader' },
+          ],
+        },
+        {
+          test: /\.m?[jt]s$/,
+          exclude: /\.g[jt]s$/,
+          use: [{ loader: 'babel-loader-9', options: babelLoaderOptions(shared, options) }],
+        },
+        {
+          test: /\.css$/i,
+          use: [MiniCssExtractPlugin.loader, cssLoader],
+        },
+      ];
+      opts.module.rules.push(...rules);
 
-  private findBestError(errors: any[]) {
-    let error = errors[0];
-    let file;
-    if (error.module?.userRequest) {
-      file = relative(this.pathToVanillaApp, error.module.userRequest);
-    }
+      // ---- apply the embroider sub-plugins ----
 
-    if (!error.file) {
-      error.file = file || (error.loc ? error.loc.file : null) || (error.location ? error.location.file : null);
-    }
-    if (error.line == null) {
-      error.line = (error.loc ? error.loc.line : null) || (error.location ? error.location.line : null);
-    }
-    if (typeof error.message === 'string') {
-      if (error.module?.context) {
-        error.message = error.message.replace(error.module.context, error.module.userRequest);
-      }
+      new EmbroiderPlugin(appRoot, babelLoaderPrefix(shared, options)).apply(compiler);
+      new MiniCssExtractPlugin({
+        filename: 'assets/chunk.[contenthash].css',
+        chunkFilename: 'assets/chunk.[contenthash].css',
+        ignoreOrder: true,
+        ...options.cssPluginOptions,
+      }).apply(compiler);
+      new HtmlOutputPlugin(htmlState).apply(compiler);
+    },
+  };
+}
 
-      // the tmpdir on OSX is horribly long and makes error messages hard to
-      // read. This is doing the same as String.prototype.replaceAll, which node
-      // doesn't have yet.
-      error.message = error.message.split(tmpdir).join('$TMPDIR');
-    }
-    return error;
-  }
-};
+function variantFor(shared: Shared): Variant {
+  let mode = shared.prebuildEnv;
+  return {
+    name: mode,
+    runtime: 'browser',
+    optimizeForProduction: mode === 'production',
+  };
+}
 
-const threadLoaderOptions = {
-  workers: 'JOBS' in process.env && Number(process.env.JOBS),
-  // poolTimeout shuts down idle workers. The problem is, for
-  // interactive rebuilds that means your startup cost for the
-  // next rebuild is at least 600ms worse. So we insist on
-  // keeping workers alive always.
-  poolTimeout: Infinity,
-};
+function babelLoaderOptions(shared: Shared, options: Options) {
+  return {
+    variant: variantFor(shared),
+    appBabelConfigPath: join(shared.appRoot, 'babel.config.cjs'),
+    cacheDirectory: getPackagerCacheDir('webpack-babel-loader'),
+    ...options.babelLoaderOptions,
+  };
+}
 
-function canUseThreadLoader(extraOptions: object | false | undefined) {
-  // If the environment sets JOBS to 0, or if our extraOptions are set to false,
-  // we have been explicitly configured not to use thread-loader
-  if (process.env.JOBS === '0' || extraOptions === false) {
-    return false;
+function babelLoaderPrefix(shared: Shared, options: Options): string {
+  return `babel-loader-9?${JSON.stringify(babelLoaderOptions(shared, options))}!`;
+}
+
+function addLoaderAlias(compiler: Compiler, name: string, alias: string) {
+  let { resolveLoader } = compiler.options;
+  if (Array.isArray(resolveLoader.alias)) {
+    resolveLoader.alias.push({ name, alias });
+  } else if (resolveLoader.alias) {
+    (resolveLoader.alias as Record<string, string>)[name] ??= alias;
   } else {
-    return true;
+    resolveLoader.alias = { [name]: alias };
   }
 }
-
-function warmUp(extraOptions: object | false | undefined) {
-  // We don't know if we'll be parallel-safe or not, but if we've been
-  // configured to not use thread-loader, then there is no need to consume extra
-  // resources warming the worker pool
-  if (!canUseThreadLoader(extraOptions)) {
-    return null;
-  }
-
-  threadLoaderWarmup(Object.assign({}, threadLoaderOptions, extraOptions), [
-    require.resolve('@embroider/hbs-loader'),
-    require.resolve('@embroider/babel-loader-9'),
-  ]);
-}
-
-function maybeThreadLoader(extraOptions: object | false | undefined) {
-  if (!canUseThreadLoader(extraOptions)) {
-    return null;
-  }
-
-  return {
-    loader: 'thread-loader',
-    options: Object.assign({}, threadLoaderOptions, extraOptions),
-  };
-}
-
-function appendArrays(objValue: any, srcValue: any) {
-  if (Array.isArray(objValue)) {
-    return objValue.concat(srcValue);
-  }
-}
-
-function isCSS(filename: string) {
-  return /\.css$/i.test(filename);
-}
-
-// typescript doesn't understand that regular use of array.filter(Boolean) does
-// this.
-function nonNullArray<T>(array: T[]): NonNullable<T>[] {
-  return array.filter(Boolean) as NonNullable<T>[];
-}
-
-function makeBabelLoaderOptions(
-  variant: Variant,
-  appBabelConfigPath: string,
-  extraOptions: BabelLoaderOptions | undefined
-) {
-  const cacheDirectory = getPackagerCacheDir('webpack-babel-loader');
-  const options: BabelLoaderOptions & { variant: Variant; appBabelConfigPath: string } = {
-    variant,
-    appBabelConfigPath,
-    cacheDirectory,
-    ...extraOptions,
-  };
-  return {
-    loader: 'babel-loader-9',
-    options,
-  };
-}
-
-export { Webpack };

@@ -23,6 +23,7 @@
     "packages/core",
     "packages/reverse-exports",
     "packages/addon-shim",
+    "packages/webpack",
   ],
   "references": [
     { "path": "packages/reverse-exports" },
@@ -30,6 +31,7 @@
     { "path": "packages/compat" },
     { "path": "packages/config-meta-loader" },
     { "path": "packages/vite" },
+    { "path": "packages/webpack" },
     { "path": "packages/template-tag-codemod" },
     { "path": "packages/legacy-inspector-support" },
     { "path": "packages/addon-shim" },

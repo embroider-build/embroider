@@ -1,25 +1,35 @@
 import { dirname, resolve } from 'path';
 import { ModuleRequest, type VirtualResponse, type RequestAdapter, type Resolution } from '@embroider/core';
-import { Resolver as EmbroiderResolver, ResolverOptions as EmbroiderResolverOptions } from '@embroider/core';
+import { ResolverLoader } from '@embroider/core';
+import type { Resolver as EmbroiderResolver, ResolverOptions } from '@embroider/core';
 import type { Compiler, Module, ResolveData } from 'webpack';
 import assertNever from 'assert-never';
 import escapeRegExp from 'escape-string-regexp';
+import { registerVirtualResponse } from './virtual-loader';
 
-export { EmbroiderResolverOptions as Options };
+export type { ResolverOptions as Options };
 
 const virtualLoaderName = '@embroider/webpack/src/virtual-loader';
 const virtualLoaderPath = resolve(__dirname, './virtual-loader.js');
 const virtualRequestPattern = new RegExp(`${escapeRegExp(virtualLoaderPath)}\\?(?<query>.+)!`);
 
 export class EmbroiderPlugin {
-  #resolver: EmbroiderResolver;
+  #resolverLoader: ResolverLoader;
   #babelLoaderPrefix: string;
   #appRoot: string;
 
-  constructor(opts: EmbroiderResolverOptions, babelLoaderPrefix: string) {
-    this.#resolver = new EmbroiderResolver(opts);
+  // Note: the resolver config (resolver.json) is read lazily, the first time
+  // webpack actually resolves something. That's important because the compat
+  // prebuild (which writes resolver.json) runs during the build, after this
+  // plugin has already been constructed and `apply`'d.
+  constructor(appRoot: string, babelLoaderPrefix: string) {
+    this.#resolverLoader = new ResolverLoader(appRoot);
     this.#babelLoaderPrefix = babelLoaderPrefix;
-    this.#appRoot = opts.appRoot;
+    this.#appRoot = appRoot;
+  }
+
+  get #resolver(): EmbroiderResolver {
+    return this.#resolverLoader.resolver;
   }
 
   #addLoaderAlias(compiler: Compiler, name: string, alias: string) {
@@ -44,6 +54,21 @@ export class EmbroiderPlugin {
       nmf.hooks.resolve.tapAsync(
         { name: '@embroider/webpack', stage: 50 },
         (state: ExtendedResolveData, callback: CB) => {
+          // Snapshot the original request so that, if embroider's resolver
+          // declines (not_found), we can hand the *original* request back to
+          // webpack's own resolution. This mirrors @embroider/vite's resolver
+          // plugin, which returns `null` on not_found so rollup keeps
+          // resolving. It matters for fully-v2 apps that have no compat
+          // prebuild (hence no resolver.json): the core resolver can't resolve
+          // a plain relative app import like `./src/app`, but webpack itself
+          // can. If the module is genuinely missing, webpack's default resolve
+          // will still produce its own "Module not found".
+          let original = {
+            request: state.request,
+            context: state.context,
+            issuer: state.contextInfo.issuer,
+          };
+
           let request = ModuleRequest.create(WebpackRequestAdapter.create, {
             resolveFunction: defaultResolve,
             state,
@@ -59,7 +84,11 @@ export class EmbroiderPlugin {
             resolution => {
               switch (resolution.type) {
                 case 'not_found':
-                  callback(resolution.err);
+                  // restore the pristine request and let webpack resolve it
+                  state.request = original.request;
+                  state.context = original.context;
+                  state.contextInfo.issuer = original.issuer;
+                  defaultResolve(state, callback);
                   break;
                 case 'found':
                   callback(null, undefined);
@@ -118,6 +147,13 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
       return;
     }
 
+    if (specifier.startsWith('/@embroider/virtual/')) {
+      // when our virtual paths are used in HTML (and the generated entries we
+      // derive from it) they come in with a leading slash. We still want them
+      // to resolve like packages, exactly as the vite/rollup adapter does.
+      specifier = specifier.slice(1);
+    }
+
     let fromFile: string | undefined;
     if (state.contextInfo.issuer) {
       fromFile = state.contextInfo.issuer;
@@ -125,12 +161,17 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
       // when the files emitted from our virtual-loader try to import things,
       // those requests show in webpack as having no issuer. But we can see here
       // which requests they are and adjust the issuer so they resolve things from
-      // the correct logical place.
+      // the correct logical place. The virtual module's own specifier is the
+      // correct logical "fromFile" for any imports it makes.
       for (let dep of state.dependencies) {
         let match = virtualRequestPattern.exec((dep as any)._parentModule?.userRequest);
         if (match) {
-          fromFile = new URLSearchParams(match.groups!.query).get('f')!;
-          break;
+          // URLSearchParams already decodes the value
+          let id = new URLSearchParams(match.groups!.query).get('id');
+          if (id) {
+            fromFile = id;
+            break;
+          }
         }
       }
     }
@@ -183,12 +224,16 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
   // out to webpack does that happen.
   toWebpackResolveData(
     request: ModuleRequest<WebpackResolution>,
-    virtualFileName: string | undefined
+    virtual: VirtualResponse | false
   ): ExtendedResolveData {
     let specifier = request.specifier;
-    if (virtualFileName) {
+    if (virtual) {
+      // Hand the VirtualResponse across in-process and key the request only by
+      // the stable specifier, so the same logical virtual always produces the
+      // same webpack module (this is what rollup/vite get for free).
+      registerVirtualResponse(this.appRoot, virtual);
       let params = new URLSearchParams();
-      params.set('f', virtualFileName);
+      params.set('id', virtual.specifier);
       params.set('a', this.appRoot);
       specifier = `${this.babelLoaderPrefix}${virtualLoaderName}?${params.toString()}!`;
     }
@@ -229,23 +274,20 @@ class WebpackRequestAdapter implements RequestAdapter<WebpackResolution> {
     virtualResponse: VirtualResponse | false
   ): Promise<WebpackResolution> {
     return await new Promise(resolve =>
-      this.resolveFunction(
-        this.toWebpackResolveData(request, virtualResponse ? virtualResponse.specifier : request.specifier),
-        err => {
-          if (err) {
-            // unfortunately webpack doesn't let us distinguish between Not Found
-            // and other unexpected exceptions here.
-            resolve({ type: 'not_found', err });
-          } else {
-            resolve({
-              type: 'found',
-              result: this.originalState.createData,
-              virtual: virtualResponse,
-              filename: this.originalState.createData.resource!,
-            });
-          }
+      this.resolveFunction(this.toWebpackResolveData(request, virtualResponse), err => {
+        if (err) {
+          // unfortunately webpack doesn't let us distinguish between Not Found
+          // and other unexpected exceptions here.
+          resolve({ type: 'not_found', err });
+        } else {
+          resolve({
+            type: 'found',
+            result: this.originalState.createData,
+            virtual: virtualResponse,
+            filename: this.originalState.createData.resource!,
+          });
         }
-      )
+      })
     );
   }
 }

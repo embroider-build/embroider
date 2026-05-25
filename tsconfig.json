@@ -23,6 +23,7 @@
     "packages/core",
     "packages/reverse-exports",
     "packages/addon-shim",
+    "packages/macros",
   ],
   "references": [
     { "path": "packages/reverse-exports" },
@@ -33,6 +34,7 @@
     { "path": "packages/template-tag-codemod" },
     { "path": "packages/legacy-inspector-support" },
     { "path": "packages/addon-shim" },
+    { "path": "packages/macros" },
     { "path": "tests/scenarios" },
   ]
 }

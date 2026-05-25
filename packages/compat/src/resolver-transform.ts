@@ -1,11 +1,5 @@
 import type { ASTv1, ASTPlugin, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
-import type {
-  PreprocessedComponentRule,
-  ActivePackageRules,
-  ComponentRules,
-  PackageRules,
-  ModuleRules,
-} from './dependency-rules';
+import type { PreprocessedComponentRule, ActivePackageRules, ComponentRules, PackageRules } from './dependency-rules';
 import { preprocessComponentRule, appTreeRulesDir } from './dependency-rules';
 import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
@@ -413,7 +407,7 @@ class TemplateResolver implements ASTPlugin {
     return fileRules ?? componentRules;
   }
 
-  private standardDasherize(snippet: string, rule: PackageRules | ModuleRules): string {
+  private standardDasherize(snippet: string, rule: PackageRules): string {
     let name = snippetToDasherizedName(snippet);
     if (name == null) {
       throw new Error(`unable to parse component snippet "${snippet}" from rule ${JSON.stringify(rule, null, 2)}`);

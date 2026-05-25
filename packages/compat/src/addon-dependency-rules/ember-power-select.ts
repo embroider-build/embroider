@@ -3,21 +3,6 @@ import type { PackageRules } from '..';
 let rules: PackageRules = {
   package: 'ember-power-select',
   semverRange: '< 5.0.1',
-  addonModules: {
-    './components/power-select.js': {
-      dependsOnComponents: [
-        '{{power-select/before-options}}',
-        '{{power-select/options}}',
-        '{{power-select/power-select-group}}',
-        '{{power-select/trigger}}',
-        '{{power-select/search-message}}',
-        '{{power-select/placeholder}}',
-      ],
-    },
-    './components/power-select-multiple.js': {
-      dependsOnComponents: ['{{power-select-multiple/trigger}}'],
-    },
-  },
   components: {
     '{{power-select}}': {
       layout: {

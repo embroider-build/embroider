@@ -31,11 +31,6 @@ appScenarios
               },
             },
           },
-          addonModules: {
-            'components/hello-world.js': {
-              dependsOnComponents: ['{{second-choice}}'],
-            },
-          },
           addonTemplates: {
             'templates/components/addon-tree-invoke-example.hbs': {
               invokes: {

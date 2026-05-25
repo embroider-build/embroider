@@ -57,6 +57,7 @@ export default class PackageCache {
 
   private rootCache: Map<string, Package> = new Map();
   private resolutionCache: Map<Package, Map<string, Package | null>> = new Map();
+  private ownerCache: Map<string, Package | undefined> = new Map();
 
   get(packageRoot: string) {
     let root = getCachedRealpath(packageRoot);
@@ -67,6 +68,11 @@ export default class PackageCache {
   }
 
   ownerOfFile(filename: string): Package | undefined {
+    if (this.ownerCache.has(filename)) {
+      return this.ownerCache.get(filename);
+    }
+
+    let result: Package | undefined;
     let candidate = filename;
 
     // first we look through our cached packages for any that are rooted right
@@ -79,10 +85,12 @@ export default class PackageCache {
       }
 
       if (this.rootCache.has(candidate)) {
-        return this.rootCache.get(candidate);
+        result = this.rootCache.get(candidate);
+        break;
       }
       if (getCachedExists(join(candidate, 'package.json'))) {
-        return this.get(candidate);
+        result = this.get(candidate);
+        break;
       }
       let nextCandidate = resolve(candidate, '..');
       if (nextCandidate === candidate) {
@@ -91,6 +99,9 @@ export default class PackageCache {
       }
       candidate = nextCandidate;
     }
+
+    this.ownerCache.set(filename, result);
+    return result;
   }
 
   static shared(identifier: string, appRoot: string) {

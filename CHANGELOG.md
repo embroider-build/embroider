@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## Release (2026-05-26)
+
+* @embroider/compat 4.1.19 (patch)
+* @embroider/core 4.5.0 (minor)
+* @embroider/macros 1.20.3 (patch)
+* @embroider/shared-internals 3.1.0 (minor)
+* @embroider/vite 1.7.4 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/core`
+  * [#2735](https://github.com/embroider-build/embroider/pull/2735) compile `@embroider/core` to es2022 for native #private fields ([@davidtaylorhq](https://github.com/davidtaylorhq))
+* `@embroider/shared-internals`
+  * [#2737](https://github.com/embroider-build/embroider/pull/2737) optimize `ownerOfFile` in PackageCache ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
+#### :house: Internal
+* `@embroider/macros`
+  * [#2741](https://github.com/embroider-build/embroider/pull/2741) move macros to be a project-based tsconfig ([@mansona](https://github.com/mansona))
+* `@embroider/compat`
+  * [#2740](https://github.com/embroider-build/embroider/pull/2740) Cleanup unused amd support features ([@ef4](https://github.com/ef4))
+
+#### Committers: 3
+- Chris Manson ([@mansona](https://github.com/mansona))
+- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+
 ## Release (2026-05-19)
 
 * @embroider/vite 1.7.3 (patch)

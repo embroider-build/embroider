@@ -7,53 +7,49 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 import esc from "../../src/addon/es-compat2";
 import * as _importSync20 from "../../README";
-import * as _importSync40 from "../../dist";
-import * as _importSync60 from "../../node_modules";
-import * as _importSync80 from "../../package";
-import * as _importSync00 from "../../smoke-test";
-import * as _importSync100 from "../../src";
-import * as _importSync120 from "../../tests";
+import * as _importSync40 from "../../node_modules";
+import * as _importSync60 from "../../package";
+import * as _importSync80 from "../../smoke-test";
+import * as _importSync00 from "../../src";
+import * as _importSync100 from "../../tests";
+import * as _importSync120 from "../../tsconfig";
 import * as _importSync140 from "../../tsconfig";
-import * as _importSync160 from "../../tsconfig";
-import * as _importSync180 from "../../vitest.config";
+import * as _importSync160 from "../../vitest.config";
 function getFile(file) {
   return _defineProperty(_defineProperty({
     "README": esc(_importSync20),
-    "dist": esc(_importSync40),
-    "node_modules": esc(_importSync60),
-    "package": esc(_importSync80),
-    "smoke-test": esc(_importSync00),
-    "src": esc(_importSync100),
-    "tests": esc(_importSync120),
-    "tsconfig": esc(_importSync140)
-  }, "tsconfig", esc(_importSync160)), "vitest.config", esc(_importSync180))[file].default;
+    "node_modules": esc(_importSync40),
+    "package": esc(_importSync60),
+    "smoke-test": esc(_importSync80),
+    "src": esc(_importSync00),
+    "tests": esc(_importSync100),
+    "tsconfig": esc(_importSync120)
+  }, "tsconfig", esc(_importSync140)), "vitest.config", esc(_importSync160))[file].default;
 }"
 `;
 
 exports[`importSync > without presets > babel7 > importSync accepts template argument with dynamic part 1`] = `
 "import esc from "../../src/addon/es-compat2";
 import * as _importSync20 from "../../README";
-import * as _importSync40 from "../../dist";
-import * as _importSync60 from "../../node_modules";
-import * as _importSync80 from "../../package";
-import * as _importSync00 from "../../smoke-test";
-import * as _importSync100 from "../../src";
-import * as _importSync120 from "../../tests";
+import * as _importSync40 from "../../node_modules";
+import * as _importSync60 from "../../package";
+import * as _importSync80 from "../../smoke-test";
+import * as _importSync00 from "../../src";
+import * as _importSync100 from "../../tests";
+import * as _importSync120 from "../../tsconfig";
 import * as _importSync140 from "../../tsconfig";
-import * as _importSync160 from "../../tsconfig";
-import * as _importSync180 from "../../vitest.config";
+import * as _importSync160 from "../../vitest.config";
 function getFile(file) {
   return {
     "README": esc(_importSync20),
-    "dist": esc(_importSync40),
-    "node_modules": esc(_importSync60),
-    "package": esc(_importSync80),
-    "smoke-test": esc(_importSync00),
-    "src": esc(_importSync100),
-    "tests": esc(_importSync120),
+    "node_modules": esc(_importSync40),
+    "package": esc(_importSync60),
+    "smoke-test": esc(_importSync80),
+    "src": esc(_importSync00),
+    "tests": esc(_importSync100),
+    "tsconfig": esc(_importSync120),
     "tsconfig": esc(_importSync140),
-    "tsconfig": esc(_importSync160),
-    "vitest.config": esc(_importSync180)
+    "vitest.config": esc(_importSync160)
   }[file].default;
 }"
 `;

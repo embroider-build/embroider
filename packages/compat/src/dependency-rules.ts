@@ -16,18 +16,6 @@ export interface PackageRules {
     [key: string]: ComponentRules;
   };
 
-  addonModules?: {
-    // `filename` is relative to your package root, and it assumes v2 package
-    // format. Like "templates/components/foo.hbs".
-    [filename: string]: ModuleRules;
-  };
-
-  appModules?: {
-    // `filename` is relative to the app's root, and it assumes v2 package
-    // format. Like "templates/components/foo.hbs".
-    [filename: string]: ModuleRules;
-  };
-
   addonTemplates?: {
     // `filename` is relative to your package root, and it assumes v2 package
     // format. Like "templates/foo.hbs".
@@ -125,16 +113,6 @@ export interface ComponentRules extends TemplateRules {
   // staticComponent Option enabled). But you can tell Embroider to ignore it by
   // setting this.
   safeToIgnore?: boolean;
-}
-
-export interface ModuleRules {
-  // We will resolve these components into the corresponding JS and HBS files
-  // and generate imports such that this module depends on them.
-  dependsOnComponents?: ComponentSnippet[];
-
-  // This adds new imports to our module, as if they were really there. Helpful
-  // for working around addons that depend on things but don't say so.
-  dependsOnModules?: string[];
 }
 
 // The bare "string" short form implies that `becomes` is the same as `name`.

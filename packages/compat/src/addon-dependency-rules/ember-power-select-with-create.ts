@@ -12,11 +12,6 @@ const rules: PackageRules[] = [
         },
       },
     },
-    addonModules: {
-      'components/power-select-with-create.js': {
-        dependsOnComponents: ['<PowerSelect/>', '<PowerSelectWithCreate::SuggestedOption/>'],
-      },
-    },
   },
 ];
 

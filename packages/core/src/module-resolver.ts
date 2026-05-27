@@ -939,6 +939,27 @@ export class Resolver {
     return request;
   }
 
+  @Memoize()
+  private get renameModulesMap(): Map<string, string> {
+    let extensionPattern = extensionsPattern(this.options.resolvableExtensions);
+
+    let map = new Map<string, string>();
+    for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
+      map.set(candidate, replacement);
+
+      let withoutExtension = candidate.replace(extensionPattern, '');
+      if (withoutExtension !== candidate) {
+        map.set(withoutExtension, replacement);
+
+        let withoutIndex = withoutExtension.replace(/\/index$/, '');
+        if (withoutIndex !== withoutExtension) {
+          map.set(withoutIndex, replacement);
+        }
+      }
+    }
+    return map;
+  }
+
   private handleRenaming<R extends ModuleRequest>(request: R): R {
     if (request.resolvedTo) {
       return request;
@@ -956,18 +977,9 @@ export class Resolver {
     // copy.
 
     if (!pkg?.hasDependency(packageName)) {
-      for (let [candidate, replacement] of Object.entries(this.options.renameModules)) {
-        if (candidate === request.specifier) {
-          return logTransition(`renameModules`, request, request.alias(replacement));
-        }
-        for (let extension of this.options.resolvableExtensions) {
-          if (candidate === request.specifier + '/index' + extension) {
-            return logTransition(`renameModules`, request, request.alias(replacement));
-          }
-          if (candidate === request.specifier + extension) {
-            return logTransition(`renameModules`, request, request.alias(replacement));
-          }
-        }
+      let replacement = this.renameModulesMap.get(request.specifier);
+      if (replacement !== undefined) {
+        return logTransition(`renameModules`, request, request.alias(replacement));
       }
 
       if (this.options.renamePackages[packageName]) {

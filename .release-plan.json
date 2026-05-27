@@ -13,42 +13,20 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.18",
-      "newVersion": "4.1.19",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.19"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
       "impact": "minor",
-      "oldVersion": "4.4.7",
-      "newVersion": "4.5.0",
+      "oldVersion": "4.5.0",
+      "newVersion": "4.6.0",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "minor",
           "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
@@ -60,21 +38,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.20.2",
-      "newVersion": "1.20.3",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.20.3"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -83,34 +47,14 @@
       "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
-      "impact": "minor",
-      "oldVersion": "3.0.2",
-      "newVersion": "3.1.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "3.1.0"
     },
     "@embroider/template-tag-codemod": {
       "oldVersion": "1.4.0"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.7.3",
-      "newVersion": "1.7.4",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.7.4"
     }
   },
-  "description": "## Release (2026-05-26)\n\n* @embroider/compat 4.1.19 (patch)\n* @embroider/core 4.5.0 (minor)\n* @embroider/macros 1.20.3 (patch)\n* @embroider/shared-internals 3.1.0 (minor)\n* @embroider/vite 1.7.4 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/core`\n  * [#2735](https://github.com/embroider-build/embroider/pull/2735) compile `@embroider/core` to es2022 for native #private fields ([@davidtaylorhq](https://github.com/davidtaylorhq))\n* `@embroider/shared-internals`\n  * [#2737](https://github.com/embroider-build/embroider/pull/2737) optimize `ownerOfFile` in PackageCache ([@davidtaylorhq](https://github.com/davidtaylorhq))\n\n#### :house: Internal\n* `@embroider/macros`\n  * [#2741](https://github.com/embroider-build/embroider/pull/2741) move macros to be a project-based tsconfig ([@mansona](https://github.com/mansona))\n* `@embroider/compat`\n  * [#2740](https://github.com/embroider-build/embroider/pull/2740) Cleanup unused amd support features ([@ef4](https://github.com/ef4))\n\n#### Committers: 3\n- Chris Manson ([@mansona](https://github.com/mansona))\n- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n"
+  "description": "## Release (2026-05-27)\n\n* @embroider/core 4.6.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/core`\n  * [#2734](https://github.com/embroider-build/embroider/pull/2734) optimize `handleRenaming` in module-resolver ([@davidtaylorhq](https://github.com/davidtaylorhq))\n\n#### Committers: 1\n- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))\n"
 }

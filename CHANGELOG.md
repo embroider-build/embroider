@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-05-27)
+
+* @embroider/core 4.6.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/core`
+  * [#2734](https://github.com/embroider-build/embroider/pull/2734) optimize `handleRenaming` in module-resolver ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
+#### Committers: 1
+- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
 ## Release (2026-05-26)
 
 * @embroider/compat 4.1.19 (patch)

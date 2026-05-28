@@ -170,7 +170,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
       }
     },
     async buildEnd() {
-      if (command === 'build') {
+      if (command !== 'dev') {
         emitVirtualFile(this, '@embroider/virtual/vendor.js');
         emitVirtualFile(this, '@embroider/virtual/vendor.css');
 

@@ -103,7 +103,6 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
   }
 
   let mode = '';
-  let command = '';
 
   return {
     name: 'embroider-resolver',
@@ -111,7 +110,6 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
 
     configResolved(config) {
       mode = config.mode;
-      command = config.command;
       cacheDir = normalize(config.cacheDir);
     },
 
@@ -170,14 +168,12 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
       }
     },
     async buildEnd() {
-      if (command === 'build') {
-        emitVirtualFile(this, '@embroider/virtual/vendor.js');
-        emitVirtualFile(this, '@embroider/virtual/vendor.css');
+      emitVirtualFile(this, '@embroider/virtual/vendor.js');
+      emitVirtualFile(this, '@embroider/virtual/vendor.css');
 
-        if (mode !== 'production') {
-          emitVirtualFile(this, '@embroider/virtual/test-support.js');
-          emitVirtualFile(this, '@embroider/virtual/test-support.css');
-        }
+      if (mode !== 'production') {
+        emitVirtualFile(this, '@embroider/virtual/test-support.js');
+        emitVirtualFile(this, '@embroider/virtual/test-support.css');
       }
     },
   };

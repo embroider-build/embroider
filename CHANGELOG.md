@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-05-28)
+
+* @embroider/vite 1.7.5 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2745](https://github.com/embroider-build/embroider/pull/2745) Fix `@embroider/virtual` emits under Vite's `experimental.bundleMode` ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
+#### Committers: 1
+- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
 ## Release (2026-05-27)
 
 * @embroider/core 4.6.0 (minor)

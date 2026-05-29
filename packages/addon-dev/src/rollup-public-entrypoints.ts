@@ -1,111 +1,33 @@
-import walkSync from 'walk-sync';
 import path from 'path';
-import minimatch from 'minimatch';
 
 import type { Plugin } from 'rollup';
-
-function normalizeFileExt(fileName: string) {
-  return fileName.replace(/(?<!\.d)\.ts|\.hbs|\.gts|\.gjs$/, '.js');
-}
+import { discoverEntrypoints } from './entrypoints';
 
 export default function publicEntrypoints(args: {
   srcDir: string;
   include: string[];
   exclude?: string[];
 }): Plugin {
-  const allEntryPoints: Set<string> = new Set();
-
   return {
     name: 'addon-modules',
 
     async buildStart() {
-      const include = [
-        ...args.include,
-        '**/*.hbs',
-        '**/*.ts',
-        '**/*.gts',
-        '**/*.gjs',
-      ];
       // wait a bit first https://github.com/nodejs/node/issues/4760
       await new Promise((resolve) => setTimeout(resolve, 50));
-      let matches = walkSync(args.srcDir, {
-        globs: include,
-        ignore: args.exclude,
-      });
 
-      matches.forEach((m) => allEntryPoints.add(m));
+      let entrypoints = discoverEntrypoints(args);
 
-      for (const name of allEntryPoints) {
+      for (const { name } of entrypoints) {
         this.addWatchFile(path.resolve(args.srcDir, name));
       }
 
-      for (let name of matches) {
-        // the matched file, but with the extension swapped with .js
-        let normalizedName = normalizeFileExt(name);
-
-        // anything that doesn't match the users patterns, and wasn't a template-only
-        // component needs to be emitted "as-is" so that other plugins may handle it.
-        let isTO = isTemplateOnly(matches, name);
-
-        let isHbs = path.extname(name) === '.hbs';
-
-        // hbs for-colocated components is handled by the rollup-hbs-plugin
-        // hbs for template-only components is handled in the isTO block
-        if (isHbs && !isTO) {
-          continue;
-        }
-
-        // these chunks matched are **/*.hbs glob and are
-        // guaranteed to not have any corresponding file as a co-located component would have.
-        if (isTO) {
-          this.emitFile({
-            type: 'chunk',
-            id: path.join(args.srcDir, normalizedName),
-            fileName: normalizedName,
-          });
-
-          continue;
-        }
-
-        // anything that matches one of the user's patterns is definitely emitted
-        let isUserDefined = args.include.some((pattern) =>
-          minimatch(name, pattern)
-        );
-
-        // additionally, we want to emit chunks where the pattern matches the supported
-        // file extensions above (TS, GTS, etc) as if they were already the built JS.
-        let wouldMatchIfBuilt = include.some((pattern) =>
-          minimatch(normalizedName, pattern)
-        );
-
-        if (isUserDefined || wouldMatchIfBuilt) {
-          this.emitFile({
-            type: 'chunk',
-            id: path.join(args.srcDir, name),
-            fileName: normalizedName,
-          });
-
-          continue;
-        }
+      for (let { idName, fileName } of entrypoints) {
+        this.emitFile({
+          type: 'chunk',
+          id: path.join(args.srcDir, idName),
+          fileName,
+        });
       }
     },
   };
-}
-
-function isTemplateOnly(matches: string[], filePath: string) {
-  let isHbs = path.extname(filePath) === '.hbs';
-
-  if (!isHbs) return false;
-
-  let correspondingFileGlob = path.join(
-    path.dirname(filePath),
-    path.basename(filePath).replace(/hbs$/, '*')
-  );
-
-  let relatedFiles = matches.filter((match) =>
-    minimatch(match, correspondingFileGlob)
-  );
-  let isTO = relatedFiles.filter((x) => x !== filePath).length === 0;
-
-  return isTO;
 }

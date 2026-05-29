@@ -1,7 +1,7 @@
 import type { Plugin } from 'rollup';
 import minimatch from 'minimatch';
 import { dirname, relative } from 'path';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 
 // randomly chosen, we're just looking to have high-entropy identifiers that
 // won't collide with anyting else in the source
@@ -29,7 +29,10 @@ export default function keepAssets({
     // load hooks, in which case this will not run but our transform hook will
     // still over from there.
     load(id: string) {
-      if (include.some((pattern) => minimatch(id, pattern))) {
+      // Only capture assets that exist on disk. Virtual assets synthesized by
+      // other plugins (e.g. glimmer-scoped-css) are handled by the transform
+      // hook below, after their own load hook has produced the content.
+      if (existsSync(id) && include.some((pattern) => minimatch(id, pattern))) {
         return {
           code: readFileSync(id).toString('binary'),
           meta: {

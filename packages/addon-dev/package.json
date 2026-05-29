@@ -14,10 +14,12 @@
   },
   "exports": {
     "./template-colocation-plugin": "./src/template-colocation-plugin.js",
-    "./rollup": "./src/rollup.js"
+    "./rollup": "./src/rollup.js",
+    "./tsdown": "./src/tsdown.js"
   },
   "files": [
     "sample-rollup.config.js",
+    "sample-tsdown.config.js",
     "src/**/*.js",
     "src/**/*.d.ts",
     "src/**/*.js.map"
@@ -26,10 +28,14 @@
     "test": "vitest"
   },
   "peerDependencies": {
-    "rollup": "^4.6.0"
+    "rollup": "^4.6.0",
+    "tsdown": "^0.22.1"
   },
   "peerDependenciesMeta": {
     "rollup": {
+      "optional": true
+    },
+    "tsdown": {
       "optional": true
     }
   },
@@ -57,8 +63,10 @@
     "@types/fs-extra": "^9.0.12",
     "@types/minimatch": "^3.0.4",
     "@types/yargs": "^17.0.3",
+    "rolldown": "^1.0.2",
     "rollup": "^3.23.0",
     "scenario-tester": "^4.0.0",
+    "tsdown": "^0.22.1",
     "typescript": "^5.4.5",
     "vitest": "^4.0.16"
   },

@@ -21,6 +21,14 @@ export class Addon {
     this.#destDir = params.destDir ?? 'dist';
   }
 
+  get srcDir(): string {
+    return this.#srcDir;
+  }
+
+  get destDir(): string {
+    return this.#destDir;
+  }
+
   // Given a list of globs describing modules in your srcDir, this generates
   // corresponding appTree modules that contain reexports, and updates your
   // package.json metadata to list them all.

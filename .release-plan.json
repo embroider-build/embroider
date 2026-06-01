@@ -44,8 +44,8 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.7.4",
-      "newVersion": "1.7.5",
+      "oldVersion": "1.7.5",
+      "newVersion": "1.7.6",
       "tagName": "latest",
       "constraints": [
         {
@@ -56,5 +56,5 @@
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-05-28)\n\n* @embroider/vite 1.7.5 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2745](https://github.com/embroider-build/embroider/pull/2745) Fix `@embroider/virtual` emits under Vite's `experimental.bundleMode` ([@davidtaylorhq](https://github.com/davidtaylorhq))\n\n#### Committers: 1\n- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))\n"
+  "description": "## Release (2026-06-01)\n\n* @embroider/vite 1.7.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2750](https://github.com/embroider-build/embroider/pull/2750) Add license metadata for `@embroider/vite` ([@davidtaylorhq](https://github.com/davidtaylorhq))\n\n#### Committers: 1\n- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))\n"
 }

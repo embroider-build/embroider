@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-06-01)
+
+* @embroider/vite 1.7.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2750](https://github.com/embroider-build/embroider/pull/2750) Add license metadata for `@embroider/vite` ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
+#### Committers: 1
+- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
 ## Release (2026-05-28)
 
 * @embroider/vite 1.7.5 (patch)

@@ -513,7 +513,6 @@ tsAppScenarios
           to: {
             'app/components/own-config-example.gjs': `
               import Component from '@glimmer/component';
-              import { macroCondition } from "@embroider/macros";
               export default class OwnConfigExample extends Component {<template>{{#if (macroCondition (macroGetOwnConfig "increment-twice"))}}Hello{{/if}}</template>}
             `,
           },
@@ -521,10 +520,10 @@ tsAppScenarios
         });
       });
 
-      test('component template using macroCondition with dependencySatisfies', async function (assert) {
+      test('component template using macroCondition with macroDependencySatisfies', async function (assert) {
         await assert.codeMod({
           from: {
-            'app/components/dependency-example.hbs': `{{#if (macroCondition (dependencySatisfies "some-package" "*"))}}Hello{{/if}}`,
+            'app/components/dependency-example.hbs': `{{#if (macroCondition (macroDependencySatisfies "some-package" "*"))}}Hello{{/if}}`,
             'app/components/dependency-example.js': `
               import Component from '@glimmer/component';
 
@@ -534,8 +533,7 @@ tsAppScenarios
           to: {
             'app/components/dependency-example.gjs': `
               import Component from '@glimmer/component';
-              import { macroCondition, dependencySatisfies } from "@embroider/macros";
-              export default class DependencyExample extends Component {<template>{{#if (macroCondition (dependencySatisfies "some-package" "*"))}}Hello{{/if}}</template>}
+              export default class DependencyExample extends Component {<template>{{#if (macroCondition (macroDependencySatisfies "some-package" "*"))}}Hello{{/if}}</template>}
             `,
           },
           via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/dependency-example.hbs`,

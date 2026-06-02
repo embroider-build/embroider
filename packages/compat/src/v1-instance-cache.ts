@@ -13,7 +13,7 @@ export default class V1InstanceCache {
   // maps from package root directories to known V1 instances of that packages.
   // There can be many because a single copy of an addon may be consumed by many
   // other packages and each gets an instance.
-  private addons: Map<string, V1Addon[]> = new Map();
+  private addons: Map<string, Set<V1Addon>> = new Map();
   private orderIdx: number;
 
   constructor(private app: CompatApp, private packageCache: PackageCache) {
@@ -64,11 +64,11 @@ export default class V1InstanceCache {
     this.orderIdx += 1;
     let Klass = this.adapterClass(addonInstance);
     let v1Addon = new Klass(addonInstance, this.app.options, this.app, this.packageCache, this.orderIdx);
-    let pkgs = getOrCreate(this.addons, v1Addon.root, () => []);
-    pkgs.push(v1Addon);
+    let pkgs = getOrCreate(this.addons, v1Addon.root, () => new Set());
+    pkgs.add(v1Addon);
   }
 
   getAddons(root: string): V1Addon[] {
-    return this.addons.get(root) || [];
+    return Array.from(this.addons.get(root) || []);
   }
 }

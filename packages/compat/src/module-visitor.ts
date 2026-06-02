@@ -350,7 +350,7 @@ class ModuleVisitor {
       ...result,
       type: 'parsed',
       resolutions: fromPairs(
-        [...module.resolved].map(([source, target]) => [
+        Array.from(module.resolved).map(([source, target]) => [
           source,
           isResolutionFailure(target) ? null : explicitRelative(this.base, target),
         ])

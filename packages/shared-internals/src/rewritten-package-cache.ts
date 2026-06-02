@@ -276,7 +276,7 @@ class WrappedPackage implements PackageTheGoodParts {
       }
     }
     pkgs.delete(castToPackage(this));
-    return [...pkgs.values()];
+    return Array.from(pkgs.values());
   }
 
   get mayRebuild() {

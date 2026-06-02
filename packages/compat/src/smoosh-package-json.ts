@@ -20,7 +20,7 @@ export default class SmooshPackageJSON extends Plugin {
         return JSON.parse(readFileSync(pkgPath, 'utf8'));
       }
     });
-    let pkg = mergeWithUniq({}, ...pkgs);
+    let pkg = mergeWithUniq({}, pkgs);
     writeFileSync(join(this.outputPath, 'package.json'), JSON.stringify(pkg, null, 2), 'utf8');
   }
 }

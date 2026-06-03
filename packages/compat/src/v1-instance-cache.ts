@@ -3,7 +3,7 @@
 // between the new and old words.
 
 import type { V1AddonConstructor } from './v1-addon';
-import V1Addon from './v1-addon';
+import V1Addon, { v1AddonRoot } from './v1-addon';
 import { pathExistsSync } from 'fs-extra';
 import type { AddonInstance, PackageCache } from '@embroider/core';
 import { getOrCreate } from '@embroider/core';
@@ -13,7 +13,7 @@ export default class V1InstanceCache {
   // maps from package root directories to known V1 instances of that packages.
   // There can be many because a single copy of an addon may be consumed by many
   // other packages and each gets an instance.
-  private addons: Map<string, Set<V1Addon>> = new Map();
+  private addons: Map<string, V1Addon> = new Map();
   private orderIdx: number;
 
   constructor(private app: CompatApp, private packageCache: PackageCache) {
@@ -62,13 +62,17 @@ export default class V1InstanceCache {
     addonInstance.addons.forEach(a => this.addAddon(a));
 
     this.orderIdx += 1;
-    let Klass = this.adapterClass(addonInstance);
-    let v1Addon = new Klass(addonInstance, this.app.options, this.app, this.packageCache, this.orderIdx);
-    let pkgs = getOrCreate(this.addons, v1Addon.root, () => new Set());
-    pkgs.add(v1Addon);
+    const root = v1AddonRoot(addonInstance);
+
+    getOrCreate(this.addons, root, () => {
+      let Klass = this.adapterClass(addonInstance);
+      let v1Addon = new Klass(addonInstance, this.app.options, this.app, this.packageCache, this.orderIdx);
+      return v1Addon;
+    });
   }
 
   getAddons(root: string): V1Addon[] {
-    return Array.from(this.addons.get(root) || []);
+    const addon = this.addons.get(root);
+    return addon ? [addon] : [];
   }
 }

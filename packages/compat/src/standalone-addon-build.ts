@@ -8,6 +8,7 @@ import broccoliMergeTrees from 'broccoli-merge-trees';
 import writeFile from 'broccoli-file-creator';
 import type { Node } from 'broccoli-node-api';
 import type CompatApp from './compat-app';
+import { join } from 'path';
 
 export function convertLegacyAddons(compatApp: CompatApp) {
   let packageCache = PackageCache.shared('embroider', compatApp.root);
@@ -56,7 +57,7 @@ ${summarizePeerDepViolations(violations)}
       segments.pop();
     }
     segments.push('moved-package-target.js');
-    return writeFile(segments.join('/'), '');
+    return writeFile(join(...segments), '');
   });
 
   let additionalTrees = [

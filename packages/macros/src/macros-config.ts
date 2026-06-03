@@ -497,7 +497,7 @@ const NO_LOCK_FILE_FOUND = 'no-lockfile-found';
 let _LOCK_FILE_CONTENTS: string | Buffer | null = null;
 function getLockFile(appRoot: string): Buffer | string {
   if (!_LOCK_FILE_CONTENTS) {
-    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: appRoot });
+    let lockFilePath = findUp.sync(['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock'], { cwd: appRoot });
 
     if (!lockFilePath) {
       lockFilePath = findUp.sync('package.json', { cwd: appRoot });

@@ -116,6 +116,8 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
       this._super.included.apply(this, args);
     },
 
+    allowCachingPerBundle: true,
+
     treeForApp(this: AddonInstance) {
       if (disabled) {
         return undefined;

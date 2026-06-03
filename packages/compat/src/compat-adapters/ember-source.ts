@@ -542,7 +542,8 @@ function moveObjectSpecifiersToMetal() {
            * I need to use getAllPRevSiblings and getAllNextSiblings here because I need the siblings
            * to be paths and path.container only holds nodes (for some strange reason).
            */
-          const objectimport = [...path.getAllPrevSiblings(), ...path.getAllNextSiblings()].find(
+          const searchObjects = Array.from(path.getAllPrevSiblings()).concat(Array.from(path.getAllNextSiblings()));
+          const objectimport = searchObjects.find(
             p => p.node.type === 'ImportDeclaration' && p.node.source.value === '@ember/object'
           ) as NodePath<Babel.types.ImportDeclaration>;
 

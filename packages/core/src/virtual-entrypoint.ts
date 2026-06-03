@@ -298,7 +298,7 @@ export function splitRoute(
   }
 
   if (ownFiles.length > 0) {
-    addLazyBundle([...ownNames], ownFiles);
+    addLazyBundle(Array.from(ownNames), ownFiles);
   }
 }
 

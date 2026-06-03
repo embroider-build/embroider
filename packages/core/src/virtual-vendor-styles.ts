@@ -83,7 +83,9 @@ function impliedAddonVendorStyles(engine: Engine): string[] {
     let styles = getAddonImplicitStyles(addon);
 
     if (styles.length) {
-      result = [...styles, ...result];
+      const newResult = styles.slice().concat(result);
+
+      result = newResult;
     }
   }
   return result;

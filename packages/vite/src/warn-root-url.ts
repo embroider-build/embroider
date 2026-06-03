@@ -25,13 +25,13 @@ export function warnRootUrl(): Plugin {
         );
 
         const matches = html.matchAll(ROOT_URL_TOKEN_REGEX);
-        const count = [...matches].length;
+        const count = Array.from(matches).length;
 
         const dom = new JSDOM(html, {
           includeNodeLocations: true,
         });
         const document = dom.window.document;
-        const nodes = [...document.querySelectorAll('*')].filter(node =>
+        const nodes = Array.from(document.querySelectorAll('*')).filter(node =>
           node.getAttributeNames().some(key => node.getAttribute(key)?.match(ROOT_URL_TOKEN_REGEX))
         );
 

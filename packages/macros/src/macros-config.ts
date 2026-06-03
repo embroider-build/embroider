@@ -1,9 +1,9 @@
 import fs from 'fs';
 import { join } from 'path';
-import crypto from 'crypto';
+import { xxh3 } from '@node-rs/xxhash';
 import findUp from 'find-up';
 import type { PluginItem } from '@babel/core';
-import { RewrittenPackageCache, getOrCreate } from '@embroider/shared-internals';
+import { AddonInstance, RewrittenPackageCache, getOrCreate } from '@embroider/shared-internals';
 import type { FirstTransformParams } from './glimmer/ast-transform';
 import { makeFirstTransform, makeSecondTransform } from './glimmer/ast-transform';
 import type State from './babel/state';
@@ -338,7 +338,7 @@ export default class MacrosConfig {
       },
       owningPackageRoot,
 
-      isDevelopingPackageRoots: [...this.isDevelopingPackageRoots],
+      isDevelopingPackageRoots: Array.from(this.isDevelopingPackageRoots),
 
       get appPackageRoot() {
         return self.appRoot;
@@ -355,31 +355,10 @@ export default class MacrosConfig {
       importSyncImplementation: this.importSyncImplementation,
     };
 
-    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: self.appRoot });
-
-    if (!lockFilePath) {
-      lockFilePath = findUp.sync('package.json', { cwd: opts.appPackageRoot });
-    }
-
-    let lockFileBuffer = lockFilePath ? fs.readFileSync(lockFilePath) : 'no-cache-key';
-
-    // @embroider/macros provides a macro called dependencySatisfies which checks if a given
-    // package name satisfies a given semver version range. Due to the way babel caches this can
-    // cause a problem where the macro plugin does not run (because it has been cached) but the version
-    // of the dependency being checked for changes (due to installing a different version). This will lead to
-    // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
-    // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
-    // more information in issue #906
-    let hash = crypto.createHash('sha256');
-    hash = hash.update(lockFileBuffer);
-    if (appOrAddonInstance) {
-      // ensure that the actual running addon names and versions are accounted
-      // for in the cache key; this ensures that we still invalidate the cache
-      // when linking another project (e.g. ember-source) which would normally
-      // not cause the lockfile to change;
-      hash = hash.update(gatherAddonCacheKey(appOrAddonInstance.project));
-    }
-    let cacheKey = hash.digest('hex');
+    const cacheKey = getAddonCacheKey({
+      appRoot: self.appRoot,
+      project: appOrAddonInstance ? appOrAddonInstance.project : null,
+    });
 
     return [
       [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts],
@@ -503,4 +482,66 @@ function isScalar(val: any): boolean {
 
 function isPlainObject(obj: any): obj is Record<string, any> {
   return typeof obj === 'object' && obj.constructor === Object && obj.toString() === '[object Object]';
+}
+
+/**
+ * Caching the lockfile contents in memory *does* mean that if you change something in the lockfile
+ * you will need to restart your build for it to take effect. However, this is already the case today
+ * with embroider assets (and for many things using vite) so this feels like an acceptable tradeoff.
+ *
+ * If we determine that this is a problem in practice, we can still gain a perf boost by caching the
+ * path lookup, and comparing the full contents of the lockfile to the cached version to determine
+ * if we need to bust the cache, without needing to read the lockfile on every single babel transform.
+ */
+const NO_LOCK_FILE_FOUND = 'no-lockfile-found';
+let _LOCK_FILE_CONTENTS: string | Buffer | null = null;
+function getLockFile(appRoot: string): Buffer | string {
+  if (!_LOCK_FILE_CONTENTS) {
+    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: appRoot });
+
+    if (!lockFilePath) {
+      lockFilePath = findUp.sync('package.json', { cwd: appRoot });
+    }
+
+    _LOCK_FILE_CONTENTS = lockFilePath ? fs.readFileSync(lockFilePath) : NO_LOCK_FILE_FOUND;
+  }
+
+  return _LOCK_FILE_CONTENTS;
+}
+
+// Cached so we only pay the cost of hashing the (potentially large) lockfile once.
+// Used as the seed for per-addon hashes so that both inputs affect the final key.
+let _lockFileHash: bigint | null = null;
+function getLockFileHash(appRoot: string): bigint {
+  if (_lockFileHash === null) {
+    _lockFileHash = xxh3.xxh64(getLockFile(appRoot));
+  }
+  return _lockFileHash;
+}
+
+/**
+ * Generates a two-part cache key for babel based on the contents of the app's lockfile and the
+ * addons in the project. This is used to bust babel's cache when either of those things change.
+ */
+function getAddonCacheKey(options: { appRoot: string; project: AddonInstance['project'] | null | undefined }): string {
+  // Part 1: lockfile hash, computed once and reused as the seed for part 2.
+  // @embroider/macros provides a macro called dependencySatisfies which checks if a given
+  // package name satisfies a given semver version range. Due to the way babel caches this can
+  // cause a problem where the macro plugin does not run (because it has been cached) but the version
+  // of the dependency being checked for changes (due to installing a different version). This will lead to
+  // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
+  // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
+  // more information in issue #906
+  const lockHash = getLockFileHash(options.appRoot);
+
+  if (options.project) {
+    // Part 2: ensure that the actual running addon names and versions are accounted
+    // for in the cache key; this ensures that we still invalidate the cache
+    // when linking another project (e.g. ember-source) which would normally
+    // not cause the lockfile to change. The lockfile hash seeds this so both
+    // parts contribute to the final key.
+    return xxh3.xxh64(gatherAddonCacheKey(options.project), lockHash).toString(16);
+  }
+
+  return lockHash.toString(16);
 }

@@ -8,6 +8,7 @@ import broccoliMergeTrees from 'broccoli-merge-trees';
 import writeFile from 'broccoli-file-creator';
 import type { Node } from 'broccoli-node-api';
 import type CompatApp from './compat-app';
+import { join } from 'path';
 
 export function convertLegacyAddons(compatApp: CompatApp) {
   let packageCache = PackageCache.shared('embroider', compatApp.root);
@@ -44,7 +45,7 @@ ${summarizePeerDepViolations(violations)}
   let index = buildAddonIndex(appPackage, v1Addons);
 
   let interiorTrees: Node[] = [];
-  let exteriorTrees = Array.from(v1Addons).map(pkg => {
+  let exteriorTrees = [...v1Addons].map(pkg => {
     let interior = buildCompatAddon(pkg, instanceCache);
     interiorTrees.push(interior);
     return new Funnel(interior, { destDir: index.packages[pkg.root] });
@@ -56,10 +57,11 @@ ${summarizePeerDepViolations(violations)}
       segments.pop();
     }
     segments.push('moved-package-target.js');
-    return writeFile(segments.join('/'), '');
+    return writeFile(join(...segments), '');
   });
 
-  let additionalTrees = [
+  return broccoliMergeTrees([
+    ...exteriorTrees,
     new Funnel(compatApp.synthesizeStylesPackage(interiorTrees), {
       destDir: '@embroider/synthesized-styles',
     }),
@@ -67,11 +69,8 @@ ${summarizePeerDepViolations(violations)}
       destDir: '@embroider/synthesized-vendor',
     }),
     writeFile('index.json', JSON.stringify(index, null, 2)),
-  ];
-
-  let finalTrees = exteriorTrees.slice().concat(additionalTrees, fakeTargets);
-
-  return broccoliMergeTrees(finalTrees);
+    ...fakeTargets,
+  ]);
 }
 
 function buildAddonIndex(appPackage: Package, packages: Set<Package>): RewrittenPackageIndex {
@@ -84,13 +83,13 @@ function buildAddonIndex(appPackage: Package, packages: Set<Package>): Rewritten
     content.packages[oldPkg.root] = newRoot;
     let nonResolvableDeps = oldPkg.nonResolvableDeps;
     if (nonResolvableDeps) {
-      content.extraResolutions[newRoot] = Array.from(nonResolvableDeps.values()).map(v => v.root);
+      content.extraResolutions[newRoot] = [...nonResolvableDeps.values()].map(v => v.root);
     }
   }
 
   let nonResolvableDeps = appPackage.nonResolvableDeps;
   if (nonResolvableDeps) {
-    let extraRoots = Array.from(nonResolvableDeps.values()).map(v => v.root);
+    let extraRoots = [...nonResolvableDeps.values()].map(v => v.root);
     // the app gets extraResolutions registered against its *original*
     // location
     content.extraResolutions[appPackage.root] = extraRoots;

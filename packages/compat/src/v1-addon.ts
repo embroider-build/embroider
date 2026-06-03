@@ -583,14 +583,17 @@ export default class V1Addon {
   // things to the package metadata.
   protected get packageMeta(): Partial<AddonMeta> {
     let built = this.build();
+    const metas = [built.staticMeta];
+    for (const dynamicMeta of built.dynamicMeta) {
+      metas.push(dynamicMeta());
+    }
     return mergeWithAppend(
       {
         version: 2,
         'auto-upgraded': true,
         type: 'addon',
       },
-      built.staticMeta,
-      ...built.dynamicMeta.map(d => d())
+      metas
     );
   }
 

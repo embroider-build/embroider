@@ -1,12 +1,18 @@
 import mergeWith from 'lodash/mergeWith';
 import uniq from 'lodash/uniq';
 
-export function mergeWithAppend(dest: object, ...srcs: object[]) {
-  return mergeWith(dest, ...srcs, appendArrays);
+export function mergeWithAppend(dest: object, srcs: object[]) {
+  for (const src of srcs) {
+    mergeWith(dest, src, appendArrays);
+  }
+  return dest;
 }
 
-export function mergeWithUniq(dest: object, ...srcs: object[]) {
-  return mergeWith(dest, ...srcs, appendArraysUniq);
+export function mergeWithUniq(dest: object, srcs: object[]) {
+  for (const src of srcs) {
+    mergeWith(dest, src, appendArraysUniq);
+  }
+  return dest;
 }
 
 function appendArrays(objValue: any, srcValue: any) {

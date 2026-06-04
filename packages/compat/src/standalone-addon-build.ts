@@ -69,7 +69,7 @@ ${summarizePeerDepViolations(violations)}
     writeFile('index.json', JSON.stringify(index, null, 2)),
   ];
 
-  let finalTrees = exteriorTrees.slice().concat(additionalTrees, fakeTargets);
+  let finalTrees = exteriorTrees.concat(additionalTrees, fakeTargets);
 
   return broccoliMergeTrees(finalTrees);
 }

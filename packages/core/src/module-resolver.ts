@@ -22,6 +22,7 @@ import { nodeResolve, type NodeResolveOpts } from './node-resolve';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import { extractResolution, type ModuleRequest, type Resolution } from './module-request';
+import validatePackageName from 'validate-npm-package-name';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -35,6 +36,11 @@ makeDebug.formatters.p = (s: string) => {
   }
   return s;
 };
+
+function isValidPackageName(name: string) {
+  // https://npmx.dev/package/validate-npm-package-name/v/8.0.0
+  return validatePackageName(name).validForNewPackages;
+}
 
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
   if (after.resolvedTo) {
@@ -1162,9 +1168,20 @@ export class Resolver {
       !appImportInAppTree(pkg, logicalPackage, packageName) &&
       !reliablyResolvable(pkg, packageName)
     ) {
-      throw new Error(
-        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
-      );
+      if (isValidPackageName(packageName)) {
+        throw new Error(
+          `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+        );
+      }
+
+      /**
+       * Invalid package names must be handled by other plugins
+       * - virtual:foo
+       * - virtual:
+       * - ~build/meta
+       * - etc
+       */
+      return request;
     }
 
     return request;

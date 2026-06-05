@@ -37,8 +37,7 @@ export default function buildCompatAddon(originalPackage: Package, v1Cache: V1In
   if (needsSmooshing) {
     let trees = oldPackages.map(pkg => pkg.v2Tree).reverse();
     let smoosher = new SmooshPackageJSON(trees, { annotation: originalPackage.name });
-    let finalTrees = trees.slice();
-    finalTrees.push(smoosher);
+    let finalTrees = trees.concat(smoosher);
     return broccoliMergeTrees(finalTrees, { overwrite: true });
   } else {
     return oldPackages[0].v2Tree;

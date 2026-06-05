@@ -1,5 +1,30 @@
 # Embroider Changelog
 
+## Release (2026-06-05)
+
+* @embroider/addon-shim 1.10.3 (patch)
+* @embroider/compat 4.1.20 (patch)
+* @embroider/core 4.6.1 (patch)
+* @embroider/macros 1.20.4 (patch)
+* @embroider/shared-internals 3.1.1 (patch)
+* @embroider/template-tag-codemod 1.4.1 (patch)
+* @embroider/vite 1.7.6 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2758](https://github.com/embroider-build/embroider/pull/2758) perf: faster path generation, safer tree building ([@runspired](https://github.com/runspired))
+  * [#2757](https://github.com/embroider-build/embroider/pull/2757) perf: fix stack overflow ([@runspired](https://github.com/runspired))
+* `@embroider/addon-shim`
+  * [#2761](https://github.com/embroider-build/embroider/pull/2761) perf: dedupe v2 addons by default ([@runspired](https://github.com/runspired))
+* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/vite`
+  * [#2760](https://github.com/embroider-build/embroider/pull/2760) perf: dont use array spread ([@runspired](https://github.com/runspired))
+* `@embroider/vite`
+  * [#2750](https://github.com/embroider-build/embroider/pull/2750) Add license metadata for `@embroider/vite` ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
+#### Committers: 2
+- Chris Thoburn ([@runspired](https://github.com/runspired))
+- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))
+
 ## Release (2026-05-28)
 
 * @embroider/vite 1.7.5 (patch)

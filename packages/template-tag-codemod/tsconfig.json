@@ -5,7 +5,7 @@
   "extends": "../../tsconfig-base.json",
   "compilerOptions": {
     "composite": true,
-    "target": "es2021",
+    "target": "es2024",
     "outDir": "dist"
   },
 }

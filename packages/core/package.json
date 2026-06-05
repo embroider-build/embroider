@@ -67,10 +67,10 @@
     "resolve.exports": "^2.0.2",
     "semver": "^7.3.5",
     "typescript-memoize": "^1.0.1",
+    "validate-npm-package-name": "^8.0.0",
     "walk-sync": "^3.0.0"
   },
   "devDependencies": {
-    "embroider-sample-transforms": "workspace:*",
     "@embroider/test-support": "workspace:*",
     "@glimmer/syntax": "^0.94.9",
     "@glint/template": "^1.0.0",
@@ -86,6 +86,8 @@
     "@types/resolve": "^1.20.0",
     "@types/semver": "^7.3.5",
     "@types/tmp": "^0.1.0",
+    "@types/validate-npm-package-name": "^4.0.2",
+    "embroider-sample-transforms": "workspace:*",
     "fixturify": "^2.1.1",
     "tmp": "^0.1.0",
     "typescript": "^5.4.5"

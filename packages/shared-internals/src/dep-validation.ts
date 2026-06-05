@@ -24,7 +24,8 @@ export function crawlDeps(startingPackage: Package): Map<Package, Package[][]> {
       seen.add(pkg);
       for (let dep of pkg.dependencies) {
         if (pkg.categorizeDependency(dep.name) !== 'peerDependencies') {
-          queue.push({ pkg: dep, path: [...path, pkg] });
+          let queuePath = path.concat(pkg);
+          queue.push({ pkg: dep, path: queuePath });
         }
       }
     }

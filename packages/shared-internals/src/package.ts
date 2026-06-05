@@ -160,7 +160,7 @@ export default class Package {
       }
     }
     pkgs.delete(this);
-    return [...pkgs.values()];
+    return Array.from(pkgs.values());
   }
 
   get mayRebuild(): boolean {

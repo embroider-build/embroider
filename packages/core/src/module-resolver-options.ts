@@ -98,7 +98,7 @@ function partitionEngines(
     findActiveAddons(current.package, current, extraDeps);
     // ensure addons are applied in the correct order, if set (via @embroider/compat/v1-addon)
     current.addons = new Map(
-      [...current.addons].sort(([a], [b]) => {
+      Array.from(current.addons).sort(([a], [b]) => {
         return (a.meta['order-index'] || 0) - (b.meta['order-index'] || 0);
       })
     );

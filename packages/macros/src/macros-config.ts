@@ -64,7 +64,7 @@ function gatherAddonCacheKey(project: any): string {
     gatherAddonCacheKeyWorker(addon, memo);
   });
 
-  cacheKey = [...memo].join('|');
+  cacheKey = Array.from(memo).join('|');
   addonCacheKey.set(project, cacheKey);
 
   return cacheKey;

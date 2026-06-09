@@ -45,6 +45,11 @@ export function ember(params?: {
         config.optimizeDeps.exclude ||= [];
         config.optimizeDeps.extensions ||= [];
 
+        // Pin the dep-optimizer scan to the app entry. With optimizeDeps.entries
+        // unset, Vite defaults to scanning **/*.html — it ignores __tests__/ and
+        // coverage/, but NOT Ember's tests/index.html. Overridable.
+        config.optimizeDeps.entries ??= ['index.html'];
+
         if (!config.resolve.extensions) {
           config.resolve.extensions = extensions;
         }

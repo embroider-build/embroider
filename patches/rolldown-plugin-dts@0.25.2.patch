@@ -1,0 +1,84 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 7bde3c12873bc42d10d9a7fc750a8a24670e0757..321db018be7bb30442c54a8475337901033a3523 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -1034,6 +1034,13 @@ function createGeneratePlugin({ entry, tsconfig, tsconfigRaw, build, incremental
+ 							name: name ? `${name}.d` : void 0
+ 						});
+ 					}
++					// Make non-existent source files (e.g. virtual .ts files created by
++					// a plugin) available to the TypeScript compiler so declaration files
++					// can be generated for them.
++					if (!existsSync(id)) {
++						(tscContext || globalContext).files.set(path.resolve(id), code);
++						debug$2("register virtual file: %s", id);
++					}
+ 				}
+ 				if (emitDtsOnly) {
+ 					if (RE_JSON.test(id)) return "{}";
+@@ -1091,6 +1098,7 @@ function createGeneratePlugin({ entry, tsconfig, tsconfigRaw, build, incremental
+ 						cwd,
+ 						entries: eager ? void 0 : Array.from(dtsMap.values()).filter((v) => v.isEntry).map((v) => v.id),
+ 						id,
++						code,
+ 						sourcemap,
+ 						vue,
+ 						tsMacro,
+diff --git a/dist/tsc-DBLgyoBn.mjs b/dist/tsc-DBLgyoBn.mjs
+index 4c6a228de0d5b2b60cb1bbdd8349b272d625a9b4..17b61f1a4ac6fa085f0af360336951f08c3ce4b3 100644
+--- a/dist/tsc-DBLgyoBn.mjs
++++ b/dist/tsc-DBLgyoBn.mjs
+@@ -333,7 +333,7 @@ function createOrGetTsModule(options) {
+ 	context.programs.push(module.program);
+ 	return module;
+ }
+-function createTsProgram({ entries, id, tsconfig, tsconfigRaw, vue, tsMacro, cwd, context = globalContext }) {
++function createTsProgram({ entries, id, tsconfig, tsconfigRaw, vue, tsMacro, cwd, context = globalContext, code }) {
+ 	const fsSystem = createFsSystem(context.files);
+ 	const baseDir = tsconfig ? path.dirname(tsconfig) : cwd;
+ 	const parsedConfig = ts.parseJsonConfigFileContent(tsconfigRaw, fsSystem, baseDir, void 0, void 0, void 0, vue ? [{
+@@ -349,10 +349,12 @@ function createTsProgram({ entries, id, tsconfig, tsconfigRaw, vue, tsMacro, cwd
+ 		id,
+ 		entries,
+ 		vue,
+-		tsMacro
++		tsMacro,
++		context,
++		code
+ 	});
+ }
+-function createTsProgramFromParsedConfig({ parsedConfig, fsSystem, baseDir, id, entries, vue, tsMacro }) {
++function createTsProgramFromParsedConfig({ parsedConfig, fsSystem, baseDir, id, entries, vue, tsMacro, context, code }) {
+ 	const compilerOptions = {
+ 		...defaultCompilerOptions,
+ 		...parsedConfig.options,
+@@ -360,7 +362,29 @@ function createTsProgramFromParsedConfig({ parsedConfig, fsSystem, baseDir, id,
+ 		$rootDir: baseDir
+ 	};
+ 	const rootNames = [...new Set([id, ...entries || parsedConfig.fileNames].map((f) => fsSystem.resolvePath(f)))];
++	const resolvedId = fsSystem.resolvePath(id);
++	// Make the current virtual file content available to TypeScript's host.
++	if (code && context) {
++		context.files.set(resolvedId, code);
++	}
+ 	const host = ts.createCompilerHost(compilerOptions, true);
++	const originalReadFile = host.readFile.bind(host);
++	host.readFile = (fileName) => {
++		if (context?.files.has(fileName)) return context.files.get(fileName);
++		return originalReadFile(fileName);
++	};
++	const originalFileExists = host.fileExists.bind(host);
++	host.fileExists = (fileName) => {
++		if (context?.files.has(fileName)) return true;
++		return originalFileExists(fileName);
++	};
++	const originalGetSourceFile = host.getSourceFile.bind(host);
++	host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => {
++		if (context?.files.has(fileName)) {
++			return ts.createSourceFile(fileName, context.files.get(fileName), languageVersion, true, ts.ScriptKind.TS);
++		}
++		return originalGetSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile);
++	};
+ 	const program = createProgramFactory(ts, {
+ 		vue,
+ 		tsMacro

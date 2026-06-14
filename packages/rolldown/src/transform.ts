@@ -1,4 +1,5 @@
 import { Preprocessor } from 'content-tag';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import type { Plugin } from 'rolldown';
 import path from 'node:path';
@@ -15,20 +16,14 @@ export function emberTransform(): Plugin {
     resolveId: {
       order: 'pre',
       handler(id, importer) {
-        console.log('RESOLVE', id, 'from', importer);
-
         if (!importer) return null;
 
-        const fileName = importer ? path.join(path.dirname(importer), id) : id;
+        const fileName = path.join(path.dirname(importer), id);
 
         if (id.endsWith('.gts') && !importer.endsWith('.d.ts')) {
-          // const newId = id.replace(/\.gts$/, '.ts');
-
           gtsFiles.push(fileName);
 
           const newId = fileName.replace(/\.gts$/, '.ts');
-
-          console.log('resolve [src]', id, 'from', importer, newId);
 
           return {
             id: newId,
@@ -41,9 +36,20 @@ export function emberTransform(): Plugin {
           importer.endsWith('.d.ts') &&
           gtsFiles.includes(fileName.replace('.d.ts', '.gts'))
         ) {
-          // const newId = id.replace(/\.gts$/, '.d.ts');
-          console.log('resolve [types]', id, 'from', importer, fileName);
           return fileName;
+        } else if (id.endsWith('.ts') && !importer.endsWith('.d.ts')) {
+          const gtsFileName = fileName.replace(/\.ts$/, '.gts');
+
+          if (existsSync(gtsFileName) && !existsSync(fileName)) {
+            gtsFiles.push(gtsFileName);
+
+            return {
+              id: fileName,
+              meta: {
+                fileName: gtsFileName,
+              },
+            };
+          }
         }
 
         return null;
@@ -56,14 +62,10 @@ export function emberTransform(): Plugin {
         id: /\.ts$/,
       },
       async handler(id) {
-        console.log('LOAD', id, this.getModuleInfo(id), 'resolveId:');
-
         const meta = this.getModuleInfo(id)?.meta ?? {};
         const fileName = meta?.fileName;
 
-        if (fileName /*&& fileName.endsWith('.gts')*/) {
-          console.log('-> FROM', fileName);
-
+        if (fileName) {
           return await readFile(fileName, { encoding: 'utf8' });
         }
 
@@ -78,22 +80,26 @@ export function emberTransform(): Plugin {
         id: /\.(gjs|ts)$/,
       },
       handler(input, id) {
-        // my idea to rewrite the imports, so .d.ts can be done, but nope
+        // Rewrite .gts imports in declaration files to .d.ts so the dts bundler
+        // can resolve them as regular declaration files.
         if (input.includes('.gts') && id.endsWith('.d.ts')) {
-          console.log('TRANSFORM [imports]', id);
-          const remappedImports = input.replace(
+          input = input.replace(
             /(['"`])((?:\.\.?\/|\/|@|[A-Za-z0-9_\-])[^'"]*?\.gts)\1/g,
-            (_m, q, p) => `${q}${p.replace(/\.gts$/, id.includes('.d.ts') ? '.d.ts' : '.ts')}${q}`
+            (_m, q, p) => `${q}${p.replace(/\.gts$/, '.d.ts')}${q}`
           );
-
-          console.log('REPLACE import', { id, input, remappedImports });
-          input = remappedImports;
         }
 
-        // console.log('TRANSFORM', id, 'original code:\n', input);
+        // Rewrite .gts imports in source files to .ts. From this point on
+        // rolldown-plugin-dts only sees virtual .ts files and never needs to
+        // know that .gts files exist.
+        if (input.includes('.gts') && !id.endsWith('.d.ts')) {
+          input = input.replace(
+            /(['"`])((?:\.\.?\/|\/|@|[A-Za-z0-9_\-])[^'"]*?\.gts)\1/g,
+            (_m, q, p) => `${q}${p.replace(/\.gts$/, '.ts')}${q}`
+          );
+        }
 
         if (input.includes('<template>')) {
-          console.log('TRANSFORM [code]', id);
           const { code, map } = processor.process(input, {
             filename: id,
           });
@@ -107,9 +113,5 @@ export function emberTransform(): Plugin {
         return input;
       },
     },
-
-    // moduleParsed(mod) {
-    //   console.log('MODULE PARSED', mod.id, mod.code);
-    // },
   };
 }

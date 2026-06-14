@@ -6,8 +6,9 @@ export default defineConfig({
   entry: ['./src/index.ts'],
   sourcemap: true,
   clean: true,
-  dts: {
-    build: true,
+  dts: true,
+  outExtensions({ pkgType }) {
+    return pkgType === 'module' ? { js: '.js', dts: '.d.ts' } : undefined;
   },
   neverBundle: ['node:*', '@ember/*', '@glimmer/*'],
   plugins: [

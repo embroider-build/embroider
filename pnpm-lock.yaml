@@ -11,6 +11,11 @@ overrides:
   browserslist: ^4.14.0
   graceful-fs: ^4.0.0
 
+patchedDependencies:
+  rolldown-plugin-dts@0.25.2:
+    hash: cfe04d414bcfafa6d456fc4f877a5b8c7b52d0239281c2cd5bab2ffa29fc845b
+    path: patches/rolldown-plugin-dts@0.25.2.patch
+
 importers:
 
   .:
@@ -32641,7 +32646,7 @@ snapshots:
       glob: 13.0.6
       package-json-from-dist: 1.0.1
 
-  rolldown-plugin-dts@0.25.2(rolldown@1.0.3)(typescript@5.9.3):
+  rolldown-plugin-dts@0.25.2(patch_hash=cfe04d414bcfafa6d456fc4f877a5b8c7b52d0239281c2cd5bab2ffa29fc845b)(rolldown@1.0.3)(typescript@5.9.3):
     dependencies:
       '@babel/generator': 8.0.0-rc.6
       '@babel/helper-validator-identifier': 8.0.0-rc.6
@@ -34021,7 +34026,7 @@ snapshots:
       obug: 2.1.1
       picomatch: 4.0.4
       rolldown: 1.0.3
-      rolldown-plugin-dts: 0.25.2(rolldown@1.0.3)(typescript@5.9.3)
+      rolldown-plugin-dts: 0.25.2(patch_hash=cfe04d414bcfafa6d456fc4f877a5b8c7b52d0239281c2cd5bab2ffa29fc845b)(rolldown@1.0.3)(typescript@5.9.3)
       semver: 7.8.1
       tinyexec: 1.2.2
       tinyglobby: 0.2.16

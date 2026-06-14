@@ -6,7 +6,9 @@ export default defineConfig({
   entry: ['./src/index.ts'],
   sourcemap: true,
   clean: true,
-  dts: true,
+  dts: {
+    build: true,
+  },
   neverBundle: ['node:*', '@ember/*', '@glimmer/*'],
   plugins: [
     babel({
@@ -15,7 +17,7 @@ export default defineConfig({
     }),
     ember(),
   ],
-  devtools: {
-    ui: true,
-  },
+  // devtools: {
+  //   ui: true,
+  // },
 });

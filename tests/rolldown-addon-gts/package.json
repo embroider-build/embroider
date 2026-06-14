@@ -1,5 +1,5 @@
 {
-  "name": "rolldown-addon",
+  "name": "rolldown-addon-gts",
   "type": "module",
   "scripts": {
     "build:rolldown": "rolldown -c",
@@ -11,13 +11,14 @@
   "devDependencies": {
     "@babel/core": "^7.28.6",
     "@babel/plugin-transform-typescript": "^7.28.6",
+    "@ember/library-tsconfig": "^2.0.0",
     "@embroider/rolldown": "workspace:*",
-    "@rollup/plugin-babel": "^6.1.0",
-    "@vitejs/devtools": "^0.0.0-alpha.32",
+    "@rollup/plugin-babel": "^7.1.0",
     "babel-plugin-ember-template-compilation": "^4.0.0",
     "ember-source": "^6.10.0",
-    "rolldown": "^1.0.0-rc.6",
-    "tsdown": "^0.21.0-beta.2",
-    "typescript": "^5.9.3"
+    "rolldown": "^1.0.3",
+    "tsdown": "^0.22.1",
+    "typescript": "^5.9.3",
+    "unrun": "^0.3.0"
   }
 }

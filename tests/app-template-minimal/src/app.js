@@ -1,10 +1,11 @@
 import Application from '@ember/application';
-import Resolver from 'ember-resolver';
-import config from '#config';
-
-import { registry } from './registry.js';
+import { Resolver } from './resolver';
+import * as PageTitleService from 'ember-page-title/services/page-title';
 
 export default class App extends Application {
-  modulePrefix = config.modulePrefix;
-  Resolver = Resolver.withModules(registry);
+  Resolver = new Resolver({
+    ...import.meta.glob('./router.{gjs,gts,js,ts}', { eager: true }),
+    ...import.meta.glob('./{templates,services,routes}/**/*.{gjs,gts,js,ts}', { eager: true }),
+    './services/page-title': PageTitleService,
+  });
 }

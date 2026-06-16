@@ -4,6 +4,7 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "declaration": true,
+    "declarationMap": true,
     "typeRoots": ["types", "node_modules/@types"],
     "esModuleInterop": true,
     "noUnusedLocals": true,

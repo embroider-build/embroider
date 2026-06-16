@@ -8,6 +8,10 @@ import { transform } from '@babel/core';
 import { stripBadReexportsPlugin } from '../compat-utils';
 
 export default class extends V1Addon {
+  protected customizes(): boolean {
+    return false;
+  }
+
   get v2Tree(): Node {
     // workaround for https://github.com/DockYard/ember-composable-helpers/issues/308
     // and https://github.com/DockYard/ember-composable-helpers/pull/302

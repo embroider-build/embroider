@@ -258,9 +258,10 @@ async function maybeCaptureNewOptimizedDep(
     try {
       renameSync(tmp, jumpRoot);
     } catch (err) {
-      if (err.code === 'EEXIST') {
+      if (err.code === 'EEXIST' || err.code === 'ENOTEMPTY') {
         // somebody raced us and made it first. It's content-addressable so
-        // that's fine.
+        // that's fine. ENOTEMPTY happens on Linux when renaming onto a
+        // now-non-empty directory; same race, different errno.
       } else {
         throw err;
       }

@@ -4,17 +4,7 @@
       "oldVersion": "8.3.0"
     },
     "@embroider/addon-shim": {
-      "impact": "patch",
-      "oldVersion": "1.10.2",
-      "newVersion": "1.10.3",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-shim/package.json"
+      "oldVersion": "1.10.3"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "4.0.0"
@@ -23,45 +13,13 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.19",
-      "newVersion": "4.1.20",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.20"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.6.0",
-      "newVersion": "4.6.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.6.1"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -70,21 +28,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.20.3",
-      "newVersion": "1.20.4",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.20.4"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -93,41 +37,17 @@
       "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
-      "impact": "patch",
-      "oldVersion": "3.1.0",
-      "newVersion": "3.1.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "3.1.1"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "patch",
-      "oldVersion": "1.4.0",
-      "newVersion": "1.4.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "1.4.1"
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.7.5",
-      "newVersion": "1.7.6",
+      "oldVersion": "1.7.6",
+      "newVersion": "1.7.7",
       "tagName": "latest",
       "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
@@ -136,5 +56,5 @@
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-06-05)\n\n* @embroider/addon-shim 1.10.3 (patch)\n* @embroider/compat 4.1.20 (patch)\n* @embroider/core 4.6.1 (patch)\n* @embroider/macros 1.20.4 (patch)\n* @embroider/shared-internals 3.1.1 (patch)\n* @embroider/template-tag-codemod 1.4.1 (patch)\n* @embroider/vite 1.7.6 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2758](https://github.com/embroider-build/embroider/pull/2758) perf: faster path generation, safer tree building ([@runspired](https://github.com/runspired))\n  * [#2757](https://github.com/embroider-build/embroider/pull/2757) perf: fix stack overflow ([@runspired](https://github.com/runspired))\n* `@embroider/addon-shim`\n  * [#2761](https://github.com/embroider-build/embroider/pull/2761) perf: dedupe v2 addons by default ([@runspired](https://github.com/runspired))\n* `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/vite`\n  * [#2760](https://github.com/embroider-build/embroider/pull/2760) perf: dont use array spread ([@runspired](https://github.com/runspired))\n* `@embroider/vite`\n  * [#2750](https://github.com/embroider-build/embroider/pull/2750) Add license metadata for `@embroider/vite` ([@davidtaylorhq](https://github.com/davidtaylorhq))\n\n#### Committers: 2\n- Chris Thoburn ([@runspired](https://github.com/runspired))\n- David Taylor ([@davidtaylorhq](https://github.com/davidtaylorhq))\n"
+  "description": "## Release (2026-06-17)\n\n* @embroider/vite 1.7.7 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2771](https://github.com/embroider-build/embroider/pull/2771) fix: tolerate ENOTEMPTY on jumpRoot rename race in @embroider/vite resolver ([@hugorodro](https://github.com/hugorodro))\n\n#### :house: Internal\n* [#2765](https://github.com/embroider-build/embroider/pull/2765) Enable declarationMap in our base tsconfig ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Hugo Rodriguez ([@hugorodro](https://github.com/hugorodro))\n"
 }

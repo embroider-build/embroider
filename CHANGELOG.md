@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2026-06-17)
+
+* @embroider/vite 1.7.7 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2771](https://github.com/embroider-build/embroider/pull/2771) fix: tolerate ENOTEMPTY on jumpRoot rename race in @embroider/vite resolver ([@hugorodro](https://github.com/hugorodro))
+
+#### :house: Internal
+* [#2765](https://github.com/embroider-build/embroider/pull/2765) Enable declarationMap in our base tsconfig ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- Hugo Rodriguez ([@hugorodro](https://github.com/hugorodro))
+
 ## Release (2026-06-05)
 
 * @embroider/addon-shim 1.10.3 (patch)

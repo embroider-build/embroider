@@ -95,6 +95,20 @@ wideAppScenarios
 
     project.addDevDependency(addon2);
     project.mergeFiles({
+      'ember-cli-build.js': `
+        'use strict';
+        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+        const { compatBuild } = require('@embroider/compat');
+        module.exports = async function (defaults) {
+          const { buildOnce } = await import('@embroider/vite');
+          let app = new EmberApp(defaults, {});
+          // Split a route named "map" (its route entrypoint id ends in ".map")
+          // to cover the vite dev regression in #2670.
+          return compatBuild(app, buildOnce, {
+            splitAtRoutes: ['parent', 'parent.map'],
+          });
+        };
+      `,
       'testem-dev.js': `
           'use strict';
 
@@ -135,6 +149,11 @@ wideAppScenarios
             test('visiting /', async function (assert) {
               await visit('/');
               assert.dom().includesText('hey');
+            });
+
+            test('can load a code-split route named "map" at /parent/map', async function (assert) {
+              await visit('/parent/map');
+              assert.dom('[data-test-map]').exists('the split "map" route loaded');
             });
           });
           `,
@@ -240,6 +259,19 @@ wideAppScenarios
         },
       },
       app: {
+        'router.js': `
+          import EmberRouter from '@embroider/router';
+          import config from 'app-template/config/environment';
+          export default class Router extends EmberRouter {
+            location = config.locationType;
+            rootURL = config.rootURL;
+          }
+          Router.map(function () {
+            this.route('parent', function () {
+              this.route('map');
+            });
+          });
+        `,
         components: {
           old: {
             'component.js': `import Component from '@glimmer/component';
@@ -280,6 +312,9 @@ wideAppScenarios
           `,
         },
         routes: {
+          parent: {
+            'map.js': `import Route from '@ember/routing/route'; export default class MapRoute extends Route {}`,
+          },
           'application.js': `
             import Route from '@ember/routing/route';
             import * as emberService from '@ember/service';
@@ -300,6 +335,10 @@ wideAppScenarios
           <Old @message={{this.model.message}} />
 
           {{outlet}}`,
+          'parent.hbs': `{{outlet}}`,
+          parent: {
+            'map.hbs': `<div data-test-map>map route loaded</div>`,
+          },
         },
       },
       public: {

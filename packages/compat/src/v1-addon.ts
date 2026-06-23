@@ -315,10 +315,7 @@ export default class V1Addon {
 
   @Memoize()
   get root(): string {
-    // addonInstance.root gets modified by a customized "main" or
-    // "ember-addon.main" in package.json. We want the real package root here
-    // (the place where package.json lives).
-    return dirname(pkgUpSync({ cwd: this.addonInstance.root })!);
+    return v1AddonRoot(this.addonInstance);
   }
 
   @Memoize()
@@ -1066,6 +1063,15 @@ export default class V1Addon {
     this.buildPackageJSON(built);
     return built;
   }
+}
+
+/**
+ * addonInstance.root gets modified by a customized "main" or
+ * "ember-addon.main" in package.json. We want the real package root here
+ * (the place where package.json lives).
+ */
+export function v1AddonRoot(addonInstance: AddonInstance) {
+  return dirname(pkgUpSync({ cwd: addonInstance.root })!);
 }
 
 export interface V1AddonConstructor {

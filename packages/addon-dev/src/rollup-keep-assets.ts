@@ -1,7 +1,8 @@
 import type { Plugin } from 'rollup';
 import minimatch from 'minimatch';
-import { dirname, relative } from 'path';
+import { basename, dirname, relative } from 'path';
 import { readFileSync } from 'fs';
+import MagicString from 'magic-string';
 
 // randomly chosen, we're just looking to have high-entropy identifiers that
 // won't collide with anyting else in the source
@@ -50,36 +51,90 @@ export default function keepAssets({
         output = Buffer.from(code, 'binary');
       }
       if (include.some((pattern) => minimatch(id, pattern))) {
+        let assetFileName = relative(from, id);
+
+        // CSS may carry a source map produced by an earlier plugin's
+        // load/transform hook (e.g. a plugin that rewrites CSS). Emit it as a
+        // companion `.map` and link it so browser devtools can map the emitted
+        // CSS back to the original source.
+        //
+        // This is gated to `.css` on purpose: the `sourceMappingURL` annotation
+        // is a CSS/JS comment, so appending it to other kept assets (images,
+        // arbitrary text, etc.) would corrupt them. CSS is also the only text
+        // asset that realistically arrives here with a meaningful map.
+        if (
+          !ourMeta?.binaryLoaded &&
+          assetFileName.toLowerCase().endsWith('.css')
+        ) {
+          let map = this.getCombinedSourcemap();
+          if (map && map.mappings) {
+            this.emitFile({
+              type: 'asset',
+              fileName: `${assetFileName}.map`,
+              source: map.toString(),
+            });
+            output = `${code}\n/*# sourceMappingURL=${basename(
+              assetFileName
+            )}.map */\n`;
+          }
+        }
+
         let ref = this.emitFile({
           type: 'asset',
-          fileName: relative(from, id),
+          fileName: assetFileName,
           source: output,
         });
+
+        let replacement: string;
         if (exports === '*') {
-          return `export * from ${marker}("${ref}")`;
+          replacement = `export * from ${marker}("${ref}")`;
         } else if (exports === 'default') {
-          return `export default ${marker}("${ref}")`;
+          replacement = `export default ${marker}("${ref}")`;
         } else {
           // side-effect only
-          return `${marker}("${ref}")`;
+          replacement = `${marker}("${ref}")`;
         }
+
+        // The original module content (the asset) is gone from the JS graph —
+        // it's been emitted as a file and replaced by this placeholder. There's
+        // nothing to map it to, so hand back an empty map rather than letting
+        // rollup warn that this transform dropped the source map.
+        return { code: replacement, map: { mappings: '' } };
       }
     },
     renderChunk(code, chunk) {
-      if (code.includes(marker)) {
-        const { getName, imports } = nameTracker(code, exports);
-
-        code = code.replace(
-          new RegExp(`${marker}\\("([^"]+)"\\)`, 'g'),
-          (_x, ref) => {
-            let assetFileName = this.getFileName(ref);
-            let relativeName =
-              './' + relative(dirname(chunk.fileName), assetFileName);
-            return getName(relativeName) ?? '';
-          }
-        );
-        return imports() + code;
+      if (!code.includes(marker)) {
+        return null;
       }
+
+      const { getName, imports } = nameTracker(code, exports);
+      const magic = new MagicString(code);
+      const pattern = new RegExp(`${marker}\\("([^"]+)"\\)`, 'g');
+
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(code)) !== null) {
+        let ref = match[1];
+        let assetFileName = this.getFileName(ref);
+        let relativeName =
+          './' + relative(dirname(chunk.fileName), assetFileName);
+        let replacement = getName(relativeName) ?? '';
+        let start = match.index;
+        let end = start + match[0].length;
+        if (replacement) {
+          magic.update(start, end, replacement);
+        } else {
+          magic.remove(start, end);
+        }
+      }
+
+      magic.prepend(imports());
+
+      // Returning a map keeps the chunk's source map intact across the import
+      // injection and marker replacement above.
+      return {
+        code: magic.toString(),
+        map: magic.generateMap({ hires: true }),
+      };
     },
   };
 }

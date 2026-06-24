@@ -1984,8 +1984,8 @@ importers:
         specifier: npm:ember-source@beta
         version: ember-source@7.1.0-beta.1(@glimmer/component@2.1.1)
       ember-source-canary:
-        specifier: npm:ember-source@alpha
-        version: ember-source@7.2.0-alpha.1(@glimmer/component@2.1.1)
+        specifier: file:../../ember-source-7.2.0-alpha.1.tgz
+        version: ember-source@file:ember-source-7.2.0-alpha.1.tgz(@glimmer/component@2.1.1)
       ember-source-latest:
         specifier: npm:ember-source@latest
         version: ember-source@7.0.0(@glimmer/component@2.1.1)
@@ -8643,6 +8643,13 @@ packages:
 
   ember-source@7.2.0-alpha.1:
     resolution: {integrity: sha512-oJ2yJqxPkYP7gH3s/iwNtRinRg107g3tvgdwjNPHI2z2hGk4WbvKkxKTJXwgyRzqrvVrWuK0h6Y05bsAMMbzRw==}
+    engines: {node: '>= 20.19'}
+    peerDependencies:
+      '@glimmer/component': '>= 1.1.2'
+
+  ember-source@file:ember-source-7.2.0-alpha.1.tgz:
+    resolution: {integrity: sha512-83GM7YTRJG+0XjdSRHVRZxKzExi4ciSYKsJBo2ngEjexbUFQcU+YJVs+C90P6ZxqkFJELThlmyY0jX6G/IFuIg==, tarball: file:ember-source-7.2.0-alpha.1.tgz}
+    version: 7.2.0-alpha.1
     engines: {node: '>= 20.19'}
     peerDependencies:
       '@glimmer/component': '>= 1.1.2'
@@ -26090,6 +26097,30 @@ snapshots:
       - supports-color
 
   ember-source@7.2.0-alpha.1(@glimmer/component@2.1.1):
+    dependencies:
+      '@babel/core': 7.29.7
+      '@embroider/addon-shim': link:packages/addon-shim
+      '@glimmer/component': 2.1.1
+      '@simple-dom/interface': 1.4.0
+      backburner.js: 2.8.0
+      broccoli-file-creator: 2.1.1
+      chalk: 4.1.2
+      ember-cli-babel: 8.3.1(@babel/core@7.29.7)
+      ember-cli-get-component-path-option: 1.0.0
+      ember-cli-normalize-entity-name: 1.0.0
+      ember-cli-path-utils: 1.0.0
+      ember-cli-string-utils: 1.1.0
+      ember-cli-typescript-blueprint-polyfill: 0.1.0
+      ember-router-generator: 2.0.0
+      inflection: 2.0.1
+      route-recognizer: 0.3.4
+      semver: 7.8.1
+      silent-error: 1.1.1
+      simple-html-tokenizer: 0.5.11
+    transitivePeerDependencies:
+      - supports-color
+
+  ember-source@file:ember-source-7.2.0-alpha.1.tgz(@glimmer/component@2.1.1):
     dependencies:
       '@babel/core': 7.29.7
       '@embroider/addon-shim': link:packages/addon-shim

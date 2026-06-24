@@ -42,7 +42,7 @@ export default function publicAssets(
       this.addWatchFile(path);
     },
 
-    generateBundle() {
+    closeBundle() {
       let pkg = readJsonSync('package.json');
       const filenames = walkSync(path, {
         directories: false,

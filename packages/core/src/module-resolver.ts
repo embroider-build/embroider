@@ -1163,7 +1163,7 @@ export class Resolver {
       !reliablyResolvable(pkg, packageName)
     ) {
       throw new Error(
-        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies`
+        `${pkg.name} is trying to import from ${packageName} but that is not one of its explicit dependencies. ${pkg.name} is a v2 addon, and v2 addons are only allowed to import from their dependencies (or peerDependencies).`
       );
     }
 

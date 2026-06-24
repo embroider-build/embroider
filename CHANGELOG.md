@@ -1,5 +1,23 @@
 # Embroider Changelog
 
+## Release (2026-06-24)
+
+* @embroider/addon-dev 8.3.1 (patch)
+* @embroider/compat 4.1.21 (patch)
+* @embroider/core 4.6.2 (patch)
+* @embroider/macros 1.20.5 (patch)
+* @embroider/vite 1.7.8 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2777](https://github.com/embroider-build/embroider/pull/2777) `publicAssets` uses `closeBundle` instead of `generateBundle` so it can work with generated assets ([@evoactivity](https://github.com/evoactivity))
+* `@embroider/macros`
+  * [#2772](https://github.com/embroider-build/embroider/pull/2772) Use parseSync in @embroider/macros for Babel 8 compatibility ([@johanrd](https://github.com/johanrd))
+
+#### Committers: 2
+- Johan Røed ([@johanrd](https://github.com/johanrd))
+- Liam ([@evoactivity](https://github.com/evoactivity))
+
 ## Release (2026-06-17)
 
 * @embroider/vite 1.7.7 (patch)

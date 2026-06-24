@@ -1,7 +1,17 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.3.0"
+      "impact": "patch",
+      "oldVersion": "8.3.0",
+      "newVersion": "8.3.1",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.10.3"
@@ -13,13 +23,33 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.20"
+      "impact": "patch",
+      "oldVersion": "4.1.20",
+      "newVersion": "4.1.21",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "oldVersion": "4.6.1"
+      "impact": "patch",
+      "oldVersion": "4.6.1",
+      "newVersion": "4.6.2",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/core/package.json"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -28,7 +58,17 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.20.4"
+      "impact": "patch",
+      "oldVersion": "1.20.4",
+      "newVersion": "1.20.5",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -44,17 +84,17 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.7.6",
-      "newVersion": "1.7.7",
+      "oldVersion": "1.7.7",
+      "newVersion": "1.7.8",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-06-17)\n\n* @embroider/vite 1.7.7 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2771](https://github.com/embroider-build/embroider/pull/2771) fix: tolerate ENOTEMPTY on jumpRoot rename race in @embroider/vite resolver ([@hugorodro](https://github.com/hugorodro))\n\n#### :house: Internal\n* [#2765](https://github.com/embroider-build/embroider/pull/2765) Enable declarationMap in our base tsconfig ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- Hugo Rodriguez ([@hugorodro](https://github.com/hugorodro))\n"
+  "description": "## Release (2026-06-24)\n\n* @embroider/addon-dev 8.3.1 (patch)\n* @embroider/compat 4.1.21 (patch)\n* @embroider/core 4.6.2 (patch)\n* @embroider/macros 1.20.5 (patch)\n* @embroider/vite 1.7.8 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2777](https://github.com/embroider-build/embroider/pull/2777) `publicAssets` uses `closeBundle` instead of `generateBundle` so it can work with generated assets ([@evoactivity](https://github.com/evoactivity))\n* `@embroider/macros`\n  * [#2772](https://github.com/embroider-build/embroider/pull/2772) Use parseSync in @embroider/macros for Babel 8 compatibility ([@johanrd](https://github.com/johanrd))\n\n#### Committers: 2\n- Johan Røed ([@johanrd](https://github.com/johanrd))\n- Liam ([@evoactivity](https://github.com/evoactivity))\n"
 }

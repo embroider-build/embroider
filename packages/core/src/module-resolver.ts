@@ -464,7 +464,9 @@ export class Resolver {
       browser: true,
       conditions: ['default', 'imports'],
     });
-    let target = matched ? `${matched}:route=${routeName}` : `-embroider-route-entrypoint.js:route=${routeName}`;
+    // Keep the id from ending in a route-controlled extension like `.map`,
+    // which Vite's dev sourcemap middleware would mis-serve. See #2670.
+    let target = matched ? `${matched}:route=${routeName}.js` : `-embroider-route-entrypoint.js:route=${routeName}.js`;
     let specifier = resolve(pkg.root, target);
 
     return logTransition(

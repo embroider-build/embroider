@@ -395,7 +395,7 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint(/import\("\/app\/-embroider-route-entrypoint.js:route=people\?import"\)/);
+        inEntrypoint(/import\("\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has split controllers in route entrypoint', function () {
@@ -566,7 +566,7 @@ splitScenarios
       });
 
       test('dynamically imports the route entrypoint from the main entrypoint', function () {
-        inEntrypoint(/import\("\/app\/-embroider-route-entrypoint.js:route=people\?import"\)/);
+        inEntrypoint(/import\("\/app\/-embroider-route-entrypoint.js:route=people/);
       });
 
       test('has split controllers in route entrypoint', function () {

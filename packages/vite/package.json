@@ -36,6 +36,7 @@
     "@babel/core": "^7.22.9",
     "@embroider/macros": "workspace:*",
     "@embroider/reverse-exports": "workspace:*",
+    "@rolldown/pluginutils": "^1.0.1",
     "assert-never": "^1.2.1",
     "browserslist": "*",
     "browserslist-to-esbuild": "^2.1.1",
@@ -45,9 +46,11 @@
     "fast-glob": "^3.3.2",
     "fs-extra": "^10.0.0",
     "jsdom": "^25.0.0",
+    "oxc-parser": "^0.137.0",
     "send": "^1.2.1",
     "source-map-url": "^0.4.1",
-    "terser": "^5.7.0"
+    "terser": "^5.7.0",
+    "zimmerframe": "^1.1.4"
   },
   "devDependencies": {
     "@embroider/core": "workspace:^",

@@ -115,6 +115,7 @@
     "node-fetch": "2.7.0",
     "pkg-up": "^3.1.0",
     "popper.js": "^1.16.1",
+    "puppeteer-core": "^23.0.0",
     "strip-ansi": "^6.0.0",
     "testem": "^3.10.1",
     "tslib": "^2.6.0",

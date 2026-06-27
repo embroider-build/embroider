@@ -417,7 +417,16 @@ export default class CompatApp {
         version: 2,
         'implicit-scripts': this._implicitScripts.map(remapAsset).filter(forbiddenVendorPath),
         'implicit-styles': this._implicitStyles.map(remapAsset),
-        'implicit-test-scripts': this.legacyEmberAppInstance.legacyTestFilesToAppend.map(remapAsset),
+        'implicit-test-scripts': this.legacyEmberAppInstance.legacyTestFilesToAppend
+          // @embroider/macros' test-support is always provided by
+          // @embroider/core's generateTestSupport (it `require.resolve`s the file
+          // directly), regardless of whether macros participates as a v1 addon. If
+          // we also list it here, then when macros is a v2 addon its v1 `included()`
+          // still appends the import but the file is never copied into the
+          // synthesized-vendor's vendor tree, leaving a dangling implicit-test-script
+          // that fails to resolve. Drop it and let core be the single source.
+          .filter(path => !path.endsWith('embroider-macros-test-support.js'))
+          .map(remapAsset),
         'implicit-test-styles': this.legacyEmberAppInstance.vendorTestStaticStyles.map(remapAsset),
         'public-assets': mapKeys(this._publicAssets, (_, key) => remapAsset(key)),
       };

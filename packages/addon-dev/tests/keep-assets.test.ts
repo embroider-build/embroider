@@ -1,6 +1,12 @@
 import { describe, test, expect } from 'vitest';
 import { rollup } from 'rollup';
-import type { Plugin, RollupLog } from 'rollup';
+import type {
+  LoadResult,
+  OutputAsset,
+  OutputChunk,
+  Plugin,
+  RollupLog,
+} from 'rollup';
 import {
   TraceMap,
   originalPositionFor,
@@ -21,89 +27,141 @@ function generatedPositionOf(code: string, token: string) {
 }
 
 const FROM = '/proj/src';
-const CSS_ID = '/proj/src/styles.css';
 const ENTRY_ID = '/proj/src/entry.js';
+const CSS_ID = '/proj/src/styles.css';
 
 const SCOPED_CSS = '.foo_scoped { color: red; }\n';
 
-// Stands in for a plugin (like ember-scoped-css) that loads/rewrites the CSS
-// and hands rollup a `{ code, map }` from its load hook.
-function upstream(): Plugin {
+// a real (non-identity) map like one produced by a rewriting plugin
+function mapFor(source: string) {
+  return {
+    version: 3,
+    sources: [source],
+    sourcesContent: ['.foo { color: red; }\n'],
+    names: [],
+    // maps the start of the output back to the start of the source
+    mappings: 'AAAA',
+  };
+}
+
+type StubModule = string | { code: string; map?: unknown };
+
+// stands in for upstream plugins (like ember-scoped-css) that load modules
+// and may hand rollup a `{ code, map }` from their load hook
+function stubModules(modules: Record<string, StubModule>): Plugin {
   return {
     name: 'test-upstream',
     resolveId(id) {
       if (id === 'entry') return ENTRY_ID;
-      if (id === './styles.css') return CSS_ID;
+      if (id.startsWith('./')) return `${FROM}/${id.slice(2)}`;
       return undefined;
     },
     load(id) {
-      if (id === ENTRY_ID) {
-        return `import "./styles.css";\nconsole.log("from entry");\n`;
-      }
-      if (id === CSS_ID) {
-        return {
-          code: SCOPED_CSS,
-          map: {
-            version: 3,
-            sources: ['styles.css'],
-            sourcesContent: ['.foo { color: red; }\n'],
-            names: [],
-            // maps the start of the output back to the start of the source
-            mappings: 'AAAA',
-          },
-        };
-      }
-      return undefined;
+      return modules[id] as LoadResult;
     },
   };
 }
 
-async function build() {
+const DEFAULT_MODULES: Record<string, StubModule> = {
+  [ENTRY_ID]: `import "./styles.css";\nconsole.log("from entry");\n`,
+  [CSS_ID]: { code: SCOPED_CSS, map: mapFor('styles.css') },
+};
+
+async function build({
+  modules = DEFAULT_MODULES,
+  include = ['**/*.css'],
+  exports = undefined as undefined | 'default' | '*',
+  sourcemap = true as boolean | 'inline' | 'hidden',
+} = {}) {
   const warnings: RollupLog[] = [];
   const bundle = await rollup({
     input: 'entry',
-    onwarn(warning) {
-      warnings.push(warning);
-    },
-    plugins: [upstream(), keepAssets({ from: FROM, include: ['**/*.css'] })],
+    onwarn: (w) => warnings.push(w),
+    plugins: [
+      stubModules(modules),
+      keepAssets({ from: FROM, include, exports }),
+    ],
   });
-  const { output } = await bundle.generate({ format: 'es', sourcemap: true });
+  const { output } = await bundle.generate({ format: 'es', sourcemap });
   await bundle.close();
   return { output, warnings };
+}
+
+function findAsset(
+  output: (OutputChunk | OutputAsset)[],
+  fileName: string
+): string | undefined {
+  const asset = output.find(
+    (o) => o.type === 'asset' && o.fileName === fileName
+  );
+  return asset ? String((asset as OutputAsset).source) : undefined;
+}
+
+function brokenSourcemapWarnings(warnings: RollupLog[]) {
+  return warnings.filter((w) => w.code === 'SOURCEMAP_BROKEN');
 }
 
 describe('keep-assets source maps', () => {
   test('does not warn that sourcemaps are broken', async () => {
     const { warnings } = await build();
-    const broken = warnings.filter((w) => w.code === 'SOURCEMAP_BROKEN');
-    expect(broken).toEqual([]);
+    expect(brokenSourcemapWarnings(warnings)).toEqual([]);
   });
 
-  test('emits a companion .map for the kept CSS asset and links it', async () => {
+  test('emits a companion .map for kept CSS that has an upstream map', async () => {
     const { output } = await build();
 
-    const css = output.find(
-      (o) => o.type === 'asset' && o.fileName === 'styles.css'
-    );
-    const map = output.find(
-      (o) => o.type === 'asset' && o.fileName === 'styles.css.map'
-    );
-
-    expect(css, 'the CSS asset was emitted').toBeTruthy();
+    const css = findAsset(output, 'styles.css');
+    const map = findAsset(output, 'styles.css.map');
     expect(map, 'a companion styles.css.map asset was emitted').toBeTruthy();
 
-    const cssSource = css!.type === 'asset' ? String(css!.source) : '';
-    expect(cssSource).toContain(SCOPED_CSS.trim());
-    expect(cssSource).toContain('/*# sourceMappingURL=styles.css.map */');
+    expect(css).toContain(SCOPED_CSS.trim());
+    expect(css).toContain('/*# sourceMappingURL=styles.css.map */');
 
-    const parsed = JSON.parse(
-      map!.type === 'asset' ? String(map!.source) : '{}'
-    );
+    const parsed = JSON.parse(map!);
     expect(parsed.version).toBe(3);
-    expect(parsed.sources.some((s: string) => s.endsWith('styles.css'))).toBe(
-      true
-    );
+    expect(parsed.sources).toEqual(['styles.css']);
     expect(parsed.mappings.length).toBeGreaterThan(0);
+  });
+
+  test('CSS with no upstream map is emitted byte-for-byte, with no .map', async () => {
+    // rollup synthesizes an identity map for any plugin-loaded module, which
+    // must not be mistaken for a real upstream map
+    const { output, warnings } = await build({
+      modules: { ...DEFAULT_MODULES, [CSS_ID]: SCOPED_CSS },
+    });
+    expect(findAsset(output, 'styles.css')).toBe(SCOPED_CSS);
+    expect(findAsset(output, 'styles.css.map')).toBeUndefined();
+    expect(brokenSourcemapWarnings(warnings)).toEqual([]);
+  });
+
+  test('output sourcemap settings control the emitted map', async () => {
+    // sourcemap: false suppresses both the .map and the annotation
+    let { output } = await build({ sourcemap: false });
+    expect(findAsset(output, 'styles.css')).toBe(SCOPED_CSS);
+    expect(findAsset(output, 'styles.css.map')).toBeUndefined();
+
+    // sourcemap: 'inline' embeds the map instead of emitting a file
+    ({ output } = await build({ sourcemap: 'inline' }));
+    expect(findAsset(output, 'styles.css')).toContain(
+      'sourceMappingURL=data:application/json;charset=utf-8;base64,'
+    );
+    expect(findAsset(output, 'styles.css.map')).toBeUndefined();
+
+    // sourcemap: 'hidden' emits the .map but not the annotation
+    ({ output } = await build({ sourcemap: 'hidden' }));
+    expect(findAsset(output, 'styles.css')).toBe(SCOPED_CSS);
+    expect(findAsset(output, 'styles.css.map')).toBeTruthy();
+  });
+
+  test('absolute paths in `sources` are rebased relative to the emitted map', async () => {
+    const { output } = await build({
+      modules: {
+        ...DEFAULT_MODULES,
+        [CSS_ID]: { code: SCOPED_CSS, map: mapFor(CSS_ID) },
+      },
+    });
+    const parsed = JSON.parse(findAsset(output, 'styles.css.map')!);
+    expect(parsed.sources).toEqual(['styles.css']);
   });
 
   test('keeps the JS chunk source map accurate across the injected imports', async () => {
@@ -131,49 +189,41 @@ describe('keep-assets source maps', () => {
   });
 
   test('non-CSS assets are left untouched (no map, no annotation)', async () => {
-    // A plugin-provided text asset gets a synthesized identity map from rollup,
-    // but it is not CSS — appending a `sourceMappingURL` comment would corrupt
-    // it (e.g. an arbitrary `.xyz` asset that the consuming build then can't
-    // parse). It must be emitted verbatim.
-    const XYZ_ID = '/proj/src/custom.xyz';
-    const E_ID = '/proj/src/entry.js';
-
-    const warnings: RollupLog[] = [];
-    const bundle = await rollup({
-      input: 'entry',
-      onwarn: (w) => warnings.push(w),
-      plugins: [
-        {
-          name: 'custom',
-          resolveId(id) {
-            if (id === 'entry') return E_ID;
-            if (id === './custom.xyz') return XYZ_ID;
-            return undefined;
-          },
-          load(id) {
-            if (id === E_ID)
-              return `import value from "./custom.xyz";\nexport default value;\n`;
-            if (id === XYZ_ID) return 'Custom Content';
-            return undefined;
-          },
-        } satisfies Plugin,
-        keepAssets({ from: FROM, include: ['**/*.xyz'], exports: 'default' }),
-      ],
+    // appending a `sourceMappingURL` comment to an arbitrary asset would
+    // corrupt it; it must be emitted verbatim
+    const { output, warnings } = await build({
+      modules: {
+        [ENTRY_ID]: `import value from "./custom.xyz";\nexport default value;\n`,
+        [`${FROM}/custom.xyz`]: 'Custom Content',
+      },
+      include: ['**/*.xyz'],
+      exports: 'default',
     });
-    const { output } = await bundle.generate({ format: 'es', sourcemap: true });
-    await bundle.close();
-
-    const xyz = output.find(
-      (o) => o.type === 'asset' && o.fileName === 'custom.xyz'
-    );
-    expect(xyz, 'the .xyz asset was emitted').toBeTruthy();
-    expect(xyz!.type === 'asset' ? String(xyz!.source) : '').toBe(
-      'Custom Content'
-    );
+    expect(findAsset(output, 'custom.xyz')).toBe('Custom Content');
     expect(
-      output.find((o) => o.fileName === 'custom.xyz.map'),
+      findAsset(output, 'custom.xyz.map'),
       'no .map for a non-CSS asset'
-    ).toBeFalsy();
+    ).toBeUndefined();
+    expect(brokenSourcemapWarnings(warnings)).toEqual([]);
+  });
+
+  test('dropping a real upstream map on an unannotatable asset stays loud', async () => {
+    const { output, warnings } = await build({
+      modules: {
+        [ENTRY_ID]: `import "./custom.xyz";\n`,
+        [`${FROM}/custom.xyz`]: {
+          code: 'Custom Content',
+          map: mapFor('custom.xyz'),
+        },
+      },
+      include: ['**/*.xyz'],
+    });
+    // there is no comment syntax for .xyz, so the asset stays verbatim...
+    expect(findAsset(output, 'custom.xyz')).toBe('Custom Content');
+    expect(findAsset(output, 'custom.xyz.map')).toBeUndefined();
+    // ...and the dropped map surfaces as rollup's usual warning instead of
+    // being silently suppressed
+    expect(brokenSourcemapWarnings(warnings).length).toBeGreaterThan(0);
   });
 
   test('binary assets are emitted without a spurious .map', async () => {
@@ -196,13 +246,13 @@ describe('keep-assets source maps', () => {
         format: 'es',
         sourcemap: true,
       });
-      const map = output.find(
-        (o) => o.type === 'asset' && o.fileName === 'logo.png.map'
-      );
-      expect(map, 'no spurious .map for a binary asset').toBeFalsy();
+      expect(
+        findAsset(output, 'logo.png.map'),
+        'no spurious .map for a binary asset'
+      ).toBeUndefined();
     } finally {
       await bundle.close();
     }
-    expect(warnings.filter((w) => w.code === 'SOURCEMAP_BROKEN')).toEqual([]);
+    expect(brokenSourcemapWarnings(warnings)).toEqual([]);
   });
 });

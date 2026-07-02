@@ -79,6 +79,7 @@ export default function keepAssets({
       } else {
         let upstreamMap = realCombinedSourcemap(
           this.getCombinedSourcemap(),
+          id,
           code
         );
         if (upstreamMap) {
@@ -195,14 +196,20 @@ export default function keepAssets({
   };
 }
 
-// `getCombinedSourcemap` never returns nothing: it synthesizes an identity
-// map when no plugin supplied one, and an empty one when an earlier transform
-// broke the chain. Returns the map only when it's real, otherwise undefined.
-function realCombinedSourcemap(map: SourceMap, code: string) {
+// `getCombinedSourcemap` never returns nothing, so we must recognize its two
+// not-actually-a-map shapes. When no plugin supplied a map it synthesizes an
+// identity map via `generateMap({ source: id, includeContent: true })`, which
+// is always exactly `{ sources: [id], sourcesContent: [code] }`. When an
+// earlier transform broke the chain, the collapsed map has no sources.
+function realCombinedSourcemap(map: SourceMap, id: string, code: string) {
   if (!map.mappings || map.sources.length === 0) {
     return undefined;
   }
-  if (map.sources.length === 1 && map.sourcesContent?.[0] === code) {
+  if (
+    map.sources.length === 1 &&
+    map.sources[0] === id &&
+    map.sourcesContent?.[0] === code
+  ) {
     return undefined;
   }
   return map;

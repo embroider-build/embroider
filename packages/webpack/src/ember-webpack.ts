@@ -11,7 +11,7 @@
 
 import type { AppMeta, BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
 import { HTMLEntrypoint, getAppMeta, getPackagerCacheDir, getOrCreate } from '@embroider/core';
-import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
+import { locateEmbroiderWorkingDir, PackageCache, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
 import type { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
 import webpack from 'webpack';
 import type { Stats } from 'fs-extra';
@@ -140,6 +140,11 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     warmUp(this.extraThreadLoaderOptions);
   }
 
+  private fileIsInV2Addon(filename: string): boolean {
+    let pkg = PackageCache.shared('embroider', this.appRoot).ownerOfFile(filename);
+    return Boolean(pkg?.isV2Addon());
+  }
+
   get bundleSummary(): BundleSummary {
     let bundleSummary = this._bundleSummary;
     if (bundleSummary === undefined) {
@@ -224,6 +229,25 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       node: false,
       module: {
         rules: [
+          {
+            // Ember addons need their .js files to be interpreted the same
+            // way whether or not the addon's package.json says `"type":
+            // "module"`. Without this rule, webpack would give the strict ESM
+            // treatment to .js files in v2 addons that say `"type":
+            // "module"`: import specifiers would need to be fully-specified
+            // (breaking, for example, the relative `es-compat2` import that
+            // @embroider/macros emits for importSync), and default-importing
+            // one of the CommonJS modules we externalize (like our
+            // `/@embroider/ext-cjs/` virtual modules) would yield the
+            // module's exports object rather than its default export. Opting
+            // these files back into "javascript/auto" keeps type=module v2
+            // addons working the same as every other v2 addon.
+            test: (filename: string) => filename.endsWith('.js') && this.fileIsInV2Addon(filename),
+            type: 'javascript/auto',
+            resolve: {
+              fullySpecified: false,
+            },
+          },
           {
             test: /\.hbs$/,
             use: nonNullArray([

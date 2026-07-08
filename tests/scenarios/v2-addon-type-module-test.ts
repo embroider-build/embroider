@@ -1,4 +1,4 @@
-import { appScenarios, baseV2Addon } from './scenarios';
+import { appScenarios, baseAddon, baseV2Addon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
@@ -54,6 +54,15 @@ appScenarios
         import { importSync } from '@embroider/macros';
         importSync('./side-effect.js');
       `,
+      'uses-v1-addon.js': `
+        import innerV1Default, { innerV1Named } from 'inner-v1-addon';
+        export function useV1AddonDefault() {
+          return innerV1Default();
+        }
+        export function useV1AddonNamed() {
+          return innerV1Named();
+        }
+      `,
       app: {
         components: {
           'esm-hello.js': `export { default } from 'esm-v2-addon/components/esm-hello';`,
@@ -96,6 +105,25 @@ appScenarios
     addon.linkDependency('@embroider/addon-shim', { baseDir: __dirname });
     addon.linkDependency('@embroider/macros', { baseDir: __dirname });
 
+    // a v1 addon consumed by the type=module v2 addon, to cover the request
+    // path where an import from a strict-ESM file lands in a rewritten
+    // package (see #1674)
+    let innerV1 = baseAddon();
+    innerV1.pkg.name = 'inner-v1-addon';
+    merge(innerV1.files, {
+      addon: {
+        'index.js': `
+          export default function innerV1Default() {
+            return 'inner-v1-default-worked';
+          }
+          export function innerV1Named() {
+            return 'inner-v1-named-worked';
+          }
+        `,
+      },
+    });
+    addon.addDependency(innerV1);
+
     project.addDevDependency(addon);
 
     merge(project.files, {
@@ -130,6 +158,7 @@ appScenarios
           'esm-import-test.js': `
             import { module, test } from 'qunit';
             import { useDirectoryImport } from 'esm-v2-addon';
+            import { useV1AddonDefault, useV1AddonNamed } from 'esm-v2-addon/uses-v1-addon';
             import 'esm-v2-addon/uses-import-sync';
 
             module('Unit | import from type=module v2 addon', function () {
@@ -139,6 +168,14 @@ appScenarios
 
               test('the addon can use importSync from @embroider/macros', function (assert) {
                 assert.equal(window.__esm_v2_addon_side_effect, 'esm-side-effect-worked');
+              });
+
+              test('the addon can default-import from a v1 addon dependency', function (assert) {
+                assert.equal(useV1AddonDefault(), 'inner-v1-default-worked');
+              });
+
+              test('the addon can named-import from a v1 addon dependency', function (assert) {
+                assert.equal(useV1AddonNamed(), 'inner-v1-named-worked');
               });
             });
           `,

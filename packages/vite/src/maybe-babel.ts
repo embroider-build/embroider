@@ -109,6 +109,9 @@ export function maybeBabel(userOptions: Options = {}): Plugin {
         // is one of the babel-supported extensions
         id(extensionRegExp),
         or(
+          // always run gts and gjs through babel
+          id(/\.gts$/),
+          id(/\.gjs$/),
           // imports one of the modules above
           code(importsRegex),
           // (a common way to do translations)

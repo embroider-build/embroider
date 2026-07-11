@@ -56,9 +56,7 @@
       "browserslist": "^4.14.0",
       "graceful-fs": "^4.0.0"
     },
-    "patchedDependencies": {
-      "rolldown-plugin-dts@0.25.2": "patches/rolldown-plugin-dts@0.25.2.patch"
-    }
+    "patchedDependencies": {}
   },
   "changelog": {
     "__comment__": "Our release infrastructure relies on these exact labels. Be careful changing them.",

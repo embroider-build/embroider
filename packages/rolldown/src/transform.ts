@@ -1,14 +1,38 @@
 import { Preprocessor } from 'content-tag';
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import type { Plugin } from 'rolldown';
 import path from 'node:path';
 
 const processor = new Preprocessor();
 
-// maps `.gts` -> `.ts`, so rolldown can identify it as ts and apply its transform
+function fixDeclarationImports(content: string): string {
+  return content
+    .replace(/from\s+'([^']+)\.gts'/g, "from '$1'")
+    .replace(/from\s+"([^"]+)\.gts"/g, 'from "$1"')
+    .replace(/import\("([^"]+)\.gts"\)/g, 'import("$1")')
+    .replace(/import\('([^']+)\.gts'\)/g, "import('$1')");
+}
+
+async function fixDtsExtensionsInDir(dir: string): Promise<void> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await fixDtsExtensionsInDir(fullPath);
+    } else if (entry.name.endsWith('.d.ts')) {
+      const content = await readFile(fullPath, { encoding: 'utf8' });
+      const fixed = fixDeclarationImports(content);
+      if (fixed !== content) {
+        await writeFile(fullPath, fixed);
+      }
+    }
+  }
+}
+
+// maps `.gts` -> `.ts` and `.gjs` -> `.js`, so rolldown can identify them as ts/js
 export function emberTransform(): Plugin {
-  const gtsFiles: string[] = [];
+  const virtualFiles: string[] = [];
 
   return {
     name: 'ember:transform',
@@ -21,34 +45,41 @@ export function emberTransform(): Plugin {
         const fileName = path.join(path.dirname(importer), id);
 
         if (id.endsWith('.gts') && !importer.endsWith('.d.ts')) {
-          gtsFiles.push(fileName);
-
-          const newId = fileName.replace(/\.gts$/, '.ts');
-
+          virtualFiles.push(fileName);
           return {
-            id: newId,
-            meta: {
-              fileName,
-            },
+            id: fileName.replace(/\.gts$/, '.ts'),
+            meta: { fileName },
           };
-        } else if (
-          id.endsWith('.d.ts') &&
-          importer.endsWith('.d.ts') &&
-          gtsFiles.includes(fileName.replace('.d.ts', '.gts'))
-        ) {
-          return fileName;
-        } else if (id.endsWith('.ts') && !importer.endsWith('.d.ts')) {
+        }
+
+        if (id.endsWith('.gjs') && !importer.endsWith('.d.ts')) {
+          virtualFiles.push(fileName);
+          return {
+            id: fileName.replace(/\.gjs$/, '.js'),
+            meta: { fileName },
+          };
+        }
+
+        if (id.endsWith('.d.ts') && importer.endsWith('.d.ts')) {
+          const gtsFile = fileName.replace('.d.ts', '.gts');
+          if (virtualFiles.includes(gtsFile)) {
+            return fileName;
+          }
+        }
+
+        if (id.endsWith('.ts') && !importer.endsWith('.d.ts')) {
           const gtsFileName = fileName.replace(/\.ts$/, '.gts');
-
           if (existsSync(gtsFileName) && !existsSync(fileName)) {
-            gtsFiles.push(gtsFileName);
+            virtualFiles.push(gtsFileName);
+            return { id: fileName, meta: { fileName: gtsFileName } };
+          }
+        }
 
-            return {
-              id: fileName,
-              meta: {
-                fileName: gtsFileName,
-              },
-            };
+        if (id.endsWith('.js') && !importer.endsWith('.d.ts')) {
+          const gjsFileName = fileName.replace(/\.js$/, '.gjs');
+          if (existsSync(gjsFileName) && !existsSync(fileName)) {
+            virtualFiles.push(gjsFileName);
+            return { id: fileName, meta: { fileName: gjsFileName } };
           }
         }
 
@@ -59,14 +90,21 @@ export function emberTransform(): Plugin {
     load: {
       order: 'pre',
       filter: {
-        id: /\.ts$/,
+        id: /\.(ts|js)$/,
       },
       async handler(id) {
         const meta = this.getModuleInfo(id)?.meta ?? {};
         const fileName = meta?.fileName;
 
         if (fileName) {
-          return await readFile(fileName, { encoding: 'utf8' });
+          const source = await readFile(fileName, { encoding: 'utf8' });
+          if (source.includes('<template>')) {
+            const { code, map } = processor.process(source, {
+              filename: fileName,
+            });
+            return { code, map };
+          }
+          return source;
         }
 
         return null;
@@ -76,41 +114,34 @@ export function emberTransform(): Plugin {
     transform: {
       order: 'pre',
       filter: {
-        code: /<template>|\.gts/,
-        id: /\.(gjs|ts)$/,
+        code: /\.gts/,
+        id: /\.(js|ts)$/,
       },
       handler(input, id) {
-        // Rewrite .gts imports in declaration files to .d.ts so the dts bundler
-        // can resolve them as regular declaration files.
         if (input.includes('.gts') && id.endsWith('.d.ts')) {
-          input = input.replace(
+          return input.replace(
             /(['"`])((?:\.\.?\/|\/|@|[A-Za-z0-9_\-])[^'"]*?\.gts)\1/g,
             (_m, q, p) => `${q}${p.replace(/\.gts$/, '.d.ts')}${q}`
           );
         }
 
-        // Rewrite .gts imports in source files to .ts. From this point on
-        // rolldown-plugin-dts only sees virtual .ts files and never needs to
-        // know that .gts files exist.
         if (input.includes('.gts') && !id.endsWith('.d.ts')) {
-          input = input.replace(
+          return input.replace(
             /(['"`])((?:\.\.?\/|\/|@|[A-Za-z0-9_\-])[^'"]*?\.gts)\1/g,
             (_m, q, p) => `${q}${p.replace(/\.gts$/, '.ts')}${q}`
           );
         }
 
-        if (input.includes('<template>')) {
-          const { code, map } = processor.process(input, {
-            filename: id,
-          });
-
-          return {
-            code,
-            map,
-          };
-        }
-
         return input;
+      },
+    },
+
+    writeBundle: {
+      async handler(options) {
+        const outDir = (options as any).dir;
+        if (outDir) {
+          await fixDtsExtensionsInDir(path.resolve(outDir));
+        }
       },
     },
   };

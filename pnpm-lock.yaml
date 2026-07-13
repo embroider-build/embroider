@@ -1733,6 +1733,9 @@ importers:
       '@embroider/webpack':
         specifier: workspace:*
         version: link:../../packages/webpack
+      '@jridgewell/trace-mapping':
+        specifier: ^0.3.25
+        version: 0.3.31
       '@types/qunit':
         specifier: 2.19.10
         version: 2.19.10
@@ -1881,6 +1884,9 @@ importers:
       broccoli-stew:
         specifier: ^3.0.0
         version: 3.0.0
+      decorator-transforms:
+        specifier: ^2.0.0
+        version: 2.3.2(@babel/core@7.29.7)
       ember-bootstrap:
         specifier: ^6.0.0
         version: 6.7.0(@babel/core@7.29.7)(@glimmer/component@2.1.1)(@glimmer/tracking@1.1.2)(@glint/environment-ember-loose@1.5.2(@glimmer/component@2.1.1)(@glint/template@1.7.7)(ember-cli-htmlbars@6.3.0)(ember-modifier@4.3.0(@babel/core@7.29.7)))(@glint/template@1.7.7)(ember-modifier@4.3.0(@babel/core@7.29.7))(ember-source@7.2.0-alpha.1(@glimmer/component@2.1.1))(webpack@5.107.2(esbuild@0.27.7)(lightningcss@1.32.0))

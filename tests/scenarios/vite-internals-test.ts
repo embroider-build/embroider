@@ -2,9 +2,9 @@ import { baseAddon, tsAppScenarios } from './scenarios';
 import type { PreparedApp, Project, Scenario, Scenarios } from 'scenario-tester';
 import QUnit from 'qunit';
 import fetch from 'node-fetch';
-import CommandWatcher from './helpers/command-watcher';
+import { setupViteDevServer } from './helpers';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
-import { mkdirSync, moveSync, readFileSync, writeFileSync } from 'fs-extra';
+import { mkdirSync, moveSync } from 'fs-extra';
 import { resolve } from 'path';
 
 const { module: Qmodule, test } = QUnit;
@@ -349,28 +349,19 @@ function editBabelConfig(src: string): string {
 function runViteInternalsTest(scenario: Scenario) {
   Qmodule(scenario.name, function (hooks) {
     let app: PreparedApp;
-    let server: CommandWatcher;
-    let appURL: string;
 
     hooks.before(async () => {
       app = await scenario.prepare();
     });
 
     Qmodule('vite dev', function (hooks) {
-      hooks.before(async () => {
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-      });
+      let dev = setupViteDevServer(hooks, () => app);
 
       let expectAudit = setupAuditTest(hooks, () => ({
-        appURL,
+        appURL: dev.appURL,
         startingFrom: ['index.html'],
         fetch: fetch as unknown as typeof globalThis.fetch,
       }));
-
-      hooks.after(async () => {
-        await server?.shutdown();
-      });
 
       test(`dep optimization of a v2 addon`, async function (assert) {
         expectAudit
@@ -428,22 +419,12 @@ function runViteInternalsTest(scenario: Scenario) {
       });
 
       Qmodule('vite dev', function (hooks) {
-        hooks.before(async () => {
-          server = CommandWatcher.launch('vite', ['--clearScreen', 'false', '--base', base], { cwd: app.dir });
-          const [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-          let testem = readFileSync(resolve(app.dir, 'testem-dev.js')).toString();
-          let environment = readFileSync(resolve(app.dir, 'config', 'environment.js')).toString();
-          const url = appURL.replace('/sub-dir', '');
-          testem = testem
-            .replace(`test_page: '/tests?hidepassed',`, `test_page: '${base}tests?hidepassed',`)
-            .replace(`.testemProxy('http://localhost:4200', '/')`, `.testemProxy('${url}', '${base}')`);
-          environment = environment.replace(`rootURL: '/',`, `rootURL: '${base}',`);
-          writeFileSync(resolve(app.dir, 'testem-dev.js'), testem);
-          writeFileSync(resolve(app.dir, 'config', 'environment.js'), environment);
-        });
-
-        hooks.after(async () => {
-          await server?.shutdown();
+        setupViteDevServer(hooks, () => app, {
+          viteArgs: ['--base', base],
+          rewriteProxy: {
+            testemFile: 'testem-dev.js',
+            base,
+          },
         });
 
         test('run test suite against vite dev', async function (assert) {

@@ -29,7 +29,9 @@ export function setupViteDevServer(
     if (rewrite) {
       let testemFile = rewrite.testemFile ?? 'testem-dev.cjs';
       let base = rewrite.base ?? '/';
-      let url = appURL.replace(new RegExp(`^${base}`), '/').replace('//', '/');
+      // The dev server URL includes the base path (e.g. `http://localhost:5173/sub-dir`); the
+      // proxy just needs the bare origin, since the base is passed separately below.
+      let url = new URL(appURL).origin;
 
       let testem = readFileSync(resolve(app.dir, testemFile)).toString();
 

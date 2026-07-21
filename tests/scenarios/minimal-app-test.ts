@@ -2,7 +2,7 @@ import { minimalAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import fetch from 'node-fetch';
-import CommandWatcher from './helpers/command-watcher';
+import { setupViteDevServer } from './helpers';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
 
 const { module: Qmodule, test } = QUnit;
@@ -181,28 +181,19 @@ export function start() {
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
-      let server: CommandWatcher;
-      let appURL: string;
 
       hooks.before(async () => {
         app = await scenario.prepare();
       });
 
       Qmodule('vite dev', function (hooks) {
-        hooks.before(async () => {
-          server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-          [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-        });
+        let dev = setupViteDevServer(hooks, () => app);
 
         let expectAudit = setupAuditTest(hooks, () => ({
-          appURL,
+          appURL: dev.appURL,
           startingFrom: ['index.html'],
           fetch: fetch as unknown as typeof globalThis.fetch,
         }));
-
-        hooks.after(async () => {
-          await server?.shutdown();
-        });
 
         test(`dep optimization of a v2 addon`, async function (assert) {
           expectAudit

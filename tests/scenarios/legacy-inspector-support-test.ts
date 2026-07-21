@@ -1,9 +1,9 @@
 import { wideAppScenarios } from './scenarios';
 import type { PreparedApp, Project, Scenario } from 'scenario-tester';
 import QUnit from 'qunit';
-import { readdirSync, readFileSync, writeFileSync } from 'fs-extra';
-import { join, resolve } from 'path';
-import CommandWatcher from './helpers/command-watcher';
+import { readdirSync } from 'fs-extra';
+import { join } from 'path';
+import { setupViteDevServer } from './helpers';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -155,20 +155,7 @@ function runTests(scenario: Scenario) {
     });
 
     Qmodule('vite dev', function (hooks) {
-      let server: CommandWatcher;
-
-      hooks.before(async () => {
-        server = CommandWatcher.launch('vite', ['--clearScreen', 'false'], { cwd: app.dir });
-        const [, appURL] = await server.waitFor(/Local:\s+(https?:\/\/.*)\//g);
-
-        let testem = readFileSync(resolve(app.dir, 'testem-dev.js')).toString();
-        testem = testem.replace(`.testemProxy('http://localhost:4200', '/')`, `.testemProxy('${appURL}', '/')`);
-        writeFileSync(resolve(app.dir, 'testem-dev.js'), testem);
-      });
-
-      hooks.after(async () => {
-        await server?.shutdown();
-      });
+      setupViteDevServer(hooks, () => app, { rewriteProxy: { testemFile: 'testem-dev.js' } });
 
       test('run test suite against vite dev', async function (assert) {
         let result = await app.execute('pnpm testem --file testem-dev.js ci');

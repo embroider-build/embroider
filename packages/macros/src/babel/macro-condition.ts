@@ -18,8 +18,6 @@ export function identifyMacroConditionPath(
   let test: NodePath<t.Node>;
 
   if (path.isLogicalExpression()) {
-    // `??` has no equivalent branch semantics for a boolean predicate, so we
-    // leave it alone (and the ReferencedIdentifier check will flag it).
     if (path.node.operator !== '&&' && path.node.operator !== '||') {
       return false;
     }
@@ -61,14 +59,8 @@ export default function macroCondition(macro: MacroCondition, state: State, cont
   }
 
   if (macro.conditional.isLogicalExpression()) {
-    // Bundlers and minifiers routinely collapse
-    // `macroCondition(x) ? expr : {};` statements into
-    // `macroCondition(x) && expr;`, so published code can legitimately reach
-    // us in this shape even though authors write the ternary/if form.
     let effectivePredicate = predicate.value === macro.parity;
     let right = macro.conditional.get('right');
-    // `true && right` / `false || right` evaluate to the right operand;
-    // otherwise the expression short-circuits to the predicate's value.
     let keptRight = (macro.conditional.node.operator === '&&') === effectivePredicate;
     if (keptRight) {
       macro.conditional.replaceWith(right.node);

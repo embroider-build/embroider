@@ -160,6 +160,107 @@ describe('macroCondition', function () {
         expect(code).not.toMatch(/\/runtime/);
       });
 
+      test('logical && with true predicate keeps right operand', () => {
+        let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        return macroCondition(true) && 'alpha';
+      }
+      `);
+        expect(run(code, { filename })).toBe('alpha');
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/&&/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
+      });
+
+      test('logical && with false predicate drops right operand', () => {
+        let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        return macroCondition(false) && 'alpha';
+      }
+      `);
+        expect(run(code, { filename })).toBe(false);
+        expect(code).not.toMatch(/alpha/);
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/&&/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
+      });
+
+      test('logical || with true predicate drops right operand', () => {
+        let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        return macroCondition(true) || 'alpha';
+      }
+      `);
+        expect(run(code, { filename })).toBe(true);
+        expect(code).not.toMatch(/alpha/);
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/\|\|/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
+      });
+
+      test('logical || with false predicate keeps right operand', () => {
+        let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        return macroCondition(false) || 'alpha';
+      }
+      `);
+        expect(run(code, { filename })).toBe('alpha');
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/\|\|/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
+      });
+
+      test('negated logical && keeps right operand', () => {
+        let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        return !macroCondition(false) && 'alpha';
+      }
+      `);
+        expect(run(code, { filename })).toBe('alpha');
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/&&/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
+      });
+
+      test('logical && statement (minifier output shape) keeps side effect', () => {
+        let code = transform(`
+      import { macroCondition } from '@embroider/macros';
+      export default function() {
+        let result = 'beta';
+        macroCondition(true) && (result = 'alpha');
+        return result;
+      }
+      `);
+        expect(run(code, { filename })).toBe('alpha');
+        expect(code).not.toMatch(/macroCondition/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).not.toMatch(/\/runtime/);
+      });
+
+      runTimeTest('given runtime implementation, logical && keeps runtime predicate', () => {
+        let code = transform(`
+      import { isTesting, macroCondition } from '@embroider/macros';
+      export default function() {
+        return macroCondition(isTesting()) && 'alpha';
+      }
+      `);
+        expect(run(code, { filename })).toBe('alpha');
+        expect(code).toMatch(/macroCondition/);
+        expect(code).toMatch(/&&/);
+        expect(code).not.toMatch(/@embroider\/macros/);
+        expect(code).toMatch(/\/runtime/);
+      });
+
       test('if selects consequent, no alternate', () => {
         let code = transform(`
       import { macroCondition } from '@embroider/macros';
@@ -303,7 +404,9 @@ describe('macroCondition', function () {
           return macroCondition(true);
         }
         `);
-        }).toThrow(/macroCondition can only be used as the predicate of an if statement or ternary expression/);
+        }).toThrow(
+          /macroCondition can only be used as the predicate of an if statement, ternary expression, or && \/ \|\| logical expression/
+        );
       });
 
       test('composes with other macros using ternary', () => {

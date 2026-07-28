@@ -1,5 +1,25 @@
 # Embroider Changelog
 
+## Release (2026-07-28)
+
+* @embroider/compat 4.1.22 (patch)
+* @embroider/core 4.6.3 (patch)
+* @embroider/macros 1.20.6 (patch)
+* @embroider/vite 1.7.9 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2742](https://github.com/embroider-build/embroider/pull/2742) fix: handle Embroider macro helpers in template tag codemod ([@olenderhub](https://github.com/olenderhub))
+* `@embroider/macros`
+  * [#2787](https://github.com/embroider-build/embroider/pull/2787) macroCondition: support && / || logical expression position ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* [#2785](https://github.com/embroider-build/embroider/pull/2785) Abstract vite dev utility (for qunit) for visiting /tests ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Hubert Olender ([@olenderhub](https://github.com/olenderhub))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-06-24)
 
 * @embroider/addon-dev 8.3.1 (patch)

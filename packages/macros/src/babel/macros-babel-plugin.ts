@@ -29,12 +29,12 @@ export default function main(context: typeof Babel): unknown {
         }
       },
     },
-    'IfStatement|ConditionalExpression': {
-      enter(path: NodePath<t.IfStatement | t.ConditionalExpression>, state: State) {
+    'IfStatement|ConditionalExpression|LogicalExpression': {
+      enter(path: NodePath<t.IfStatement | t.ConditionalExpression | t.LogicalExpression>, state: State) {
         let found = identifyMacroConditionPath(path);
         if (found) {
           state.calledIdentifiers.add(found.callExpression.get('callee').node);
-          macroCondition(found, state);
+          macroCondition(found, state, context);
         }
       },
     },
@@ -257,7 +257,10 @@ export default function main(context: typeof Babel): unknown {
       }
 
       if (path.referencesImport('@embroider/macros', 'macroCondition') && !state.calledIdentifiers.has(path.node)) {
-        throw error(path, `macroCondition can only be used as the predicate of an if statement or ternary expression`);
+        throw error(
+          path,
+          `macroCondition can only be used as the predicate of an if statement, ternary expression, or && / || logical expression`
+        );
       }
 
       if (path.referencesImport('@embroider/macros', 'each') && !state.calledIdentifiers.has(path.node)) {

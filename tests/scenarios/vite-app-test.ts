@@ -102,8 +102,8 @@ wideAppScenarios
         module.exports = async function (defaults) {
           const { buildOnce } = await import('@embroider/vite');
           let app = new EmberApp(defaults, {});
-          // Split a route named "map" (its route entrypoint id ends in ".map")
-          // to cover the vite dev regression in #2670.
+          // Covers #2670. Both routes must be split: vite strips the ".map" off the
+          // child's id and only hijacks it if "route=parent" is a module it knows.
           return compatBuild(app, buildOnce, {
             splitAtRoutes: ['parent', 'parent.map'],
           });

@@ -40,6 +40,13 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
       return await observeDepScan(context, source, importer, options);
     }
 
+    // Ids we already virtualized come back as literal sources when rolldown's
+    // lazy dev mode re-imports a lazy entry through its `?rolldown-lazy=` stub.
+    let alreadyVirtualized = responseMetas.get(normalizePath(source));
+    if (alreadyVirtualized) {
+      return { id: source, meta: { 'embroider-resolver': alreadyVirtualized } };
+    }
+
     let request = ModuleRequest.create(RollupRequestAdapter.create, {
       context,
       source,

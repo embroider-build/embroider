@@ -4,7 +4,7 @@ import QUnit from 'qunit';
 import fetch from 'node-fetch';
 import { setupViteDevServer } from './helpers';
 import { setupAuditTest } from '@embroider/test-support/audit-assertions';
-import { mkdirSync, moveSync } from 'fs-extra';
+import { mkdirSync, moveSync, writeFileSync } from 'fs-extra';
 import { resolve } from 'path';
 
 const { module: Qmodule, test } = QUnit;
@@ -411,6 +411,57 @@ function runViteInternalsTest(scenario: Scenario) {
         assert.equal(result.exitCode, 0, result.output);
       });
     });
+
+    // `experimental.bundledDev` is vite 8 only.
+    if (scenario.name.includes('vite-rolldown')) {
+      Qmodule('vite dev with bundledDev', function (hooks) {
+        hooks.before(async () => {
+          // Resolving twice is what rolldown's lazy dev mode does to every lazy
+          // entry, via its `?rolldown-lazy=` stub.
+          writeFileSync(
+            resolve(app.dir, 'vite.bundled-dev.config.mjs'),
+            `
+              import { defineConfig } from 'vite';
+              import { extensions, classicEmberSupport, ember } from '@embroider/vite';
+              import { babel } from '@rollup/plugin-babel';
+              import { resolve } from 'node:path';
+
+              const reResolveVirtualId = {
+                name: 'test-re-resolve-virtual-id',
+                async buildEnd() {
+                  const first = await this.resolve('@embroider/core/route/application', resolve(process.cwd(), 'package.json'));
+                  const second = first && (await this.resolve(first.id, first.id + '?rolldown-lazy=1'));
+                  console.log('RE_RESOLVE_RESULT ' + JSON.stringify({ first: first?.id ?? null, second: second?.id ?? null }));
+                },
+              };
+
+              export default defineConfig({
+                experimental: { bundledDev: true },
+                plugins: [reResolveVirtualId, classicEmberSupport(), ember(), babel({ babelHelpers: 'runtime', extensions })],
+              });
+            `
+          );
+        });
+
+        let dev = setupViteDevServer(hooks, () => app, {
+          viteArgs: ['--config', 'vite.bundled-dev.config.mjs'],
+        });
+
+        test('a virtual id we handed out re-resolves to itself', async function (assert) {
+          let [, payload] = await dev.server.waitFor(/RE_RESOLVE_RESULT (.*)/);
+          let { first, second } = JSON.parse(payload);
+          assert.ok(first, 'the route entrypoint got virtualized');
+          assert.strictEqual(second, first, 'resolving it a second time gives back the same virtual module');
+        });
+
+        // Booting the app is left out until vitejs/vite#23124 is fixed: its own
+        // lazy route entries fail to compile when a client asks for them.
+        test('serves the app', async function (assert) {
+          let response = await fetch(dev.appURL);
+          assert.strictEqual(response.status, 200);
+        });
+      });
+    }
 
     Qmodule('vite with custom base', function (hooks) {
       const base = '/sub-dir/';

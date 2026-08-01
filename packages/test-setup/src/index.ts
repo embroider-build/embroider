@@ -104,7 +104,9 @@ export function embroiderOptimized(extension?: object) {
 function extendScenario(scenario: object, extension?: object) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/consistent-type-imports
   let mergeWith = require('lodash/mergeWith') as typeof import('lodash/mergeWith');
-  return mergeWith(scenario, extension, appendArrays);
+  // Merge into a fresh object: `scenario.npm.devDependencies` is the shared
+  // `embroiderDevDeps`, and mergeWith writes into its first argument.
+  return mergeWith({}, scenario, extension, appendArrays);
 }
 
 function appendArrays(objValue: any, srcValue: any) {

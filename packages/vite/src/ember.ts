@@ -5,6 +5,7 @@ import type { ConfigEnv, Plugin } from 'vite';
 
 import { esBuildResolver } from './esbuild-resolver.js';
 import { warnRootUrl } from './warn-root-url.js';
+import { warnVirtualAppCss } from './warn-virtual-app-css.js';
 import type { ViteUserConfig as UserConfig, Vite8UserConfig } from './types.js';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
@@ -31,6 +32,7 @@ export function ember(params?: {
 }) {
   return [
     warnRootUrl(),
+    warnVirtualAppCss(),
     templateTag(),
     resolver(),
     {

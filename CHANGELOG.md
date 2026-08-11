@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-08-11)
+
+* @embroider/test-setup 4.0.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/test-setup`
+  * [#2795](https://github.com/embroider-build/embroider/pull/2795) fix(test-setup): stop embroiderSafe/Optimized mutating shared devDependencies (stable) ([@johanrd](https://github.com/johanrd))
+
+#### Committers: 1
+- Johan Røed ([@johanrd](https://github.com/johanrd))
+
 ## Release (2026-04-29)
 
 * @embroider/compat 3.9.4 (patch)

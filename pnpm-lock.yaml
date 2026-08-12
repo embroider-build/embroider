@@ -426,13 +426,13 @@ importers:
   packages/core:
     dependencies:
       '@babel/core':
-        specifier: ^7.14.5
+        specifier: ^7.14.5 || ^8.0.0
         version: 7.29.7
       '@babel/parser':
-        specifier: ^7.14.5
+        specifier: ^7.14.5 || ^8.0.0
         version: 7.29.7
       '@babel/traverse':
-        specifier: ^7.14.5
+        specifier: ^7.14.5 || ^8.0.0
         version: 7.29.7(supports-color@8.1.1)
       '@embroider/macros':
         specifier: workspace:*
@@ -959,7 +959,7 @@ importers:
   packages/vite:
     dependencies:
       '@babel/core':
-        specifier: ^7.22.9
+        specifier: ^7.22.9 || ^8.0.0
         version: 7.29.7
       '@embroider/macros':
         specifier: workspace:*

@@ -1,12 +1,17 @@
-import type { TransformOptions } from '@babel/core';
-import { parse } from '@babel/core';
+// parseSync rather than parse: babel 8 makes the callback argument mandatory on
+// the plain `parse`, and throws when it's missing.
+import { parseSync } from '@babel/core';
 import type { NodePath } from '@babel/traverse';
 import traverse from '@babel/traverse';
 import { types as t } from '@babel/core';
 import assertNever from 'assert-never';
 
-export function describeExports(code: string, babelParserConfig: TransformOptions): { names: Set<string> } {
-  let ast = parse(code, babelParserConfig);
+// babel 8 renamed TransformOptions to InputOptions, so we name the options type
+// by derivation instead of importing it, and work under either major.
+type ParseOptions = NonNullable<Parameters<typeof parseSync>[1]>;
+
+export function describeExports(code: string, babelParserConfig: ParseOptions): { names: Set<string> } {
+  let ast = parseSync(code, babelParserConfig);
   if (!ast || ast.type !== 'File') {
     throw new Error(`bug in embroider/core describe-exports`);
   }

@@ -9,7 +9,7 @@ import { expectRewrittenFilesAt } from '@embroider/test-support/file-assertions/
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('release')
+  .only('lts_6_12')
   .map('stage-1-max-compat', project => {
     let addon = baseAddon();
 
@@ -135,7 +135,7 @@ appScenarios
   });
 
 appScenarios
-  .only('release')
+  .only('lts_6_12')
   .map('stage-1-inline-hbs', project => {
     let addon = baseAddon();
 
@@ -225,7 +225,7 @@ appScenarios
   });
 
 appScenarios
-  .only('release')
+  .only('lts_6_12')
   .map('stage-1-problematic-addon-zoo', project => {
     let addon = baseAddon();
 

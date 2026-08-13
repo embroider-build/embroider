@@ -1750,21 +1750,18 @@ importers:
       ember-cli-5.8:
         specifier: npm:ember-cli@~5.8.0
         version: /ember-cli@5.8.1(@babel/core@7.29.0)
+      ember-cli-6.12:
+        specifier: npm:ember-cli@~6.12.0
+        version: /ember-cli@6.12.0(@babel/core@7.29.0)
       ember-cli-babel-latest:
         specifier: npm:ember-cli-babel@latest
         version: /ember-cli-babel@8.3.1(@babel/core@7.29.0)
-      ember-cli-beta:
-        specifier: npm:ember-cli@beta
-        version: /ember-cli@7.0.0-beta.1(@babel/core@7.29.0)
       ember-cli-fastboot:
         specifier: ^4.1.1
         version: 4.1.5(ember-source@3.28.12)
       ember-cli-htmlbars-7:
         specifier: npm:ember-cli-htmlbars@^7.0.0
         version: /ember-cli-htmlbars@7.0.1(@babel/core@7.29.0)(ember-source@3.28.12)
-      ember-cli-latest:
-        specifier: npm:ember-cli@latest
-        version: /ember-cli@6.12.0(@babel/core@7.29.0)
       ember-composable-helpers:
         specifier: ^4.4.1
         version: 4.5.0
@@ -1781,9 +1778,6 @@ importers:
         specifier: npm:ember-data@~4.8.0
         version: /ember-data@4.8.8(@babel/core@7.29.0)(ember-source@3.28.12)
       ember-data-5.3:
-        specifier: npm:ember-data@5.3.0
-        version: /ember-data@5.3.0(@babel/core@7.29.0)(@ember/string@3.1.1)(ember-source@3.28.12)
-      ember-data-latest:
         specifier: npm:ember-data@5.3.0
         version: /ember-data@5.3.0(@babel/core@7.29.0)(@ember/string@3.1.1)(ember-source@3.28.12)
       ember-engines:
@@ -1819,14 +1813,8 @@ importers:
       ember-source-5.8:
         specifier: npm:ember-source@~5.8.0
         version: /ember-source@5.8.0(@babel/core@7.29.0)
-      ember-source-beta:
-        specifier: npm:ember-source@beta
-        version: /ember-source@7.0.0-beta.1
-      ember-source-canary:
-        specifier: https://s3.amazonaws.com/builds.emberjs.com/canary/shas/756f0e3f98b8ca5edf443fe57318b4dac692bffa.tgz
-        version: '@s3.amazonaws.com/builds.emberjs.com/canary/shas/756f0e3f98b8ca5edf443fe57318b4dac692bffa.tgz'
-      ember-source-latest:
-        specifier: npm:ember-source@latest
+      ember-source-6.12:
+        specifier: npm:ember-source@~6.12.0
         version: /ember-source@6.12.0
       ember-template-imports:
         specifier: ^4.1.2
@@ -5540,40 +5528,10 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-tooling/blueprint-model@0.6.2:
-    resolution: {integrity: sha512-63CctAbpa/xS094Qo+23xcsxVkbs9djJnifEcUPizHuOCiDx222jSe7fCimgfhNa+txaA7KH8QfMX70gtg1J1A==}
-    dependencies:
-      chalk: 5.6.2
-      diff: 7.0.0
-      isbinaryfile: 5.0.7
-      lodash: 4.18.1
-      promise.hash.helper: 1.0.8
-      quick-temp: 0.1.9
-      silent-error: 1.1.1
-    transitivePeerDependencies:
-      - supports-color
-    dev: true
-
   /@ember-tooling/classic-build-addon-blueprint@6.12.0:
     resolution: {integrity: sha512-2sf34DIJO6RnpzcQy0A4RmGNwukE4vihHv/b9loDZzV4lnFNOTyHua09S5ai4szO7Iv91Q2OPEgOBo09yG+7SQ==}
     dependencies:
       '@ember-tooling/blueprint-model': 0.5.0
-      chalk: 5.6.2
-      ember-cli-normalize-entity-name: 1.0.0
-      ember-cli-string-utils: 1.1.0
-      fs-extra: 11.3.4
-      lodash: 4.18.1
-      silent-error: 1.1.1
-      sort-package-json: 2.15.1
-      walk-sync: 3.0.0
-    transitivePeerDependencies:
-      - supports-color
-    dev: true
-
-  /@ember-tooling/classic-build-addon-blueprint@7.0.0-beta.1:
-    resolution: {integrity: sha512-tTRXWUgBPU9QKfinRwRdGaRgLe7RZU2PZDr3wgiHE0fqjnoZ5uFWGws9dG54EPB8vuY2QAiJ8wU10nuyksQy0g==}
-    dependencies:
-      '@ember-tooling/blueprint-model': 0.6.2
       chalk: 5.6.2
       ember-cli-normalize-entity-name: 1.0.0
       ember-cli-string-utils: 1.1.0
@@ -5596,29 +5554,8 @@ packages:
       - supports-color
     dev: true
 
-  /@ember-tooling/classic-build-app-blueprint@7.0.0-beta.1:
-    resolution: {integrity: sha512-WBs93CXjb886wUQZMPD/++VWit7wUEOsklQY3o0okCgIqe7etlnwpo3inXKIcOUutOqjZtAGg4hfZT1Bgv436A==}
-    dependencies:
-      '@ember-tooling/blueprint-model': 0.6.2
-      chalk: 5.6.2
-      ember-cli-string-utils: 1.1.0
-    transitivePeerDependencies:
-      - supports-color
-    dev: true
-
   /@ember/app-blueprint@6.12.1:
     resolution: {integrity: sha512-rjvZ5BRyfWKjh3C5U7Hd/lH0W9ChkPW+3lsZBY2I0fRDuewq1ML4QRXgN0OwKyDTipkDk8GplSoOQWXcwMCSJg==}
-    dependencies:
-      chalk: 4.1.2
-      ejs: 3.1.10
-      ember-cli-string-utils: 1.1.0
-      lodash: 4.18.1
-      sort-package-json: 3.6.1
-      walk-sync: 3.0.0
-    dev: true
-
-  /@ember/app-blueprint@7.0.0-beta.1:
-    resolution: {integrity: sha512-yEDqcRLCOhLgl3OqeLhP6Q6xbILqZ9m1NNjMKc20FRfeAYbSgMLjDzayDDquVIgdHZqdi/l0qd81LYga0yLl6Q==}
     dependencies:
       chalk: 4.1.2
       ejs: 3.1.10
@@ -6281,17 +6218,6 @@ packages:
       '@glimmer/wire-format': 0.87.1
     dev: true
 
-  /@glimmer/compiler@0.92.0:
-    resolution: {integrity: sha512-hTP18//aDRxsadWvqzAz3r54yEhN+M2UcTfUV++13gNSqgvRwuKTUelcL3bLDTQcnGUzZEMnFb3+3QayAAmQBg==}
-    engines: {node: '>= 16.0.0'}
-    dependencies:
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/syntax': 0.92.3
-      '@glimmer/util': 0.92.0
-      '@glimmer/vm': 0.92.0
-      '@glimmer/wire-format': 0.92.3
-    dev: true
-
   /@glimmer/compiler@0.92.4:
     resolution: {integrity: sha512-xoR8F6fsgFqWbPbCfSgJuJ95vaLnXw0SgDCwyl/KMeeaSxpHwJbr8+BfiUl+7ko2A+HzrY5dPXXnGr4ZM+CUXw==}
     engines: {node: '>= 16.0.0'}
@@ -6368,15 +6294,6 @@ packages:
       '@glimmer/util': 0.87.1
     dev: true
 
-  /@glimmer/destroyable@0.92.0:
-    resolution: {integrity: sha512-Y6IO0CTKdIvM24HvhcZBePDRG9Rc3nbRRqpYameNHmI/msEOVHk6BT217qkpGnma4OuT/AU6msoIOkTQI5kQPg==}
-    dependencies:
-      '@glimmer/env': 0.1.7
-      '@glimmer/global-context': 0.92.0
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/util': 0.92.0
-    dev: true
-
   /@glimmer/destroyable@0.92.3:
     resolution: {integrity: sha512-vQ+mzT9Vkf+JueY7L5XbZqK0WyEVTKv0HOLrw/zDw9F5Szn3F/8Ea/qbAClo3QK3oZeg+ulFTa/61rdjSFYHGA==}
     dependencies:
@@ -6419,13 +6336,6 @@ packages:
       '@glimmer/vm': 0.92.3
     dev: true
 
-  /@glimmer/encoder@0.92.5:
-    resolution: {integrity: sha512-C6PxHql94o5TRpNutu5H/WjnmEnNjq8Exsfuf8mGn32VBr5/+bxvnNeNPz0s6kZe2HZOjLLLn0LLgNtmlif74A==}
-    dependencies:
-      '@glimmer/interfaces': 0.93.0
-      '@glimmer/vm': 0.93.1
-    dev: true
-
   /@glimmer/env@0.1.7:
     resolution: {integrity: sha512-JKF/a9I9jw6fGoz8kA7LEQslrwJ5jms5CXhu/aqkBWk+PmZ6pTl8mlb/eJ/5ujBGTiQzBhy5AIWF712iA+4/mw==}
 
@@ -6449,10 +6359,6 @@ packages:
 
   /@glimmer/global-context@0.87.1:
     resolution: {integrity: sha512-Mitr7pBeVDTplFWlohyzxWLpFll7ffMZN+fnkBmUj8HiDLbD790Lb8lR9B2nL3t4RGnh6W9kDkCnZB+hvDm/eQ==}
-    dev: true
-
-  /@glimmer/global-context@0.92.0:
-    resolution: {integrity: sha512-XUPXIsz/F0YQz3vY9x+u3YQMibM3378gEPJObs3CHzAWJUl9Kz1CAb+jRigRrxIcmdzoonA49VMwGmmKRNoGag==}
     dev: true
 
   /@glimmer/global-context@0.92.3:
@@ -6482,20 +6388,8 @@ packages:
       '@simple-dom/interface': 1.4.0
     dev: true
 
-  /@glimmer/interfaces@0.92.0:
-    resolution: {integrity: sha512-SKZvIs+ZPN8F3EH8kEzs7rGIUa+wuV+/3oWYyEiBrqd+VrZlmAxIELM6qZ6oxXT2tx6q1rh2EmA5rWezi6bmYQ==}
-    dependencies:
-      '@simple-dom/interface': 1.4.0
-    dev: true
-
   /@glimmer/interfaces@0.92.3:
     resolution: {integrity: sha512-QwQeA01N+0h+TAi/J7iUnZtRuJy+093hNyagxDQBA6b1wCBw+q+al9+O6gmbWlkWE7EifzmNE1nnrgcecJBlJQ==}
-    dependencies:
-      '@simple-dom/interface': 1.4.0
-    dev: true
-
-  /@glimmer/interfaces@0.93.0:
-    resolution: {integrity: sha512-k2xUOMmB5e8/tH+LqiUqYnrV3f2RFxPvo0i62xNvfFnZMayJwonUz97i7+V5E5dv82rckzVHNg0bWyNmMyCnqg==}
     dependencies:
       '@simple-dom/interface': 1.4.0
     dev: true
@@ -6549,20 +6443,6 @@ packages:
       '@glimmer/vm': 0.87.1
     dev: true
 
-  /@glimmer/manager@0.92.0:
-    resolution: {integrity: sha512-vo5kpdyRq1YpP9FBcpSB9K8nGyz3C8k/vF3yd6g0u4zqVaaQrtvM+nw7pqOOQHf+FfQMr5nLYisvySWT7Eqwww==}
-    dependencies:
-      '@glimmer/debug': 0.92.4
-      '@glimmer/destroyable': 0.92.0
-      '@glimmer/env': 0.1.7
-      '@glimmer/global-context': 0.92.0
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/reference': 0.92.0
-      '@glimmer/util': 0.92.0
-      '@glimmer/validator': 0.92.0
-      '@glimmer/vm': 0.92.0
-    dev: true
-
   /@glimmer/manager@0.92.4:
     resolution: {integrity: sha512-YMoarZT/+Ft2YSd+Wuu5McVsdP9y6jeAdVQGYFpno3NlL3TXYbl7ELtK7OGxFLjzQE01BdiUZZRvcY+a/s9+CQ==}
     dependencies:
@@ -6603,15 +6483,6 @@ packages:
       '@glimmer/interfaces': 0.87.1
       '@glimmer/runtime': 0.87.1
       '@glimmer/util': 0.87.1
-      '@simple-dom/document': 1.4.0
-    dev: true
-
-  /@glimmer/node@0.92.0:
-    resolution: {integrity: sha512-TlyGmuCjGLWXvQDsAXUhDGjd4Q7BgNVwqv0hObu7A0qGOlEfpS1l6i/7cAzmCpQVUcGQiyUruJrIfpQgDWaepg==}
-    dependencies:
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/runtime': 0.92.0
-      '@glimmer/util': 0.92.0
       '@simple-dom/document': 1.4.0
     dev: true
 
@@ -6663,21 +6534,6 @@ packages:
       '@glimmer/wire-format': 0.87.1
     dev: true
 
-  /@glimmer/opcode-compiler@0.92.0:
-    resolution: {integrity: sha512-78LgXyLzGeCIlQwH45T6RoKtO8AGXEmrlOMjP7dq7k5JpDpitJHAwmPavjC18uhgOVs8V3SLYUsE/lnvhmuQkg==}
-    dependencies:
-      '@glimmer/debug': 0.92.4
-      '@glimmer/encoder': 0.92.5
-      '@glimmer/env': 0.1.7
-      '@glimmer/global-context': 0.92.0
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/manager': 0.92.0
-      '@glimmer/reference': 0.92.0
-      '@glimmer/util': 0.92.0
-      '@glimmer/vm': 0.92.0
-      '@glimmer/wire-format': 0.92.3
-    dev: true
-
   /@glimmer/opcode-compiler@0.92.4:
     resolution: {integrity: sha512-WnZSBwxNqW/PPD/zfxEg6BVR5tHwTm8fp76piix8BNCQ6CuzVn6HUJ5SlvBsOwyoRCmzt/pkKmBJn+I675KG4w==}
     dependencies:
@@ -6709,12 +6565,6 @@ packages:
     resolution: {integrity: sha512-ayYjznPMSGpgygNT7XlTXeel6Cl/fafm4WJeRRgdPxG1EZMjKPlfpfAyNzf9peEIlW3WMbPu3RAIYrf54aThWQ==}
     dependencies:
       '@glimmer/util': 0.87.1
-    dev: true
-
-  /@glimmer/owner@0.92.0:
-    resolution: {integrity: sha512-SUhVaUvcLcVJ+9f8ob/fln0+z6jAinYv21sA1FcgAYMnb3eaB5RPjFFW3BjGy9VPT/IOAVyj95+NDm6wguMDEg==}
-    dependencies:
-      '@glimmer/util': 0.92.0
     dev: true
 
   /@glimmer/owner@0.92.3:
@@ -6756,19 +6606,6 @@ packages:
       '@glimmer/util': 0.87.1
       '@glimmer/vm': 0.87.1
       '@glimmer/wire-format': 0.87.1
-    dev: true
-
-  /@glimmer/program@0.92.0:
-    resolution: {integrity: sha512-hRIZMRlRsyJuhUoqLsBu66NTPel6itXrccBOHBI49n9+FdisjiM3tgNNhrY+Tik/GnmtzztrCWjrqpf/PCp+rg==}
-    dependencies:
-      '@glimmer/encoder': 0.92.5
-      '@glimmer/env': 0.1.7
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/manager': 0.92.0
-      '@glimmer/opcode-compiler': 0.92.0
-      '@glimmer/util': 0.92.0
-      '@glimmer/vm': 0.92.0
-      '@glimmer/wire-format': 0.92.3
     dev: true
 
   /@glimmer/program@0.92.4:
@@ -6822,16 +6659,6 @@ packages:
       '@glimmer/interfaces': 0.87.1
       '@glimmer/util': 0.87.1
       '@glimmer/validator': 0.87.1
-    dev: true
-
-  /@glimmer/reference@0.92.0:
-    resolution: {integrity: sha512-es2a3bh9nk8kYCacLfm5Ly3x5sFDf2f0/7Vj1Ca2BXXfAn8UhuaR9uCrEI1OtBBz1JBciCzpbKemsu8J6VulYg==}
-    dependencies:
-      '@glimmer/env': 0.1.7
-      '@glimmer/global-context': 0.92.0
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/util': 0.92.0
-      '@glimmer/validator': 0.92.0
     dev: true
 
   /@glimmer/reference@0.92.3:
@@ -6897,23 +6724,6 @@ packages:
       '@glimmer/wire-format': 0.87.1
     dev: true
 
-  /@glimmer/runtime@0.92.0:
-    resolution: {integrity: sha512-LlAf86bNhRCfPvrXY5x+3YMhhSWSCT5NVTTYQp9j07D0bxvNw57n4mESuEgYZYWl4/cyEwegrmWW6Qs1P85bmQ==}
-    dependencies:
-      '@glimmer/destroyable': 0.92.0
-      '@glimmer/env': 0.1.7
-      '@glimmer/global-context': 0.92.0
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/manager': 0.92.0
-      '@glimmer/owner': 0.92.0
-      '@glimmer/program': 0.92.0
-      '@glimmer/reference': 0.92.0
-      '@glimmer/util': 0.92.0
-      '@glimmer/validator': 0.92.0
-      '@glimmer/vm': 0.92.0
-      '@glimmer/wire-format': 0.92.3
-    dev: true
-
   /@glimmer/runtime@0.92.4:
     resolution: {integrity: sha512-ISqM/8hVh+fY/gnLAAPKfts4CvnJBOyCYAXgGccIlzzQrSVLaz0NoRiWTLGj5B/3xyPbqLwYPDvlTsOjYtvPoA==}
     dependencies:
@@ -6963,16 +6773,6 @@ packages:
       '@glimmer/interfaces': 0.87.1
       '@glimmer/util': 0.87.1
       '@glimmer/wire-format': 0.87.1
-      '@handlebars/parser': 2.0.0
-      simple-html-tokenizer: 0.5.11
-    dev: true
-
-  /@glimmer/syntax@0.92.0:
-    resolution: {integrity: sha512-h8pYBC2cCnEyjbZBip2Yw4qi8S8sjNCYAb57iHek3AIhyFKMM13aTN+/aajFOM4FUTMCVE2B/iAAmO41WRCX4A==}
-    dependencies:
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/util': 0.92.0
-      '@glimmer/wire-format': 0.92.3
       '@handlebars/parser': 2.0.0
       simple-html-tokenizer: 0.5.11
     dev: true
@@ -7037,25 +6837,11 @@ packages:
       '@glimmer/interfaces': 0.87.1
     dev: true
 
-  /@glimmer/util@0.92.0:
-    resolution: {integrity: sha512-Fap52smLp8RkCgvozrZG7RysNJ2T6mk1SPoknMzmukbabFVBAzxl5iyY4OXUbmR09j6t2pupjF6sPabnLtL4vw==}
-    dependencies:
-      '@glimmer/env': 0.1.7
-      '@glimmer/interfaces': 0.92.0
-    dev: true
-
   /@glimmer/util@0.92.3:
     resolution: {integrity: sha512-K1oH93gGU36slycxJ9CcFpUTsdOc4XQ6RuZFu5oRsxFYtEF5PSu7ik11h58fyeoaWOr1ebfkyAMawbeI2AJ5GA==}
     dependencies:
       '@glimmer/env': 0.1.7
       '@glimmer/interfaces': 0.92.3
-    dev: true
-
-  /@glimmer/util@0.93.1:
-    resolution: {integrity: sha512-EFLxpoGY+cEyi/GVyO5acBpyAlf0CLSvGjURbuWcKcOMtESO72KPJvJuLaAcRssHDqKtWKPO/Fs7nNl8wfn7Lg==}
-    dependencies:
-      '@glimmer/env': 0.1.7
-      '@glimmer/interfaces': 0.93.0
     dev: true
 
   /@glimmer/util@0.94.8:
@@ -7096,15 +6882,6 @@ packages:
       '@glimmer/global-context': 0.87.1
       '@glimmer/interfaces': 0.87.1
       '@glimmer/util': 0.87.1
-    dev: true
-
-  /@glimmer/validator@0.92.0:
-    resolution: {integrity: sha512-GFX54PD8BRi+lg/HJ8KJRcvnV4rbDzJooQnOpJ9PlgIQi4KP/ivdjsw3DaEuvqn4K584LR6VTgHmxfZlLkDh2g==}
-    dependencies:
-      '@glimmer/env': 0.1.7
-      '@glimmer/global-context': 0.92.0
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/util': 0.92.0
     dev: true
 
   /@glimmer/validator@0.92.3:
@@ -7164,15 +6941,6 @@ packages:
       - '@babel/core'
     dev: true
 
-  /@glimmer/vm-babel-plugins@0.92.0(@babel/core@7.29.0):
-    resolution: {integrity: sha512-s/jPlTykZb3YzzOCVmGyMP8NihonHM+eY5WBQl+MOCXe2KdGkTAxFgnuGYzHTtJ/JzCRa/YRXQhJhncJSg6L2A==}
-    engines: {node: '>=16'}
-    dependencies:
-      babel-plugin-debug-macros: 0.3.4(@babel/core@7.29.0)
-    transitivePeerDependencies:
-      - '@babel/core'
-    dev: true
-
   /@glimmer/vm-babel-plugins@0.92.3(@babel/core@7.29.0):
     resolution: {integrity: sha512-VpkKsHc3oiq9ruiwT7sN4RuOIc5n10PCeWX7tYSNZ85S1bETcAFn0XbyNjI+G3uFshQGEK0T8Fn3+/8VTNIQIg==}
     engines: {node: '>=16'}
@@ -7203,25 +6971,11 @@ packages:
       '@glimmer/util': 0.87.1
     dev: true
 
-  /@glimmer/vm@0.92.0:
-    resolution: {integrity: sha512-y8HKYa0XrVZEKKJxfjVudpiC1ghe33lNKy0+/vxUBosQlH/+i1IJsHMaszQ5jhXZ3+RyTug4PMbs8BUeKDfzig==}
-    dependencies:
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/util': 0.92.0
-    dev: true
-
   /@glimmer/vm@0.92.3:
     resolution: {integrity: sha512-DNMQz7nn2zRwKO1irVZ4alg1lH+VInwR3vkWVgobUs0yh7OoHVGXKMd5uxzIksqJEUw1XOX9Qgu/GYZB1PiH3w==}
     dependencies:
       '@glimmer/interfaces': 0.92.3
       '@glimmer/util': 0.92.3
-    dev: true
-
-  /@glimmer/vm@0.93.1:
-    resolution: {integrity: sha512-LTlEJZsxwz3lkNGh8wk5KjCVc2jwBIGLy1h8zuiz5rHwhHpdIE17iokp7tKoZR5vnhBSvS4UxcgctBhOl7PgaQ==}
-    dependencies:
-      '@glimmer/interfaces': 0.93.0
-      '@glimmer/util': 0.93.1
     dev: true
 
   /@glimmer/wire-format@0.84.2:
@@ -15764,149 +15518,6 @@ packages:
       - whiskers
     dev: true
 
-  /ember-cli@7.0.0-beta.1(@babel/core@7.29.0):
-    resolution: {integrity: sha512-c87U2lWqHU6I6bBVEcD/SumJknk3awLGwUTBqnbsCP/K9oduWpBRDcQ9r1DE2MmCrE/YGi4R+j3y4e8rXii4rA==}
-    engines: {node: '>= 20.19.0'}
-    hasBin: true
-    dependencies:
-      '@ember-tooling/blueprint-blueprint': 0.2.1
-      '@ember-tooling/blueprint-model': 0.5.0
-      '@ember-tooling/classic-build-addon-blueprint': 7.0.0-beta.1
-      '@ember-tooling/classic-build-app-blueprint': 7.0.0-beta.1
-      '@ember/app-blueprint': 7.0.0-beta.1
-      '@pnpm/find-workspace-dir': 1000.1.5
-      babel-remove-types: 1.1.0
-      broccoli: 4.0.0
-      broccoli-concat: 4.2.7
-      broccoli-config-loader: 1.0.1
-      broccoli-config-replace: 1.1.3
-      broccoli-debug: 0.6.5
-      broccoli-funnel: 3.0.8
-      broccoli-funnel-reducer: 1.0.0
-      broccoli-merge-trees: 4.2.0
-      broccoli-middleware: 2.1.1
-      broccoli-slow-trees: 3.1.0
-      broccoli-source: 3.0.1
-      broccoli-stew: 3.0.0
-      calculate-cache-key-for-tree: 2.0.0
-      capture-exit: 2.0.0
-      chalk: 5.6.2
-      ci-info: 4.4.0
-      clean-base-url: 1.0.0
-      compression: 1.8.1
-      configstore: 7.1.0
-      console-ui: 3.1.2
-      content-tag: 4.1.1
-      core-object: 3.1.5
-      dag-map: 2.0.2
-      diff: 8.0.4
-      ember-cli-is-package-missing: 1.0.0
-      ember-cli-normalize-entity-name: 1.0.0
-      ember-cli-preprocess-registry: 5.0.1
-      ember-cli-string-utils: 1.1.0
-      ensure-posix-path: 1.1.1
-      execa: 9.6.1
-      exit: 0.1.2
-      express: 5.2.1
-      filesize: 11.0.16
-      find-up: 8.0.0
-      find-yarn-workspace-root: 2.0.0
-      fs-extra: 11.3.4
-      fs-tree-diff: 2.0.1
-      get-caller-file: 2.0.5
-      git-repo-info: 2.1.1
-      glob: 13.0.6
-      heimdalljs: 0.2.6
-      heimdalljs-fs-monitor: 1.1.2
-      heimdalljs-graph: 1.0.0
-      heimdalljs-logger: 0.1.10
-      http-proxy: 1.18.1
-      inflection: 3.0.2
-      inquirer: 13.4.2
-      is-git-url: 1.0.0
-      is-language-code: 5.1.3
-      lodash: 4.18.1
-      markdown-it: 14.1.1
-      markdown-it-terminal: 0.4.0(markdown-it@14.1.1)
-      minimatch: 10.2.5
-      morgan: 1.10.1
-      nopt: 3.0.6
-      npm-package-arg: 13.0.2
-      os-locale: 6.0.2
-      p-defer: 4.0.1
-      portfinder: 1.0.38
-      promise-map-series: 0.3.0
-      promise.hash.helper: 1.0.8
-      quick-temp: 0.1.9
-      resolve: 1.22.12
-      resolve-package-path: 4.0.3
-      safe-stable-stringify: 2.5.0
-      sane: 5.0.1
-      semver: 7.7.4
-      silent-error: 1.1.1
-      sort-package-json: 3.6.1
-      symlink-or-copy: 1.3.1
-      testem: 3.20.0(@babel/core@7.29.0)
-      tiny-lr: 2.0.0
-      tree-sync: 2.1.0
-      walk-sync: 4.0.1
-      watch-detector: 1.0.2
-      workerpool: 10.0.2
-      yam: 1.0.0
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - arc-templates
-      - atpl
-      - bracket-template
-      - bufferutil
-      - coffee-script
-      - debug
-      - dot
-      - dust
-      - dustjs-helpers
-      - dustjs-linkedin
-      - eco
-      - ect
-      - ejs
-      - haml-coffee
-      - hamlet
-      - hamljs
-      - handlebars
-      - hogan.js
-      - htmling
-      - jazz
-      - jqtpl
-      - just
-      - liquid-node
-      - liquor
-      - mote
-      - nunjucks
-      - plates
-      - pug
-      - qejs
-      - ractive
-      - react
-      - react-dom
-      - slm
-      - supports-color
-      - swig
-      - swig-templates
-      - teacup
-      - templayed
-      - then-pug
-      - tinyliquid
-      - toffee
-      - twig
-      - twing
-      - underscore
-      - utf-8-validate
-      - vash
-      - velocityjs
-      - walrus
-      - whiskers
-    dev: true
-
   /ember-compatibility-helpers@1.2.7(@babel/core@7.29.0):
     resolution: {integrity: sha512-BtkjulweiXo9c3yVWrtexw2dTmBrvavD/xixNC6TKOBdrixUwU+6nuOO9dufDWsMxoid7MvtmDpzc9+mE8PdaA==}
     engines: {node: 10.* || >= 12.*}
@@ -17301,34 +16912,6 @@ packages:
       simple-html-tokenizer: 0.5.11
     transitivePeerDependencies:
       - rsvp
-      - supports-color
-    dev: true
-
-  /ember-source@7.0.0-beta.1:
-    resolution: {integrity: sha512-KZ130VJdZXS+d16PrhlH4pzEuPOPO40/b1mUx9N5eKBDnP4NgkDHXL0kWenv58zIooikx25P1mpIdtzgk/feOQ==}
-    engines: {node: '>= 20.19'}
-    peerDependencies:
-      '@glimmer/component': '>= 1.1.2'
-    dependencies:
-      '@babel/core': 7.29.0
-      '@embroider/addon-shim': 1.10.2
-      '@simple-dom/interface': 1.4.0
-      backburner.js: 2.8.0
-      broccoli-file-creator: 2.1.1
-      chalk: 4.1.2
-      ember-cli-babel: 8.3.1(@babel/core@7.29.0)
-      ember-cli-get-component-path-option: 1.0.0
-      ember-cli-normalize-entity-name: 1.0.0
-      ember-cli-path-utils: 1.0.0
-      ember-cli-string-utils: 1.1.0
-      ember-cli-typescript-blueprint-polyfill: 0.1.0
-      ember-router-generator: 2.0.0
-      inflection: 2.0.1
-      route-recognizer: 0.3.4
-      semver: 7.7.4
-      silent-error: 1.1.1
-      simple-html-tokenizer: 0.5.11
-    transitivePeerDependencies:
       - supports-color
     dev: true
 
@@ -27108,59 +26691,3 @@ packages:
   /yoctocolors@2.1.2:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
-
-  '@s3.amazonaws.com/builds.emberjs.com/canary/shas/756f0e3f98b8ca5edf443fe57318b4dac692bffa.tgz':
-    resolution: {tarball: https://s3.amazonaws.com/builds.emberjs.com/canary/shas/756f0e3f98b8ca5edf443fe57318b4dac692bffa.tgz}
-    name: ember-source
-    version: 5.11.0-alpha.1.canary
-    engines: {node: '>= 16.*'}
-    peerDependencies:
-      '@glimmer/component': ^1.1.2
-    dependencies:
-      '@babel/core': 7.29.0
-      '@ember/edition-utils': 1.2.0
-      '@glimmer/compiler': 0.92.0
-      '@glimmer/destroyable': 0.92.0
-      '@glimmer/env': 0.1.7
-      '@glimmer/global-context': 0.92.0
-      '@glimmer/interfaces': 0.92.0
-      '@glimmer/manager': 0.92.0
-      '@glimmer/node': 0.92.0
-      '@glimmer/opcode-compiler': 0.92.0
-      '@glimmer/owner': 0.92.0
-      '@glimmer/program': 0.92.0
-      '@glimmer/reference': 0.92.0
-      '@glimmer/runtime': 0.92.0
-      '@glimmer/syntax': 0.92.0
-      '@glimmer/util': 0.92.0
-      '@glimmer/validator': 0.92.0
-      '@glimmer/vm': 0.92.0
-      '@glimmer/vm-babel-plugins': 0.92.0(@babel/core@7.29.0)
-      '@simple-dom/interface': 1.4.0
-      backburner.js: 2.8.0
-      broccoli-file-creator: 2.1.1
-      broccoli-funnel: 3.0.8
-      broccoli-merge-trees: 4.2.0
-      chalk: 4.1.2
-      ember-auto-import: 2.13.1
-      ember-cli-babel: 8.3.1(@babel/core@7.29.0)
-      ember-cli-get-component-path-option: 1.0.0
-      ember-cli-is-package-missing: 1.0.0
-      ember-cli-normalize-entity-name: 1.0.0
-      ember-cli-path-utils: 1.0.0
-      ember-cli-string-utils: 1.1.0
-      ember-cli-typescript-blueprint-polyfill: 0.1.0
-      ember-cli-version-checker: 5.1.2
-      ember-router-generator: 2.0.0
-      inflection: 2.0.1
-      route-recognizer: 0.3.4
-      router_js: 8.0.6(route-recognizer@0.3.4)
-      semver: 7.7.4
-      silent-error: 1.1.1
-      simple-html-tokenizer: 0.5.11
-    transitivePeerDependencies:
-      - '@glint/template'
-      - rsvp
-      - supports-color
-      - webpack
-    dev: true

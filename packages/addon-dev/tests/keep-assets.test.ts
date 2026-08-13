@@ -16,7 +16,7 @@ import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-import keepAssets from '../src/rollup-keep-assets';
+import keepAssets, { rebaseSources } from '../src/rollup-keep-assets';
 
 // generated { line (1-based), column (0-based) } of the first occurrence of `token`
 function generatedPositionOf(code: string, token: string) {
@@ -162,6 +162,19 @@ describe('keep-assets source maps', () => {
     });
     const parsed = JSON.parse(findAsset(output, 'styles.css.map')!);
     expect(parsed.sources).toEqual(['styles.css']);
+  });
+
+  test('null entries in `sources` (legal per the spec) pass through rebasing', () => {
+    // end-to-end coverage isn't possible here: rollup 3 (this repo's dev
+    // dependency) crashes on null sources while collapsing chunk maps, before
+    // keep-assets is reachable. rollup 4 consumers do reach this code.
+    const map = { ...mapFor('styles.css'), sources: [null, CSS_ID] };
+    const rebased = rebaseSources(
+      { toString: () => JSON.stringify(map) },
+      CSS_ID,
+      'styles.css'
+    );
+    expect(rebased.sources).toEqual([null, 'styles.css']);
   });
 
   test('keeps the JS chunk source map accurate across the injected imports', async () => {

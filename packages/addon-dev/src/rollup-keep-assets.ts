@@ -13,9 +13,6 @@ let counter = 11559;
 // byte-for-byte.
 const annotationFormats: { [ext: string]: (url: string) => string } = {
   '.css': (url) => `\n/*# sourceMappingURL=${url} */\n`,
-  '.js': (url) => `\n//# sourceMappingURL=${url}\n`,
-  '.mjs': (url) => `\n//# sourceMappingURL=${url}\n`,
-  '.cjs': (url) => `\n//# sourceMappingURL=${url}\n`,
 };
 
 function annotationFor(fileName: string) {
@@ -218,11 +215,20 @@ function realCombinedSourcemap(map: SourceMap, id: string, code: string) {
 // combined maps often carry absolute module ids in `sources`. The emitted
 // `.map` sits next to the emitted asset, so make them relative to it rather
 // than leaking build-machine paths.
-function rebaseSources(map: SourceMap, id: string, assetFileName: string) {
+//
+// exported for testing
+export function rebaseSources(
+  map: Pick<SourceMap, 'toString'>,
+  id: string,
+  assetFileName: string
+) {
   let parsed = JSON.parse(map.toString());
   parsed.file = basename(assetFileName);
-  parsed.sources = parsed.sources.map((source: string) =>
-    isAbsolute(source) ? relative(dirname(id), source) : source
+  // `sources` entries may be null per the source map spec
+  parsed.sources = parsed.sources.map((source: string | null) =>
+    typeof source === 'string' && isAbsolute(source)
+      ? relative(dirname(id), source)
+      : source
   );
   return parsed;
 }

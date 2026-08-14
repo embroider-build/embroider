@@ -3,12 +3,12 @@ import { Scenarios } from 'scenario-tester';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import { readFileSync } from 'fs';
-import { sourcemapDemoAddon } from './helpers/sourcemap-addon';
+import { v2AddonForSourceMapTesting } from './scenarios';
 import { assertTemplateVariableMapsToSource } from './helpers/source-maps';
 
 const { module: Qmodule, test } = QUnit;
 
-Scenarios.fromProject(() => sourcemapDemoAddon())
+Scenarios.fromProject(() => v2AddonForSourceMapTesting())
   .map('v2-addon-dev-sourcemap', () => {})
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

@@ -3,14 +3,14 @@ import { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import { basename, dirname, join } from 'path';
 import { assertTemplateVariableMapsToSource, findMapForVariable } from './helpers/source-maps';
-import { sourcemapDemoAddon } from './helpers/sourcemap-addon';
+import { v2AddonForSourceMapTesting } from './scenarios';
 
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
   .only('canary')
   .map('vite-app-sourcemap', project => {
-    project.addDevDependency(sourcemapDemoAddon());
+    project.addDevDependency(v2AddonForSourceMapTesting());
 
     project.linkDevDependency('@babel/plugin-transform-typescript', { baseDir: __dirname });
 

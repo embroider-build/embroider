@@ -78,6 +78,17 @@ export function ember(params?: {
 
           config.optimizeDeps.rolldownOptions.resolve ||= {};
           config.optimizeDeps.rolldownOptions.resolve.extensions = extensions;
+
+          config.build.rolldownOptions ||= {};
+          config.build.rolldownOptions.moduleTypes ||= {};
+          if (!config.build.rolldownOptions.moduleTypes['.ts']) {
+            // tell rolldown to treat '.ts' files like '.js' files so that it
+            // doesn't apply its own (wrong) transformations to things like
+            // class field initialization. This is the `vite build` equivalent
+            // to `config.oxc = false` which we do to get the same effect in
+            // `vite dev`.
+            config.build.rolldownOptions.moduleTypes['.ts'] = 'js';
+          }
         } else {
           /**
            * Vite 7 and lower

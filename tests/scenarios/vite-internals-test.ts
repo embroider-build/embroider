@@ -187,6 +187,33 @@ function buildViteInternalsTest(testNonColocatedTemplates: boolean, app: Project
             });
           });
         `,
+        'ts-field-test.ts': `
+          import { module, test } from "qunit";
+
+          module("Unit | ts field handling", function (hooks) {
+            test("ts class field initialzation uses expected semantics", async function (assert) {
+              class Base {
+                get thing() {
+                  return 1;
+                }
+                set thing(value) {
+                  throw new Error('setting not allowed');
+                }
+              }
+
+              class Child extends (Base as any) {
+                thing = 2;
+              }
+
+              // if our field initialzation gets implemented as Set instead of Define,
+              // this will throw. We want both vite dev and vite prod to agree that it's a
+              // Define.
+              new Child();
+              assert.ok(true);
+            });
+          });
+
+        `,
       },
       integration: {
         components: {

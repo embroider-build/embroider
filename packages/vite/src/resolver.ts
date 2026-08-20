@@ -269,21 +269,23 @@ async function maybeCaptureNewOptimizedDep(
   }
   let newResult = await context.resolve(target, join(jumpRoot, 'package.json'));
   if (newResult) {
-    if (idFromResult(newResult) === foundFile) {
-      // This case is normal. For example, people could be using
-      // `optimizeDeps.exclude` or they might be working in a monorepo where an
-      // addon is not in node_modules. In both cases vite will decide not to
-      // optimize the file, even though we gave it a chance to.
-      //
-      // We cache that result so we don't keep trying.
-      debug('maybeCaptureNewOptimizedDep: %s did not become an optimized dep', foundFile);
-      notViteDeps.add(foundFile);
+    let newId = idFromResult(newResult);
+    if (newId && normalize(newId).startsWith(cacheDir)) {
+      // we captured an optimized dep
+      return newResult;
     }
-
-    return newResult;
-  } else {
-    return result;
   }
+
+  // We didn't capture an optimized dep. There are many legit reasons why
+  // the dep might not acutally be optimized. For example, people could be
+  // using `optimizeDeps.exclude` or they might be working in a monorepo
+  // where an addon is not in node_modules. In both cases vite will decide
+  // not to optimize the file, even though we gave it a chance to.
+  //
+  // We cache that result so we don't keep trying.
+  debug('maybeCaptureNewOptimizedDep: %s did not become an optimized dep', foundFile);
+  notViteDeps.add(foundFile);
+  return result;
 }
 
 function buildViteJump(pkg: Package) {

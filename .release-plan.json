@@ -13,37 +13,13 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.21",
-      "newVersion": "4.1.22",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.22"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.6.2",
-      "newVersion": "4.6.3",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.6.3"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -52,17 +28,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.20.5",
-      "newVersion": "1.20.6",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.20.6"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -78,17 +44,17 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.7.8",
-      "newVersion": "1.7.9",
+      "oldVersion": "1.7.9",
+      "newVersion": "1.7.10",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-07-28)\n\n* @embroider/compat 4.1.22 (patch)\n* @embroider/core 4.6.3 (patch)\n* @embroider/macros 1.20.6 (patch)\n* @embroider/vite 1.7.9 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2742](https://github.com/embroider-build/embroider/pull/2742) fix: handle Embroider macro helpers in template tag codemod ([@olenderhub](https://github.com/olenderhub))\n* `@embroider/macros`\n  * [#2787](https://github.com/embroider-build/embroider/pull/2787) macroCondition: support && / || logical expression position ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :house: Internal\n* [#2785](https://github.com/embroider-build/embroider/pull/2785) Abstract vite dev utility (for qunit) for visiting /tests ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Hubert Olender ([@olenderhub](https://github.com/olenderhub))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-08-20)\n\n* @embroider/vite 1.7.10 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2799](https://github.com/embroider-build/embroider/pull/2799) Ensure rolldown wont mess with ts ([@ef4](https://github.com/ef4))\n  * [#2798](https://github.com/embroider-build/embroider/pull/2798) Narrow maybeCaptureNewOptimizedDep ([@ef4](https://github.com/ef4))\n\n#### :house: Internal\n* [#2782](https://github.com/embroider-build/embroider/pull/2782) Source map testing ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

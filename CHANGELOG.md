@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2026-08-20)
+
+* @embroider/vite 1.7.10 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2799](https://github.com/embroider-build/embroider/pull/2799) Ensure rolldown wont mess with ts ([@ef4](https://github.com/ef4))
+  * [#2798](https://github.com/embroider-build/embroider/pull/2798) Narrow maybeCaptureNewOptimizedDep ([@ef4](https://github.com/ef4))
+
+#### :house: Internal
+* [#2782](https://github.com/embroider-build/embroider/pull/2782) Source map testing ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-07-28)
 
 * @embroider/compat 4.1.22 (patch)

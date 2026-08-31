@@ -76,4 +76,12 @@ export interface Options {
    * is used instead of `style-loader` in production builds.
    */
   styleLoaderOptions?: object;
+
+  /**
+   * Controls whether embroider's internal CSS pipeline is activated.
+   * If you set this to false you must provide your own webpack loaders to process your styles.
+   *
+   * Defaults to `true`
+   */
+  enableInternalCssProcessing?: boolean;
 }

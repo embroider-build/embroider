@@ -223,6 +223,11 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       ],
       node: false,
       module: {
+        parser: {
+          javascript: {
+            exportsPresence: 'error'
+          }
+        },
         rules: [
           {
             test: /\.hbs$/,

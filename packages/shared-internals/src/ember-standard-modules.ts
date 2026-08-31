@@ -57,6 +57,7 @@ emberVirtualPackages.add('@ember/-internals');
 // correctness we still want to understand that they come from there.
 emberVirtualPackages.add('@glimmer/validator');
 emberVirtualPackages.add('@glimmer/reference');
+emberVirtualPackages.add('@glimmer/runtime');
 emberVirtualPackages.add('@glimmer/manager');
 
 // These are the known names that people use to import template precomiplation

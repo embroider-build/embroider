@@ -177,6 +177,26 @@ export default class MacrosConfig {
       //    true to distinguish the two.
       isTesting: false,
     };
+
+    this.loadAddonConfigFile();
+  }
+
+  private loadAddonConfigFile() {
+    let addonConfig: Record<string, object>;
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      addonConfig = require(join(this.appRoot, 'config', 'addons'));
+    } catch (e) {
+      if (e.code !== 'MODULE_NOT_FOUND') {
+        throw e;
+      }
+      addonConfig = {};
+    }
+
+    for (const [packageName, config] of Object.entries(addonConfig)) {
+      this.setConfig(this.appRoot, packageName, config);
+    }
   }
 
   private get packageCache() {

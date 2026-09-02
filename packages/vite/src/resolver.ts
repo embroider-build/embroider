@@ -117,7 +117,18 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
 
     configureServer(s) {
       server = s;
-      server.watcher.on('all', (_eventName, path) => {
+      server.watcher.on('all', (eventName, path) => {
+        // The virtual modules that register `watches` (the app/engine
+        // entrypoint and template-only-component shims) derive their contents
+        // purely from *which* files exist under the watched paths, never from
+        // those files' contents. So only add/unlink events can invalidate
+        // them. A plain 'change' event cannot, and reloading the virtual
+        // module for it forces a redundant full page reload -- most visibly on
+        // every stylesheet edit, where it pre-empts Vite's own CSS HMR. Let
+        // Vite's module graph handle content changes.
+        if (eventName === 'change') {
+          return;
+        }
         for (let [id, watches] of virtualDeps) {
           for (let watch of watches) {
             if (path.startsWith(watch)) {

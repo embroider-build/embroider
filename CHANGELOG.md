@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-09-03)
+
+* @embroider/core 4.6.4 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/core`
+  * [#2770](https://github.com/embroider-build/embroider/pull/2770) Fix: split child route "parent.map" fails to load in vite dev ([@johanrd](https://github.com/johanrd))
+
+#### Committers: 1
+- Johan Røed ([@johanrd](https://github.com/johanrd))
+
 ## Release (2026-08-20)
 
 * @embroider/vite 1.7.10 (patch)

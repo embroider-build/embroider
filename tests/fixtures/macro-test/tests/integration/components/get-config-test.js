@@ -73,6 +73,7 @@ module('Integration | Macro | getConfig', function(hooks) {
       assert.deepEqual(value, {
         mode: 'amazing',
         count: 42,
+        showRed: true,
         inner: {
           items: [
             { name: 'Arthur', awesome: true }

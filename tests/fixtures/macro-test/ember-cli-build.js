@@ -9,6 +9,7 @@ module.exports = function (defaults) {
       setOwnConfig: {
         mode: 'amazing',
         count: 42,
+        showRed: true,
         inner: {
           items: [{ name: 'Arthur', awesome: true }],
           description: null,

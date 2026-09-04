@@ -3,7 +3,10 @@ import { default as gjs } from './rollup-gjs-plugin';
 import { default as publicEntrypoints } from './rollup-public-entrypoints';
 import { default as appReexports } from './rollup-app-reexports';
 import { default as keepAssets } from './rollup-keep-assets';
-import { default as declarations } from './rollup-declarations';
+import {
+  default as declarations,
+  type DeclarationsOptions,
+} from './rollup-declarations';
 import { default as dependencies } from './rollup-addon-dependencies';
 import {
   default as publicAssets,
@@ -111,7 +114,10 @@ export class Addon {
     return publicAssets(path, opts);
   }
 
-  declarations(path: string, command?: string) {
-    return declarations(path, command);
+  // Emits .d.ts files into `path` by running your type-checking command. In
+  // watch mode this runs once per watch session by default; pass
+  // `{ watch: 'always' }` to type-check on every rebuild.
+  declarations(path: string, commandOrOptions?: string | DeclarationsOptions) {
+    return declarations(path, commandOrOptions);
   }
 }

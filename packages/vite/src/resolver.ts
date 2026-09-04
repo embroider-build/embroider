@@ -150,6 +150,11 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
     },
 
     async resolveId(source, importer, options) {
+      let seen = responseMetas.get(normalizePath(source));
+      if (seen) {
+        return { id: source, meta: { 'embroider-resolver': seen } };
+      }
+
       let resolution = await resolveId(this, source, importer, options);
       if (typeof resolution === 'string') {
         return resolution;

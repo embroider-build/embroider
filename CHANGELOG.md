@@ -1,5 +1,20 @@
 # Embroider Changelog
 
+## Release (2026-09-04)
+
+* @embroider/compat 4.1.23 (patch)
+* @embroider/core 4.6.5 (patch)
+* @embroider/macros 1.20.7 (patch)
+* @embroider/shared-internals 3.2.0 (minor)
+* @embroider/vite 1.7.11 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/shared-internals`
+  * [#2801](https://github.com/embroider-build/embroider/pull/2801) Add @ember/reactive to ember-standard-modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-09-03)
 
 * @embroider/core 4.6.4 (patch)

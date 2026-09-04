@@ -13,20 +13,34 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.22"
+      "impact": "patch",
+      "oldVersion": "4.1.22",
+      "newVersion": "4.1.23",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.6.3",
-      "newVersion": "4.6.4",
+      "oldVersion": "4.6.4",
+      "newVersion": "4.6.5",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        },
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
@@ -38,7 +52,17 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "oldVersion": "1.20.6"
+      "impact": "patch",
+      "oldVersion": "1.20.6",
+      "newVersion": "1.20.7",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
+        }
+      ],
+      "pkgJSONPath": "./packages/macros/package.json"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -47,14 +71,34 @@
       "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
-      "oldVersion": "3.1.1"
+      "impact": "minor",
+      "oldVersion": "3.1.1",
+      "newVersion": "3.2.0",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/shared-internals/package.json"
     },
     "@embroider/template-tag-codemod": {
       "oldVersion": "1.4.1"
     },
     "@embroider/vite": {
-      "oldVersion": "1.7.10"
+      "impact": "patch",
+      "oldVersion": "1.7.10",
+      "newVersion": "1.7.11",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Has dependency `workspace:*` on @embroider/macros"
+        }
+      ],
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-09-03)\n\n* @embroider/core 4.6.4 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/core`\n  * [#2770](https://github.com/embroider-build/embroider/pull/2770) Fix: split child route \"parent.map\" fails to load in vite dev ([@johanrd](https://github.com/johanrd))\n\n#### Committers: 1\n- Johan Røed ([@johanrd](https://github.com/johanrd))\n"
+  "description": "## Release (2026-09-04)\n\n* @embroider/compat 4.1.23 (patch)\n* @embroider/core 4.6.5 (patch)\n* @embroider/macros 1.20.7 (patch)\n* @embroider/shared-internals 3.2.0 (minor)\n* @embroider/vite 1.7.11 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/shared-internals`\n  * [#2801](https://github.com/embroider-build/embroider/pull/2801) Add @ember/reactive to ember-standard-modules ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

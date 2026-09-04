@@ -24,6 +24,7 @@
     "packages/reverse-exports",
     "packages/addon-shim",
     "packages/macros",
+    "packages/addon-dev"
   ],
   "references": [
     { "path": "packages/reverse-exports" },
@@ -35,6 +36,7 @@
     { "path": "packages/legacy-inspector-support" },
     { "path": "packages/addon-shim" },
     { "path": "packages/macros" },
+    { "path": "packages/addon-dev" },
     { "path": "tests/scenarios" },
   ]
 }

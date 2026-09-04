@@ -40,6 +40,9 @@ type GlobalSharedState = WeakMap<any, GlobalSharedEntry>;
 // share the GlobalSharedState beneath.
 let localSharedState: WeakMap<any, MacrosConfig> = new WeakMap();
 
+// Used to memoize the work to generate a cache key from a given (root, package) tuple
+let projectToRootCacheKey: Map<any, Map<string, string>> = new Map();
+
 function gatherAddonCacheKeyWorker(item: any, memo: Set<string>) {
   item.addons.forEach((addon: any) => {
     let key = `${addon.pkg.name}@${addon.pkg.version}`;
@@ -355,31 +358,8 @@ export default class MacrosConfig {
       importSyncImplementation: this.importSyncImplementation,
     };
 
-    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: self.appRoot });
-
-    if (!lockFilePath) {
-      lockFilePath = findUp.sync('package.json', { cwd: opts.appPackageRoot });
-    }
-
-    let lockFileBuffer = lockFilePath ? fs.readFileSync(lockFilePath) : 'no-cache-key';
-
-    // @embroider/macros provides a macro called dependencySatisfies which checks if a given
-    // package name satisfies a given semver version range. Due to the way babel caches this can
-    // cause a problem where the macro plugin does not run (because it has been cached) but the version
-    // of the dependency being checked for changes (due to installing a different version). This will lead to
-    // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
-    // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
-    // more information in issue #906
-    let hash = crypto.createHash('sha256');
-    hash = hash.update(lockFileBuffer);
-    if (appOrAddonInstance) {
-      // ensure that the actual running addon names and versions are accounted
-      // for in the cache key; this ensures that we still invalidate the cache
-      // when linking another project (e.g. ember-source) which would normally
-      // not cause the lockfile to change;
-      hash = hash.update(gatherAddonCacheKey(appOrAddonInstance.project));
-    }
-    let cacheKey = hash.digest('hex');
+    let project = appOrAddonInstance ? appOrAddonInstance.project : undefined;
+    let cacheKey = this.cacheKeyForProject(project);
 
     return [
       [join(__dirname, 'babel', 'macros-babel-plugin.js'), opts],
@@ -453,6 +433,49 @@ export default class MacrosConfig {
     } else {
       return this.packageCache.original(us);
     }
+  }
+
+  static lockFileBuffer(root: string): Buffer | string {
+    let lockFilePath = findUp.sync(['yarn.lock', 'package-lock.json', 'pnpm-lock.yaml'], { cwd: root });
+
+    if (!lockFilePath) {
+      lockFilePath = findUp.sync('package.json', { cwd: root });
+    }
+
+    return lockFilePath ? fs.readFileSync(lockFilePath) : 'no-cache-key';
+  }
+
+  private cacheKeyForProject(project: any): string {
+    let rootToCacheKey = projectToRootCacheKey.get(project) ?? new Map();
+    let root = this.appRoot;
+
+    // if we've already computed a key for this project and root, return that
+    if (rootToCacheKey.has(root)) {
+      return rootToCacheKey.get(root);
+    }
+
+    // @embroider/macros provides a macro called dependencySatisfies which checks if a given
+    // package name satisfies a given semver version range. Due to the way babel caches this can
+    // cause a problem where the macro plugin does not run (because it has been cached) but the version
+    // of the dependency being checked for changes (due to installing a different version). This will lead to
+    // the old evaluated state being used which might be invalid. This cache busting plugin keeps track of a
+    // hash representing the lock file of the app and if it ever changes forces babel to rerun its plugins.
+    // more information in issue #906
+    let hash = crypto.createHash('sha256');
+    hash = hash.update(MacrosConfig.lockFileBuffer(root));
+    if (project) {
+      // ensure that the actual running addon names and versions are accounted
+      // for in the cache key; this ensures that we still invalidate the cache
+      // when linking another project (e.g. ember-source) which would normally
+      // not cause the lockfile to change;
+      hash = hash.update(gatherAddonCacheKey(project));
+    }
+    let cacheKey = hash.digest('hex');
+
+    rootToCacheKey.set(root, cacheKey);
+    projectToRootCacheKey.set(project, rootToCacheKey);
+
+    return cacheKey;
   }
 
   finalize() {

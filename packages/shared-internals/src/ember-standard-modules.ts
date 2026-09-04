@@ -48,6 +48,9 @@ emberVirtualPeerDeps.add('ember-source');
 // Added in ember-source 4.5.0-beta.1
 emberVirtualPackages.add('@ember/renderer');
 
+// Added in ember-source 6.8.0
+emberVirtualPackages.add('@ember/reactive');
+
 // Added in ember-source 4.10.0-beta.1
 emberVirtualPackages.add('@ember/owner');
 

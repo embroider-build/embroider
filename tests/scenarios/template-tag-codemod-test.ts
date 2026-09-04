@@ -18,6 +18,7 @@ tsAppScenarios
         },
         components: {
           'message-box.hbs': `<div></div>`,
+          'if.hbs': '<div></div>',
           nested: {
             'example.js': 'export default class {}',
           },
@@ -229,6 +230,84 @@ tsAppScenarios
               import t from "../helpers/t.js";
               <template><div data-test={{t "hello"}}>{{t "hello"}}</div></template>
             `,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
+      test('modifier keyword shadowing', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `
+                {{#let (modifier resize 'foo') as |curried|}}
+                  <div {{this.inline}} {{curried}}>Modifier applied</div>
+                {{/let}}
+            `,
+            'app/modifiers/resize.js': `
+              import Modifier from 'ember-modifier';
+              class resize extends Modifier {
+                modify(el, [x]){
+                  console.log('class modifier', x)
+                }
+              }
+            `,
+            'app/components/example.js': `
+              import { modifier } from 'ember-modifier';
+              import Component from "@ember/component";
+              export default class extends Component {
+                inline = modifier((element)=>{console.log('inline modifier')}, {eager:false});
+              }
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+              import Modifier, { modifier as emberModifier } from 'ember-modifier';
+              import Component from "@ember/component";
+              import resize from './modifiers/resize.js'
+              export default class extends Component {<template>{{#let (modifier resize 'foo') as |curried|}}
+                  <div {{this.inline}} {{curried}}>Modifier applied</div>
+                {{/let}}</template>
+                inline = emberModifier((element)=>{console.log('inline modifier')}, {eager:false});
+              }
+            `,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
+      test('component name similar to keyword', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `
+              <If />
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `
+            import If from "./if.js";
+            <template>
+              <If />
+            </template>`,
+          },
+          via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
+        });
+      });
+
+      test('let printer multiline reprint', async function (assert) {
+        await assert.codeMod({
+          from: {
+            'app/components/example.hbs': `
+                {{#let "class-outline-pressed-touch do-not-change-white-space-chars-for-next-two-lines
+								they-are-part-of-the-test longer-class-than-expected even-more-classes
+								prettier-width-is-too-low" as |class|}}
+                  <div class={{if @overrideStyles @overrideStyles class}}>Hello world</div>
+                {{/let}}
+            `,
+          },
+          to: {
+            'app/components/example.gjs': `<template>{{#let "class-outline-pressed-touch longer-class-than-expected even-more-classes prettier-with-is-too-low" as |class|}}
+                  <div class={{if @overrideStyles @overrideStyles class}}>Hello world</div>
+                {{/let}}</template>`,
           },
           via: `node ${templateTagPath} --reusePrebuild  --renderTests false --routeTemplates false --components ./app/components/example.hbs`,
         });

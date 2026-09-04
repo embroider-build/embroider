@@ -17,7 +17,6 @@
     "./rollup": "./src/rollup.js"
   },
   "files": [
-    "sample-rollup.config.js",
     "src/**/*.js",
     "src/**/*.d.ts",
     "src/**/*.js.map"

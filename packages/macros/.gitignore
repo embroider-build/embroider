@@ -5,6 +5,8 @@
 /tests/**/*.js
 /tests/**/*.d.ts
 /tests/**/*.map
+# test fixtures are checked in, they're not compiler output
+!/tests/**/fixtures/**
 !/src/vendor/*.js
 !/src/addon/*.js
 /tsconfig.tsbuildinfo

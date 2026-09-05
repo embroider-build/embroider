@@ -1,0 +1,1 @@
+export default 'fact-result';

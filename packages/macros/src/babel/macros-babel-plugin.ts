@@ -12,6 +12,14 @@ import failBuild from './fail-build';
 import { Evaluator, buildLiterals } from './evaluate-json';
 import type * as Babel from '@babel/core';
 import { existsSync, readdirSync } from 'fs';
+import {
+  entryKey,
+  lookupExpression,
+  parseSpecifier,
+  patternMatcher,
+  patternParts,
+  relativeSpecifier,
+} from './import-sync-pattern';
 import { resolve, dirname, join } from 'path';
 
 export default function main(context: typeof Babel): unknown {
@@ -166,57 +174,59 @@ export default function main(context: typeof Babel): unknown {
         if (callee.referencesImport('@embroider/macros', 'importSync')) {
           if (state.opts.importSyncImplementation === 'eager') {
             let specifier = path.node.arguments[0];
-            if (specifier?.type !== 'StringLiteral') {
-              let relativePath = '';
-              let property;
-              if (specifier.type === 'TemplateLiteral') {
-                relativePath = specifier.quasis[0].value.cooked!;
-                property = specifier.expressions[0] as t.Expression;
-              }
-              // babel might transform template form `../my-path/${id}` to '../my-path/'.concat(id)
-              if (
-                specifier.type === 'CallExpression' &&
-                specifier.callee.type === 'MemberExpression' &&
-                specifier.callee.property.type === 'Identifier' &&
-                specifier.callee.property.name === 'concat' &&
-                specifier.callee.object.type === 'StringLiteral'
-              ) {
-                relativePath = specifier.callee.object.value;
-                property = specifier.arguments[0] as t.Expression;
-              }
-              if (property && relativePath && relativePath.startsWith('.')) {
-                const resolvedPath = resolve(dirname((state as any).filename), relativePath);
+            let target: string | undefined;
+            if (specifier?.type === 'StringLiteral') {
+              target = specifier.value;
+            } else {
+              let parts = specifier ? patternParts(t, specifier) : undefined;
+              if (parts && parts.length > 0 && parts.every(part => part.type === 'static')) {
+                // a template literal that has no interpolations at all is just
+                // a string, so treat it like one
+                target = parts.map(part => (part.type === 'static' ? part.value : '')).join('');
+              } else {
+                let parsed = parts ? parseSpecifier(parts) : undefined;
+                if (!parsed) {
+                  throw new Error(
+                    `importSync eager mode only supports dynamic paths which are relative, must start with a '.', had ${specifier?.type}`
+                  );
+                }
+                const { dir, pattern } = parsed;
+                const resolvedPath = resolve(dirname((state as any).filename), dir);
                 let entries: string[] = [];
                 if (existsSync(resolvedPath)) {
                   entries = readdirSync(resolvedPath).filter(e => !e.startsWith('.'));
                 }
-                const obj = t.objectExpression(
-                  entries.map(e => {
-                    let key = e.split('.')[0];
-                    const rest = e.split('.').slice(1, -1);
-                    if (rest.length) {
-                      key += `.${rest}`;
-                    }
-                    const id = t.callExpression(
-                      state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
-                      [state.importUtil.import(path, join(relativePath, key).replace(/\\/g, '/'), '*')]
-                    );
-                    return t.objectProperty(t.stringLiteral(key), id);
-                  })
+                const matches = patternMatcher(pattern);
+                const seen = new Set<string>();
+                const properties: t.ObjectProperty[] = [];
+                for (const entry of entries) {
+                  const key = entryKey(entry);
+                  // entries that the pattern could never select would just bloat
+                  // the bundle, and files that differ only by extension collapse
+                  // to the same key (and the same extension-less import)
+                  if (!matches(key) || seen.has(key)) {
+                    continue;
+                  }
+                  seen.add(key);
+                  const id = t.callExpression(
+                    state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'),
+                    [state.importUtil.import(path, relativeSpecifier(join(dir, key)), '*')]
+                  );
+                  properties.push(t.objectProperty(t.stringLiteral(key), id));
+                }
+                const memberExpr = t.memberExpression(
+                  t.objectExpression(properties),
+                  lookupExpression(t, pattern),
+                  true
                 );
-                const memberExpr = t.memberExpression(obj, property, true);
                 path.replaceWith(memberExpr);
                 state.calledIdentifiers.add(callee.node);
                 return;
-              } else {
-                throw new Error(
-                  `importSync eager mode only supports dynamic paths which are relative, must start with a '.', had ${specifier.type}`
-                );
               }
             }
             path.replaceWith(
               t.callExpression(state.importUtil.import(path, state.pathToOurAddon('es-compat2'), 'default', 'esc'), [
-                state.importUtil.import(path, specifier.value, '*'),
+                state.importUtil.import(path, target, '*'),
               ])
             );
             state.calledIdentifiers.add(callee.node);

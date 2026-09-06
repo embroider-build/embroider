@@ -159,6 +159,35 @@ let foo = importSync('foo');
 let foo = require('foo');
 ```
 
+#### dynamic paths
+
+`importSync` also accepts a template literal with interpolations, as long as the
+directory part of the path is a relative path that's known at build time:
+
+```js
+import { importSync } from '@embroider/macros';
+
+let mod = importSync(`./results/${type}-result`);
+```
+
+The macro reads that directory at build time and expands the call into a lookup
+over its contents, so the above compiles to something like:
+
+```js
+let mod = {
+  'fact-result': esc(_factResult),
+  'task-result': esc(_taskResult),
+}[`${type}-result`];
+```
+
+Only the entries that the pattern could actually select are included. A file
+extension on the pattern is optional and ignored — `./results/${type}-result.js`
+behaves identically to `./results/${type}-result`.
+
+The interpolations must stay within a single path segment. A pattern like
+`./results/${dir}/${type}` is a build error, because the directory to read isn't
+known until runtime.
+
 #### hint
 
 When using `importSync` on non ember-addon packages both the package being imported from *and* `ember-auto-import` *must* be in the `dependencies` of your addons `package.json`.

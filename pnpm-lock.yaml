@@ -253,8 +253,8 @@ importers:
         specifier: ^1.0.11
         version: 1.0.11
       broccoli:
-        specifier: ^3.5.2
-        version: 3.5.2
+        specifier: ^4.0.0
+        version: 4.0.0
       broccoli-concat:
         specifier: ^4.2.5
         version: 4.2.7
@@ -1229,8 +1229,8 @@ importers:
         specifier: ^1.7.0
         version: 1.7.0
       broccoli:
-        specifier: ^3.4.2
-        version: 3.5.2
+        specifier: ^4.0.0
+        version: 4.0.0
       code-equality-assertions:
         specifier: ^0.9.0
         version: 0.9.0(@types/jest@29.5.14)(qunit@2.25.0)
@@ -9778,7 +9778,6 @@ packages:
     resolution: {integrity: sha512-ozbS3LuenHVxNRh/wdnN16QapUHzauqSomAl1jwwJRRsGwFwtj644lIhxfWu0Fy0acCij2+AEgHvjscq3dlVXg==}
     engines: {'0': node >= 0.8.0}
     hasBin: true
-    dev: true
 
   /ansi-regex@2.1.1:
     resolution: {integrity: sha512-TIGnTpdo+E3+pCyAluZvtED5p5wCqLdezCyhPZzKPcxvFplEt4i+W7OONCKgeZFT3+y5NZZfOOS/Bdcanm1MYA==}
@@ -9857,7 +9856,6 @@ packages:
     dependencies:
       normalize-path: 3.0.0
       picomatch: 2.3.2
-    dev: true
 
   /archy@1.0.0:
     resolution: {integrity: sha512-Xg+9RwCg/0p32teKdGMPTPnVXKD0w3DfHnFTficozsAgsvq2XenPJq/MYpzzQ/v8zrOyJn6Ds39VA4JIDwFfqw==}
@@ -11840,7 +11838,6 @@ packages:
       watch-detector: 1.0.2
     transitivePeerDependencies:
       - supports-color
-    dev: true
 
   /browser-process-hrtime@1.0.0:
     resolution: {integrity: sha512-9o5UecI3GhkpM6DrXr69PblIuWxPKk9Y0jHBRhdocZ2y7YECBFCsHm79Pr3OyR2AvjhDkabFJaDJMYRazHgsow==}
@@ -19035,7 +19032,6 @@ packages:
       is-glob: 4.0.3
       micromatch: 4.0.8
       resolve-dir: 1.0.1
-    dev: true
 
   /fixturify-project@1.10.0:
     resolution: {integrity: sha512-L1k9uiBQuN0Yr8tA9Noy2VSQ0dfg0B8qMdvT7Wb5WQKc7f3dn3bzCbSrqlb+etLW+KDV4cBC7R1OvcMg3kcxmA==}
@@ -24555,7 +24551,6 @@ packages:
       micromatch: 4.0.8
       minimist: 1.2.8
       walker: 1.0.8
-    dev: true
 
   /sax@1.2.4:
     resolution: {integrity: sha512-NqVDv9TpANUjFm0N8uM5GxL36UgKi9/atZw+x7YFnQ8ckwFGKrl4xX4yWtrey3UJm5nP1kUbnYgLopqWNSRhWw==}

@@ -1,11 +1,17 @@
 import { fork } from 'child_process';
+import type { ChildProcess } from 'child_process';
 import type { Plugin } from 'vite';
 import { createRequire } from 'node:module';
 import { join, dirname } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
-export function emberBuild(command: string, mode: string, resolvableExtensions: string[] | undefined): Promise<void> {
+export function emberBuild(
+  command: string,
+  mode: string,
+  resolvableExtensions: string[] | undefined,
+  onWatcher?: (child: ChildProcess) => void
+): Promise<void> {
   let env: Record<string, string> = {
     ...process.env,
     EMBROIDER_PREBUILD: 'true',
@@ -38,6 +44,7 @@ export function emberBuild(command: string, mode: string, resolvableExtensions: 
         env,
       }
     );
+    onWatcher?.(child);
     child.on('exit', code => (code === 0 ? resolve() : reject(new Error('ember build --watch failed'))));
     child.on('spawn', () => {
       child.stderr?.on('data', data => {
@@ -58,6 +65,7 @@ export function compatPrebuild(): Plugin {
   let viteMode: string | undefined;
   let resolvableExtensions: string[] | undefined;
   let buildPromise: Promise<void> | undefined;
+  let watcher: ChildProcess | undefined;
 
   return {
     name: 'embroider-builder',
@@ -85,8 +93,16 @@ export function compatPrebuild(): Plugin {
         throw new Error(`bug: embroider compatPrebuild did not detect Vite's mode`);
       }
 
-      buildPromise = emberBuild(viteCommand, viteMode, resolvableExtensions);
+      buildPromise = emberBuild(viteCommand, viteMode, resolvableExtensions, child => {
+        watcher = child;
+      });
       await buildPromise;
+    },
+
+    closeBundle() {
+      watcher?.kill('SIGTERM');
+      watcher = undefined;
+      buildPromise = undefined;
     },
   };
 }

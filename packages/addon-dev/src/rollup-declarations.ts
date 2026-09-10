@@ -1,7 +1,7 @@
 import type { Plugin } from 'rollup';
 import execa from 'execa';
 import walkSync from 'walk-sync';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, rename, writeFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import { packageUp } from 'package-up';
 
@@ -108,26 +108,47 @@ async function fixDeclarationsInMatchingFiles(dir: string) {
   }
 
   const dtsFiles = walkSync(dir, {
-    globs: ['**/*.d.ts'],
+    globs: ['**/*.d.ts', '**/*.d.gts.ts', '**/*.d.gjs.ts'],
     directories: false,
     includeBasePath: true,
   });
 
   return Promise.all(
     dtsFiles.map(async (file) => {
-      const content = await readFile(file, { encoding: 'utf8' });
+      // TypeScript has never supported "compiled to JS" workflows
+      // when using external tools.
+      //
+      // So, the "arbitrary extensions" TS emits, will look like .d.gts.ts
+      //   or .d.gjs.ts
+      //
+      // Because TS doesn't understand that external tools emit JS,
+      //   and thus their declarations must be .d.ts, we have to
+      //   manually handle this rename ourselves.
+      //
+      // Upstream: https://github.com/microsoft/TypeScript/issues/64053
+      // This'll be a no-op if/when TS fixes this.
+      let target = file.replace(/\.d\.(gts|gjs)\.ts$/, '.d.ts');
 
-      await writeFile(file, fixDeclarations(content));
+      if (target !== file) {
+        await rename(file, target);
+      }
+
+      const content = await readFile(target, { encoding: 'utf8' });
+
+      await writeFile(target, fixDeclarations(content));
     })
   );
 }
 
-// Strip any .gts extension from imports in d.ts files, as these won't resolve. See https://github.com/typed-ember/glint/issues/628
-// Once Glint v2 is available, this shouldn't be needed anymore.
+// Strip any .gts/.gjs extension from imports in d.ts files, as these won't
+// resolve once the declaration files themselves are named *.d.ts.
+// See
+//  - https://github.com/typed-ember/glint/issues/628
+//  - https://github.com/microsoft/TypeScript/issues/64053
 function fixDeclarations(content: string) {
   return content
-    .replace(/from\s+'([^']+)\.gts'/g, `from '$1'`)
-    .replace(/from\s+"([^"]+)\.gts"/g, `from '$1'`)
-    .replace(/import\("([^"]+)\.gts"\)/g, `import('$1')`)
-    .replace(/import\('([^']+)\.gts'\)/g, `import('$1')`);
+    .replace(/from\s+'([^']+)\.(gts|gjs)'/g, `from '$1'`)
+    .replace(/from\s+"([^"]+)\.(gts|gjs)"/g, `from '$1'`)
+    .replace(/import\("([^"]+)\.(gts|gjs)"\)/g, `import('$1')`)
+    .replace(/import\('([^']+)\.(gts|gjs)'\)/g, `import('$1')`);
 }

@@ -412,12 +412,21 @@ export default class CompatApp {
       }
 
       let remapAsset = this.remapAsset.bind(this);
+      let remapTestAsset = (asset: string) => {
+        if (asset === 'vendor/embroider-macros-test-support.js') {
+          // Older copies of @embroider/macros still register this legacy vendor
+          // path, but a v2 macros addon no longer relies on synthesized vendor
+          // output for the bootstrap itself.
+          return remapAsset('node_modules/@embroider/macros/src/vendor/embroider-macros-test-support.js');
+        }
+        return remapAsset(asset);
+      };
 
       let addonMeta: AddonMeta = {
         version: 2,
         'implicit-scripts': this._implicitScripts.map(remapAsset).filter(forbiddenVendorPath),
         'implicit-styles': this._implicitStyles.map(remapAsset),
-        'implicit-test-scripts': this.legacyEmberAppInstance.legacyTestFilesToAppend.map(remapAsset),
+        'implicit-test-scripts': this.legacyEmberAppInstance.legacyTestFilesToAppend.map(remapTestAsset),
         'implicit-test-styles': this.legacyEmberAppInstance.vendorTestStaticStyles.map(remapAsset),
         'public-assets': mapKeys(this._publicAssets, (_, key) => remapAsset(key)),
       };

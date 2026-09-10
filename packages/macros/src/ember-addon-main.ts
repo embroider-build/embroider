@@ -48,7 +48,9 @@ export = {
     // our source code
     this.installBabelPlugin(this);
 
-    appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test' });
+    // We point at our package-local file so compat builds can keep resolving it
+    // after macros itself is treated as a v2 addon and no classic vendor tree is synthesized.
+    appInstance.import('node_modules/@embroider/macros/src/vendor/embroider-macros-test-support.js', { type: 'test' });
 
     const originalToTree = appInstance.toTree;
 

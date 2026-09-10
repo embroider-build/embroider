@@ -1,12 +1,16 @@
-import { appScenarios, baseV2Addon } from './scenarios';
+import { appScenarios, baseV2Addon, patchTestWaiters } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
+import { readJSONSync, removeSync } from 'fs-extra';
+import { join } from 'path';
+
+const resolve = require('resolve');
 
 const { module: Qmodule, test } = QUnit;
 
 appScenarios
-  .only('canary')
+  .only('lts_5_12')
   .map('macro-deep-v2-addon-compat-istesting', project => {
     let addon = baseV2Addon();
     addon.pkg.name = 'macros-consumer-addon';
@@ -52,7 +56,12 @@ appScenarios
 
     project.addDevDependency(addon);
     project.addDevDependency(intermediate);
+    project.removeDevDependency('ember-data');
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
+    project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: 'ember-test-helpers-5' });
+    project.linkDevDependency('ember-qunit', { baseDir: __dirname, resolveName: 'ember-qunit-9' });
+    project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters-4' });
+    patchTestWaiters(project);
 
     merge(project.files, {
       tests: {
@@ -92,8 +101,41 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      test('pnpm test', async function (assert) {
-        let result = await app.execute('pnpm test');
+      test('pnpm vite build emits a resolvable macros test-support bootstrap', async function (assert) {
+        let result = await app.execute('pnpm vite build --mode development');
+        assert.equal(result.exitCode, 0, result.output);
+
+        let synthesizedVendorDir = join(
+          app.dir,
+          'node_modules',
+          '.embroider',
+          'rewritten-packages',
+          '@embroider',
+          'synthesized-vendor'
+        );
+        let implicitTestScripts = readJSONSync(join(synthesizedVendorDir, 'package.json'))['ember-addon'][
+          'implicit-test-scripts'
+        ];
+        let macrosTestSupport = implicitTestScripts.find((script: string) =>
+          script.includes('embroider-macros-test-support.js')
+        );
+
+        assert.ok(macrosTestSupport, JSON.stringify(implicitTestScripts));
+        removeSync(join(synthesizedVendorDir, 'vendor', 'embroider-macros-test-support.js'));
+
+        let resolvedPath: string;
+        try {
+          resolvedPath = resolve.sync(macrosTestSupport, { basedir: synthesizedVendorDir });
+        } catch (error) {
+          assert.ok(false, (error as Error).message);
+          return;
+        }
+
+        assert.ok(resolvedPath.endsWith('embroider-macros-test-support.js'), resolvedPath);
+      });
+
+      test('pnpm ember test --path dist', async function (assert) {
+        let result = await app.execute('pnpm ember test --path dist');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

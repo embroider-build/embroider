@@ -1,5 +1,27 @@
 # Embroider Changelog
 
+## Release (2026-09-10)
+
+* @embroider/addon-dev 8.4.0 (minor)
+* @embroider/compat 4.1.24 (patch)
+* @embroider/core 4.6.6 (patch)
+* @embroider/macros 1.21.0 (minor)
+* @embroider/vite 1.7.12 (patch)
+
+#### :rocket: Enhancement
+* `@embroider/macros`
+  * [#2779](https://github.com/embroider-build/embroider/pull/2779) Macros: v2 addon ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* `@embroider/addon-dev`
+  * [#2804](https://github.com/embroider-build/embroider/pull/2804) TS7 Support ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2807](https://github.com/embroider-build/embroider/pull/2807) Fix eager importSync pattern support ([@ef4](https://github.com/ef4))
+
+#### Committers: 2
+- Edward Faulkner ([@ef4](https://github.com/ef4))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-09-04)
 
 * @embroider/compat 4.1.23 (patch)

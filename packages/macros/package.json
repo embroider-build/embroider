@@ -73,8 +73,6 @@
     "node": "12.* || 14.* || >= 16"
   },
   "ember-addon": {
-    "version": 2,
-    "type": "addon",
     "main": "src/ember-addon-main.js"
   }
 }

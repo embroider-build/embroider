@@ -1,17 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "minor",
-      "oldVersion": "8.3.1",
-      "newVersion": "8.4.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "8.4.0"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.10.3"
@@ -24,8 +14,8 @@
     },
     "@embroider/compat": {
       "impact": "patch",
-      "oldVersion": "4.1.23",
-      "newVersion": "4.1.24",
+      "oldVersion": "4.1.24",
+      "newVersion": "4.1.25",
       "tagName": "latest",
       "constraints": [
         {
@@ -40,8 +30,8 @@
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.6.5",
-      "newVersion": "4.6.6",
+      "oldVersion": "4.6.6",
+      "newVersion": "4.6.7",
       "tagName": "latest",
       "constraints": [
         {
@@ -58,15 +48,11 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "minor",
-      "oldVersion": "1.20.7",
-      "newVersion": "1.21.0",
+      "impact": "patch",
+      "oldVersion": "1.21.0",
+      "newVersion": "1.21.1",
       "tagName": "latest",
       "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
         {
           "impact": "patch",
           "reason": "Appears in changelog section :bug: Bug Fix"
@@ -88,8 +74,8 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.7.11",
-      "newVersion": "1.7.12",
+      "oldVersion": "1.7.12",
+      "newVersion": "1.7.13",
       "tagName": "latest",
       "constraints": [
         {
@@ -100,5 +86,5 @@
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-09-10)\n\n* @embroider/addon-dev 8.4.0 (minor)\n* @embroider/compat 4.1.24 (patch)\n* @embroider/core 4.6.6 (patch)\n* @embroider/macros 1.21.0 (minor)\n* @embroider/vite 1.7.12 (patch)\n\n#### :rocket: Enhancement\n* `@embroider/macros`\n  * [#2779](https://github.com/embroider-build/embroider/pull/2779) Macros: v2 addon ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* `@embroider/addon-dev`\n  * [#2804](https://github.com/embroider-build/embroider/pull/2804) TS7 Support ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2807](https://github.com/embroider-build/embroider/pull/2807) Fix eager importSync pattern support ([@ef4](https://github.com/ef4))\n\n#### Committers: 2\n- Edward Faulkner ([@ef4](https://github.com/ef4))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-09-10)\n\n* @embroider/compat 4.1.25 (patch)\n* @embroider/core 4.6.7 (patch)\n* @embroider/macros 1.21.1 (patch)\n* @embroider/vite 1.7.13 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2810](https://github.com/embroider-build/embroider/pull/2810) Revert \"Macros: v2 addon\" ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

@@ -2,6 +2,20 @@
 
 ## Release (2026-09-10)
 
+* @embroider/compat 4.1.25 (patch)
+* @embroider/core 4.6.7 (patch)
+* @embroider/macros 1.21.1 (patch)
+* @embroider/vite 1.7.13 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/macros`
+  * [#2810](https://github.com/embroider-build/embroider/pull/2810) Revert "Macros: v2 addon" ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 1
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
+## Release (2026-09-10)
+
 * @embroider/addon-dev 8.4.0 (minor)
 * @embroider/compat 4.1.24 (patch)
 * @embroider/core 4.6.6 (patch)

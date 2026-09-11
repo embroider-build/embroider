@@ -13,7 +13,8 @@
   "author": "Edward Faulkner <edward@eaf4.com>",
   "exports": {
     ".": "./dist/src/index.js",
-    "./default-renaming": "./dist/src/default-renaming.js"
+    "./default-renaming": "./dist/src/default-renaming.js",
+    "./addon-resolver": "./dist/src/addon-resolver.js"
   },
   "bin": {
     "template-tag-codemod": "./dist/src/cli.js"

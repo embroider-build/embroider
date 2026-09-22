@@ -9,11 +9,41 @@ import mergeTrees from 'broccoli-merge-trees';
 import { createHash } from 'crypto';
 import { join, dirname } from 'path';
 import { sync as pkgUpSync } from 'pkg-up';
+import chalk from 'chalk';
 
 export interface PipelineOptions<PackagerOptions> extends Options {
   packagerOptions?: PackagerOptions;
   onOutputPath?: (outputPath: string) => void;
   variants?: Variant[];
+}
+
+function warnEmbroiderV3Deprecated(emberApp: EmberAppInstance): void {
+  const isDummyApp = emberApp.project.pkg.keywords?.includes('ember-addon') ?? false;
+  const deprecationMessage = (
+    isDummyApp
+      ? [
+          `This addon's dummy app builds with Embroider@3, which is deprecated.`,
+          `  * No new features or bugfixes will be released.`,
+          `  * Security fixes will be backported only while Ember v6.12 remains an active LTS.`,
+          `  * Your ember-try embroider scenarios will not work with Ember v7.`,
+          ``,
+          `Migrate to the v2 addon format:`,
+          `  https://github.com/embroider-build/embroider/blob/main/docs/porting-addons-to-v2.md`,
+        ]
+      : [
+          `This app builds with Embroider@3, which is deprecated.`,
+          `  * No new features or bugfixes will be released.`,
+          `  * Security fixes will be backported only while Ember v6.12 remains an active LTS.`,
+          `  * You must migrate before upgrading to Ember v7.`,
+          ``,
+          `Migrate to Vite with the ember-vite-codemod:`,
+          `  https://github.com/mainmatter/ember-vite-codemod`,
+        ]
+  )
+    .concat([``, `See the deprecation RFC for details:`, `  https://rfcs.emberjs.com/id/1187-deprecate-embroider-3`])
+    .join('\n');
+
+  console.warn(`\n${chalk.yellow(deprecationMessage)}\n`);
 }
 
 export function stableWorkspaceDir(appRoot: string, environment: string) {
@@ -32,6 +62,8 @@ export default function defaultPipeline<PackagerOptions>(
   let addons;
 
   let embroiderApp = new App(emberApp, options);
+
+  warnEmbroiderV3Deprecated(emberApp);
 
   addons = new CompatAddons(embroiderApp);
   addons.ready().then(result => {

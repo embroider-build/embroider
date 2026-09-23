@@ -33,8 +33,21 @@ jobs:
         with:
           name: "Build Outputs"
           path: |
-            packages/**/dist
-            packages/**/src/**/*.{d.ts,d.ts.map,js,js.map}
+            packages/*/dist
+            packages/*/src/**/*.js
+            packages/*/src/**/*.js.map
+            packages/*/src/**/*.d.ts
+            packages/*/src/**/*.d.ts.map
+            packages/*/tests/**/*.js
+            packages/*/tests/**/*.js.map
+            packages/*/tests/**/*.d.ts
+            packages/*/tests/**/*.d.ts.map
+            test-packages/support/**/*.js
+            test-packages/support/**/*.js.map
+            test-packages/support/**/*.d.ts
+            test-packages/support/**/*.d.ts.map
+            tests/scenarios/dist
+            !**/node_modules/**
       - run: pnpm lint
 
   jest-suites:
@@ -60,7 +73,6 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: "Build Outputs"
-          path: packages
       - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/*" test
 
@@ -88,7 +100,6 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: "Build Outputs"
-          path: packages
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -114,7 +125,6 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: "Build Outputs"
-          path: packages
       - uses: ./.github/actions/setup
       - id: set-matrix
         working-directory: test-packages/support
@@ -138,7 +148,6 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: "Build Outputs"
-          path: packages
       - uses: ./.github/actions/setup
         with:
           use_lockfile: false
@@ -163,7 +172,6 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: "Build Outputs"
-          path: packages
       - uses: ./.github/actions/setup
       - id: set-matrix
         working-directory: test-packages/support
@@ -187,7 +195,6 @@ jobs:
       - uses: actions/download-artifact@v7
         with:
           name: "Build Outputs"
-          path: packages
       - uses: ./.github/actions/setup
         with:
           use_lockfile: false

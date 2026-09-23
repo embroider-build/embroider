@@ -17,7 +17,6 @@
     "lint:prettier": "prettier . -c",
     "lint:prettier:fix": "prettier . -w",
     "lint:router-types": "cd packages/router && pnpm lint:types",
-    "prepare": "tsc -b && pnpm build-v2-addons",
     "test": "cd tests/scenarios && pnpm test"
   },
   "jest": {

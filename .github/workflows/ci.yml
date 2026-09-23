@@ -15,9 +15,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm compile
+      - run: pnpm build-v2-addons
+      - name: "Upload all outputs to cache"
+        uses: actions/upload-artifact@v7
+        with:
+          name: "Build Outputs"
+          path: |
+            packages/**/dist
+            packages/**/src/**/*.{d.ts,d.ts.map,js,js.map}
+
   jest-suites:
     runs-on: ${{matrix.os}}
     timeout-minutes: 5
+    needs: [build]
 
     strategy:
       fail-fast: false
@@ -34,17 +56,31 @@ jobs:
         with:
           node-version: ${{matrix.node}}
           cache: pnpm
+      - uses: actions/download-artifact@v7
+        with:
+          name: "Build Outputs"
+          path: packages
       - run: pnpm install --no-lockfile
       - run: pnpm --filter "@embroider/*" test
 
   extended-node-support:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    needs: [build]
 
     strategy:
       fail-fast: false
       matrix:
-        node: ["12.22.12", "14.21.3", "16.20.2", "18.20.8", "20.19.5", "22.20.0", "24.9.0"]
+        node:
+          [
+            "12.22.12",
+            "14.21.3",
+            "16.20.2",
+            "18.20.8",
+            "20.19.5",
+            "22.20.0",
+            "24.9.0",
+          ]
 
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +89,10 @@ jobs:
         with:
           node-version: 22 # this is only used for the pnpm install, the user-node-version above will be used in tests
           cache: pnpm
+      - uses: actions/download-artifact@v7
+        with:
+          name: "Build Outputs"
+          path: packages
       - run: pnpm install --no-lockfile
       - name: downgrade Node Version in .npmrc
         run: printf "auto-install-peers=false\nuse-node-version=${{matrix.node}}" > .npmrc
@@ -81,7 +121,7 @@ jobs:
   test-ubuntu:
     needs: ["preflight-ubuntu", "jest-suites"]
     name: ${{ matrix.name }}
-    runs-on: 'ubuntu-latest'
+    runs-on: "ubuntu-latest"
     timeout-minutes: 10
 
     strategy:
@@ -91,6 +131,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v7
+        with:
+          name: "Build Outputs"
+          path: packages
       - uses: ./.github/actions/setup
         with:
           use_lockfile: false
@@ -123,7 +167,7 @@ jobs:
   test-windows:
     needs: ["preflight-windows", "jest-suites"]
     name: ${{ matrix.name }}
-    runs-on: 'windows-latest'
+    runs-on: "windows-latest"
     timeout-minutes: 60
 
     strategy:
@@ -133,6 +177,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v7
+        with:
+          name: "Build Outputs"
+          path: packages
       - uses: ./.github/actions/setup
         with:
           use_lockfile: false

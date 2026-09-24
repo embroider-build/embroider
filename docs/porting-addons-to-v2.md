@@ -237,9 +237,8 @@ Now that we've separated the test-app and docs app concerns from the addon, we c
 
    `pnpm add --save-dev @embroider/addon-dev rollup @rollup/plugin-babel @babel/core @babel/plugin-transform-class-properties @babel/plugin-proposal-decorators`
 
-6. Grab the [example babel config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.json) and save it as `addon/babel.config.json`
-   - If you addon requires template transforms in order to publish to a shareable format. Apply transforms using the `babel-plugin-ember-template-compilation`. View how to use this in the [example babel.config.js](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-babel.config.js)
-7. Grab the [example rollup config](https://github.com/embroider-build/embroider/blob/main/packages/addon-dev/sample-rollup.config.js) and save it as `addon/rollup.config.js`.
+6. Grab the [publish babel configs from the blueprint](https://github.com/ember-cli/ember-addon-blueprint/blob/65be0ecc3f6c0bcd02de57d469788daa3bd93aac/files/babel.publish.config.cjs) and save it to `addon/babel.config.cjs`
+7. Grab the [example rollup config](https://github.com/ember-cli/ember-addon-blueprint/blob/65be0ecc3f6c0bcd02de57d469788daa3bd93aac/files/rollup.config.mjs) and save it as `addon/rollup.config.js`.
 8. Identify your **app reexports**. This is the list of modules from your addon that get reexported by files in the `addon/app` directory.
 9. Edit `addon/rollup.config.js`. Customize the `publicEntrypoints` so it includes
 

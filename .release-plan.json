@@ -1,7 +1,17 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.4.0"
+      "impact": "patch",
+      "oldVersion": "8.4.0",
+      "newVersion": "8.4.1",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :memo: Documentation"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.10.3"
@@ -13,30 +23,20 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.24",
-      "newVersion": "4.1.25",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.25"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.0"
     },
     "@embroider/core": {
       "impact": "patch",
-      "oldVersion": "4.6.6",
-      "newVersion": "4.6.7",
+      "oldVersion": "4.6.7",
+      "newVersion": "4.6.8",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :house: Internal"
         }
       ],
       "pkgJSONPath": "./packages/core/package.json"
@@ -48,17 +48,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.21.0",
-      "newVersion": "1.21.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.21.1"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -74,17 +64,17 @@
     },
     "@embroider/vite": {
       "impact": "patch",
-      "oldVersion": "1.7.12",
-      "newVersion": "1.7.13",
+      "oldVersion": "1.7.13",
+      "newVersion": "1.7.14",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-09-10)\n\n* @embroider/compat 4.1.25 (patch)\n* @embroider/core 4.6.7 (patch)\n* @embroider/macros 1.21.1 (patch)\n* @embroider/vite 1.7.13 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/macros`\n  * [#2810](https://github.com/embroider-build/embroider/pull/2810) Revert \"Macros: v2 addon\" ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 1\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
+  "description": "## Release (2026-09-24)\n\n* @embroider/addon-dev 8.4.1 (patch)\n* @embroider/core 4.6.8 (patch)\n* @embroider/vite 1.7.14 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2797](https://github.com/embroider-build/embroider/pull/2797) Move `@babel/core` to peerDependency (allowing wider range) in `@embroider/vite` ([@wagenet](https://github.com/wagenet))\n\n#### :memo: Documentation\n* `@embroider/addon-dev`\n  * [#1262](https://github.com/embroider-build/embroider/pull/1262) Remove sample files from addon-dev ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### :house: Internal\n* `@embroider/core`\n  * [#2819](https://github.com/embroider-build/embroider/pull/2819) Derive the types of ParseOptions, rather than import them, due to instability in the types in babel 7 -> 8 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n* Other\n  * [#2817](https://github.com/embroider-build/embroider/pull/2817) Simulate an npm publish in ci by only building once ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Peter Wagenet ([@wagenet](https://github.com/wagenet))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

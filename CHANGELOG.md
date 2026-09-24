@@ -1,5 +1,29 @@
 # Embroider Changelog
 
+## Release (2026-09-24)
+
+* @embroider/addon-dev 8.4.1 (patch)
+* @embroider/core 4.6.8 (patch)
+* @embroider/vite 1.7.14 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2797](https://github.com/embroider-build/embroider/pull/2797) Move `@babel/core` to peerDependency (allowing wider range) in `@embroider/vite` ([@wagenet](https://github.com/wagenet))
+
+#### :memo: Documentation
+* `@embroider/addon-dev`
+  * [#1262](https://github.com/embroider-build/embroider/pull/1262) Remove sample files from addon-dev ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### :house: Internal
+* `@embroider/core`
+  * [#2819](https://github.com/embroider-build/embroider/pull/2819) Derive the types of ParseOptions, rather than import them, due to instability in the types in babel 7 -> 8 ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+* Other
+  * [#2817](https://github.com/embroider-build/embroider/pull/2817) Simulate an npm publish in ci by only building once ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Peter Wagenet ([@wagenet](https://github.com/wagenet))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-09-10)
 
 * @embroider/compat 4.1.25 (patch)

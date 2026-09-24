@@ -1,5 +1,4 @@
 import type { Plugin as EsBuildPlugin, OnLoadResult, PluginBuild, ResolveResult } from 'esbuild';
-import { transformAsync } from '@babel/core';
 import core, { ModuleRequest, type VirtualResponse } from '@embroider/core';
 const { ResolverLoader, virtualContent } = core;
 import fs from 'fs-extra';
@@ -10,13 +9,43 @@ import { hbsToJS } from '@embroider/core';
 import { Preprocessor } from 'content-tag';
 import { extname } from 'path';
 import { BackChannel } from './backchannel.js';
+import type { transformAsync as TransformAsyncValue } from '@babel/core';
+
+type TransformAsyncFn = typeof TransformAsyncValue;
 
 export function esBuildResolver(): EsBuildPlugin {
   let resolverLoader = new ResolverLoader(process.cwd());
   let preprocessor = new Preprocessor();
 
+  let babelCorePromise;
+  let babelCoreTransformAsync: undefined | TransformAsyncFn;
+  async function loadBabel() {
+    try {
+      const babelCore = await import('@babel/core');
+
+      babelCoreTransformAsync = babelCore.transformAsync;
+    } catch (e) {
+      if (e.code === 'ERR_MODULE_NOT_FOUND') {
+        throw new Error(`Could not load the peerDependency: "@babel/core". Please add "@babel/core" to your project.`);
+      }
+
+      throw e;
+    }
+  }
+
+  async function transformAsync(...args: Parameters<TransformAsyncFn>): ReturnType<TransformAsyncFn> {
+    if (!babelCoreTransformAsync) {
+      throw new Error(`peerDependency "@babel/core" was not loaded. Please add "@babel/core" to your project.`);
+    }
+
+    return babelCoreTransformAsync(...args);
+  }
+
   async function transformAndAssert(src: string, filename: string): Promise<string> {
+    await (babelCorePromise ||= loadBabel());
+
     const result = await transformAsync(src, { filename });
+
     if (!result || result.code == null) {
       throw new Error(`Failed to load file ${filename} in esbuild-hbs-loader`);
     }

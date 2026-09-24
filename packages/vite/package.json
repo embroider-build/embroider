@@ -30,6 +30,11 @@
     "@embroider/core": "workspace:^",
     "vite": ">= 5.2.0"
   },
+  "peerDependenciesMeta": {
+    "@babel/core": {
+      "optional": true
+    }
+  },
   "scripts": {
     "test": "vitest"
   },

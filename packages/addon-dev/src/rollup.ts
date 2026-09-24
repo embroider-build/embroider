@@ -5,10 +5,7 @@ import { default as appReexports } from './rollup-app-reexports';
 import { default as keepAssets } from './rollup-keep-assets';
 import { default as declarations } from './rollup-declarations';
 import { default as dependencies } from './rollup-addon-dependencies';
-import {
-  default as publicAssets,
-  type PublicAssetsOptions,
-} from './rollup-public-assets';
+import { default as publicAssets } from './rollup-public-assets';
 import { default as clean } from './rollup-incremental-plugin';
 import type { Plugin } from 'rollup';
 
@@ -107,8 +104,8 @@ export class Addon {
     return dependencies();
   }
 
-  publicAssets(path: string, opts?: PublicAssetsOptions) {
-    return publicAssets(path, opts);
+  publicAssets(...args: Parameters<typeof publicAssets>) {
+    return publicAssets(...args);
   }
 
   declarations(path: string, command?: string) {

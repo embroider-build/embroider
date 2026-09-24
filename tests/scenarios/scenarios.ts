@@ -147,7 +147,7 @@ export function isUsingEmberGte7(project: Project): boolean {
   return ember7ResolvedNames.includes(checkLinkedVersion(project, 'ember-source')!);
 }
 
-async function release(project: Project) {
+export function releaseDeps(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-latest' });
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-latest' });
@@ -159,6 +159,10 @@ async function release(project: Project) {
   project.linkDevDependency('ember-page-title', { baseDir: __dirname, resolveName: 'ember-page-title-9' });
   project.removeDevDependency('ember-cli-app-version');
   project.linkDevDependency('@glimmer/component', { baseDir: __dirname });
+}
+
+async function release(project: Project) {
+  releaseDeps(project);
 
   updateEmberQunit(project);
   patchTestWaiters(project);

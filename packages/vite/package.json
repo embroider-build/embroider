@@ -26,14 +26,19 @@
     }
   },
   "peerDependencies": {
+    "@babel/core": "^7.22.9 || ^8.0.0",
     "@embroider/core": "workspace:^",
     "vite": ">= 5.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@babel/core": {
+      "optional": true
+    }
   },
   "scripts": {
     "test": "vitest"
   },
   "dependencies": {
-    "@babel/core": "^7.22.9",
     "@embroider/macros": "workspace:*",
     "@embroider/reverse-exports": "workspace:*",
     "assert-never": "^1.2.1",
@@ -50,6 +55,7 @@
     "terser": "^5.7.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.17.5",
     "@embroider/core": "workspace:^",
     "@rollup/plugin-babel": "^5.3.1",
     "@types/babel__core": "^7.20.1",

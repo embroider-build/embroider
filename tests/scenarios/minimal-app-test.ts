@@ -57,6 +57,13 @@ minimalAppScenarios
     `,
 
       src: {
+        styles: {
+          'app.css': `
+            legend {
+              font-style: italic;
+            }
+          `,
+        },
         components: {
           'fancy-component.gjs': `
           import Component from '@glimmer/component';
@@ -68,6 +75,21 @@ minimalAppScenarios
           }
         `,
           'fancy-button.gjs': `<template><h1>I'm fancy</h1></template>`,
+          'clicker.gts': `
+            import Component from '@glimmer/component';
+            import { tracked } from '@glimmer/tracking';
+
+            export class Clicker extends Component {
+              @tracked count = 0;
+
+              increment = () => this.count++;
+
+              <template>
+                <output>{{this.count}}</output>
+                <button {{on "click" this.increment}}>++</button>
+              </template>
+            }
+          `,
         },
         templates: {
           'application.gjs': `
@@ -75,7 +97,9 @@ minimalAppScenarios
 
           <template>
             {{pageTitle "MyApp"}}
-            {{outlet}}
+            <fieldset><legend>app/templates/application.gjs</legend>
+              {{outlet}}
+            </fieldset>
           </template>
         `,
           'index.gjs': `
@@ -102,7 +126,7 @@ minimalAppScenarios
         },
       },
       tests: {
-        'test-helper.js': `import Application from '#/app';
+        'test-helper.js': `import Application from '#src/app';
 import config, { enterTestMode } from '#config';
 
 import * as QUnit from 'qunit';
@@ -152,13 +176,59 @@ export function start() {
             });
           });
           `,
+        application: {
+          'style-test.js': `
+            import { setupApplicationTest } from 'ember-qunit';
+            import { test, module } from 'qunit';
+            import { visit } from '@ember/test-helpers';
+
+            module('styles', function (hooks) {
+              setupApplicationTest(hooks);
+
+              test('legend is italic', async function (assert) {
+                await visit('/');
+
+                assert.dom('legend').hasStyle({ fontStyle: 'italic' });
+              });
+            });
+            `,
+        },
+        rendering: {
+          'clicker-test.gts': `
+            import { module, test } from 'qunit';
+            import { setupRenderingTest } from 'app-template-minimal/tests/helpers';
+            import { click, render } from '@ember/test-helpers';
+
+            import { Clicker } from '#src/components/clicker.gts';
+
+            module('Rendering | <Clicker>', function (hooks) {
+              setupRenderingTest(hooks);
+
+              test('it works', async function (assert) {
+                await render(
+                  <template>
+                    <Clicker />
+                  </template>
+                );
+
+                assert.dom('output').hasText('0');
+
+                await click('button');
+                assert.dom('output').hasText('1');
+
+                await click('button');
+                assert.dom('output').hasText('2');
+              });
+            });
+          `,
+        },
         integration: {
           components: {
             'fancy-component-test.gjs': `
                         import { module, test } from 'qunit';
             import { setupRenderingTest } from 'app-template-minimal/tests/helpers';
             import { render } from '@ember/test-helpers';
-            import FancyComponent from '#/components/fancy-component.gjs';
+            import FancyComponent from '#src/components/fancy-component.gjs';
 
             module('Integration | Component | fancy-component', function (hooks) {
               setupRenderingTest(hooks);

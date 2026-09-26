@@ -5,6 +5,13 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 
+function warnTargetsFile(message: string) {
+  console.log(`\n${chalk.bold.yellow('WARNING')}\n${chalk.yellow(message)}`);
+  console.log(
+    'Move the browsers list from config/targets.js to the "browserslist" key in package.json, then delete config/targets.js.\n'
+  );
+}
+
 export function configTargets() {
   return {
     name: 'vite-plugin-ember-browser-targets',
@@ -20,15 +27,11 @@ export function configTargets() {
 
         if (browsers) {
           if (browserslistConfig) {
-            console.log(
-              `\n${chalk.bold.yellow('WARNING')}\n${chalk.yellow(
-                'Browser targets are defined in both config/targets.js and your browserslist config.'
-              )}`
+            warnTargetsFile(
+              'Browser targets are defined in both config/targets.js and your browserslist config. Embroider uses config/targets.js, but other tools use the browserslist config.'
             );
-            console.log(
-              'Embroider uses config/targets.js for the Vite build target, but tools that read browserslist directly will use the other list.'
-            );
-            console.log('Keep only one of them so every tool targets the same browsers.\n');
+          } else {
+            warnTargetsFile('config/targets.js is no longer the recommended way to set browser targets.');
           }
 
           return {

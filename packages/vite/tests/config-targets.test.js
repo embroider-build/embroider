@@ -58,14 +58,19 @@ describe('Vite plugin configTargets', () => {
     expect(await run()).toEqual({ build: { target: ['safari17'] } });
   });
 
-  it('uses config/targets.js', async () => {
+  it('uses config/targets.js and suggests moving to browserslist', async () => {
     project({
       'package.json': JSON.stringify({ name: 'app' }),
       'config/targets.js': `'use strict';\nconst browsers = ['chrome 100'];\nmodule.exports = { browsers };\n`,
     });
 
     expect(await run()).toEqual({ build: { target: ['chrome100'] } });
-    expect(consoleSpy).not.toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('config/targets.js is no longer the recommended way to set browser targets.')
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('to the "browserslist" key in package.json, then delete config/targets.js.')
+    );
   });
 
   it('prefers config/targets.js over browserslist and warns when both are present', async () => {
@@ -78,6 +83,9 @@ describe('Vite plugin configTargets', () => {
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('WARNING'));
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining('Browser targets are defined in both config/targets.js and your browserslist config.')
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining('to the "browserslist" key in package.json, then delete config/targets.js.')
     );
   });
 

@@ -2,6 +2,8 @@ import { appScenarios, baseV2Addon } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
 import merge from 'lodash/merge';
+import { readJSONSync } from 'fs-extra';
+import { join, sep } from 'path';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -52,6 +54,8 @@ appScenarios
 
     project.addDevDependency(addon);
     project.addDevDependency(intermediate);
+    // every ember-data release still brings its own v1 @embroider/macros
+    project.removeDevDependency('ember-data');
     project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
 
     merge(project.files, {
@@ -95,6 +99,14 @@ appScenarios
       test('pnpm test', async function (assert) {
         let result = await app.execute('pnpm test');
         assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test('no v1 copy of @embroider/macros supplies vendor files', function (assert) {
+        let index = readJSONSync(join(app.dir, 'node_modules', '.embroider', 'rewritten-packages', 'index.json'));
+        let v1Macros = Object.keys(index.packages).filter(
+          path => path.split(sep).slice(-2).join('/') === '@embroider/macros'
+        );
+        assert.deepEqual(v1Macros, []);
       });
     });
   });

@@ -48,8 +48,6 @@ export = {
     // our source code
     this.installBabelPlugin(this);
 
-    appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test' });
-
     const originalToTree = appInstance.toTree;
 
     if (!hasWrappedToTree) {
@@ -60,6 +58,8 @@ export = {
       // that timing.
       appInstance.toTree = function (...args) {
         macrosConfig.finalize();
+        // Only classic builds call toTree. Embroider supplies this file itself.
+        appInstance.import('vendor/embroider-macros-test-support.js', { type: 'test', prepend: true });
         return originalToTree.apply(appInstance, args);
       };
       hasWrappedToTree = true;

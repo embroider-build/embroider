@@ -96,7 +96,7 @@ Scenarios.fromProject(baseMinimalApp)
               import { module, test } from 'qunit';
               import { setupRenderingTest } from 'app-template-minimal/tests/helpers';
               import { render } from '@ember/test-helpers';
-              import FancyComponent from '#/components/fancy-component.gjs';
+              import FancyComponent from '#components/fancy-component.gjs';
 
               module('Integration | Component | fancy-component', function (hooks) {
                 setupRenderingTest(hooks);

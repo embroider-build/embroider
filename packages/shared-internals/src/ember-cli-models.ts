@@ -18,7 +18,7 @@ export interface AppInstance {
   project: Project;
   options: any;
   addonPostprocessTree: (which: string, tree: Node) => Node;
-  import(path: string, opts?: { type?: string }): void;
+  import(path: string, opts?: { type?: string; prepend?: boolean }): void;
   toTree(additionalTrees?: Node[]): Node;
 }
 

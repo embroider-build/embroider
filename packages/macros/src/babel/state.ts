@@ -69,8 +69,12 @@ const runtimeAddonPath = resolve(join(__dirname, '..', 'addon'));
 
 function pathToAddon(this: State, moduleName: string): string {
   if (!this.opts.owningPackageRoot) {
-    // running inside embroider, so make a relative path to the module
-    return explicitRelative(dirname(this.sourceFile), join(runtimeAddonPath, moduleName));
+    // running inside embroider, so make a relative path to the module. The
+    // extension matters because this import may get emitted into a file
+    // whose package sets `"type": "module"`, where the bundler will apply
+    // strict ESM semantics and refuse to resolve import paths that aren't
+    // fully-specified.
+    return explicitRelative(dirname(this.sourceFile), join(runtimeAddonPath, `${moduleName}.js`));
   } else {
     // running inside a classic build, so use a classic-compatible runtime
     // specifier.

@@ -222,6 +222,30 @@ if (macroCondition(dependencySatisfies('ember-qunit', '*'))) {
 {{macroDependencySatisfies 'qunit' '^2.8.0'}}
 ```
 
+### appEmberSatisfies
+
+Added in `@embroider/macros` 1.19.0.
+
+Tests whether the app's version of `ember-source` satisfies the given semver range. The argument must be a string in the syntax of [semver's satisfies](https://github.com/npm/node-semver#usage) method.
+
+The macro always reads `ember-source` from the app, not from the package that contains the call. An addon can use it without a peer dependency on `ember-source`.
+
+If the app does not depend on `ember-source`, the result is `false`. Prerelease versions also match, so `6.1.0-beta.1` satisfies `>= 6.0.0`.
+
+```js
+import { macroCondition, appEmberSatisfies } from '@embroider/macros';
+
+if (macroCondition(appEmberSatisfies('>= 6.0.0'))) {
+  // code for ember-source 6 and later
+} else {
+  // code for older versions of ember-source
+}
+```
+
+```hbs
+{{macroAppEmberSatisfies '>= 6.0.0'}}
+```
+
 ### getOwnConfig, getConfig, and getGlobalConfig
 
 A common pattern is to have a set of configuration properties that you define (or a consumer defines for you) which you base certain build time conditions around. This is achieved via the `getOwnConfig`, `getConfig`, and `getGlobalConfig` macros (depending on which config you want to read).

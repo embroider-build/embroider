@@ -117,7 +117,25 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
 
     configureServer(s) {
       server = s;
-      server.watcher.on('all', (_eventName, path) => {
+      server.watcher.on('all', (eventName, path) => {
+        // The virtual modules that register `watches` (the app/engine
+        // entrypoint and template-only-component shims) derive their contents
+        // purely from *which* files exist under the watched paths, never from
+        // those files' contents. So a plain 'change' event can never invalidate
+        // them -- only 'add' and 'unlink' can.
+        //
+        // We still fall through to the reload below for a changed file that
+        // Vite's own module graph doesn't know about, because for those the
+        // entrypoint reload is the only thing that gets the change to the
+        // browser (for example the classic `app/styles/app.css`, which reaches
+        // the browser as a broccoli-built <link> rather than as a module). But
+        // when Vite is already tracking the file, reloading the entrypoint on
+        // top of Vite's own update is redundant, and worse than redundant for
+        // stylesheets: the full page reload pre-empts CSS hot replacement on
+        // every single edit.
+        if (eventName === 'change' && server.moduleGraph.getModulesByFile(path)?.size) {
+          return;
+        }
         for (let [id, watches] of virtualDeps) {
           for (let watch of watches) {
             if (path.startsWith(watch)) {

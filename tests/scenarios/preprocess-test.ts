@@ -7,6 +7,7 @@ import CommandWatcher from './helpers/command-watcher';
 import fetch from 'node-fetch';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import globby from 'globby';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -39,7 +40,11 @@ appScenarios
       test(`css is transformed: build mode`, async function (assert) {
         let result = await app.execute(`pnpm build`);
         assert.strictEqual(result.exitCode, 0, result.output);
-        let text = readFileSync(join(app.dir, `dist/@embroider/virtual/app.css`), 'utf8');
+
+        let [appCss] = globby.sync('assets/app-*.css', { cwd: join(app.dir, 'dist') });
+        assert.ok(appCss, 'expected a fingerprinted assets/app.*.css in dist');
+
+        let text = readFileSync(join(app.dir, 'dist', appCss), 'utf8');
         assert.strictEqual(text, 'body { background: red; }');
       });
 

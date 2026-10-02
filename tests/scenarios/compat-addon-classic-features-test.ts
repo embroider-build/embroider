@@ -13,6 +13,29 @@ import CommandWatcher from './helpers/command-watcher';
 
 const { module: Qmodule, test } = QUnit;
 
+type Assert = Parameters<Parameters<typeof test>[1]>[0];
+
+function findEmittedAssets(appDir: string, name: string): string[] {
+  let ext = name.slice(name.lastIndexOf('.'));
+  let base = name.slice(0, name.lastIndexOf('.'));
+  return globby.sync(`assets/${base}-*${ext}`, { cwd: join(appDir, 'dist') }).sort();
+}
+
+function assertTransformedHtml(assert: Assert, appDir: string, htmls: string[]): void {
+  for (let html of htmls) {
+    let contents = readFileSync(join(appDir, 'dist', html), 'utf8');
+    assert.false(contents.includes('/@embroider/virtual/'), `${html} still uses /@embroider/virtual/*`);
+
+    for (let url of htmlAssetUrls(contents)) {
+      assert.true(existsSync(join(appDir, 'dist', url)), `${html} uses missing ${url}`);
+    }
+  }
+}
+
+function htmlAssetUrls(html: string): string[] {
+  return [...html.matchAll(/(?:href|src)="(\/[^"]+)"/g)].map(match => match[1]);
+}
+
 appScenarios
   .map('compat-addon-classic-features-content-for', project => {
     let myAddon = baseAddon();
@@ -154,20 +177,20 @@ appScenarios
         app = await scenario.prepare();
       });
 
-      test('virtual scripts are emitted in the build', async function (assert) {
+      test('virtual scripts are emitted (and fingerprinted) in the build', async function (assert) {
         let result = await app.execute('pnpm build --mode=production');
         assert.equal(result.exitCode, 0, result.output);
 
-        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/vendor.js`), 'vendor.js');
-        assert.false(existsSync(`${app.dir}/dist/@embroider/virtual/test-support.js`), 'test-support.js');
+        assert.equal(findEmittedAssets(app.dir, 'vendor.js').length, 1, 'vendor.js is emitted once, fingerprinted');
+        assert.equal(findEmittedAssets(app.dir, 'test-support.js').length, 0, 'no test-support.js in production');
+        assertTransformedHtml(assert, app.dir, ['index.html']);
 
         result = await app.execute('pnpm build --mode=development');
         assert.equal(result.exitCode, 0, result.output);
 
-        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/vendor.js`), 'vendor.js');
-        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/test-support.js`), 'test-support.js');
-        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/vendor.css`), 'vendor.css');
-        assert.true(existsSync(`${app.dir}/dist/@embroider/virtual/test-support.css`), 'test-support.css');
+        assert.equal(findEmittedAssets(app.dir, 'vendor.js').length, 1, 'vendor.js is emitted once, fingerprinted');
+        assert.equal(findEmittedAssets(app.dir, 'test-support.js').length, 1, 'test-support.js is fingerprinted');
+        assertTransformedHtml(assert, app.dir, ['index.html', 'tests/index.html']);
       });
 
       test('virtual scripts contents are served in dev mode', async function (assert) {

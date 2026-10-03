@@ -5,6 +5,7 @@ import type { ConfigEnv, Plugin } from 'vite';
 
 import { esBuildResolver } from './esbuild-resolver.js';
 import { warnRootUrl } from './warn-root-url.js';
+import { typescriptTransform } from './typescript-transform.js';
 import type { ViteUserConfig as UserConfig, Vite8UserConfig } from './types.js';
 
 export let extensions = ['.mjs', '.gjs', '.js', '.mts', '.gts', '.ts', '.hbs', '.hbs.js', '.json'];
@@ -31,6 +32,7 @@ export function ember(params?: {
 }) {
   return [
     warnRootUrl(),
+    typescriptTransform(),
     templateTag(),
     resolver(),
     {
@@ -147,20 +149,6 @@ export function ember(params?: {
         // Traditional ember development port as default.
         if (config.server.port == null) {
           config.server.port = 4200;
-        }
-
-        // vite will try to transpile away typescript in .ts files using
-        // esbuild. But if we have any typescript, we expect it to get handled
-        // by babel, because we don't want esbuild's decorator implementation.
-        // @ts-expect-error the types aren't finished yet it would seem
-        if (this?.meta?.rolldownVersion) {
-          if (config.oxc == null) {
-            config.oxc = false;
-          }
-        } else {
-          if (config.esbuild == null) {
-            config.esbuild = false;
-          }
         }
 
         minification(config, env.mode);

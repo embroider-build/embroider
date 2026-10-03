@@ -133,7 +133,10 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
         // top of Vite's own update is redundant, and worse than redundant for
         // stylesheets: the full page reload pre-empts CSS hot replacement on
         // every single edit.
-        if (eventName === 'change' && server.moduleGraph.getModulesByFile(path)?.size) {
+        //
+        // The module graph is keyed by forward-slash paths, but the watcher
+        // reports native ones, so on Windows the lookup needs normalizing.
+        if (eventName === 'change' && server.moduleGraph.getModulesByFile(normalizePath(path))?.size) {
           return;
         }
         for (let [id, watches] of virtualDeps) {

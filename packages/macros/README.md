@@ -1,6 +1,6 @@
 # @embroider/macros
 
-A standardized solution for modifying your package's Javascript and Glimmer templates at app-compilation-time.
+A standardized solution for modifying your package's JavaScript and Glimmer templates at app-compilation-time.
 
 ## Motivation
 

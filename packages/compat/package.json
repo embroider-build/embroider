@@ -1,6 +1,6 @@
 {
   "name": "@embroider/compat",
-  "version": "4.1.25",
+  "version": "4.1.26",
   "private": false,
   "description": "Backward compatibility layer for the Embroider build system.",
   "repository": {

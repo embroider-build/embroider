@@ -34,6 +34,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm compile
+      - run: pnpm build-v2-addons
       - name: Publish to NPM
         run: NPM_CONFIG_PROVENANCE=true pnpm release-plan publish
         env:

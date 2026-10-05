@@ -2,6 +2,24 @@
 
 ## Release (2026-10-05)
 
+* @embroider/addon-dev 8.4.2 (patch)
+* @embroider/compat 4.1.27 (patch)
+* @embroider/core 4.6.9 (patch)
+* @embroider/macros 1.21.3 (patch)
+* @embroider/vite 1.7.15 (patch)
+
+#### :bug: Bug Fix
+* [#2827](https://github.com/embroider-build/embroider/pull/2827) Build the packages before the publish ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### :memo: Documentation
+* `@embroider/addon-dev`, `@embroider/compat`, `@embroider/core`, `@embroider/macros`, `@embroider/vite`
+  * [#2828](https://github.com/embroider-build/embroider/pull/2828) Update the READMEs of the five packages that need a new release ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### Committers: 1
+- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+## Release (2026-10-05)
+
 * @embroider/addon-dev 8.4.1 (patch)
 * @embroider/compat 4.1.26 (patch)
 * @embroider/core 4.6.8 (patch)

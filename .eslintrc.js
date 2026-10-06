@@ -24,7 +24,9 @@ module.exports = {
     {
       files: ['**/*.ts'],
       parserOptions: {
-        project: true,
+        projectService: {
+          allowDefaultProject: ['packages/shared-internals/tests/*.ts'],
+        },
       },
       rules: {
         '@typescript-eslint/consistent-type-imports': 'error',

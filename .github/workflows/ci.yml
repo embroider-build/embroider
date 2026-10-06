@@ -50,10 +50,28 @@ jobs:
             !**/node_modules/**
       - run: pnpm lint
 
+  # Tells us if our local env may run in to problems
+  build_no_lockfile:
+    name: "Build (no lockfile, for dev)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --no-lockfile
+      - run: pnpm compile
+
   jest-suites:
     runs-on: ${{matrix.os}}
     timeout-minutes: 5
-    needs: [build]
+    needs:
+      - build
+      # unused, but halting the whole CI (to save water, etc)
+      # if this ever fails
+      - build_no_lockfile
 
     strategy:
       fail-fast: false
@@ -84,16 +102,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node:
-          [
-            "12.22.12",
-            "14.21.3",
-            "16.20.2",
-            "18.20.8",
-            "20.19.5",
-            "22.20.0",
-            "24.9.0",
-          ]
+        node: ["12.22.12", "14.21.3", "16.20.2", "18.20.8", "20.19.5", "22.20.0", "24.9.0"]
 
     steps:
       - uses: actions/checkout@v4

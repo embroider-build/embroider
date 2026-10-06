@@ -206,6 +206,12 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
       }
     },
 
+    // There are other plugins that implement transformIndexHtml and you might
+    // think that it would be relevant to put the implementation in those, but
+    // we always need to make sure that if anybody has used the
+    // emitVirtualAsset function, it always gets applied in index.html. The
+    // resolver will always be used in an Ember app so this is a good place to
+    // put it as a backstop.
     transformIndexHtml(html) {
       return rewriteVirtualAssetUrls(html, config, command === 'serve');
     },

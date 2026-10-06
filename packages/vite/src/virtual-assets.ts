@@ -21,6 +21,7 @@ export function emitVirtualAsset(
   context: { emitFile: (emittedFile: { type: 'asset'; name: string; source: string | Uint8Array }) => string },
   { url, name, source }: { url: string; name: string; source: string | Uint8Array }
 ): void {
+  // This is documented API https://vite.dev/guide/api-plugin#referencing-emitted-assets
   let referenceId = context.emitFile({ type: 'asset', name, source });
   virtualAssetRegistry(config).set(url, `__VITE_ASSET__${referenceId}__`);
 }

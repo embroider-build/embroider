@@ -4,6 +4,9 @@
     "type": "git",
     "url": "git@github.com:embroider-build/embroider.git"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build-v2-addons": "concurrently 'pnpm:build-v2-addons:*'",
     "build-v2-addons:router": "cd packages/router && pnpm build",
@@ -18,15 +21,6 @@
     "lint:prettier:fix": "prettier . -w",
     "lint:router-types": "cd packages/router && pnpm lint:types",
     "test": "cd tests/scenarios && pnpm test"
-  },
-  "jest": {
-    "projects": [
-      "<rootDir>/packages/*"
-    ],
-    "testEnvironment": "node",
-    "testMatch": [
-      "**/*.test.js"
-    ]
   },
   "devDependencies": {
     "@types/jest": "^29.2.0",
@@ -43,13 +37,37 @@
     "release-plan": "^0.18.0",
     "typescript": "^5.5.2"
   },
-  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org"
+  "jest": {
+    "projects": [
+      "<rootDir>/packages/*"
+    ],
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.test.js"
+    ]
   },
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748",
   "pnpm": {
+    "packageExtensions": {
+      "babel-import-util": {
+        "dependencies": {
+          "@babel/core": "^7.14.3",
+          "@types/babel__core": "^7.20.5"
+        }
+      },
+      "babel-plugin-ember-template-compilation": {
+        "dependencies": {
+          "@babel/core": "^7.14.3",
+          "@types/babel__core": "^7.20.5"
+        }
+      }
+    },
     "overrides": {
       "@embroider/addon-shim": "workspace:*",
+      "@babel/types": "^7.0.0",
+      "@babel/core": "^7.0.0",
+      "@babel/generator": "^7.0.0",
+      "@babel/template": "^7.0.0",
       "@types/eslint": "^8.37.0",
       "babel-plugin-module-resolver@5.0.1": "5.0.0",
       "browserslist": "^4.14.0",

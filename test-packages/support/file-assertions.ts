@@ -41,7 +41,7 @@ export class BoundExpectFile {
         result: true,
         data: readFileSync(this.fullPath, 'utf8'),
       };
-    } catch (err) {
+    } catch {
       return {
         result: false,
         actual: 'file missing',
@@ -117,7 +117,7 @@ export class BoundExpectFile {
         let parsed;
         try {
           parsed = JSON.parse(this.contents.data);
-        } catch (err) {
+        } catch {
           return {
             result: false,
             actual: this.contents.data,

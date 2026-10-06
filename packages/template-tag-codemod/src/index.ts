@@ -142,7 +142,7 @@ export async function ensurePrebuild(opts: OptionsWithDefaults) {
     let versions: Record<string, string> = {};
     try {
       versions = JSON.parse(readFileSync(resolve(working, 'version.json'), 'utf8'));
-    } catch (err) {}
+    } catch {}
 
     if (
       versions['@embroider/core'] &&
@@ -173,7 +173,7 @@ export async function ensureAppSetup() {
   let content: string;
   try {
     content = readFileSync(filename, 'utf8');
-  } catch (err) {
+  } catch {
     console.error(`Run template-tag-codemod inside a Ember app.`);
     process.exit(-1);
   }

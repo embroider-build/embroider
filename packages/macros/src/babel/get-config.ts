@@ -86,7 +86,7 @@ function targetPackage(
   try {
     let target = packageCache.resolve(packageName, us);
     return packageCache.original(target);
-  } catch (err) {
+  } catch {
     return null;
   }
 }

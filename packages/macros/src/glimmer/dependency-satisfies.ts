@@ -30,7 +30,7 @@ export default function dependencySatisfies(
   let pkg;
   try {
     pkg = packageCache.resolve(packageName, us);
-  } catch (err) {
+  } catch {
     // it's not an error if we can't resolve it, we just don't satisfy it.
   }
 

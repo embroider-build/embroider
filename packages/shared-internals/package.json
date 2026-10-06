@@ -10,18 +10,16 @@
   },
   "exports": {
     ".": {
-      "browser": "./src/browser-index.js",
-      "default": "./src/index.js"
+      "browser": "./dist/browser-index.js",
+      "default": "./dist/index.js"
     },
-    "./src/*": "./src/*.js"
+    "./src/*": "./dist/*.js"
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist"
   ],
   "scripts": {
     "test": "jest"

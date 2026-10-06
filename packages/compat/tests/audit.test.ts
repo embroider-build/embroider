@@ -60,7 +60,6 @@ describe('audit', function () {
       engines: [
         {
           packageName: 'audit-this-app',
-          fastbootFiles: {},
           activeAddons: [
             {
               name: 'ember-source',

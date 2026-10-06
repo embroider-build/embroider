@@ -11,6 +11,11 @@ const { module: Qmodule, test } = QUnit;
 appScenarios
   .map('fastboot-app-test', project => {
     project.pkg.fastbootDependencies = ['crypto', 'node-fetch'];
+    project.pkg.exports = {
+      './tests/*': './tests/*',
+      './fastboot/*': './fastboot/*',
+      './*': './app/*',
+    };
 
     project.addDependency(
       new Project('@embroider/sample-lib', '0.0.0', {
@@ -68,6 +73,7 @@ appScenarios
     });
     project.addDependency(v2Example);
 
+    project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-latest' });
     project.linkDependency('ember-cli-fastboot', { baseDir: __dirname });
     project.linkDependency('fastboot', { baseDir: __dirname });
 
@@ -80,10 +86,11 @@ appScenarios
     // this fixes: Cannot find module 'abortcontroller-polyfill/dist/cjs-ponyfill'
     project.removeDependency('ember-fetch');
 
+    // not sure why this is breaking
+    project.removeDependency('ember-data');
+
     merge(project.files, loadFromFixtureData('fastboot-app'));
   })
-  // TODO remove once https://github.com/ember-fastboot/ember-cli-fastboot/issues/925 is fixed
-  .skip()
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {
       let app: PreparedApp;
@@ -108,11 +115,14 @@ appScenarios
           let doc: JSDOM['window']['document'];
 
           hooks.before(async () => {
-            fb = await setupFastboot(app, env, {
-              EMBER_ENV: env,
-              EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
-              EMBROIDER_TEST_SETUP_FORCE: 'embroider',
-            });
+            fb = await setupFastboot(
+              'app'
+              //   env, {
+              //   EMBER_ENV: env,
+              //   EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+              //   EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+              // }
+            );
             doc = (await fb.visit('/')).window.document;
           });
 

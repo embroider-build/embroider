@@ -1,10 +1,12 @@
-'use strict';
+import EmberApp from 'ember-cli/lib/broccoli/ember-app.js';
+import { compatBuild } from '@embroider/compat';
+import { buildOnce } from '@embroider/vite';
 
-const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-const { prebuild } = require('@embroider/compat');
+export default function (defaults) {
+  let app = new EmberApp(defaults);
 
-module.exports = function (defaults) {
-  let app = new EmberApp(defaults, {});
-
-  return prebuild(app);
+  return compatBuild(app, buildOnce, {
+    useAddonConfigModule: false,
+    useAddonAppBoot: false,
+  });
 };

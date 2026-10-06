@@ -52,6 +52,7 @@ export default class EmberCliFastboot extends V1Addon {
     // we need to list app-factory.js as a public asset so it will make it's way
     // into the app's final dist.
     meta['public-assets']['./public/app-factory.js'] = 'ember-cli-fastboot/app-factory.js';
+    meta['public-assets']['./_fastboot_/package.json'] = 'package.json';
     return meta;
   }
 

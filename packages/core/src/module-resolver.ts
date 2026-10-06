@@ -8,7 +8,7 @@ import {
   packageName,
   syntheticJStoHBS,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix, basename } from 'path';
+import { join, dirname, resolve, posix, basename } from 'path';
 import type { Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -17,11 +17,14 @@ import { externalName } from '@embroider/reverse-exports';
 import { exports as resolveExports } from 'resolve.exports';
 import { Memoize } from 'typescript-memoize';
 import { describeExports } from './describe-exports';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { nodeResolve, type NodeResolveOpts } from './node-resolve';
 import type { Options, EngineConfig } from './module-resolver-options';
 import { satisfies } from 'semver';
 import { extractResolution, type ModuleRequest, type Resolution } from './module-request';
+import walkSync from 'walk-sync';
+// import { createAddFunction } from './app-files';
+// import { resolvableExtensions } from './resolvable-extensions';
 
 const debug = makeDebug('embroider:resolver');
 
@@ -35,6 +38,11 @@ makeDebug.formatters.p = (s: string) => {
   }
   return s;
 };
+
+// this maps the resolved name e.g. ./services/example.js to the package resolvable path e.g. my-app/fastboot/services/example.js
+interface FastbootFiles {
+  [fileName: string]: string;
+}
 
 function logTransition<R extends ModuleRequest>(reason: string, before: R, after: R = before): R {
   if (after.resolvedTo) {
@@ -273,29 +281,34 @@ export class Resolver {
       return request;
     }
 
+    if (request.specifier.includes('fastboot')) {
+      debugger;
+    }
+
     let engineConfig = this.engineConfig(pkg.name);
     let appRelativePath = explicitRelative(pkg.root, resolve(dirname(request.fromFile), request.specifier));
     if (engineConfig) {
       for (let candidate of this.withResolvableExtensions(appRelativePath)) {
-        let fastbootFile = engineConfig.fastbootFiles[candidate];
+        let fastbootFile = this.getFastbootFiles(pkg.name)[candidate];
         if (fastbootFile) {
-          if (fastbootFile.shadowedFilename) {
-            let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {
-              configFile: false,
-            });
-            let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
-            if (switchFile.specifier === request.fromFile) {
-              return logTransition('internal lookup from fastbootSwitch', request);
-            } else {
-              return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
-            }
-          } else {
-            return logTransition(
-              'unshadowed app fastboot',
-              request,
-              request.alias(fastbootFile.localFilename).rehome(resolve(pkg.root, 'package.json'))
-            );
-          }
+          // we may need to resolve this here since we don't have full knowledge of engine files in the config
+          // if (fastbootFile.shadowedFilename) {
+          // let { names } = describeExports(readFileSync(resolve(pkg.root, fastbootFile.shadowedFilename), 'utf8'), {
+          //   configFile: false,
+          // });
+          // let switchFile = fastbootSwitch(candidate, resolve(pkg.root, 'package.json'), names);
+          // if (switchFile.specifier === request.fromFile) {
+          //   return logTransition('internal lookup from fastbootSwitch', request);
+          // } else {
+          //   return logTransition('shadowed app fastboot', request, request.virtualize(switchFile));
+          // }
+          // } else {
+          return logTransition(
+            'unshadowed app fastboot',
+            request,
+            request.alias(fastbootFile).rehome(resolve(pkg.root, 'package.json'))
+          );
+          // }
         }
       }
     }
@@ -329,14 +342,16 @@ export class Resolver {
 
       let engineConfig = this.engineConfig(pkg.name);
       if (engineConfig) {
-        let fastbootFile = engineConfig.fastbootFiles[rel];
-        if (fastbootFile && fastbootFile.shadowedFilename) {
+        let fastbootFile = this.getFastbootFiles(pkg.name)[rel];
+        // TODO I'm not sure what we should do with shadowedFilename here
+        if (fastbootFile /*&& fastbootFile.shadowedFilename*/) {
           let targetFile: string;
-          if (section === 'app-js') {
-            targetFile = fastbootFile.shadowedFilename;
-          } else {
-            targetFile = fastbootFile.localFilename;
-          }
+          // if (section === 'app-js') {
+          // TODO I'm not sure what we should do with shadowedFilename here
+          // targetFile = fastbootFile.shadowedFilename;
+          // } else {
+          targetFile = fastbootFile;
+          // }
           return logTransition(
             'matched app entry',
             request,
@@ -722,6 +737,55 @@ export class Resolver {
 
   private engineConfig(packageName: string): EngineConfig | undefined {
     return this.options.engines.find(e => e.packageName === packageName);
+  }
+
+  @Memoize()
+  private getFastbootFiles(packageName: string): FastbootFiles {
+    let engine = this.options.engines.find(e => e.packageName === packageName);
+
+    if (!engine) {
+      return {};
+    }
+
+    let hasFastboot = Boolean(engine.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
+
+    if (!hasFastboot) {
+      return {};
+    }
+
+    let combinedFiles = new Map<string, string>();
+
+    const appDirPath = join(engine.root, 'fastboot');
+    if (existsSync(appDirPath)) {
+      const files: string[] = walkSync(appDirPath, {
+        directories: false,
+      });
+
+      const fastbootFiles = new Set(files);
+
+      for (let f of fastbootFiles) {
+        let packageFileName = f.replace(/^/, `${engine.packageName}/fastboot/`).replace(/\.js$/, '');
+        combinedFiles.set(`./app/${f}`, packageFileName);
+      }
+    }
+
+    // go through each of the addons and get their fastboot files
+    for (let activeAddon of engine.activeAddons) {
+      let addon = this.packageCache.get(activeAddon.root);
+      let fastbootJS = addon?.meta?.['fastboot-js'];
+      if (fastbootJS) {
+        debugger;
+        for (let filename of Object.keys(fastbootJS)) {
+          let packageFilename = filename.replace(/^\.\//, `${addon.name}/`);
+          combinedFiles.set(`./app/${filename.replace(/^\.\//, '')}`, packageFilename);
+        }
+      }
+    }
+
+    console.log('fastboot files', Object.fromEntries(combinedFiles.entries()));
+
+    debugger;
+    return Object.fromEntries(combinedFiles.entries());
   }
 
   private get mergeMap(): MergeMap {
@@ -1480,7 +1544,7 @@ function engineRelativeName(pkg: Package, filename: string): string | undefined 
   }
 }
 
-const fastbootSwitchSuffix = '/embroider_fastboot_switch';
+const fastbootSwitchSuffix = '/embroider_fastboot_switch.js';
 
 function fastbootSwitch(specifier: string, fromFile: string, names: Set<string>) {
   let filename = `${resolve(dirname(fromFile), specifier)}${fastbootSwitchSuffix}`;

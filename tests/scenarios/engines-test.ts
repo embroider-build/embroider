@@ -170,7 +170,7 @@ engineScenarios
       let visit: any;
 
       hooks.before(async () => {
-        ({ visit } = await setupFastboot(app));
+        ({ visit } = await setupFastboot('app'));
       });
 
       test('host-app', async function (assert) {

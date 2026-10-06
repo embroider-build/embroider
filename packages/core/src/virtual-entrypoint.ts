@@ -9,6 +9,7 @@ import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import escapeRegExp from 'escape-string-regexp';
 import { optionsWithDefaults } from './options';
 import { resolvableExtensions } from './resolvable-extensions';
+import { existsSync } from 'fs';
 
 export interface EntrypointResponse {
   type: 'entrypoint';
@@ -104,7 +105,9 @@ export function renderEntrypoint(
   );
 
   let amdModules = nonFastboot.map(file => importPaths(resolver, appFiles, file));
-  let fastbootOnlyAmdModules = fastboot.map(file => importPaths(resolver, appFiles, file));
+  let fastbootOnlyAmdModules = fastboot.map(file =>
+    importPaths(resolver, appFiles, file, appFiles.engine.modulePrefix)
+  );
 
   let lazyEngines: { names: string[]; path: string }[] = [];
 
@@ -230,12 +233,12 @@ function excludeDotFiles(files: string[]) {
   return files.filter(file => !file.startsWith('.') && !file.includes('/.'));
 }
 
-export function importPaths(resolver: Resolver, { engine }: AppFiles, engineRelativePath: string) {
+export function importPaths(resolver: Resolver, { engine }: AppFiles, engineRelativePath: string, prefix = '.') {
   let resolvableExtensionsPattern = extensionsPattern(resolver.options.resolvableExtensions);
   let noHBS = engineRelativePath.replace(resolvableExtensionsPattern, '').replace(/\.hbs$/, '');
   return {
     runtime: `${engine.modulePrefix}/${noHBS}`,
-    buildtime: `./${engineRelativePath}`,
+    buildtime: `${prefix}/${engineRelativePath}`,
   };
 }
 
@@ -317,6 +320,7 @@ function shouldSplitRoute(routeName: string, splitAtRoutes: (RegExp | string)[] 
 
 export function getAppFiles(appRoot: string): Set<string> {
   const files: string[] = walkSync(appRoot, {
+    directories: false,
     ignore: [
       '_babel_filter_.js',
       ...resolvableExtensions().map(ext => `app${ext}`),
@@ -330,7 +334,13 @@ export function getAppFiles(appRoot: string): Set<string> {
 }
 
 export function getFastbootFiles(appRoot: string): Set<string> {
-  const appDirPath = join(appRoot, '_fastboot_');
-  const files: string[] = walkSync(appDirPath);
+  const appDirPath = join(appRoot, 'fastboot');
+  if (!existsSync(appDirPath)) {
+    return new Set([]);
+  }
+
+  const files: string[] = walkSync(appDirPath, {
+    directories: false,
+  });
   return new Set(files);
 }

@@ -1,6 +1,4 @@
-'use strict';
-
-module.exports = function (environment) {
+export default function (environment) {
   let ENV = {
     modulePrefix: 'app-template',
     environment,
@@ -47,4 +45,4 @@ module.exports = function (environment) {
   }
 
   return ENV;
-};
+}

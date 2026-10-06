@@ -8,6 +8,38 @@ export interface RouteFiles {
   children: Map<string, RouteFiles>;
 }
 
+export function createAddFunction(resolvableExtensions: RegExp) {
+  return function add(map: Map<string, string>, filename: string): void {
+    if (!resolvableExtensions.test(filename)) {
+      return;
+    }
+
+    if (/\.d\.ts$/.test(filename)) {
+      // .d.ts files are technically "*.ts" files but aren't really and we
+      // don't want to include them when we crawl through the app.
+      return;
+    }
+
+    filename = filename.split(sep).join('/');
+
+    let extensionless = filename.replace(resolvableExtensions, '');
+    let prior = map.get(extensionless);
+
+    if (!prior) {
+      // no prior, so we win
+      map.set(extensionless, filename);
+    } else if (prior.startsWith('components/') && prior.endsWith('.hbs') && !prior.endsWith('/template.hbs')) {
+      // The prior entry in combinedFiles is a colocated hbs component. The
+      // name "template.hbs" is special in the template colocation rules due
+      // to earlier pods patterns.
+      //
+      // colocated hbs never wins over the corresponding other resolvable js
+      // or ts.
+      map.set(extensionless, filename);
+    }
+  };
+}
+
 export class AppFiles {
   readonly components: ReadonlyArray<string>;
   readonly helpers: ReadonlyArray<string>;
@@ -34,35 +66,7 @@ export class AppFiles {
     let combinedFiles = new Map<string, string>();
     let combinedNonFastbootFiles = new Map<string, string>();
 
-    function add(map: Map<string, string>, filename: string): void {
-      if (!resolvableExtensions.test(filename)) {
-        return;
-      }
-
-      if (/\.d\.ts$/.test(filename)) {
-        // .d.ts files are technically "*.ts" files but aren't really and we
-        // don't want to include them when we crawl through the app.
-        return;
-      }
-
-      filename = filename.split(sep).join('/');
-
-      let extensionless = filename.replace(resolvableExtensions, '');
-      let prior = map.get(extensionless);
-
-      if (!prior) {
-        // no prior, so we win
-        map.set(extensionless, filename);
-      } else if (prior.startsWith('components/') && prior.endsWith('.hbs') && !prior.endsWith('/template.hbs')) {
-        // The prior entry in combinedFiles is a colocated hbs component. The
-        // name "template.hbs" is special in the template colocation rules due
-        // to earlier pods patterns.
-        //
-        // colocated hbs never wins over the corresponding other resolvable js
-        // or ts.
-        map.set(extensionless, filename);
-      }
-    }
+    const add = createAddFunction(resolvableExtensions);
 
     for (let f of appFiles) {
       add(combinedFiles, f);
@@ -168,7 +172,7 @@ export class AppFiles {
       [...fastbootFiles].map(name => [
         `./${name}`,
         {
-          localFilename: `./_fastboot_/${name}`,
+          localFilename: `${engine.modulePrefix}/fastboot/${name}`,
           shadowedFilename: appFiles.has(name) ? `./${name}` : undefined,
         },
       ])

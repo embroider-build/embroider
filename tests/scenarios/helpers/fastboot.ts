@@ -1,30 +1,29 @@
-import type { PreparedApp } from 'scenario-tester';
+// import type { PreparedApp } from 'scenario-tester';
 import { join } from 'path';
 import { readFileSync } from 'fs';
 import type { JSDOM } from 'jsdom';
+// @ts-expect-error no typse
+import FastBoot from 'fastboot';
 
 export interface FastbootTestHelpers {
   visit(url: string): Promise<JSDOM>;
   fetchAsset(url: string): Promise<string>;
 }
 
-export async function setupFastboot(
-  app: PreparedApp,
-  environment = 'development',
-  envVars?: Record<string, string>
-): Promise<FastbootTestHelpers> {
-  let result = await app.execute(`node node_modules/ember-cli/bin/ember build --environment=${environment}`, {
-    env: envVars,
-  });
+export async function setupFastboot(directory: string): Promise<FastbootTestHelpers> {
+  // app: PreparedApp,
+  // environment = 'development',
+  // envVars?: Record<string, string>
+  // let result = await app.execute(`node node_modules/ember-cli/bin/ember build --environment=${environment}`, {
+  //   env: envVars,
+  // });
 
-  if (result.exitCode !== 0) {
-    throw new Error(`failed to build app for fastboot: ${result.output}`);
-  }
-
-  const FastBoot = require('fastboot');
+  // if (result.exitCode !== 0) {
+  //   throw new Error(`failed to build app for fastboot: ${result.output}`);
+  // }
 
   let fastboot = new FastBoot({
-    distPath: join(app.dir, 'dist'),
+    distPath: join(directory, 'dist'),
     resilient: false,
   });
 
@@ -45,7 +44,7 @@ export async function setupFastboot(
     if (u.origin !== origin) {
       throw new Error(`fetchAsset only supports local assets, you asked for ${url}`);
     }
-    return readFileSync(join(app.dir, 'dist', u.pathname), 'utf-8');
+    return readFileSync(join(directory, 'dist', u.pathname), 'utf-8');
   }
 
   return { visit, fetchAsset };

@@ -130,7 +130,7 @@ Scenarios.fromProject(() => new Project())
                 packageName: 'my-app',
                 isLazy: false,
                 root: app.dir,
-                fastbootFiles: opts?.fastbootFiles ?? {},
+                // fastbootFiles: opts?.fastbootFiles ?? {},
                 activeAddons: [
                   {
                     name: 'ember-source',

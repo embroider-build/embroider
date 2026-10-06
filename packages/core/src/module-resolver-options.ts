@@ -1,9 +1,17 @@
-import { explicitRelative, RewrittenPackageCache, type AddonPackage, type Package } from '@embroider/shared-internals';
-import type { Engine } from './app-files';
+import {
+  explicitRelative,
+  // extensionsPattern,
+  RewrittenPackageCache,
+  type AddonPackage,
+  type Package,
+} from '@embroider/shared-internals';
+import { type Engine } from './app-files';
 import { resolvableExtensions } from './resolvable-extensions';
 import { resolve as resolvePath } from 'path';
 import { realpathSync } from 'fs-extra';
 import flatMap from 'lodash/flatMap';
+// import { existsSync } from 'fs';
+// import walkSync from 'walk-sync';
 
 export interface Options {
   renamePackages: {
@@ -22,10 +30,14 @@ export interface Options {
   emberVersion: string;
 }
 
+// interface FastbootFiles {
+//   [appName: string]: { localFilename: string; shadowedFilename: string | undefined };
+// }
+
 export interface EngineConfig {
   packageName: string;
   activeAddons: { name: string; root: string; canResolveFromFile: string }[];
-  fastbootFiles: { [appName: string]: { localFilename: string; shadowedFilename: string | undefined } };
+  // fastbootFiles: FastbootFiles;
   root: string;
   isLazy: boolean;
 }
@@ -122,7 +134,7 @@ function partitionEngines(
     packageName: engine.package.name,
     // we need to use the real path here because webpack requests always use the real path i.e. follow symlinks
     root: realpathSync(engine.package.root),
-    fastbootFiles: {},
+    // fastbootFiles: findFastbootFiles(engine),
     activeAddons: [...engine.addons]
       .map(([addon, canResolveFromFile]) => ({
         name: addon.name,
@@ -136,6 +148,56 @@ function partitionEngines(
     isLazy: engine.package.isLazyEngine(),
   }));
 }
+
+// function findFastbootFiles(engine: Engine): FastbootFiles {
+//   let hasFastboot = Boolean(new Array(engine.addons.keys).find(a => a.name === 'ember-cli-fastboot'));
+
+//   if (!hasFastboot) {
+//     return {};
+//   }
+
+//   const appDirPath = join(engine.package.root, 'fastboot');
+//   if (!existsSync(appDirPath)) {
+//     return {};
+//   }
+
+//   const files: string[] = walkSync(appDirPath, {
+//     directories: false,
+//   });
+
+//   const fastbootFiles = new Set(files);
+
+//   let combinedFiles = new Map<string, string>();
+
+//   const add = createAddFunction(extensionsPattern(resolvableExtensions()));
+
+//   for (let f of fastbootFiles) {
+//     add(combinedFiles, f);
+//   }
+
+//   // go through each of the addons and get their fastboot files
+
+//   for (let addon of engine.addons.keys()) {
+//     let fastbootJS = addon.meta['fastboot-js'];
+//     if (fastbootJS) {
+//       for (let filename of Object.keys(fastbootJS)) {
+//         filename = filename.replace(/^\.\//, '');
+//         add(combinedFiles, filename);
+//       }
+//     }
+//   }
+
+//   return Object.fromEntries(
+//     [...fastbootFiles].map(name => [
+//       `./${name}`,
+//       {
+//         localFilename: `${engine.modulePrefix}/fastboot/${name}`,
+//         //TODO figure this out
+//         shadowedFilename: false ? `./${name}` : undefined,
+//       },
+//     ])
+//   );
+// }
 
 // recurse to find all active addons that don't cross an engine boundary.
 // Inner engines themselves will be returned, but not those engines' children.

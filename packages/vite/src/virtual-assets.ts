@@ -1,3 +1,5 @@
+import { JSDOM } from 'jsdom';
+
 export const VIRTUAL_URL_PREFIX = '/@embroider/virtual/';
 
 // '/@embroider/virtual/filename' => '__VITE_ASSET__${referenceId}__'
@@ -18,9 +20,30 @@ export function rewriteVirtualAssetUrls(html: string, base: string | undefined, 
     return html.split(VIRTUAL_URL_PREFIX).join(_base + VIRTUAL_URL_PREFIX.slice(1));
   }
 
-  let out = html;
-  for (let [url, placeholder] of registry) {
-    out = out.split(url).join(placeholder);
+  return transformHTML(html);
+}
+
+function transformHTML(html: string) {
+  if (registry.size === 0) {
+    return html;
   }
-  return out;
+
+  let parsed = new JSDOM(html);
+  let linkTags = [...parsed.window.document.querySelectorAll('link')] as HTMLLinkElement[];
+  let scriptTags = [...parsed.window.document.querySelectorAll('script')] as HTMLScriptElement[];
+  for (let linkTag of linkTags) {
+    let fingerprinted = registry.get(linkTag.href);
+    if (fingerprinted) {
+      linkTag.href = fingerprinted;
+    }
+  }
+  for (let scriptTag of scriptTags) {
+    if (scriptTag.type !== 'module') {
+      let fingerprinted = registry.get(scriptTag.src);
+      if (fingerprinted) {
+        scriptTag.src = fingerprinted;
+      }
+    }
+  }
+  return parsed.serialize();
 }

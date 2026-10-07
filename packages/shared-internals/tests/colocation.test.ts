@@ -1,4 +1,5 @@
 import { syntheticJStoHBS } from '../src';
+import { describe, test, expect } from 'vitest';
 
 describe('colocation utils', function () {
   describe('syntheticJStoHBS', function () {

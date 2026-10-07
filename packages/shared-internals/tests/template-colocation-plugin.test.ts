@@ -3,16 +3,17 @@ import { join } from 'path';
 import tmp from 'tmp';
 import { writeFileSync } from 'fs';
 import { writeJSONSync } from 'fs-extra';
+import { describe, test, afterEach, expect, beforeEach } from 'vitest';
+import templateColocationPlugin from '../src/template-colocation-plugin.ts';
 
 tmp.setGracefulCleanup();
 
-describe('template-colocation-plugin', () => {
-  jest.setTimeout(120000);
-
+describe('template-colocation-plugin', { timeout: 120000 }, () => {
   let filename: string;
   let plugins: any = [];
 
   allBabelVersions({
+    describe,
     babelConfig() {
       return {
         filename,
@@ -32,7 +33,7 @@ describe('template-colocation-plugin', () => {
         filename = join(name, 'sample.js');
         plugins = [
           [
-            join(__dirname, '../src/template-colocation-plugin.js'),
+            templateColocationPlugin,
             {
               templateMode: 'imported',
             },

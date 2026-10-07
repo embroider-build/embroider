@@ -1,6 +1,8 @@
 import { commonAncestorDirectories, getImportableModules, getWatchedDirectories } from '../src/watch-utils';
 import { Project } from 'scenario-tester';
 
+import { describe, test, afterEach, expect } from 'vitest';
+
 async function generateProject(packageJson = {}, additionalFiles = {}) {
   const project = new Project('my-package', {
     files: {

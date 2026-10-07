@@ -3,13 +3,32 @@ import { Evaluator, buildLiterals } from '../../src/babel/evaluate-json';
 import type { NodePath } from '@babel/traverse';
 import type * as Babel from '@babel/core';
 import { types as t } from '@babel/core';
-import 'code-equality-assertions/jest';
 import type State from '../../src/babel/state';
 import { initState } from '../../src/babel/state';
 import { resolve } from 'path';
+import { describe, test, expect } from 'vitest';
+import { codeEqual } from 'code-equality-assertions';
+
+expect.extend({
+  toEqualCode(received, expected) {
+    let { result, diff } = codeEqual(received, expected);
+
+    return {
+      message: () => diff ?? 'no diff',
+      pass: result,
+    };
+  },
+});
+
+declare module 'vitest' {
+  interface Assertion {
+    toEqualCode(expected: string): void;
+  }
+}
 
 describe('evaluation', function () {
   allBabelVersions({
+    describe,
     babelConfig() {
       return {
         plugins: [testEval],
@@ -131,6 +150,7 @@ describe('evaluation', function () {
 
 describe('hasRuntimeImplementation', function () {
   allBabelVersions({
+    describe,
     babelConfig() {
       return {
         plugins: [[testRuntime, { appPackageRoot: resolve(__dirname, '..', '..') }]],

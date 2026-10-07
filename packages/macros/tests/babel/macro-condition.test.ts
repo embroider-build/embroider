@@ -3,6 +3,7 @@ import { allBabelVersions } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { MacrosConfig } from '../../src/node';
 import { join } from 'path';
+import { describe, test, expect, beforeAll, afterAll } from 'vitest';
 
 describe('macroCondition', function () {
   let config: MacrosConfig;
@@ -21,6 +22,7 @@ describe('macroCondition', function () {
   });
 
   allBabelVersions({
+    describe,
     babelConfig(version: number) {
       let babelConfig = makeBabelConfig(version, config);
       if (version === 7) {

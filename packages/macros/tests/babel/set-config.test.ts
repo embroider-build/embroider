@@ -2,7 +2,7 @@ import { MacrosConfig } from '../../src/node';
 import { allBabelVersions } from './helpers';
 
 describe(`setConfig`, function () {
-  allBabelVersions(function () {
+  allBabelVersions(describe, function () {
     test('works with empty config', () => {
       let config = {};
 

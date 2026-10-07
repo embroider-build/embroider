@@ -1,5 +1,4 @@
 import { join } from 'path';
-import 'jest';
 import type { TransformOptions as Options7 } from '@babel/core';
 import { transform as transform7 } from '@babel/core';
 import { createContext, Script } from 'vm';
@@ -60,7 +59,9 @@ export function allBabelVersions(params: {
   babelConfig(major: 7): Options7;
   createTests(transform: Transform): void;
   includePresetsTests?: boolean;
+  describe: (name: string, fn: () => void) => void;
 }) {
+  const describe = params.describe;
   function versions(usePresets: boolean) {
     describe('babel7', function () {
       function transform(code: string, opts?: { filename?: string }) {
@@ -84,10 +85,10 @@ export function allBabelVersions(params: {
   }
 
   if (params.includePresetsTests) {
-    describe('with presets', function () {
+    params.describe('with presets', function () {
       versions(true);
     });
-    describe('without presets', function () {
+    params.describe('without presets', function () {
       versions(false);
     });
   } else {

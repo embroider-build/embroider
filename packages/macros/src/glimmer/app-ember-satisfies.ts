@@ -22,7 +22,7 @@ export default function appEmberSatisfies(node: any, packageCache: RewrittenPack
   let pkg;
   try {
     pkg = packageCache.resolve(packageName, root);
-  } catch (err) {
+  } catch {
     // it's not an error if we can't resolve it, we just don't satisfy it.
   }
 

@@ -24,7 +24,7 @@ export async function httpAudit(
     for (;;) {
       try {
         return await (options.fetch ?? globalThis.fetch)(id);
-      } catch (err) {
+      } catch {
         if (remainingTries-- > 0) {
           backoffMS *= 1.5;
           await new Promise(r => setTimeout(r, backoffMS));

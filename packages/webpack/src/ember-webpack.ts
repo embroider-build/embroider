@@ -31,16 +31,9 @@ import supportsColor from 'supports-color';
 import type { Options as HbsLoaderOptions } from '@embroider/hbs-loader';
 import type { Options as EmbroiderPluginOptions } from './webpack-resolver-plugin';
 import { EmbroiderPlugin } from './webpack-resolver-plugin';
+import type Terser from 'terser';
 
 const debug = makeDebug('embroider:debug');
-
-// this function is never called. It exists to workaround typescript being
-// obtuse. https://github.com/microsoft/TypeScript/pull/53426
-async function loadTerser() {
-  let Terser = await import('terser');
-  return Terser.minify;
-}
-type MinifyOptions = NonNullable<Parameters<Awaited<ReturnType<typeof loadTerser>>>[1]>;
 
 interface AppInfo {
   entrypoints: HTMLEntrypoint[];
@@ -320,7 +313,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
     const [Terser, srcURL] = await Promise.all([import('terser'), import('source-map-url')]);
 
     let inCode = readFileSync(join(this.pathToVanillaApp, script), 'utf8');
-    let terserOpts: MinifyOptions = {};
+    let terserOpts: Terser.MinifyOptions = {};
     let fileRelativeSourceMapURL;
     let appRelativeSourceMapURL;
     if (srcURL.default.existsIn(inCode)) {
@@ -329,7 +322,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       let content;
       try {
         content = readJSONSync(join(this.pathToVanillaApp, appRelativeSourceMapURL));
-      } catch (err) {
+      } catch {
         // the script refers to a sourcemap that doesn't exist, so we just leave
         // the map out.
       }

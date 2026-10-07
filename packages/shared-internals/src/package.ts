@@ -199,7 +199,7 @@ export default class Package {
             try {
               pkg = this.packageCache.get(join(this.root, path));
               main = pkg.packageJSON['ember-addon']?.main || pkg.packageJSON['main'];
-            } catch (err) {
+            } catch {
               // package was missing or had invalid package.json
               return false;
             }

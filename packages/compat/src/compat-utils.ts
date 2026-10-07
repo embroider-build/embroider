@@ -50,7 +50,7 @@ function stripBadReexportsTransform() {
         ) {
           try {
             resolve.sync(path.node.source.value, { basedir: state.opts.resolveBase });
-          } catch (err) {
+          } catch {
             path.remove();
           }
         }

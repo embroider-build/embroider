@@ -89,7 +89,7 @@ class ScriptOptimizer {
       let content;
       try {
         content = readJSONSync(resolve(this.rootDir, appRelativeSourceMapURL));
-      } catch (err) {
+      } catch {
         // the script refers to a sourcemap that doesn't exist, so we just leave
         // the map out.
       }

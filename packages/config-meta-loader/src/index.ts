@@ -5,7 +5,7 @@ export default function loadConfigFromMeta(prefix: string): any {
     let rawConfig = document.querySelector(`meta[name="${metaName}"]`)!.getAttribute('content') ?? '{}';
     let config = JSON.parse(decodeURIComponent(rawConfig));
     return config;
-  } catch (err) {
+  } catch {
     return `Could not read config from meta tag with name "${metaName}".`;
   }
 }

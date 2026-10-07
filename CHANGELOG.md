@@ -1,5 +1,24 @@
 # Embroider Changelog
 
+## Release (2026-10-07)
+
+* @embroider/compat 4.1.28 (patch)
+* @embroider/config-meta-loader 1.0.1 (patch)
+* @embroider/core 4.6.10 (patch)
+* @embroider/macros 1.21.4 (patch)
+* @embroider/shared-internals 3.2.1 (patch)
+* @embroider/template-tag-codemod 1.4.2 (patch)
+* @embroider/vite 1.7.16 (patch)
+
+#### :house: Internal
+* `@embroider/macros`, `@embroider/shared-internals`
+  * [#2834](https://github.com/embroider-build/embroider/pull/2834) convert shared-internals to be a ts project build ([@mansona](https://github.com/mansona))
+* `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/vite`
+  * [#2835](https://github.com/embroider-build/embroider/pull/2835) update @typescript-eslint ([@mansona](https://github.com/mansona))
+
+#### Committers: 1
+- Chris Manson ([@mansona](https://github.com/mansona))
+
 ## Release (2026-10-05)
 
 * @embroider/addon-dev 8.4.2 (patch)

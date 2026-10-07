@@ -12,7 +12,6 @@ import fs from 'fs-extra';
 import { createHash } from 'crypto';
 import { BackChannel } from './backchannel.js';
 import { existsSync, mkdtempSync } from 'node:fs';
-import type { ResolvedConfig } from 'vite';
 import { emitVirtualAsset, rewriteVirtualAssetUrls } from './virtual-assets.js';
 
 const { ensureSymlinkSync, writeFileSync, renameSync } = fs;
@@ -97,7 +96,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
   }
 
   async function emitVirtualFile(context: PluginContext, fileName: string): Promise<void> {
-    emitVirtualAsset(config, context, {
+    emitVirtualAsset(context, {
       url: '/' + fileName,
       name: `embroider-virtual-${fileName.slice(fileName.lastIndexOf('/') + 1)}`,
       source: virtualContent((await ensureVirtualResolve(context, fileName)).virtual, resolverLoader.resolver).src,
@@ -106,14 +105,14 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
 
   let mode = '';
   let command = '';
-  let config: ResolvedConfig;
+  let base: string | undefined;
 
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
 
-    configResolved(resolvedConfig) {
-      config = resolvedConfig;
+    configResolved(config) {
+      base = config.base;
       mode = config.mode;
       command = config.command;
       cacheDir = normalize(config.cacheDir);
@@ -213,7 +212,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
     // resolver will always be used in an Ember app so this is a good place to
     // put it as a backstop.
     transformIndexHtml(html) {
-      return rewriteVirtualAssetUrls(html, config, command === 'serve');
+      return rewriteVirtualAssetUrls(html, base, command === 'serve');
     },
   };
 }

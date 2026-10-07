@@ -1,7 +1,7 @@
 import type { Resolver } from '@embroider/core';
 import * as core from '@embroider/core';
 const { ResolverLoader } = core;
-import type { Plugin, ResolvedConfig } from 'vite';
+import type { Plugin } from 'vite';
 import * as process from 'process';
 import { join, posix, dirname, basename } from 'path';
 import fs from 'fs-extra';
@@ -34,12 +34,10 @@ export function assets(): Plugin {
   const resolverLoader = new ResolverLoader(cwd);
   let mode: 'build' | 'serve' = 'build';
   let publicDir = 'public';
-  let config: ResolvedConfig;
   return {
     name: 'assets',
     enforce: 'post',
     configResolved(options) {
-      config = options;
       mode = options.command;
       publicDir = options.publicDir;
     },
@@ -87,7 +85,7 @@ export function assets(): Plugin {
 
               let url = posix.resolve('/', dest);
               if (url.startsWith(VIRTUAL_URL_PREFIX)) {
-                emitVirtualAsset(config, this, {
+                emitVirtualAsset(this, {
                   url,
                   name: `embroider-virtual-${url.slice(url.lastIndexOf('/') + 1)}`,
                   source: readFileSync(filePath),

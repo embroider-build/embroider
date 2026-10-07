@@ -39,6 +39,7 @@ export function buildResolverOptions<T extends Options>(inputs: {
   staticAppPaths?: string[];
   extend?: (opts: T, allActiveAddons: AddonPackage[]) => T;
 }): T {
+  debugger;
   let appPackage: Package;
   if (inputs.appPackage) {
     appPackage = inputs.appPackage;

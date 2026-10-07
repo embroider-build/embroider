@@ -429,20 +429,41 @@ export class Resolver {
       pkg = this.packageCache.resolve(packageName, requestingPkg);
     }
 
-    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
-    let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
-    return logTransition(
-      'entrypoint',
-      request,
-      request.virtualize({
-        type: 'entrypoint',
-        specifier,
-        fromDir: dirname(specifier),
-      })
-    );
+    if (requestingPkg.isV2Addon()) {
+      let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
+        browser: true,
+        conditions: ['default', 'imports'],
+      });
+      let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
+
+      return logTransition(
+        'entrypoint',
+        request,
+        request.virtualize({
+          type: 'entrypoint',
+          specifier,
+          fromPackageDir: pkg.root,
+          appTreeDir: null,
+        })
+      );
+    } else {
+      let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
+        browser: true,
+        conditions: ['default', 'imports'],
+      });
+      let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
+
+      return logTransition(
+        'entrypoint',
+        request,
+        request.virtualize({
+          type: 'entrypoint',
+          specifier,
+          fromPackageDir: pkg.root,
+          appTreeDir: dirname(specifier),
+        })
+      );
+    }
   }
 
   private handleRouteEntrypoint<R extends ModuleRequest>(request: R): R {

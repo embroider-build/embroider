@@ -69,6 +69,7 @@ interface ModeTestHooks {
 }
 type CreateModeTests = (transform: Transform, hooks: ModeTestHooks) => void;
 
+// TODO: stop accessing test in module scope here so we can turn off `globals: true` in vitest config
 function disabledTest(_name: string, _impl: jest.ProvidesCallback | undefined) {}
 disabledTest.only = disabledTest;
 disabledTest.skip = disabledTest;
@@ -96,9 +97,13 @@ export function allModes(fn: CreateModeTests): CreateTests {
   };
 }
 
-export function allBabelVersions(createTests: CreateTests | CreateTestsWithConfig) {
+export function allBabelVersions(
+  describe: (name: string, fn: () => void) => void,
+  createTests: CreateTests | CreateTestsWithConfig
+) {
   let config: MacrosConfig;
   allBabel({
+    describe,
     includePresetsTests: true,
     babelConfig() {
       return {

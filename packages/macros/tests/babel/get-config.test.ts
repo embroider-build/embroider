@@ -2,6 +2,7 @@ import { allBabelVersions } from '@embroider/test-support';
 import { allModes, makeRunner } from './helpers';
 import { dirname } from 'path';
 import { buildMacros } from '../../src/babel';
+import { describe, test, expect } from 'vitest';
 
 describe(`getConfig`, function () {
   let macros: ReturnType<typeof buildMacros>;
@@ -9,6 +10,7 @@ describe(`getConfig`, function () {
   let run: ReturnType<typeof makeRunner>;
 
   allBabelVersions({
+    describe,
     babelConfig(_version: number) {
       let c = {
         filename,

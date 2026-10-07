@@ -3,6 +3,7 @@ import tmp from 'tmp';
 import { join } from 'path';
 import fixturify from 'fixturify';
 import { realpathSync } from 'fs';
+import { describe, test, expect } from 'vitest';
 
 tmp.setGracefulCleanup();
 

@@ -1,4 +1,5 @@
 import { explicitRelative } from '../src';
+import { describe, test, expect } from 'vitest';
 
 describe('core path utils', function () {
   test('explicit relative', function () {

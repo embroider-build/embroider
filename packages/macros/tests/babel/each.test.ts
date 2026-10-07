@@ -1,11 +1,13 @@
 import { allBabelVersions } from '@embroider/test-support';
 import { makeBabelConfig, allModes, makeRunner } from './helpers';
 import { MacrosConfig } from '../../src/node';
+import { describe, test, expect } from 'vitest';
 
 describe('each', function () {
   let macrosConfig: MacrosConfig;
 
   allBabelVersions({
+    describe,
     babelConfig(version: number) {
       return makeBabelConfig(version, macrosConfig);
     },

@@ -8,7 +8,7 @@ function lookupKeys(code: string): string[] {
 }
 
 describe('importSync', function () {
-  allBabelVersions(function createTests(transform: Transform, config: MacrosConfig) {
+  allBabelVersions(describe, function createTests(transform: Transform, config: MacrosConfig) {
     config.setOwnConfig(__filename, { target: 'my-plugin' });
     config.importSyncImplementation = 'eager';
     config.finalize();

@@ -10,21 +10,19 @@
   },
   "exports": {
     ".": {
-      "browser": "./src/browser-index.js",
-      "default": "./src/index.js"
+      "browser": "./dist/browser-index.js",
+      "default": "./dist/index.js"
     },
-    "./src/*": "./src/*.js"
+    "./src/*": "./dist/*.js"
   },
   "license": "MIT",
   "author": "Edward Faulkner",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "files": [
-    "src/**/*.js",
-    "src/**/*.d.ts",
-    "src/**/*.js.map"
+    "dist"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "vitest"
   },
   "dependencies": {
     "babel-import-util": "^3.0.1",
@@ -36,27 +34,28 @@
     "lodash": "^4.17.21",
     "minimatch": "^3.0.4",
     "pkg-entry-points": "^1.1.1",
-    "resolve.exports": "^2.0.2",
     "resolve-package-path": "^4.0.1",
+    "resolve.exports": "^2.0.2",
     "semver": "^7.3.5",
     "typescript-memoize": "^1.0.1"
   },
   "devDependencies": {
-    "broccoli-node-api": "^1.7.0",
     "@embroider/test-support": "workspace:*",
     "@types/babel__core": "^7.1.14",
     "@types/babel__traverse": "^7.18.5",
     "@types/debug": "^4.1.5",
     "@types/fs-extra": "^9.0.12",
-    "@types/lodash": "^4.14.170",
     "@types/js-string-escape": "^1.0.0",
+    "@types/lodash": "^4.14.170",
     "@types/minimatch": "^3.0.4",
     "@types/semver": "^7.3.6",
     "@types/tmp": "^0.1.0",
+    "broccoli-node-api": "^1.7.0",
     "fixturify": "^2.1.1",
     "scenario-tester": "^4.0.0",
     "tmp": "^0.1.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": "12.* || 14.* || >= 16"

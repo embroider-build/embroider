@@ -2,6 +2,7 @@ import { allBabelVersions, runDefault } from '@embroider/test-support';
 import { Project } from 'scenario-tester';
 import { join, dirname } from 'node:path';
 import { buildMacros } from '../../src/babel';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 
 const ROOT = process.cwd();
 
@@ -33,6 +34,7 @@ describe(`appEmberSatisfies`, function () {
   });
 
   allBabelVersions({
+    describe,
     includePresetsTests: true,
     babelConfig() {
       project.write();

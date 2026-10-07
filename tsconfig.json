@@ -24,8 +24,10 @@
     "packages/reverse-exports",
     "packages/addon-shim",
     "packages/macros",
+    "packages/shared-internals"
   ],
   "references": [
+    { "path": "packages/shared-internals" },
     { "path": "packages/reverse-exports" },
     { "path": "packages/core" },
     { "path": "packages/compat" },

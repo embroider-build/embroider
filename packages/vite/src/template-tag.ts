@@ -11,8 +11,11 @@ export function templateTag(): Plugin {
   let root = '';
 
   function transform(code: string, id: string, options?: { ssr?: boolean }) {
-    // The object-hook filter is chosen by the vite version *we* resolve, which
-    // can differ from the one actually running, so don't rely on it.
+    /**
+     * Whether we use the object-hook filter depends on the vite version this package resolves,
+     * which can differ from the vite that is running.
+     * Vite 5 ignores the filter, so this check keeps .js files out.
+     */
     if (!gjsFilter.test(id)) {
       return null;
     }
@@ -29,7 +32,10 @@ export function templateTag(): Plugin {
     enforce: 'pre',
 
     configResolved(config) {
-      // follow vite: HMR is on in dev unless the user turned it off
+      /**
+       * HMR follows vite's own setting instead of adding an Embroider option,
+       * so apps don't need config to get it or to turn it off.
+       */
       hot = config.command === 'serve' && config.server.hmr !== false;
       root = config.root;
     },

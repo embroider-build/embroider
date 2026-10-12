@@ -12,6 +12,8 @@ import fs from 'fs-extra';
 import { createHash } from 'crypto';
 import { BackChannel } from './backchannel.js';
 import { existsSync, mkdtempSync } from 'node:fs';
+import { renderVendorStyles } from '@embroider/core/src/virtual-vendor-styles';
+import { renderTestSupportStyles } from '@embroider/core/src/virtual-test-support-styles';
 
 const { ensureSymlinkSync, writeFileSync, renameSync } = fs;
 
@@ -193,11 +195,33 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
     async buildEnd() {
       if (command !== 'dev') {
         emitVirtualFile(this, '@embroider/virtual/vendor.js');
-        emitVirtualFile(this, '@embroider/virtual/vendor.css');
+
+        this.emitFile({
+          type: 'asset',
+          fileName: '@embroider/virtual/vendor.css',
+          source: renderVendorStyles(
+            {
+              type: 'vendor-css',
+              specifier: 'im-surprised-this-isnt-needed',
+            },
+            resolverLoader.resolver
+          ).src,
+        });
 
         if (mode !== 'production') {
           emitVirtualFile(this, '@embroider/virtual/test-support.js');
-          emitVirtualFile(this, '@embroider/virtual/test-support.css');
+
+          this.emitFile({
+            type: 'asset',
+            fileName: '@embroider/virtual/test-support.css',
+            source: renderTestSupportStyles(
+              {
+                type: 'test-support-css',
+                specifier: 'im-surprised-this-isnt-needed',
+              },
+              resolverLoader.resolver
+            ).src,
+          });
         }
       }
     },

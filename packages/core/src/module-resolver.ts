@@ -120,7 +120,6 @@ export class Resolver {
     request = await this.handleGlobalsCompat(request);
     request = this.handleImplicitModules(request);
     request = this.handleImplicitTestScripts(request);
-    request = this.handleVendorStyles(request);
     request = this.handleTestSupportStyles(request);
     request = this.handleEntrypoint(request);
     request = this.handleRouteEntrypoint(request);
@@ -547,25 +546,6 @@ export class Resolver {
       default:
         throw new Error(`bug: unexepected @embroider/virtual specifier: ${request.specifier}`);
     }
-  }
-
-  private handleVendorStyles<R extends ModuleRequest>(request: R): R {
-    if (request.specifier !== '@embroider/virtual/vendor.css') {
-      return request;
-    }
-
-    let pkg = this.packageCache.ownerOfFile(request.fromFile);
-    if (!pkg || !this.options.engines.some(e => e.root === pkg?.root)) {
-      throw new Error(
-        `bug: found an import of ${request.specifier} in ${request.fromFile}, but this is not the top-level Ember app or Engine. The top-level Ember app is the only one that has support for @embroider/virtual/vendor.css. If you think something should be fixed in Embroider, please open an issue on https://github.com/embroider-build/embroider/issues.`
-      );
-    }
-
-    return logTransition(
-      'vendor-styles',
-      request,
-      request.virtualize({ type: 'vendor-css', specifier: resolve(pkg.root, '-embroider-vendor-styles.css') })
-    );
   }
 
   private resolveHelper<R extends ModuleRequest>(path: string, inEngine: EngineConfig, request: R): R {

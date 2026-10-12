@@ -3,7 +3,7 @@ import { locateEmbroiderWorkingDir } from '@embroider/core';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
-import { outputJSONSync, readJSONSync, writeFileSync, writeJSONSync } from 'fs-extra';
+import { outputJSONSync, readFileSync, readJSONSync, writeFileSync, writeJSONSync } from 'fs-extra';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion, Portable } from '@embroider/core/src/portable';
 import { Memoize } from 'typescript-memoize';
@@ -17,7 +17,7 @@ import { readdirSync } from 'fs-extra';
 import type CompatApp from './compat-app';
 import type { CompatBabelState } from './babel';
 import { MacrosConfig } from '@embroider/macros/src/node';
-import { buildResolverOptions } from '@embroider/core/src/module-resolver-options';
+import { buildResolverOptions, findAllActiveAddons } from '@embroider/core/src/module-resolver-options';
 import type { CompatOptionsType } from './options';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
@@ -66,6 +66,28 @@ export class CompatAppBuilder {
     });
   }
 
+  @Memoize()
+  private get vendorStyles(): string {
+    let allActiveAddons: AddonPackage[] = findAllActiveAddons(
+      this.appPackageWithMovedDeps,
+      new Map([[this.appPackageWithMovedDeps.root, [this.synthVendor, this.synthStyles] as AddonPackage[]]])
+    );
+
+    const vendorStyles = allActiveAddons.reduce((styles, addon) => {
+      if (!addon.meta['implicit-styles']) {
+        return styles;
+      }
+
+      const currentAddonStyles = addon.meta['implicit-styles']?.reduce((currentAddonCombinedStyles, fileName) => {
+        return [currentAddonCombinedStyles, readFileSync(join(addon.root, fileName), 'utf8')].join('\n');
+      }, '');
+
+      return [styles, currentAddonStyles].join('\n');
+    }, '');
+
+    return vendorStyles;
+  }
+
   async build() {
     // on the first build, we lock down the macros config. on subsequent builds,
     // this doesn't do anything anyway because it's idempotent.
@@ -77,6 +99,7 @@ export class CompatAppBuilder {
 
     this.addResolverConfig(resolverConfig);
     this.addContentForConfig(contentForConfig);
+    this.addVendorStyles(this.vendorStyles);
     this.addEmberEnvConfig(config.EmberENV);
     this.outputAppBootError(config.modulePrefix, config.APP, contentForConfig);
     this.addBabelCompat();
@@ -163,6 +186,10 @@ export class CompatAppBuilder {
       },
       { spaces: 2 }
     );
+  }
+
+  private addVendorStyles(styles: string) {
+    writeFileSync(join(locateEmbroiderWorkingDir(this.compatApp.root), 'vendor-styles.css'), styles, 'utf8');
   }
 
   private addContentForConfig(contentForConfig: any) {

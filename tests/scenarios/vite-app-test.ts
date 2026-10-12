@@ -410,6 +410,12 @@ wideAppScenarios
           vendorcss.includes('.my-verifyable-addon-class'),
           '@embroider/virtual/vendor.css should contain vendor css'
         );
+
+        const emittedVendorCss = readFileSync(join(app.dir, 'node_modules', '.embroider', 'vendor-styles.css'));
+        assert.ok(
+          emittedVendorCss.includes('.my-verifyable-addon-class'),
+          '@embroider/virtual/vendor.css should contain vendor css'
+        );
       });
 
       Qmodule('vite dev', function (hooks) {

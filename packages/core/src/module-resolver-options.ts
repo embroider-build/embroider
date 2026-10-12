@@ -191,7 +191,7 @@ function orderAddons(depA: Package, depB: Package): number {
   return depAIdx - depBIdx;
 }
 
-function findAllActiveAddons(appPackage: Package, extraDeps: Map<string, AddonPackage[]>): AddonPackage[] {
+export function findAllActiveAddons(appPackage: Package, extraDeps: Map<string, AddonPackage[]>): AddonPackage[] {
   let result = appPackage.findDescendants(isActiveAddon) as AddonPackage[];
   let extras = extraDeps.get(appPackage.root);
   if (extras) {

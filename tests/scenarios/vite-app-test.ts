@@ -1,7 +1,7 @@
 import { baseAddon, wideAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import { readdirSync } from 'fs-extra';
+import { readdirSync, readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { setupViteDevServer } from './helpers';
 
@@ -27,6 +27,13 @@ wideAppScenarios
       'index.js': `
         module.exports = {
           name: 'my-addon',
+
+          // this is to make sure that there is some content in @embroider/virtual/vendor.css
+          included() {
+            let app = this._findHost();
+            app.import('vendor/my-addon-styles.css');
+          },
+
           setupPreprocessorRegistry(type, registry) {
               // we want custom ast transforms for own addon
               if (type === 'parent') {
@@ -60,6 +67,13 @@ wideAppScenarios
             },
         }
       `,
+      vendor: {
+        'my-addon-styles.css': `
+          .my-verifyable-addon-class {
+            color: red;
+          }
+        `,
+      },
       app: {
         components: {
           'component-one.js': `export { default } from 'my-addon/components/component-one';`,
@@ -389,6 +403,13 @@ wideAppScenarios
 
         const assetFiles = readdirSync(join(app.dir, 'dist', '@embroider', 'virtual'));
         assert.ok(assetFiles.length > 1, 'should have created asset files');
+
+        const vendorcss = readFileSync(join(app.dir, 'dist', '@embroider', 'virtual', 'vendor.css'));
+
+        assert.ok(
+          vendorcss.includes('.my-verifyable-addon-class'),
+          '@embroider/virtual/vendor.css should contain vendor css'
+        );
       });
 
       Qmodule('vite dev', function (hooks) {

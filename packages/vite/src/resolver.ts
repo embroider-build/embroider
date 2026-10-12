@@ -12,6 +12,7 @@ import fs from 'fs-extra';
 import { createHash } from 'crypto';
 import { BackChannel } from './backchannel.js';
 import { existsSync, mkdtempSync } from 'node:fs';
+import { emitVirtualAsset, rewriteVirtualAssetUrls } from './virtual-assets.js';
 
 const { ensureSymlinkSync, writeFileSync, renameSync } = fs;
 
@@ -95,21 +96,23 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
   }
 
   async function emitVirtualFile(context: PluginContext, fileName: string): Promise<void> {
-    context.emitFile({
-      type: 'asset',
-      fileName,
+    emitVirtualAsset(context, {
+      url: '/' + fileName,
+      name: `embroider-virtual-${fileName.slice(fileName.lastIndexOf('/') + 1)}`,
       source: virtualContent((await ensureVirtualResolve(context, fileName)).virtual, resolverLoader.resolver).src,
     });
   }
 
   let mode = '';
   let command = '';
+  let base: string | undefined;
 
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
 
     configResolved(config) {
+      base = config.base;
       mode = config.mode;
       command = config.command;
       cacheDir = normalize(config.cacheDir);
@@ -200,6 +203,16 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
           emitVirtualFile(this, '@embroider/virtual/test-support.css');
         }
       }
+    },
+
+    // There are other plugins that implement transformIndexHtml and you might
+    // think that it would be relevant to put the implementation in those, but
+    // we always need to make sure that if anybody has used the
+    // emitVirtualAsset function, it always gets applied in index.html. The
+    // resolver will always be used in an Ember app so this is a good place to
+    // put it as a backstop.
+    transformIndexHtml(html) {
+      return rewriteVirtualAssetUrls(html, base, command === 'serve');
     },
   };
 }

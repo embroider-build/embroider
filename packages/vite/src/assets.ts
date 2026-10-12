@@ -7,6 +7,7 @@ import { join, posix, dirname, basename } from 'path';
 import fs from 'fs-extra';
 const { existsSync, readFileSync, lstatSync } = fs;
 import send from 'send';
+import { emitVirtualAsset, VIRTUAL_URL_PREFIX } from './virtual-assets.js';
 
 function findPublicAsset(relativePath: string, resolver: Resolver) {
   const packageCache = resolver.packageCache;
@@ -82,11 +83,20 @@ export function assets(): Plugin {
                 return;
               }
 
-              this.emitFile({
-                type: 'asset',
-                source: readFileSync(filePath),
-                fileName: posix.resolve('/', dest).slice(1),
-              });
+              let url = posix.resolve('/', dest);
+              if (url.startsWith(VIRTUAL_URL_PREFIX)) {
+                emitVirtualAsset(this, {
+                  url,
+                  name: `embroider-virtual-${url.slice(url.lastIndexOf('/') + 1)}`,
+                  source: readFileSync(filePath),
+                });
+              } else {
+                this.emitFile({
+                  type: 'asset',
+                  source: readFileSync(filePath),
+                  fileName: url.slice(1),
+                });
+              }
             });
           });
         }

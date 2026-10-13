@@ -35,6 +35,12 @@ module('Acceptance | smoke tests', function (hooks) {
     assert.equal(this.element.querySelector('[data-test-testing]').textContent.trim(), 'true');
   });
 
+  test('HBS macroCondition with getOwnConfig worked', async function (assert) {
+    await visit('/');
+    assert.equal(currentURL(), '/');
+    assert.equal(this.element.querySelector('[data-test-macro-condition]').textContent.trim(), 'red');
+  })
+
 
   // TODO: this tests app.import custom outputPath support. It's unclear whether
   // we want to keep that feature, and regardless this test suite was a bad

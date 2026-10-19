@@ -51,7 +51,6 @@
     "fs-extra": "^10.0.0",
     "jsdom": "^25.0.0",
     "send": "^1.2.1",
-    "source-map-url": "^0.4.1",
     "terser": "^5.7.0"
   },
   "devDependencies": {

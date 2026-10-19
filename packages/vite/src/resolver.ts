@@ -105,14 +105,12 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
 
   let mode = '';
   let command = '';
-  let base: string | undefined;
 
   return {
     name: 'embroider-resolver',
     enforce: 'pre',
 
     configResolved(config) {
-      base = config.base;
       mode = config.mode;
       command = config.command;
       cacheDir = normalize(config.cacheDir);
@@ -212,7 +210,11 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
     // resolver will always be used in an Ember app so this is a good place to
     // put it as a backstop.
     transformIndexHtml(html) {
-      return rewriteVirtualAssetUrls(html, base, command === 'serve');
+      // Only needed in `vite build`. In `vite dev` the virtual assets are served
+      // as-is and Vite's own HTML transform already applies `base` to their URLs.
+      if (command !== 'serve') {
+        return rewriteVirtualAssetUrls(html);
+      }
     },
   };
 }

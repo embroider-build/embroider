@@ -14,16 +14,7 @@ export function emitVirtualAsset(
   registry.set(url, `__VITE_ASSET__${referenceId}__`);
 }
 
-export function rewriteVirtualAssetUrls(html: string, base: string | undefined, isDev: boolean): string {
-  if (isDev) {
-    let _base = base || '/';
-    return html.split(VIRTUAL_URL_PREFIX).join(_base + VIRTUAL_URL_PREFIX.slice(1));
-  }
-
-  return transformHTML(html);
-}
-
-function transformHTML(html: string) {
+export function rewriteVirtualAssetUrls(html: string): string {
   if (registry.size === 0) {
     return html;
   }

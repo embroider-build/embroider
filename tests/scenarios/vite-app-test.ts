@@ -387,8 +387,10 @@ wideAppScenarios
         assert.ok(distFiles.includes('assets'), 'should have created assets folder');
         assert.ok(distFiles.includes('robots.txt'), 'should have copied app assets');
 
-        const assetFiles = readdirSync(join(app.dir, 'dist', '@embroider', 'virtual'));
-        assert.ok(assetFiles.length > 1, 'should have created asset files');
+        const virtualAssetFiles = readdirSync(join(app.dir, 'dist', 'assets')).filter(f =>
+          f.startsWith('embroider-virtual-')
+        );
+        assert.ok(virtualAssetFiles.length > 1, 'should have created fingerprinted virtual asset files');
       });
 
       Qmodule('vite dev', function (hooks) {

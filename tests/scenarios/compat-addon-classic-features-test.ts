@@ -18,7 +18,7 @@ type Assert = Parameters<Parameters<typeof test>[1]>[0];
 function findEmittedAssets(appDir: string, name: string): string[] {
   let ext = name.slice(name.lastIndexOf('.'));
   let base = name.slice(0, name.lastIndexOf('.'));
-  return globby.sync(`assets/${base}-*${ext}`, { cwd: join(appDir, 'dist') }).sort();
+  return globby.sync(`assets/embroider-virtual-${base}-*${ext}`, { cwd: join(appDir, 'dist') }).sort();
 }
 
 function assertTransformedHtml(assert: Assert, appDir: string, htmls: string[]): void {

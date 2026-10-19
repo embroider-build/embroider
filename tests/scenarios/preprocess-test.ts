@@ -41,8 +41,8 @@ appScenarios
         let result = await app.execute(`pnpm build`);
         assert.strictEqual(result.exitCode, 0, result.output);
 
-        let [appCss] = globby.sync('assets/app-*.css', { cwd: join(app.dir, 'dist') });
-        assert.ok(appCss, 'expected a fingerprinted assets/app.*.css in dist');
+        let [appCss] = globby.sync('assets/embroider-virtual-app-*.css', { cwd: join(app.dir, 'dist') });
+        assert.ok(appCss, 'expected a fingerprinted assets/embroider-virtual-app-*.css in dist');
 
         let text = readFileSync(join(app.dir, 'dist', appCss), 'utf8');
         assert.strictEqual(text, 'body { background: red; }');

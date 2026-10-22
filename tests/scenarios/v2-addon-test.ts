@@ -165,6 +165,98 @@ appScenarios
 
 tsAppClassicScenarios
   .only('lts_5_12') // we only need to test this against one version of ember since we are testing a addon-shim feature
+  .map('v2-addon-classic-trees', project => {
+    let addon = baseV2Addon();
+    addon.pkg.name = 'v2-addon';
+    (addon.pkg as any)['ember-addon']['app-js'] = {
+      './components/example-component.js': './_app_/components/example-component.js',
+      './helpers/example-helper.js': './_app_/helpers/example-helper.js',
+    };
+    (addon.pkg as any)['ember-addon']['public-assets'] = {
+      './public/message.txt': '/v2-addon/message.txt',
+      './public/nested/other.txt': '/v2-addon/nested/other.txt',
+    };
+    merge(addon.files, {
+      _app_: {
+        components: {
+          'example-component.js': `export { default } from 'v2-addon/components/example-component';`,
+        },
+        helpers: {
+          'example-helper.js': `export { default } from 'v2-addon/helpers/example-helper';`,
+        },
+      },
+      components: {
+        'example-component.js': `
+          import templateOnly from '@ember/component/template-only';
+          import { hbs } from 'ember-cli-htmlbars';
+          import { setComponentTemplate } from '@ember/component';
+          export default setComponentTemplate(hbs('<div data-test-example>{{example-helper}}</div>'), templateOnly());
+        `,
+      },
+      helpers: {
+        'example-helper.js': `
+          import { helper } from '@ember/component/helper';
+          export default helper(() => 'from the helper');
+        `,
+      },
+      public: {
+        'message.txt': 'public message',
+        nested: {
+          'other.txt': 'nested message',
+        },
+      },
+    });
+    project.addDevDependency(addon);
+
+    merge(project.files, {
+      tests: {
+        integration: {
+          'v2-addon-test.js': `
+            import { module, test } from 'qunit';
+            import { setupRenderingTest } from 'ember-qunit';
+            import { render } from '@ember/test-helpers';
+            import { hbs } from 'ember-cli-htmlbars';
+
+            module('Integration | v2-addon classic trees', function (hooks) {
+              setupRenderingTest(hooks);
+
+              test('app-js files are in the app tree', async function (assert) {
+                await render(hbs('<ExampleComponent />'));
+                assert.dom('[data-test-example]').hasText('from the helper');
+              });
+
+              test('public-assets are in the public tree', async function (assert) {
+                let message = await (await fetch('/v2-addon/message.txt')).text();
+                let other = await (await fetch('/v2-addon/nested/other.txt')).text();
+                assert.strictEqual(message, 'public message');
+                assert.strictEqual(other, 'nested message');
+              });
+            });
+          `,
+        },
+      },
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`pnpm test:ember`, async function (assert) {
+        let result = await app.execute('pnpm test:ember', {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'classic',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });
+
+tsAppClassicScenarios
+  .only('lts_5_12') // we only need to test this against one version of ember since we are testing a addon-shim feature
   .map('ember-auto-import-error', project => {
     // we need a v2 addon to trigger the error and this seems to be enough to guarentee that we get the error in CI
     project.linkDevDependency('@ember/test-helpers', { baseDir: __dirname, resolveName: 'ember-test-helpers-4' });

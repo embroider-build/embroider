@@ -135,26 +135,7 @@ importers:
         version: 4.1.7(@types/node@22.19.19)(esbuild@0.27.7)(jiti@2.6.1)(jsdom@26.1.0)(terser@5.48.0)(yaml@2.9.0)
 
   packages/addon-shim:
-    dependencies:
-      '@embroider/shared-internals':
-        specifier: workspace:^
-        version: link:../shared-internals
-      broccoli-funnel:
-        specifier: ^3.0.8
-        version: 3.0.8
-      common-ancestor-path:
-        specifier: ^1.0.1
-        version: 1.0.1
-      semver:
-        specifier: ^7.3.8
-        version: 7.8.1
     devDependencies:
-      '@types/common-ancestor-path':
-        specifier: ^1.0.2
-        version: 1.0.2
-      '@types/semver':
-        specifier: ^7.3.6
-        version: 7.7.1
       broccoli-node-api:
         specifier: ^1.7.0
         version: 1.7.0
@@ -5752,9 +5733,6 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
-  '@types/common-ancestor-path@1.0.2':
-    resolution: {integrity: sha512-8llyULydTb7nM9yfiW78n6id3cet+qnATPV3R44yIywxgBaa8QXFSM9QTMf4OH64QOB45BlgZ3/oL4mmFLztQw==}
-
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
 
@@ -7634,9 +7612,6 @@ packages:
   commander@8.3.0:
     resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
     engines: {node: '>= 12'}
-
-  common-ancestor-path@1.0.1:
-    resolution: {integrity: sha512-L3sHRo1pXXEqX8VU28kfgUY+YGsk09hPqZiZmLacNib6XNTCM8ubYeT7ryXQw8asB1sKgcU5lkB7ONug08aB8w==}
 
   common-path-prefix@3.0.0:
     resolution: {integrity: sha512-QE33hToZseCH3jS0qN96O/bSh3kaw/h+Tq7ngyY9eWDUnTlTNUyqfqvCXioLe5Na5jFsL78ra/wuBU4iuEgd4w==}
@@ -20457,8 +20432,6 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
-  '@types/common-ancestor-path@1.0.2': {}
-
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 22.19.19
@@ -23346,8 +23319,6 @@ snapshots:
   commander@7.2.0: {}
 
   commander@8.3.0: {}
-
-  common-ancestor-path@1.0.1: {}
 
   common-path-prefix@3.0.0: {}
 

@@ -18,15 +18,7 @@
   "files": [
     "dist"
   ],
-  "dependencies": {
-    "@embroider/shared-internals": "workspace:^",
-    "broccoli-funnel": "^3.0.8",
-    "common-ancestor-path": "^1.0.1",
-    "semver": "^7.3.8"
-  },
   "devDependencies": {
-    "@types/common-ancestor-path": "^1.0.2",
-    "@types/semver": "^7.3.6",
     "broccoli-node-api": "^1.7.0",
     "typescript": "^5.4.5",
     "webpack": "^5"

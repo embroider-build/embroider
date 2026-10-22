@@ -1,5 +1,31 @@
 # Embroider Changelog
 
+## Release (2026-10-20)
+
+* @embroider/compat 4.1.28 (patch)
+* @embroider/config-meta-loader 1.0.1 (patch)
+* @embroider/core 4.6.10 (patch)
+* @embroider/macros 1.21.4 (patch)
+* @embroider/shared-internals 3.2.1 (patch)
+* @embroider/template-tag-codemod 1.4.2 (patch)
+* @embroider/vite 1.8.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/vite`
+  * [#2830](https://github.com/embroider-build/embroider/pull/2830) @embroider/vite: Fingerprint @embroider/virtual assets ([@nickschot](https://github.com/nickschot))
+
+#### :house: Internal
+* Other
+  * [#2839](https://github.com/embroider-build/embroider/pull/2839) update to latest patch of node version for local development ([@mansona](https://github.com/mansona))
+* `@embroider/macros`, `@embroider/shared-internals`
+  * [#2834](https://github.com/embroider-build/embroider/pull/2834) convert shared-internals to be a ts project build ([@mansona](https://github.com/mansona))
+* `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/vite`
+  * [#2835](https://github.com/embroider-build/embroider/pull/2835) update @typescript-eslint ([@mansona](https://github.com/mansona))
+
+#### Committers: 2
+- Chris Manson ([@mansona](https://github.com/mansona))
+- Nick Schot ([@nickschot](https://github.com/nickschot))
+
 ## Release (2026-10-05)
 
 * @embroider/addon-dev 8.4.2 (patch)

@@ -46,6 +46,32 @@ module.exports = async function (defaults) {
 
 The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/main/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/main/packages/compat/src/options.ts)
 
+### Embroider config file
+
+You can also set options in a config file in the root of your app:
+
+```js
+// embroider.config.mjs
+export default {
+  splitAtRoutes: ['route.name'], // can also be a RegExp
+};
+```
+
+Embroider looks for the config in these places, in this order:
+
+- the `"embroider"` key in `package.json`
+- `.embroiderrc.json`
+- `embroider.config.js`
+- `embroider.config.mjs`
+- `embroider.config.cjs`
+
+If your app has an `ember-cli-build.js`, the config file accepts every option of `compatBuild`. Set each option in one place only. If `compatBuild` and the config file set the same option, the build stops with an error.
+
+If your app has no `ember-cli-build.js`, the config file accepts `splitAtRoutes` and `staticAppPaths`. To split routes, the app must:
+
+- use `@embroider/router` for its router
+- give the modules from `@embroider/virtual/compat-modules` to its resolver
+
 ## Environment variables
 
 For optional features, Embroider supports the following environment variables:

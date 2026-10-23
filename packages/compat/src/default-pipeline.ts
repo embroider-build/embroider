@@ -1,5 +1,5 @@
 import type Options from './options';
-import { recommendedOptions } from './options';
+import { recommendedOptions, withEmbroiderConfig } from './options';
 import { App, Addons as CompatAddons } from '.';
 import type { Variant, EmberAppInstance } from '@embroider/core';
 import type { Node } from 'broccoli-node-api';
@@ -23,7 +23,10 @@ export function prebuild(emberApp: EmberAppInstance, options?: Options): Node {
   let outputPath: string;
   let addons;
 
-  let embroiderApp = new App(emberApp, { ...defaultPrebuildOptions, ...options });
+  let embroiderApp = new App(emberApp, {
+    ...defaultPrebuildOptions,
+    ...withEmbroiderConfig(emberApp.project.root, options),
+  });
 
   addons = new CompatAddons(embroiderApp);
   addons.ready().then(result => {

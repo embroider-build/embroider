@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-10-23)
+
+* @embroider/addon-shim 1.11.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-shim`
+  * [#2845](https://github.com/embroider-build/embroider/pull/2845) addon-shim: remove all runtime dependencies ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### Committers: 1
+- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
 ## Release (2026-10-20)
 
 * @embroider/compat 4.1.28 (patch)

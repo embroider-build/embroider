@@ -4,7 +4,17 @@
       "oldVersion": "8.4.2"
     },
     "@embroider/addon-shim": {
-      "oldVersion": "1.10.3"
+      "impact": "minor",
+      "oldVersion": "1.10.3",
+      "newVersion": "1.11.0",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "minor",
+          "reason": "Appears in changelog section :rocket: Enhancement"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-shim/package.json"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "4.0.0"
@@ -13,51 +23,13 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.27",
-      "newVersion": "4.1.28",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.28"
     },
     "@embroider/config-meta-loader": {
-      "impact": "patch",
-      "oldVersion": "1.0.0",
-      "newVersion": "1.0.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/config-meta-loader/package.json"
+      "oldVersion": "1.0.1"
     },
     "@embroider/core": {
-      "impact": "patch",
-      "oldVersion": "4.6.9",
-      "newVersion": "4.6.10",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/core/package.json"
+      "oldVersion": "4.6.10"
     },
     "@embroider/hbs-loader": {
       "oldVersion": "4.0.0"
@@ -66,21 +38,7 @@
       "oldVersion": "0.1.3"
     },
     "@embroider/macros": {
-      "impact": "patch",
-      "oldVersion": "1.21.3",
-      "newVersion": "1.21.4",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/shared-internals"
-        }
-      ],
-      "pkgJSONPath": "./packages/macros/package.json"
+      "oldVersion": "1.21.4"
     },
     "@embroider/reverse-exports": {
       "oldVersion": "0.2.0"
@@ -89,52 +47,14 @@
       "oldVersion": "3.0.6"
     },
     "@embroider/shared-internals": {
-      "impact": "patch",
-      "oldVersion": "3.2.0",
-      "newVersion": "3.2.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/shared-internals/package.json"
+      "oldVersion": "3.2.1"
     },
     "@embroider/template-tag-codemod": {
-      "impact": "patch",
-      "oldVersion": "1.4.1",
-      "newVersion": "1.4.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/template-tag-codemod/package.json"
+      "oldVersion": "1.4.2"
     },
     "@embroider/vite": {
-      "impact": "minor",
-      "oldVersion": "1.7.15",
-      "newVersion": "1.8.0",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "minor",
-          "reason": "Appears in changelog section :rocket: Enhancement"
-        },
-        {
-          "impact": "patch",
-          "reason": "Has dependency `workspace:*` on @embroider/macros"
-        },
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.8.0"
     }
   },
-  "description": "## Release (2026-10-20)\n\n* @embroider/compat 4.1.28 (patch)\n* @embroider/config-meta-loader 1.0.1 (patch)\n* @embroider/core 4.6.10 (patch)\n* @embroider/macros 1.21.4 (patch)\n* @embroider/shared-internals 3.2.1 (patch)\n* @embroider/template-tag-codemod 1.4.2 (patch)\n* @embroider/vite 1.8.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/vite`\n  * [#2830](https://github.com/embroider-build/embroider/pull/2830) @embroider/vite: Fingerprint @embroider/virtual assets ([@nickschot](https://github.com/nickschot))\n\n#### :house: Internal\n* Other\n  * [#2839](https://github.com/embroider-build/embroider/pull/2839) update to latest patch of node version for local development ([@mansona](https://github.com/mansona))\n* `@embroider/macros`, `@embroider/shared-internals`\n  * [#2834](https://github.com/embroider-build/embroider/pull/2834) convert shared-internals to be a ts project build ([@mansona](https://github.com/mansona))\n* `@embroider/compat`, `@embroider/config-meta-loader`, `@embroider/macros`, `@embroider/shared-internals`, `@embroider/template-tag-codemod`, `@embroider/vite`\n  * [#2835](https://github.com/embroider-build/embroider/pull/2835) update @typescript-eslint ([@mansona](https://github.com/mansona))\n\n#### Committers: 2\n- Chris Manson ([@mansona](https://github.com/mansona))\n- Nick Schot ([@nickschot](https://github.com/nickschot))\n"
+  "description": "## Release (2026-10-23)\n\n* @embroider/addon-shim 1.11.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-shim`\n  * [#2845](https://github.com/embroider-build/embroider/pull/2845) addon-shim: remove all runtime dependencies ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### Committers: 1\n- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n"
 }

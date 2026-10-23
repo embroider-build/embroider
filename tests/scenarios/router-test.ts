@@ -617,7 +617,7 @@ minimalAppScenarios
       });
 
       test(`vite build puts split-me in its own chunk`, async function (assert) {
-        let result = await app.execute('pnpm build:test');
+        let result = await app.execute('pnpm cross-env NODE_ENV=development vite build --mode development');
         assert.equal(result.exitCode, 0, result.output);
 
         let assetsDir = join(app.dir, 'dist', 'assets');

@@ -1,14 +1,12 @@
+import { readFileSync } from 'fs';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'path';
+import { CopyFiles } from './copy-files';
 import {
   AddonInstance,
   AddonMeta,
   PackageInfo,
   isDeepAddonInstance,
-} from '@embroider/shared-internals';
-import buildFunnel from 'broccoli-funnel';
-import commonAncestorPath from 'common-ancestor-path';
-import { readFileSync } from 'fs';
-import { dirname, isAbsolute, join, normalize, relative, resolve } from 'path';
-import { satisfies } from 'semver';
+} from './ember-cli-models';
 
 export interface ShimOptions {
   disabled?: (options: any) => boolean;
@@ -56,39 +54,32 @@ export function addonV1Shim(directory: string, options: ShimOptions = {}) {
     // default expectation is for resourceMap to map from interior to exterior, swap if needed
     swapInteriorExterior = false
   ) {
-    const absoluteInteriorPaths = Object[
-      swapInteriorExterior ? 'values' : 'keys'
-    ](resourceMap).map((internalPath) => join(directory, internalPath));
+    let entries = Object.entries(resourceMap);
 
-    if (absoluteInteriorPaths.length === 0) {
+    if (entries.length === 0) {
       return;
     }
 
-    const ancestorPath =
-      commonAncestorPath(...absoluteInteriorPaths.map(dirname)) ?? directory;
-    const ancestorPathRel = relative(directory, ancestorPath);
-    const ancestorTree = addonInstance.treeGenerator(ancestorPath);
-    const relativeInteriorPaths = absoluteInteriorPaths.map((absPath) =>
-      relative(ancestorPath, absPath)
-    );
+    let absolutePaths: Record<string, string> = {};
+    for (let [a, b] of entries) {
+      let interiorName = swapInteriorExterior ? b : a;
+      let exteriorName = swapInteriorExterior ? a : b;
+      absolutePaths[join(directory, interiorName)] = exteriorName;
+    }
 
-    return buildFunnel(ancestorTree, {
-      files: relativeInteriorPaths,
-      getDestinationPath(relativePath: string): string {
-        for (let [a, b] of Object.entries(resourceMap)) {
-          const interiorName = swapInteriorExterior ? b : a;
-          const exteriorName = swapInteriorExterior ? a : b;
-          if (join(ancestorPathRel, relativePath) === normalize(interiorName)) {
-            return exteriorName;
-          }
-        }
-        throw new Error(
-          `bug in addonV1Shim, no match for ${relativePath} in ${JSON.stringify(
-            resourceMap
-          )}`
-        );
-      },
-    });
+    let ancestorPath =
+      commonAncestorPath(Object.keys(absolutePaths).map(dirname)) ?? directory;
+
+    let files: Record<string, string> = {};
+    for (let [absolutePath, exteriorName] of Object.entries(absolutePaths)) {
+      files[relative(ancestorPath, absolutePath)] = exteriorName;
+    }
+
+    return new CopyFiles(
+      addonInstance.treeGenerator(ancestorPath),
+      files,
+      `${pkg.name} ${relative(directory, ancestorPath)}`
+    );
   }
 
   return {
@@ -262,6 +253,34 @@ function isInside(parentDir: string, otherDir: string): boolean {
   return Boolean(rel) && !rel.startsWith('..') && !isAbsolute(rel);
 }
 
+function isInsideOrSame(parentDir: string, otherDir: string): boolean {
+  let rel = relative(parentDir, otherDir);
+  return (
+    rel === '' ||
+    (rel !== '..' && !rel.startsWith('..' + sep) && !isAbsolute(rel))
+  );
+}
+
+/**
+ * Returns undefined when the paths have no common ancestor,
+ * for example paths on two Windows drives.
+ */
+function commonAncestorPath(paths: string[]): string | undefined {
+  let ancestor = paths[0];
+
+  for (let i = 1; i < paths.length; i++) {
+    while (!isInsideOrSame(ancestor, paths[i])) {
+      let parent = dirname(ancestor);
+      if (parent === ancestor) {
+        return undefined;
+      }
+      ancestor = parent;
+    }
+  }
+
+  return ancestor;
+}
+
 type EAI2Instance = AddonInstance & {
   // all 2.x versions of EAI have this method
   registerV2Addon(name: string, root: string): void;
@@ -297,9 +316,10 @@ function locateAutoImport(addons: AddonInstance[]):
     return { present: false };
   }
   let version = instance.pkg.version;
-  let satisfiesV2 = satisfies(version, '>=2.0.0-alpha.0', {
-    includePrerelease: true,
-  });
+  /**
+   * The same result as semver's `>=2.0.0-alpha.0` with prereleases.
+   */
+  let satisfiesV2 = Number(version.split('.')[0]) >= 2;
   if (satisfiesV2) {
     return {
       present: true,

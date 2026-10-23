@@ -1,6 +1,7 @@
 import { existsSync, readJSONSync } from 'fs-extra';
 import { buildResolverOptions, type Options } from './module-resolver-options';
 import { Resolver } from './module-resolver';
+import { resolverOptionsFromEmbroiderConfig } from './embroider-config';
 import { locateEmbroiderWorkingDir } from '@embroider/shared-internals';
 import { join } from 'path';
 import type { FSWatcher } from 'fs';
@@ -46,7 +47,7 @@ export class ResolverLoader {
 
         config = rawConfig;
       } else {
-        config = buildResolverOptions({});
+        config = buildResolverOptions(resolverOptionsFromEmbroiderConfig(this.appRoot));
       }
       this.#resolver = new Resolver(config);
     }

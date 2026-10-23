@@ -1,6 +1,7 @@
 import type { V1AddonConstructor } from './v1-addon';
 import type { Options as CoreOptions } from '@embroider/core';
-import { optionsWithDefaults as coreWithDefaults } from '@embroider/core';
+import { optionsWithDefaults as coreWithDefaults, loadEmbroiderConfig } from '@embroider/core';
+import { basename } from 'path';
 import type { PackageRules } from './dependency-rules';
 
 // These options control how hard we will try to achieve compatibility with v1
@@ -121,6 +122,40 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
   }
 
   return Object.assign({}, defaults, options);
+}
+
+/**
+ * Adds the options from the Embroider config file of the app
+ * to the options that ember-cli-build gives to `compatBuild`.
+ *
+ * An option that is set in both places is an error.
+ */
+export function withEmbroiderConfig(appRoot: string, options: Options | undefined): Options | undefined {
+  let loaded = loadEmbroiderConfig(appRoot);
+  if (!loaded) {
+    return options;
+  }
+
+  let merged: Record<string, unknown> = Object.assign({}, loaded.config);
+  let duplicates: string[] = [];
+  for (let [key, value] of Object.entries(options ?? {})) {
+    if (value === undefined) {
+      continue;
+    }
+    if (key in loaded.config) {
+      duplicates.push(key);
+    }
+    merged[key] = value;
+  }
+
+  if (duplicates.length > 0) {
+    throw new Error(
+      `These Embroider options are set in ember-cli-build and in ${basename(loaded.filepath)}: ${duplicates.join(
+        ', '
+      )}. Set each option in one place only.`
+    );
+  }
+  return merged;
 }
 
 // These are recommended configurations for addons to test themselves under. By

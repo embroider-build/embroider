@@ -1,4 +1,6 @@
-import { tsAppScenarios, tsAppClassicScenarios, isUsingQunit9 } from './scenarios';
+import { tsAppScenarios, tsAppClassicScenarios, minimalAppScenarios, isUsingQunit9 } from './scenarios';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
 
@@ -288,28 +290,32 @@ function setupScenario(project: Project) {
   });
 }
 
+function useQunit9TestHelper(project: Project) {
+  if (isUsingQunit9(project)) {
+    (project.files['tests'] as any)['test-helper.ts'] = `
+import Application from 'ts-app-template/app';
+import config from 'ts-app-template/config/environment';
+import * as QUnit from 'qunit';
+import { setApplication } from '@ember/test-helpers';
+import { setup } from 'qunit-dom';
+import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+export function start() {
+
+  setApplication(Application.create(config.APP));
+  setup(QUnit.assert);
+  setupEmberOnerrorValidation();
+  qunitStart();
+}
+`;
+  }
+}
+
 tsAppScenarios
   .map('router-embroider', project => {
     setupScenario(project);
 
-    if (isUsingQunit9(project)) {
-      (project.files['tests'] as any)['test-helper.ts'] = `
-  import Application from 'ts-app-template/app';
-  import config from 'ts-app-template/config/environment';
-  import * as QUnit from 'qunit';
-  import { setApplication } from '@ember/test-helpers';
-  import { setup } from 'qunit-dom';
-  import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
-
-  export function start() {
-
-    setApplication(Application.create(config.APP));
-    setup(QUnit.assert);
-    setupEmberOnerrorValidation();
-    qunitStart();
-  }
-  `;
-    }
+    useQunit9TestHelper(project);
     project.mergeFiles({
       'ember-cli-build.js': `
         'use strict';
@@ -421,6 +427,184 @@ tsAppClassicScenarios
             EMBROIDER_TEST_SETUP_FORCE: 'classic',
           },
         });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+    });
+  });
+
+const embroiderCliBuild = (options: string) => `
+  'use strict';
+
+  const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+  const { compatBuild } = require('@embroider/compat');
+
+  module.exports = async function (defaults) {
+    const { buildOnce } = await import('@embroider/vite');
+    const app = new EmberApp(defaults, {
+      'ember-cli-babel': {
+        enableTypeScriptTransform: true,
+      },
+    });
+
+    return compatBuild(app, buildOnce, ${options});
+  };
+`;
+
+tsAppScenarios
+  .only('release')
+  .map('router-embroider-config', project => {
+    setupScenario(project);
+    useQunit9TestHelper(project);
+    project.mergeFiles({
+      'ember-cli-build.js': embroiderCliBuild('{}'),
+      'embroider.config.mjs': `export default { splitAtRoutes: ['split-me'] };`,
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`splits routes from embroider.config.mjs`, async function (assert) {
+        let result = await app.execute('pnpm test:ember', {
+          env: {
+            EMBROIDER_TEST_SETUP_FORCE: 'embroider',
+            EMBROIDER_TEST_SETUP_OPTIONS: 'optimized',
+          },
+        });
+        assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`errors when ember-cli-build sets the same option`, async function (assert) {
+        writeFileSync(join(app.dir, 'ember-cli-build.js'), embroiderCliBuild(`{ splitAtRoutes: ['split-me'] }`));
+        let result = await app.execute('pnpm vite build');
+        assert.notEqual(result.exitCode, 0, result.output);
+        assert.true(
+          result.output.includes(
+            'These Embroider options are set in ember-cli-build and in embroider.config.mjs: splitAtRoutes. Set each option in one place only.'
+          ),
+          result.output
+        );
+      });
+    });
+  });
+
+minimalAppScenarios
+  .only('canary')
+  .map('router-minimal-embroider-config', project => {
+    /**
+     * compat-modules includes the app-js of every active addon.
+     * The app-js of ember-data needs an ember-cli-build file.
+     */
+    project.removeDevDependency('ember-data');
+    project.linkDevDependency('testem', { baseDir: __dirname });
+    project.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
+    project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters-4' });
+
+    project.mergeFiles({
+      'embroider.config.mjs': `export default { splitAtRoutes: ['split-me'] };`,
+      src: {
+        'registry.js': null,
+        'app.js': `
+          import Application from '@ember/application';
+          import Resolver from 'ember-resolver';
+          import compatModules from '@embroider/virtual/compat-modules';
+          import config from '#config';
+
+          export default class App extends Application {
+            modulePrefix = config.modulePrefix;
+            Resolver = Resolver.withModules(compatModules);
+          }
+        `,
+        'router.js': `
+          import EmberRouter from '@embroider/router';
+          import config from '#config';
+
+          export default class Router extends EmberRouter {
+            location = config.locationType;
+            rootURL = config.rootURL;
+          }
+
+          Router.map(function () {
+            this.route('split-me', function () {
+              this.route('child');
+            });
+          });
+        `,
+        routes: {
+          'split-me.js': `
+            import Route from '@ember/routing/route';
+            export default class SplitMeRoute extends Route {}
+          `,
+        },
+        templates: {
+          'split-me.gjs': `<template>{{outlet}}</template>`,
+          'split-me': {
+            'index.gjs': `<template><div data-test-split-me-index>This is the split-me/index.</div></template>`,
+            'child.gjs': `<template><div data-test-split-me-child>This is the split-me/child.</div></template>`,
+          },
+        },
+      },
+      tests: {
+        'test-helper.js': `
+          import Application from '#src/app';
+          import config, { enterTestMode } from '#config';
+          import * as QUnit from 'qunit';
+          import { setApplication } from '@ember/test-helpers';
+          import { setup } from 'qunit-dom';
+          import { start as qunitStart, setupEmberOnerrorValidation } from 'ember-qunit';
+
+          export function start() {
+            enterTestMode();
+            setApplication(Application.create(config.APP));
+            setup(QUnit.assert);
+            setupEmberOnerrorValidation();
+            qunitStart();
+          }
+        `,
+        acceptance: {
+          'lazy-routes-test.js': `
+            import { module, test } from 'qunit';
+            import { visit } from '@ember/test-helpers';
+            import { setupApplicationTest } from 'ember-qunit';
+
+            module('Acceptance | lazy routes', function (hooks) {
+              setupApplicationTest(hooks);
+
+              test('lazy routes not yet present', async function (assert) {
+                await visit('/');
+                let resolver = this.owner.lookup('resolver:current');
+                assert.notOk(resolver.resolve('route:split-me'), 'route is lazy');
+                assert.notOk(resolver.resolve('template:split-me'), 'template is lazy');
+                assert.notOk(resolver.resolve('template:split-me/child'), 'child template is lazy');
+              });
+
+              test('can enter a lazy route', async function (assert) {
+                await visit('/split-me');
+                assert.dom('[data-test-split-me-index]').exists();
+              });
+
+              test('can enter a child of a lazy route', async function (assert) {
+                await visit('/split-me/child');
+                assert.dom('[data-test-split-me-child]').exists();
+              });
+            });
+          `,
+        },
+      },
+    });
+  })
+  .forEachScenario(scenario => {
+    Qmodule(scenario.name, function (hooks) {
+      let app: PreparedApp;
+      hooks.before(async () => {
+        app = await scenario.prepare();
+      });
+
+      test(`splits routes from embroider.config.mjs`, async function (assert) {
+        let result = await app.execute('pnpm test:ember');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

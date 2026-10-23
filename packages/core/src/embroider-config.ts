@@ -1,5 +1,6 @@
 import { lilconfigSync, type LoaderSync } from 'lilconfig';
-import { basename } from 'path';
+import { existsSync } from 'fs';
+import { basename, join } from 'path';
 
 export interface LoadedEmbroiderConfig {
   filepath: string;
@@ -66,13 +67,20 @@ export function resolverOptionsFromEmbroiderConfig(appRoot: string): {
     return {};
   }
 
-  for (let key of Object.keys(loaded.config)) {
-    if (!resolverConfigKeys.includes(key)) {
+  let hasEmberCliBuild = ['ember-cli-build.js', 'ember-cli-build.cjs', 'ember-cli-build.mjs'].some(name =>
+    existsSync(join(appRoot, name))
+  );
+
+  let options: Record<string, unknown> = {};
+  for (let [key, value] of Object.entries(loaded.config)) {
+    if (resolverConfigKeys.includes(key)) {
+      options[key] = value;
+    } else if (!hasEmberCliBuild) {
       throw new Error(
         `${basename(loaded.filepath)} sets the Embroider option "${key}". ` +
           `Apps without an ember-cli-build file can set only these options: ${resolverConfigKeys.join(', ')}.`
       );
     }
   }
-  return loaded.config;
+  return options;
 }

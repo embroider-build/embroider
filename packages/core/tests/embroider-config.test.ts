@@ -64,4 +64,12 @@ describe('resolverOptionsFromEmbroiderConfig', () => {
       `.embroiderrc.json sets the Embroider option "staticInvokables". Apps without an ember-cli-build file can set only these options: splitAtRoutes, staticAppPaths.`
     );
   });
+
+  test('keeps only the route splitting options in an app with ember-cli-build', () => {
+    let root = makeApp({
+      'ember-cli-build.js': '',
+      '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'], staticInvokables: false }),
+    });
+    expect(resolverOptionsFromEmbroiderConfig(root)).toEqual({ splitAtRoutes: ['admin'] });
+  });
 });

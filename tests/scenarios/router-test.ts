@@ -1,5 +1,5 @@
 import { tsAppScenarios, tsAppClassicScenarios, minimalAppScenarios, isUsingQunit9 } from './scenarios';
-import { writeFileSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
@@ -504,9 +504,6 @@ minimalAppScenarios
      * The app-js of ember-data needs an ember-cli-build file.
      */
     project.removeDevDependency('ember-data');
-    project.linkDevDependency('testem', { baseDir: __dirname });
-    project.linkDevDependency('@embroider/test-support', { baseDir: __dirname });
-    project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters-4' });
 
     project.mergeFiles({
       'embroider.config.mjs': `export default { splitAtRoutes: ['split-me'] };`,
@@ -533,18 +530,24 @@ minimalAppScenarios
           }
 
           Router.map(function () {
+            this.route('about');
             this.route('split-me', function () {
               this.route('child');
             });
           });
         `,
         routes: {
+          'about.js': `
+            import Route from '@ember/routing/route';
+            export default class AboutRoute extends Route {}
+          `,
           'split-me.js': `
             import Route from '@ember/routing/route';
             export default class SplitMeRoute extends Route {}
           `,
         },
         templates: {
+          'about.gjs': `<template><div data-test-about>This is the about route.</div></template>`,
           'split-me.gjs': `<template>{{outlet}}</template>`,
           'split-me': {
             'index.gjs': `<template><div data-test-split-me-index>This is the split-me/index.</div></template>`,
@@ -578,20 +581,25 @@ minimalAppScenarios
             module('Acceptance | lazy routes', function (hooks) {
               setupApplicationTest(hooks);
 
-              test('lazy routes not yet present', async function (assert) {
-                await visit('/');
+              /**
+               * One test, because the resolver keeps the modules of a loaded bundle.
+               * A second test would see split-me as loaded already.
+               */
+              test('loads split-me only when the app enters it', async function (assert) {
                 let resolver = this.owner.lookup('resolver:current');
-                assert.notOk(resolver.resolve('route:split-me'), 'route is lazy');
-                assert.notOk(resolver.resolve('template:split-me'), 'template is lazy');
-                assert.notOk(resolver.resolve('template:split-me/child'), 'child template is lazy');
-              });
 
-              test('can enter a lazy route', async function (assert) {
+                await visit('/about');
+                assert.dom('[data-test-about]').exists();
+                assert.ok(resolver.resolve('route:about'), 'about is in the initial bundle');
+                assert.notOk(resolver.resolve('route:split-me'), 'split-me route is not loaded');
+                assert.notOk(resolver.resolve('template:split-me'), 'split-me template is not loaded');
+                assert.notOk(resolver.resolve('template:split-me/child'), 'split-me/child template is not loaded');
+
                 await visit('/split-me');
                 assert.dom('[data-test-split-me-index]').exists();
-              });
+                assert.ok(resolver.resolve('route:split-me'), 'split-me route is loaded');
+                assert.ok(resolver.resolve('template:split-me/child'), 'split-me/child template is loaded');
 
-              test('can enter a child of a lazy route', async function (assert) {
                 await visit('/split-me/child');
                 assert.dom('[data-test-split-me-child]').exists();
               });
@@ -608,8 +616,41 @@ minimalAppScenarios
         app = await scenario.prepare();
       });
 
-      test(`splits routes from embroider.config.mjs`, async function (assert) {
-        let result = await app.execute('pnpm test:ember');
+      test(`vite build puts split-me in its own chunk`, async function (assert) {
+        let result = await app.execute('pnpm build:test');
+        assert.equal(result.exitCode, 0, result.output);
+
+        let assetsDir = join(app.dir, 'dist', 'assets');
+        let chunks = readdirSync(assetsDir).filter(name => name.endsWith('.js'));
+        let splitChunks = chunks.filter(name => name.includes('route_split-me'));
+        assert.equal(splitChunks.length, 1, `one split-me chunk in ${chunks.join(', ')}`);
+        if (splitChunks.length !== 1) {
+          return;
+        }
+
+        let splitSource = readFileSync(join(assetsDir, splitChunks[0]), 'utf8');
+        for (let name of [
+          'routes/split-me',
+          'templates/split-me',
+          'templates/split-me/index',
+          'templates/split-me/child',
+        ]) {
+          assert.true(splitSource.includes(`"app-template-minimal/${name}"`), `split-me chunk has ${name}`);
+        }
+
+        let otherSources = chunks
+          .filter(name => !splitChunks.includes(name))
+          .map(name => readFileSync(join(assetsDir, name), 'utf8'))
+          .join('\n');
+        assert.true(otherSources.includes('"app-template-minimal/routes/about"'), 'about is in the initial bundle');
+        assert.false(
+          otherSources.includes('"app-template-minimal/routes/split-me"'),
+          'split-me is not in the initial bundle'
+        );
+      });
+
+      test(`loads split-me lazily at runtime`, async function (assert) {
+        let result = await app.execute('pnpm dist:ember:test');
         assert.equal(result.exitCode, 0, result.output);
       });
     });

@@ -444,6 +444,11 @@ const embroiderCliBuild = (options: string) => `
       'ember-cli-babel': {
         enableTypeScriptTransform: true,
       },
+      '@embroider/macros': {
+        setOwnConfig: {
+          expectClassic: false,
+        },
+      },
     });
 
     return compatBuild(app, buildOnce, ${options});

@@ -1,5 +1,6 @@
 import { tsAppScenarios, tsAppClassicScenarios, minimalAppScenarios, isUsingQunit9 } from './scenarios';
 import { readdirSync, readFileSync, writeFileSync } from 'fs';
+import { readJSONSync } from 'fs-extra';
 import { join } from 'path';
 import type { PreparedApp, Project } from 'scenario-tester';
 import QUnit from 'qunit';
@@ -513,15 +514,21 @@ tsAppScenarios
         assert.equal(result.exitCode, 0, result.output);
       });
 
-      test(`errors when ember-cli-build sets the same option`, async function (assert) {
-        writeFileSync(join(app.dir, 'ember-cli-build.js'), embroiderCliBuild(`{ splitAtRoutes: ['split-me'] }`));
+      test(`deprecates an option that ember-cli-build sets too`, async function (assert) {
+        writeFileSync(join(app.dir, 'ember-cli-build.js'), embroiderCliBuild(`{ splitAtRoutes: ['other'] }`));
         let result = await app.execute('pnpm vite build');
-        assert.notEqual(result.exitCode, 0, result.output);
+        assert.equal(result.exitCode, 0, result.output);
         assert.true(
           result.output.includes(
-            'These Embroider options are set in ember-cli-build and in embroider.config.cjs: splitAtRoutes. Set each option in one place only.'
+            'DEPRECATION: The Embroider option "splitAtRoutes" is set in ember-cli-build and in embroider.config.cjs. ' +
+              'Embroider uses the value from embroider.config.cjs. Remove "splitAtRoutes" from ember-cli-build.'
           ),
           result.output
+        );
+        assert.deepEqual(
+          readJSONSync(join(app.dir, 'node_modules', '.embroider', 'resolver.json')).splitAtRoutes,
+          [{ type: 'string', value: 'split-me' }],
+          'the config file wins'
         );
       });
     });

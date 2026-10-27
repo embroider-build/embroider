@@ -1,7 +1,13 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { loadEmbroiderConfig, withEmbroiderConfig, withUserConfig } from '../src/embroider-config';
+import {
+  deprecateOldConfig,
+  getFromEmbroiderConfig,
+  hasSpecifiedInEmbroiderConfig,
+  loadEmbroiderConfig,
+  withUserConfig,
+} from '../src/embroider-config';
 import type { Options as ResolverOptions } from '../src/module-resolver-options';
 import { readResolverConfig, writeResolverConfig } from '../src/prebuild-state';
 
@@ -58,37 +64,40 @@ describe('loadEmbroiderConfig', () => {
   });
 });
 
-describe('withEmbroiderConfig', () => {
-  test('keeps the ember-cli-build options when the app has no config', () => {
-    let options = { splitAtRoutes: ['admin'] };
-    expect(withEmbroiderConfig(makeApp({}), options)).toBe(options);
-  });
-
-  test('adds the options of the config file', () => {
-    let root = makeApp({ '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'] }) });
-    expect(withEmbroiderConfig(root, { staticAppPaths: ['lib'] })).toEqual({
-      splitAtRoutes: ['admin'],
-      staticAppPaths: ['lib'],
-    });
-    expect(withEmbroiderConfig(root, undefined)).toEqual({ splitAtRoutes: ['admin'] });
-  });
-
-  test('throws when ember-cli-build and the config file set the same option', () => {
+describe('options from the config file', () => {
+  test('finds top-level and nested options', () => {
     let root = makeApp({
-      '.embroiderrc.json': JSON.stringify({
-        splitAtRoutes: ['admin'],
-        staticAppPaths: ['lib'],
-        staticInvokables: true,
-      }),
+      '.embroiderrc.json': JSON.stringify({ staticInvokables: false, amdCompatibility: { es: [] } }),
     });
-    expect(() => withEmbroiderConfig(root, { splitAtRoutes: ['other'], staticAppPaths: ['lib'] })).toThrow(
-      `These Embroider options are set in ember-cli-build and in .embroiderrc.json: splitAtRoutes, staticAppPaths. Set each option in one place only.`
-    );
+    expect(hasSpecifiedInEmbroiderConfig(root, 'staticInvokables')).toBe(true);
+    expect(getFromEmbroiderConfig(root, 'staticInvokables')).toBe(false);
+    expect(hasSpecifiedInEmbroiderConfig(root, 'amdCompatibility.es')).toBe(true);
+    expect(getFromEmbroiderConfig(root, 'amdCompatibility.es')).toEqual([]);
+    expect(hasSpecifiedInEmbroiderConfig(root, 'splitAtRoutes')).toBe(false);
+    expect(hasSpecifiedInEmbroiderConfig(root, 'amdCompatibility.cjs')).toBe(false);
   });
 
-  test('ignores ember-cli-build options that are undefined', () => {
+  test('finds no options when the app has no config', () => {
+    let root = makeApp({});
+    expect(hasSpecifiedInEmbroiderConfig(root, 'splitAtRoutes')).toBe(false);
+    expect(getFromEmbroiderConfig(root, 'splitAtRoutes')).toBeUndefined();
+  });
+
+  test('shows the deprecation of the old place once per option', () => {
     let root = makeApp({ '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'] }) });
-    expect(withEmbroiderConfig(root, { splitAtRoutes: undefined })).toEqual({ splitAtRoutes: ['admin'] });
+    let warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      deprecateOldConfig(root, 'splitAtRoutes', 'ember-cli-build');
+      deprecateOldConfig(root, 'splitAtRoutes', 'ember-cli-build');
+      expect(warn.mock.calls).toEqual([
+        [
+          'DEPRECATION: The Embroider option "splitAtRoutes" is set in ember-cli-build and in .embroiderrc.json. ' +
+            'Embroider uses the value from .embroiderrc.json. Remove "splitAtRoutes" from ember-cli-build.',
+        ],
+      ]);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

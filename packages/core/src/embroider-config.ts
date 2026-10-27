@@ -43,39 +43,48 @@ export function loadEmbroiderConfig(appRoot: string): LoadedEmbroiderConfig | un
   return { filepath, config };
 }
 
+function lookup(config: Record<string, unknown>, path: string): { found: boolean; value: unknown } {
+  let cursor: unknown = config;
+  for (let key of path.split('.')) {
+    if (typeof cursor !== 'object' || cursor === null || !(key in cursor)) {
+      return { found: false, value: undefined };
+    }
+    cursor = (cursor as Record<string, unknown>)[key];
+  }
+  return { found: true, value: cursor };
+}
+
 /**
- * Merges the config file with the options that ember-cli-build gives to `compatBuild`.
- *
- * The config file is the source of truth.
- * The ember-cli-build options stay for compatibility,
- * and this is the one place that sees which options come from there.
+ * True when the Embroider config file of the app sets the option.
+ * `path` can name a nested option, for example `amdCompatibility.es`.
  */
-export function withEmbroiderConfig<T extends object>(appRoot: string, options: T | undefined): T | undefined {
+export function hasSpecifiedInEmbroiderConfig(appRoot: string, path: string): boolean {
   let loaded = loadEmbroiderConfig(appRoot);
-  if (!loaded) {
-    return options;
-  }
+  return loaded ? lookup(loaded.config, path).found : false;
+}
 
-  let merged: Record<string, unknown> = Object.assign({}, loaded.config);
-  let duplicates: string[] = [];
-  for (let [key, value] of Object.entries(options ?? {})) {
-    if (value === undefined) {
-      continue;
-    }
-    if (key in loaded.config) {
-      duplicates.push(key);
-    }
-    merged[key] = value;
-  }
+export function getFromEmbroiderConfig(appRoot: string, path: string): unknown {
+  let loaded = loadEmbroiderConfig(appRoot);
+  return loaded ? lookup(loaded.config, path).value : undefined;
+}
 
-  if (duplicates.length > 0) {
-    throw new Error(
-      `These Embroider options are set in ember-cli-build and in ${basename(loaded.filepath)}: ${duplicates.join(
-        ', '
-      )}. Set each option in one place only.`
-    );
+const deprecated = new Set<string>();
+
+/**
+ * Tells the user to move an option from its old place to the Embroider config file.
+ * Each option shows the message once per process.
+ */
+export function deprecateOldConfig(appRoot: string, path: string, oldPlace: string): void {
+  let key = `${appRoot}\0${path}\0${oldPlace}`;
+  if (deprecated.has(key)) {
+    return;
   }
-  return merged as T;
+  deprecated.add(key);
+  let file = basename(loadEmbroiderConfig(appRoot)?.filepath ?? 'the Embroider config file');
+  console.warn(
+    `DEPRECATION: The Embroider option "${path}" is set in ${oldPlace} and in ${file}. ` +
+      `Embroider uses the value from ${file}. Remove "${path}" from ${oldPlace}.`
+  );
 }
 
 /**
@@ -85,20 +94,19 @@ export function withEmbroiderConfig<T extends object>(appRoot: string, options: 
 const minimalAppKeys = ['splitAtRoutes', 'staticAppPaths'];
 
 /**
- * Puts the user options of the config file over the resolver options.
+ * Reads the user options of the resolver.
  *
  * `prebuilt` is true when the options come from the `resolver.json` of the prebuild.
- * That file holds the ember-cli-build options too, so the config file wins.
+ * Users do not edit that file, so it is not an old place to deprecate.
  */
 export function withUserConfig<T extends ResolverOptions>(appRoot: string, resolverOptions: T, prebuilt: boolean): T {
   let loaded = loadEmbroiderConfig(appRoot);
   if (!loaded) {
     return resolverOptions;
   }
-  let config = loaded.config;
 
   if (!prebuilt) {
-    let unexpected = Object.keys(config).filter(key => !minimalAppKeys.includes(key));
+    let unexpected = Object.keys(loaded.config).filter(key => !minimalAppKeys.includes(key));
     if (unexpected.length > 0) {
       throw new Error(
         `Unexpected properties in ${basename(loaded.filepath)}: ${unexpected.join(', ')}. ` +
@@ -108,19 +116,22 @@ export function withUserConfig<T extends ResolverOptions>(appRoot: string, resol
   }
 
   let result: T = Object.assign({}, resolverOptions);
-  if ('splitAtRoutes' in config) {
-    result.splitAtRoutes = config.splitAtRoutes as T['splitAtRoutes'];
+  if (hasSpecifiedInEmbroiderConfig(appRoot, 'splitAtRoutes')) {
+    result.splitAtRoutes = getFromEmbroiderConfig(appRoot, 'splitAtRoutes') as T['splitAtRoutes'];
   }
-  if ('staticAppPaths' in config) {
-    result.staticAppPaths = config.staticAppPaths as T['staticAppPaths'];
+  if (hasSpecifiedInEmbroiderConfig(appRoot, 'staticAppPaths')) {
+    result.staticAppPaths = getFromEmbroiderConfig(appRoot, 'staticAppPaths') as T['staticAppPaths'];
   }
   if (result.options) {
     result.options = Object.assign({}, result.options);
-    if ('staticInvokables' in config) {
-      result.options.staticInvokables = config.staticInvokables as boolean;
+    if (hasSpecifiedInEmbroiderConfig(appRoot, 'staticInvokables')) {
+      result.options.staticInvokables = getFromEmbroiderConfig(appRoot, 'staticInvokables') as boolean;
     }
-    if ('allowUnsafeDynamicComponents' in config) {
-      result.options.allowUnsafeDynamicComponents = config.allowUnsafeDynamicComponents as boolean;
+    if (hasSpecifiedInEmbroiderConfig(appRoot, 'allowUnsafeDynamicComponents')) {
+      result.options.allowUnsafeDynamicComponents = getFromEmbroiderConfig(
+        appRoot,
+        'allowUnsafeDynamicComponents'
+      ) as boolean;
     }
   }
   return result;

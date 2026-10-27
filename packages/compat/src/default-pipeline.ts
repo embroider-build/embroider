@@ -1,8 +1,6 @@
 import type Options from './options';
-import { recommendedOptions } from './options';
 import { App, Addons as CompatAddons } from '.';
 import type { Variant, EmberAppInstance } from '@embroider/core';
-import { withEmbroiderConfig } from '@embroider/core';
 import type { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';
@@ -13,21 +11,11 @@ export interface PipelineOptions<PackagerOptions> extends Options {
   variants?: Variant[];
 }
 
-const defaultPrebuildOptions = {
-  ...recommendedOptions.optimized,
-  amdCompatibility: {
-    es: [],
-  },
-};
-
 export function prebuild(emberApp: EmberAppInstance, options?: Options): Node {
   let outputPath: string;
   let addons;
 
-  let embroiderApp = new App(emberApp, {
-    ...defaultPrebuildOptions,
-    ...withEmbroiderConfig(emberApp.project.root, options),
-  });
+  let embroiderApp = new App(emberApp, options);
 
   addons = new CompatAddons(embroiderApp);
   addons.ready().then(result => {

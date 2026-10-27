@@ -18,7 +18,6 @@ import type CompatApp from './compat-app';
 import type { CompatBabelState } from './babel';
 import { MacrosConfig } from '@embroider/macros/src/node';
 import { buildResolverOptions } from '@embroider/core/src/module-resolver-options';
-import type { CompatOptionsType } from './options';
 
 // This exists during the actual broccoli build step. As opposed to CompatApp,
 // which also exists during pipeline-construction time.
@@ -27,7 +26,6 @@ export class CompatAppBuilder {
   constructor(
     private origAppPackage: Package,
     private appPackageWithMovedDeps: Package,
-    private options: CompatOptionsType,
     private compatApp: CompatApp,
     private configTree: V1Config,
     private contentForTree: ContentForConfig,
@@ -49,17 +47,20 @@ export class CompatAppBuilder {
       appPackage: this.appPackageWithMovedDeps,
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
-      splitAtRoutes: this.options.splitAtRoutes,
-      staticAppPaths: this.options.staticAppPaths,
+      splitAtRoutes: this.compatApp.option('splitAtRoutes'),
+      staticAppPaths: this.compatApp.option('staticAppPaths'),
       extraDeps: new Map([[this.appPackageWithMovedDeps.root, [this.synthVendor, this.synthStyles] as AddonPackage[]]]),
       extend: (options: CompatResolverOptions, allActiveAddons) => {
-        options.activePackageRules = activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-          { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.origAppPackage.root },
-          ...allActiveAddons.filter(p => p.meta['auto-upgraded']),
-        ]);
+        options.activePackageRules = activePackageRules(
+          this.compatApp.option('packageRules').concat(defaultAddonPackageRules()),
+          [
+            { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.origAppPackage.root },
+            ...allActiveAddons.filter(p => p.meta['auto-upgraded']),
+          ]
+        );
         options.options = {
-          staticInvokables: this.options.staticInvokables,
-          allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
+          staticInvokables: this.compatApp.option('staticInvokables'),
+          allowUnsafeDynamicComponents: this.compatApp.option('allowUnsafeDynamicComponents'),
         };
         return options;
       },
@@ -85,7 +86,7 @@ export class CompatAppBuilder {
 
   @Memoize()
   private get portableHints(): PortableHint[] {
-    return this.options.pluginHints.map(hint => {
+    return this.compatApp.option('pluginHints').map(hint => {
       let cursor = join(this.origAppPackage.root, 'package.json');
       for (let i = 0; i < hint.resolve.length; i++) {
         let target = hint.resolve[i];
@@ -154,7 +155,7 @@ export class CompatAppBuilder {
     // In addition to outputting content-for.json, we also want to check if content-for 'config-module' has a custom content.
     // If so, it means some classic addons used to provide this custom content, which is no longer supported.
     // Developers can deactivate this check (and the subsequent warning) with useAddonConfigModule
-    if (this.compatApp.options.useAddonConfigModule) {
+    if (this.compatApp.option('useAddonConfigModule')) {
       let modulePrefix = this.configTree.readConfig().modulePrefix;
 
       // This is the default script provided by https://github.com/ember-cli/ember-cli/blob/master/lib/utilities/ember-app-utils.js#L84
@@ -193,7 +194,7 @@ export class CompatAppBuilder {
   // The purpose of this error message is to help developers to move the classic addons code.
   // Developers can deactivate it with useAddonAppBoot build option.
   private outputAppBootError(modulePrefix: string, appConfig: any, contentForConfig: any) {
-    if (!this.compatApp.options.useAddonAppBoot) {
+    if (!this.compatApp.option('useAddonAppBoot')) {
       return;
     }
 

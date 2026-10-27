@@ -462,7 +462,7 @@ tsAppScenarios
     useQunit9TestHelper(project);
     project.mergeFiles({
       'ember-cli-build.js': embroiderCliBuild('{}'),
-      'embroider.config.mjs': `export default { splitAtRoutes: ['split-me'] };`,
+      'embroider.config.cjs': `module.exports = { splitAtRoutes: ['split-me'] };`,
     });
   })
   .forEachScenario(scenario => {
@@ -472,7 +472,7 @@ tsAppScenarios
         app = await scenario.prepare();
       });
 
-      test(`splits routes from embroider.config.mjs`, async function (assert) {
+      test(`splits routes from embroider.config.cjs`, async function (assert) {
         let result = await app.execute('pnpm test:ember', {
           env: {
             EMBROIDER_TEST_SETUP_FORCE: 'embroider',
@@ -488,7 +488,7 @@ tsAppScenarios
         assert.notEqual(result.exitCode, 0, result.output);
         assert.true(
           result.output.includes(
-            'These Embroider options are set in ember-cli-build and in embroider.config.mjs: splitAtRoutes. Set each option in one place only.'
+            'These Embroider options are set in ember-cli-build and in embroider.config.cjs: splitAtRoutes. Set each option in one place only.'
           ),
           result.output
         );
@@ -506,7 +506,7 @@ minimalAppScenarios
     project.removeDevDependency('ember-data');
 
     project.mergeFiles({
-      'embroider.config.mjs': `export default { splitAtRoutes: ['split-me'] };`,
+      'embroider.config.js': `export default { splitAtRoutes: ['split-me'] };`,
       src: {
         'registry.js': null,
         'app.js': `

@@ -7,17 +7,9 @@ export interface LoadedEmbroiderConfig {
   config: Record<string, unknown>;
 }
 
-const searchPlaces = [
-  'package.json',
-  '.embroiderrc.json',
-  'embroider.config.js',
-  'embroider.config.mjs',
-  'embroider.config.cjs',
-];
-
 /**
  * Node can `require()` ES modules since 20.19,
- * so one sync loader covers `.js`, `.mjs`, and `.cjs` files.
+ * so a sync loader can read an ESM `.js` file in a `"type": "module"` app.
  */
 const loadModule: LoaderSync = filepath => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -36,9 +28,8 @@ const loadModule: LoaderSync = filepath => {
  */
 export function loadEmbroiderConfig(appRoot: string): LoadedEmbroiderConfig | undefined {
   let result = lilconfigSync('embroider', {
-    searchPlaces,
     stopDir: appRoot,
-    loaders: { '.js': loadModule, '.mjs': loadModule, '.cjs': loadModule },
+    loaders: { '.js': loadModule, '.cjs': loadModule },
   }).search(appRoot);
 
   if (!result) {

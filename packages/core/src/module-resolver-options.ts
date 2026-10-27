@@ -20,6 +20,16 @@ export interface Options {
   podModulePrefix?: string;
   staticAppPaths: string[];
   emberVersion: string;
+  options?: ResolverUserFlags;
+}
+
+/**
+ * User options that `compatBuild` copies into the resolver options.
+ * Apps without a prebuild do not have them.
+ */
+export interface ResolverUserFlags {
+  staticInvokables?: boolean;
+  allowUnsafeDynamicComponents?: boolean;
 }
 
 export interface EngineConfig {

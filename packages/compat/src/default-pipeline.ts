@@ -1,7 +1,8 @@
 import type Options from './options';
-import { recommendedOptions, withEmbroiderConfig } from './options';
+import { recommendedOptions } from './options';
 import { App, Addons as CompatAddons } from '.';
 import type { Variant, EmberAppInstance } from '@embroider/core';
+import { withEmbroiderConfig } from '@embroider/core';
 import type { Node } from 'broccoli-node-api';
 import writeFile from 'broccoli-file-creator';
 import mergeTrees from 'broccoli-merge-trees';

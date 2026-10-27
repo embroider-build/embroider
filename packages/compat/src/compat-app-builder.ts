@@ -1,5 +1,5 @@
 import type { AddonPackage } from '@embroider/core';
-import { locateEmbroiderWorkingDir } from '@embroider/core';
+import { locateEmbroiderWorkingDir, writeResolverConfig } from '@embroider/core';
 import type { CompatResolverOptions } from './resolver-transform';
 import type { PackageRules } from './dependency-rules';
 import { activePackageRules } from './dependency-rules';
@@ -143,26 +143,7 @@ export class CompatAppBuilder {
   }
 
   private addResolverConfig(config: CompatResolverOptions) {
-    outputJSONSync(
-      join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'),
-      {
-        ...config,
-        splitAtRoutes: config.splitAtRoutes?.map(s => {
-          if (typeof s === 'string') {
-            return {
-              type: 'string',
-              value: s,
-            };
-          } else {
-            return {
-              type: 'regex',
-              value: s.toString(),
-            };
-          }
-        }),
-      },
-      { spaces: 2 }
-    );
+    writeResolverConfig(this.compatApp.root, config);
   }
 
   private addContentForConfig(contentForConfig: any) {

@@ -462,7 +462,38 @@ tsAppScenarios
     useQunit9TestHelper(project);
     project.mergeFiles({
       'ember-cli-build.js': embroiderCliBuild('{}'),
-      'embroider.config.cjs': `module.exports = { splitAtRoutes: ['split-me'] };`,
+      'embroider.config.cjs': `module.exports = { splitAtRoutes: ['split-me'], staticAppPaths: ['static-dir'] };`,
+      app: {
+        'static-dir': {
+          'my-library.js': `
+            globalThis.staticDirMyLibLoaded = true;
+            export {};
+          `,
+        },
+        'non-static-dir': {
+          'another-library.js': `
+            globalThis.anotherLibraryLoaded = true;
+            export {};
+          `,
+        },
+      },
+      tests: {
+        unit: {
+          'static-app-paths-test.js': `
+            import { module, test } from 'qunit';
+
+            module('Unit | staticAppPaths from the Embroider config', function () {
+              test('non-static-dir is loaded', function (assert) {
+                assert.true(globalThis.anotherLibraryLoaded);
+              });
+
+              test('static-dir is not loaded', function (assert) {
+                assert.notOk(globalThis.staticDirMyLibLoaded);
+              });
+            });
+          `,
+        },
+      },
     });
   })
   .forEachScenario(scenario => {
@@ -472,7 +503,7 @@ tsAppScenarios
         app = await scenario.prepare();
       });
 
-      test(`splits routes from embroider.config.cjs`, async function (assert) {
+      test(`reads splitAtRoutes and staticAppPaths from embroider.config.cjs`, async function (assert) {
         let result = await app.execute('pnpm test:ember', {
           env: {
             EMBROIDER_TEST_SETUP_FORCE: 'embroider',
@@ -506,8 +537,20 @@ minimalAppScenarios
     project.removeDevDependency('ember-data');
 
     project.mergeFiles({
-      'embroider.config.js': `export default { splitAtRoutes: ['split-me'] };`,
+      'embroider.config.js': `export default { splitAtRoutes: ['split-me'], staticAppPaths: ['static-dir'] };`,
       src: {
+        'static-dir': {
+          'my-library.js': `
+            globalThis.staticDirMyLibLoaded = true;
+            export {};
+          `,
+        },
+        'non-static-dir': {
+          'another-library.js': `
+            globalThis.anotherLibraryLoaded = true;
+            export {};
+          `,
+        },
         'registry.js': null,
         'app.js': `
           import Application from '@ember/application';
@@ -556,6 +599,21 @@ minimalAppScenarios
         },
       },
       tests: {
+        unit: {
+          'static-app-paths-test.js': `
+            import { module, test } from 'qunit';
+
+            module('Unit | staticAppPaths from the Embroider config', function () {
+              test('non-static-dir is loaded', function (assert) {
+                assert.true(globalThis.anotherLibraryLoaded);
+              });
+
+              test('static-dir is not loaded', function (assert) {
+                assert.notOk(globalThis.staticDirMyLibLoaded);
+              });
+            });
+          `,
+        },
         'test-helper.js': `
           import Application from '#src/app';
           import config, { enterTestMode } from '#config';
@@ -649,7 +707,7 @@ minimalAppScenarios
         );
       });
 
-      test(`loads split-me lazily at runtime`, async function (assert) {
+      test(`loads split-me lazily and skips static-dir at runtime`, async function (assert) {
         let result = await app.execute('pnpm dist:ember:test');
         assert.equal(result.exitCode, 0, result.output);
       });

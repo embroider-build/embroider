@@ -58,18 +58,12 @@ describe('resolverOptionsFromEmbroiderConfig', () => {
     expect(resolverOptionsFromEmbroiderConfig(root)).toEqual({ splitAtRoutes: ['admin'], staticAppPaths: ['lib'] });
   });
 
-  test('throws for an option that needs ember-cli-build', () => {
-    let root = makeApp({ '.embroiderrc.json': JSON.stringify({ staticInvokables: false }) });
-    expect(() => resolverOptionsFromEmbroiderConfig(root)).toThrow(
-      `.embroiderrc.json sets the Embroider option "staticInvokables". Apps without an ember-cli-build file can set only these options: splitAtRoutes, staticAppPaths.`
-    );
-  });
-
-  test('keeps only the route splitting options in an app with ember-cli-build', () => {
+  test('throws for unexpected properties', () => {
     let root = makeApp({
-      'ember-cli-build.js': '',
-      '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'], staticInvokables: false }),
+      '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'], staticInvokables: false, other: 1 }),
     });
-    expect(resolverOptionsFromEmbroiderConfig(root)).toEqual({ splitAtRoutes: ['admin'] });
+    expect(() => resolverOptionsFromEmbroiderConfig(root)).toThrow(
+      `Unexpected properties in .embroiderrc.json: staticInvokables, other. Expected only: splitAtRoutes, staticAppPaths.`
+    );
   });
 });

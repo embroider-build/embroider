@@ -1,6 +1,5 @@
 import { lilconfigSync, type LoaderSync } from 'lilconfig';
-import { existsSync } from 'fs';
-import { basename, join } from 'path';
+import { basename } from 'path';
 
 export interface LoadedEmbroiderConfig {
   filepath: string;
@@ -44,8 +43,8 @@ export function loadEmbroiderConfig(appRoot: string): LoadedEmbroiderConfig | un
 }
 
 /**
- * The options that apps without an `ember-cli-build` file can set.
- * Apps with one can set every option of `compatBuild`.
+ * Embroider reads the config file here only when `compatBuild` did not write a `resolver.json`.
+ * Apps with `ember-cli-build` give the config to `compatBuild` instead.
  */
 const resolverConfigKeys = ['splitAtRoutes', 'staticAppPaths'];
 
@@ -58,20 +57,12 @@ export function resolverOptionsFromEmbroiderConfig(appRoot: string): {
     return {};
   }
 
-  let hasEmberCliBuild = ['ember-cli-build.js', 'ember-cli-build.cjs', 'ember-cli-build.mjs'].some(name =>
-    existsSync(join(appRoot, name))
-  );
-
-  let options: Record<string, unknown> = {};
-  for (let [key, value] of Object.entries(loaded.config)) {
-    if (resolverConfigKeys.includes(key)) {
-      options[key] = value;
-    } else if (!hasEmberCliBuild) {
-      throw new Error(
-        `${basename(loaded.filepath)} sets the Embroider option "${key}". ` +
-          `Apps without an ember-cli-build file can set only these options: ${resolverConfigKeys.join(', ')}.`
-      );
-    }
+  let unexpected = Object.keys(loaded.config).filter(key => !resolverConfigKeys.includes(key));
+  if (unexpected.length > 0) {
+    throw new Error(
+      `Unexpected properties in ${basename(loaded.filepath)}: ${unexpected.join(', ')}. ` +
+        `Expected only: ${resolverConfigKeys.join(', ')}.`
+    );
   }
-  return options;
+  return loaded.config;
 }

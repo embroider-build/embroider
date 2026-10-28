@@ -78,6 +78,11 @@ export function assets(): Plugin {
               }
 
               const filePath = join(pkg.root, path);
+              // the dev server skips missing assets too (see findPublicAsset)
+              if (!existsSync(filePath)) {
+                console.warn(`${pkg.name} declares a public asset "${path}" that does not exist, skipping it`);
+                return;
+              }
               if (!lstatSync(filePath).isFile()) {
                 console.log(`Invalid package definition, ${pkg.name} has defined a file "${path}" that is not a file`);
                 return;

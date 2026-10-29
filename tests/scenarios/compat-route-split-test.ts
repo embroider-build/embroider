@@ -19,13 +19,17 @@ let splitScenarios = appScenarios.map('compat-splitAtRoutes', app => {
 
       module.exports = function (defaults) {
         let app = new EmberApp(defaults, {});
-        return maybeEmbroider(app, {
-          staticInvokables: true,
-          // this is quite complicated because we don't want to match 'people.show' just 'people' to
-          // keep the behaviou to what it was before
-          splitAtRoutes: [/peo([^.\s])+$/],
-        });
+        return maybeEmbroider(app);
       };
+    `,
+    'embroider.conf.mjs': `
+      import { defineConfig } from '@embroider/compat/config';
+      export default defineConfig({
+        staticInvokables: true,
+        // this is quite complicated because we don't want to match 'people.show' just 'people' to
+        // keep the behaviou to what it was before
+        splitAtRoutes: [/peo([^.\s])+$/],
+      });
     `,
     app: {
       components: {

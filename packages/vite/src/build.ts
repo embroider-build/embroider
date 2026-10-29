@@ -1,7 +1,7 @@
 import { fork } from 'child_process';
 import type { Plugin } from 'vite';
 import { createRequire } from 'node:module';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve } from 'node:path';
 
 const require = createRequire(import.meta.url);
 
@@ -63,6 +63,13 @@ export function compatPrebuild(): Plugin {
     name: 'embroider-builder',
     enforce: 'pre',
     config(config, { mode, command }) {
+      // fail fast on a broken embroider.conf.*. This app uses compat, so we
+      // use compat's validation, which covers compat's options too.
+      // @embroider/compat isn't our dependency, so resolve it from the app.
+      let root = config.root ? resolve(config.root) : process.cwd();
+      let { validateConfig } = createRequire(join(root, 'package.json'))('@embroider/compat/config');
+      validateConfig(root);
+
       viteCommand = process.env.EMBROIDER_VITE_COMMAND ?? command;
       viteMode = mode;
       resolvableExtensions = config.resolve?.extensions;

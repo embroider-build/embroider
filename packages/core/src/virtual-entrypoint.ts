@@ -7,7 +7,7 @@ import { extensionsPattern } from '@embroider/shared-internals';
 import walkSync from 'walk-sync';
 import type { V2AddonPackage } from '@embroider/shared-internals/src/package';
 import escapeRegExp from 'escape-string-regexp';
-import { optionsWithDefaults } from './options';
+import { coreOptions } from './config-loader';
 import { resolvableExtensions } from './resolvable-extensions';
 
 export interface EntrypointResponse {
@@ -33,6 +33,7 @@ export function renderEntrypoint(
   }
 
   let engine = resolver.owningEngine(owner);
+  let options = coreOptions(resolver.options.appRoot);
   let isApp = owner?.root === resolver.options.engines[0]!.root;
   let hasFastboot = Boolean(resolver.options.engines[0]!.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
   let defineModulesFrom = ['./-embroider-implicit-modules.js'];
@@ -53,17 +54,9 @@ export function renderEntrypoint(
     getAppFiles(fromDir),
     hasFastboot ? getFastbootFiles(owner.root) : new Set(),
     extensionsPattern(resolver.options.resolvableExtensions),
-    staticAppPathsPattern(resolver.options.staticAppPaths),
+    staticAppPathsPattern(options.staticAppPaths),
     resolver.options.podModulePrefix
   );
-
-  /**
-   * we are only reading staticInvokables off this type so I'm setting the type manually here. I don't know why
-   * resolver.options is reporting an incorrect type here, but I have verified this programatically that this
-   * is the right shape here and tests fail if it is wrong anyway
-   */
-  let options =
-    (resolver.options as unknown as { options: { staticInvokables: boolean } }).options ?? optionsWithDefaults();
 
   let requiredAppFiles = [appFiles.otherAppFiles];
   if (!options.staticInvokables) {
@@ -86,7 +79,7 @@ export function renderEntrypoint(
     splitRoute(
       routeName,
       routeFiles,
-      resolver.options.splitAtRoutes,
+      options.splitAtRoutes,
       (_: string, filename: string) => {
         requiredAppFiles.push([filename]);
       },

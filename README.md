@@ -26,25 +26,25 @@ The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the offic
 
 ## Options
 
-You can pass options into Embroider by passing them into the `compatBuild` function like:
+Embroider options go in an `embroider.conf.mjs` file next to your app's `package.json`:
 
 ```js
-// ember-cli-build.js
-const EmberApp = require('ember-cli/lib/broccoli/ember-app');
-const { compatBuild } = require('@embroider/compat');
+// embroider.conf.mjs
+import { defineConfig } from '@embroider/compat/config';
 
-module.exports = async function (defaults) {
-  const { buildOnce } = await import('@embroider/vite');
-  let app = new EmberApp(defaults, {});
-
-  return compatBuild(app, buildOnce, {
-    staticInvokables: true, // this is the default so you don't need to set it
-    splitAtRoutes: ['route.name'], // can also be a RegExp
-  );
-};
+export default defineConfig({
+  staticInvokables: true, // this is the default so you don't need to set it
+  splitAtRoutes: ['route.name'], // can also be a RegExp
+});
 ```
 
+If your app doesn't use `@embroider/compat`, import `defineConfig` from `@embroider/core/config` instead. `defineConfig` doesn't do anything at runtime; it's there to give you types.
+
+The file is evaluated directly by Node, so it can be `embroider.conf.mjs`, `.cjs`, or `.js`, or, if your version of Node can run TypeScript natively, `.mts`, `.cts`, or `.ts`.
+
 The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/main/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/main/packages/compat/src/options.ts)
+
+Passing options as the third argument to `compatBuild` in `ember-cli-build.js` still works but is deprecated. Having options in both places is an error.
 
 ## Environment variables
 

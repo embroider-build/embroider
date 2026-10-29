@@ -2,6 +2,16 @@ export { Packager, PackagerConstructor, Variant, applyVariantToBabelConfig, getP
 export { HTMLEntrypoint, BundleSummary } from './html-entrypoint';
 export { default as Stage } from './stage';
 export { default as Options, optionsWithDefaults } from './options';
+export { defineConfig, validateConfig } from './config';
+export {
+  loadEmbroiderConfig,
+  coreOptions,
+  clearEmbroiderConfigCache,
+  locateConfigFile,
+  registerLegacyEmbroiderConfig,
+  serializeLegacyEmbroiderConfig,
+  type LoadedConfig,
+} from './config-loader';
 export { default as WaitForTrees, OutputPaths } from './wait-for-trees';
 export { compile as jsHandlebarsCompile } from './js-handlebars';
 export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from './messages';

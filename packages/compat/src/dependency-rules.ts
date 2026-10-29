@@ -1,6 +1,7 @@
 import type { Resolver } from '@embroider/core';
 import { getOrCreate } from '@embroider/core';
-import { resolve as pathResolve, dirname } from 'path';
+import { resolve as pathResolve, dirname, join } from 'path';
+import { readdirSync } from 'fs';
 import { satisfies } from 'semver';
 import { resolve as resolveExports } from 'resolve.exports';
 
@@ -229,4 +230,17 @@ export function appTreeRulesDir(root: string, resolver: Resolver) {
     }
   }
   return root;
+}
+
+// The rules that ship with @embroider/compat, see ./addon-dependency-rules
+export function defaultAddonPackageRules(): PackageRules[] {
+  return readdirSync(join(__dirname, 'addon-dependency-rules'))
+    .map(filename => {
+      if (filename.endsWith('.js')) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        return require(join(__dirname, 'addon-dependency-rules', filename)).default;
+      }
+    })
+    .filter(Boolean)
+    .reduce((a, b) => a.concat(b), []);
 }

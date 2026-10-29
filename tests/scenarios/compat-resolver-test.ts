@@ -7,7 +7,7 @@ import { resolve, sep } from 'path';
 import QUnit from 'qunit';
 import { Project, Scenarios } from 'scenario-tester';
 import type { CompatResolverOptions } from '@embroider/compat/src/resolver-transform';
-import type { PackageRules } from '@embroider/compat';
+import type { PackageRules, Options as CompatOptions } from '@embroider/compat';
 
 const { module: Qmodule, test } = QUnit;
 
@@ -30,7 +30,7 @@ Scenarios.fromProject(() => new Project())
       let expectTranspiled: (file: string) => ReturnType<ReturnType<ExpectFile>['transform']>;
       let givenFiles: (files: Record<string, string>) => void;
       let configure: (
-        opts?: Partial<CompatResolverOptions['options']>,
+        opts?: Pick<CompatOptions, 'staticInvokables' | 'allowUnsafeDynamicComponents'>,
         extraOpts?: ConfigureOpts,
         emberVersion?: string
       ) => Promise<void>;
@@ -52,7 +52,7 @@ Scenarios.fromProject(() => new Project())
           }
         };
         configure = async function (
-          opts?: Partial<CompatResolverOptions['options']>,
+          opts?: Pick<CompatOptions, 'staticInvokables' | 'allowUnsafeDynamicComponents'>,
           extraOpts?: ConfigureOpts,
           emberVersion = '4.6.0'
         ) {
@@ -72,20 +72,20 @@ Scenarios.fromProject(() => new Project())
             ],
             modulePrefix: 'my-app',
             podModulePrefix: undefined,
-            options: {
-              staticInvokables: false,
-              allowUnsafeDynamicComponents: false,
-              ...opts,
-            },
-            activePackageRules: [
+            packageRuleCandidates: [{ name: 'my-app', version: '0.0.0', root: app.dir }],
+            emberVersion,
+          };
+
+          let embroiderConfig: CompatOptions = {
+            staticInvokables: false,
+            allowUnsafeDynamicComponents: false,
+            ...opts,
+            packageRules: [
               {
                 package: 'my-app',
-                roots: [app.dir],
                 ...extraOpts?.appPackageRules,
               },
             ],
-            staticAppPaths: [],
-            emberVersion,
           };
 
           givenFiles({
@@ -111,6 +111,7 @@ Scenarios.fromProject(() => new Project())
               }
             `,
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
+            'embroider.conf.mjs': `export default ${JSON.stringify(embroiderConfig)};`,
           });
         };
       });

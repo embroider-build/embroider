@@ -80,6 +80,10 @@ export function optionsWithDefaults(options?: Options): CoreOptionsType {
     );
   }
 
+  if (options) {
+    validateShape(options);
+  }
+
   let defaults = {
     staticInvokables: true,
     splitAtRoutes: [],
@@ -91,4 +95,32 @@ export function optionsWithDefaults(options?: Options): CoreOptionsType {
     return Object.assign(defaults, options);
   }
   return defaults;
+}
+
+function validateShape(options: Options) {
+  let problems: string[] = [];
+  if (options.staticInvokables !== undefined && typeof options.staticInvokables !== 'boolean') {
+    problems.push(`'staticInvokables' must be a boolean`);
+  }
+  if (
+    options.splitAtRoutes !== undefined &&
+    !(
+      Array.isArray(options.splitAtRoutes) &&
+      options.splitAtRoutes.every(r => typeof r === 'string' || r instanceof RegExp)
+    )
+  ) {
+    problems.push(`'splitAtRoutes' must be an array of strings and RegExps`);
+  }
+  if (
+    options.staticAppPaths !== undefined &&
+    !(Array.isArray(options.staticAppPaths) && options.staticAppPaths.every(p => typeof p === 'string'))
+  ) {
+    problems.push(`'staticAppPaths' must be an array of strings`);
+  }
+  if (options.pluginHints !== undefined && !Array.isArray(options.pluginHints)) {
+    problems.push(`'pluginHints' must be an array`);
+  }
+  if (problems.length > 0) {
+    throw new Error(`Invalid Embroider options:\n  ${problems.join('\n  ')}`);
+  }
 }

@@ -1,6 +1,11 @@
 import type { ASTv1, ASTPlugin, ASTPluginBuilder, ASTPluginEnvironment, WalkerPath } from '@glimmer/syntax';
 import type { PreprocessedComponentRule, ActivePackageRules, ComponentRules, PackageRules } from './dependency-rules';
-import { preprocessComponentRule, appTreeRulesDir } from './dependency-rules';
+import {
+  preprocessComponentRule,
+  appTreeRulesDir,
+  activePackageRules,
+  defaultAddonPackageRules,
+} from './dependency-rules';
 import { Memoize } from 'typescript-memoize';
 import type { WithJSUtils } from 'babel-plugin-ember-template-compilation';
 import assertNever from 'assert-never';
@@ -8,7 +13,7 @@ import { join, sep } from 'path';
 import { dasherize, snippetToDasherizedName } from './dasherize-component-name';
 import type { ResolverOptions as CoreResolverOptions } from '@embroider/core';
 import { Resolver, ResolverLoader, cleanUrl } from '@embroider/core';
-import type CompatOptions from './options';
+import { compatOptions, type CompatOptionsType } from './options';
 import type { AuditMessage, Loc } from './audit';
 import { camelCase, mergeWith } from 'lodash';
 import { satisfies } from 'semver';
@@ -20,14 +25,10 @@ type Env = WithJSUtils<ASTPluginEnvironment> & {
   locals?: string[];
 };
 
-// this is a subset of the full Options. We care about serializability, and we
-// only needs parts that are easily serializable, which is why we don't keep the
-// whole thing.
-type UserConfig = Pick<Required<CompatOptions>, 'staticInvokables' | 'allowUnsafeDynamicComponents'>;
-
 export interface CompatResolverOptions extends CoreResolverOptions {
-  activePackageRules: ActivePackageRules[];
-  options: UserConfig;
+  // The app and the auto-upgraded addons. These are the packages that
+  // packageRules can apply to.
+  packageRuleCandidates?: { name: string; version: string; root: string }[];
 }
 
 export interface ExternalNameHint {
@@ -203,6 +204,8 @@ class TemplateResolver implements ASTPlugin {
   constructor(
     private env: Env,
     private config: CompatResolverOptions,
+    private options: CompatOptionsType,
+    private activePackageRules: ActivePackageRules[],
     private builtInsForEmberVersion: ReturnType<typeof builtInKeywords>,
     private supportsThisFallback: boolean,
     private externalNameHint?: ExternalNameHint,
@@ -245,7 +248,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private reportError(dep: ResolutionFail) {
-    if (!this.auditHandler && !this.config.options.allowUnsafeDynamicComponents) {
+    if (!this.auditHandler && !this.options.allowUnsafeDynamicComponents) {
       let e: any = new Error(`${dep.message}: ${dep.detail} in ${this.humanReadableFile(this.env.filename)}`);
       e.isTemplateResolverError = true;
       e.loc = dep.loc;
@@ -351,10 +354,7 @@ class TemplateResolver implements ASTPlugin {
   }
 
   private get staticInvokablesEnabled(): boolean {
-    if (!this.config?.options) {
-      return true;
-    }
-    return this.config.options.staticInvokables || Boolean(this.auditHandler);
+    return this.options.staticInvokables || Boolean(this.auditHandler);
   }
 
   private isIgnoredComponent(dasherizedName: string) {
@@ -372,7 +372,7 @@ class TemplateResolver implements ASTPlugin {
     // we're not responsible for filtering out rules for inactive packages here,
     // that is done before getting to us. So we should assume these are all in
     // force.
-    for (let rule of this.config?.activePackageRules ?? []) {
+    for (let rule of this.activePackageRules) {
       if (rule.components) {
         for (let [snippet, rules] of Object.entries(rule.components)) {
           let processedRules = preprocessComponentRule(rules);
@@ -1046,6 +1046,11 @@ class TemplateResolver implements ASTPlugin {
 export default function makeResolverTransform({ appRoot, emberVersion, externalNameHint, externalResolve }: Options) {
   let loader = new ResolverLoader(appRoot);
   let config = loader.resolver.options as CompatResolverOptions;
+  let options = compatOptions(appRoot);
+  let rules = activePackageRules(
+    options.packageRules.concat(defaultAddonPackageRules()),
+    config.packageRuleCandidates ?? []
+  );
   const resolverTransform: ASTPluginBuilder<Env> = env => {
     if (env.strictMode) {
       return {
@@ -1056,6 +1061,8 @@ export default function makeResolverTransform({ appRoot, emberVersion, externalN
     return new TemplateResolver(
       env,
       config,
+      options,
+      rules,
       builtInKeywords(emberVersion),
       supportsThisFallback(emberVersion),
       externalNameHint,

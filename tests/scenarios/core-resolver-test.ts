@@ -152,17 +152,7 @@ Scenarios.fromProject(() => new Project())
             ],
             modulePrefix: 'my-app',
             podModulePrefix: opts?.podModulePrefix,
-            options: {
-              staticInvokables: false,
-              allowUnsafeDynamicComponents: false,
-            },
-            activePackageRules: [
-              {
-                package: 'my-app',
-                roots: [app.dir],
-              },
-            ],
-            staticAppPaths: [],
+            packageRuleCandidates: [{ name: 'my-app', version: '0.0.0', root: app.dir }],
             emberVersion: '4.0.0',
           };
 
@@ -189,6 +179,7 @@ Scenarios.fromProject(() => new Project())
             `,
 
             'node_modules/.embroider/resolver.json': JSON.stringify(resolverOptions),
+            'embroider.conf.mjs': `export default { staticInvokables: false, allowUnsafeDynamicComponents: false };`,
             'node_modules/my-addon/package.json': addonPackageJSON('my-addon', opts?.addonMeta),
           });
 

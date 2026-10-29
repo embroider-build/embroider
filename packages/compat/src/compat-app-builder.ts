@@ -1,8 +1,6 @@
 import type { AddonPackage } from '@embroider/core';
-import { locateEmbroiderWorkingDir } from '@embroider/core';
+import { locateEmbroiderWorkingDir, serializeLegacyEmbroiderConfig } from '@embroider/core';
 import type { CompatResolverOptions } from './resolver-transform';
-import type { PackageRules } from './dependency-rules';
-import { activePackageRules } from './dependency-rules';
 import { outputJSONSync, readJSONSync, writeFileSync, writeJSONSync } from 'fs-extra';
 import type { PortableHint } from '@embroider/core/src/portable';
 import { maybeNodeModuleVersion, Portable } from '@embroider/core/src/portable';
@@ -12,7 +10,6 @@ import resolve from 'resolve';
 import type ContentForConfig from './content-for-config';
 import type { V1Config } from './v1-config';
 import type { Package } from '@embroider/core';
-import { readdirSync } from 'fs-extra';
 
 import type CompatApp from './compat-app';
 import type { CompatBabelState } from './babel';
@@ -49,18 +46,12 @@ export class CompatAppBuilder {
       appPackage: this.appPackageWithMovedDeps,
       modulePrefix: this.modulePrefix(),
       podModulePrefix: this.podModulePrefix(),
-      splitAtRoutes: this.options.splitAtRoutes,
-      staticAppPaths: this.options.staticAppPaths,
       extraDeps: new Map([[this.appPackageWithMovedDeps.root, [this.synthVendor, this.synthStyles] as AddonPackage[]]]),
       extend: (options: CompatResolverOptions, allActiveAddons) => {
-        options.activePackageRules = activePackageRules(this.options.packageRules.concat(defaultAddonPackageRules()), [
-          { name: this.origAppPackage.name, version: this.origAppPackage.version, root: this.origAppPackage.root },
+        options.packageRuleCandidates = [
+          this.origAppPackage,
           ...allActiveAddons.filter(p => p.meta['auto-upgraded']),
-        ]);
-        options.options = {
-          staticInvokables: this.options.staticInvokables,
-          allowUnsafeDynamicComponents: this.options.allowUnsafeDynamicComponents,
-        };
+        ].map(p => ({ name: p.name, version: p.version, root: p.root }));
         return options;
       },
     });
@@ -147,19 +138,8 @@ export class CompatAppBuilder {
       join(locateEmbroiderWorkingDir(this.compatApp.root), 'resolver.json'),
       {
         ...config,
-        splitAtRoutes: config.splitAtRoutes?.map(s => {
-          if (typeof s === 'string') {
-            return {
-              type: 'string',
-              value: s,
-            };
-          } else {
-            return {
-              type: 'regex',
-              value: s.toString(),
-            };
-          }
-        }),
+        // deprecated: embroider options from ember-cli-build.js
+        legacyEmbroiderConfig: serializeLegacyEmbroiderConfig(this.compatApp.root),
       },
       { spaces: 2 }
     );
@@ -240,16 +220,4 @@ export class CompatAppBuilder {
       `);
     }
   }
-}
-
-function defaultAddonPackageRules(): PackageRules[] {
-  return readdirSync(join(__dirname, 'addon-dependency-rules'))
-    .map(filename => {
-      if (filename.endsWith('.js')) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        return require(join(__dirname, 'addon-dependency-rules', filename)).default;
-      }
-    })
-    .filter(Boolean)
-    .reduce((a, b) => a.concat(b), []);
 }

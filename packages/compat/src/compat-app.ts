@@ -1,9 +1,16 @@
 import type { Node as BroccoliNode } from 'broccoli-node-api';
 import type { Stage, Package } from '@embroider/core';
-import { PackageCache, WaitForTrees, RewrittenPackageCache, locateEmbroiderWorkingDir } from '@embroider/core';
+import {
+  PackageCache,
+  WaitForTrees,
+  RewrittenPackageCache,
+  locateEmbroiderWorkingDir,
+  registerLegacyEmbroiderConfig,
+  clearEmbroiderConfigCache,
+} from '@embroider/core';
 import type Options from './options';
 import type { CompatOptionsType } from './options';
-import { optionsWithDefaults } from './options';
+import { compatOptions } from './options';
 import { Memoize } from 'typescript-memoize';
 import { sync as pkgUpSync } from 'pkg-up';
 import { join, dirname, isAbsolute, sep } from 'path';
@@ -42,7 +49,6 @@ interface Group {
 export default class CompatApp {
   private annotation = '@embroider/compat/app';
   private active: CompatAppBuilder | undefined;
-  readonly options: CompatOptionsType;
 
   private _publicAssets: { [filePath: string]: string } = Object.create(null);
   private _implicitScripts: string[] = [];
@@ -568,8 +574,20 @@ export default class CompatApp {
 
   readonly macrosConfig: MacrosConfig;
 
-  constructor(readonly legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
-    this.options = optionsWithDefaults(_options);
+  // Embroider options passed in ember-cli-build.js are deprecated in favor of
+  // the embroider config file. See @embroider/core's config-loader.
+  constructor(readonly legacyEmberAppInstance: EmberAppInstance, legacyOptions?: Options) {
+    // packagerOptions and variants were webpack-only, they're ignored
+    let rest = Object.fromEntries(
+      Object.entries(legacyOptions ?? {}).filter(
+        ([k, v]) => v !== undefined && k !== 'packagerOptions' && k !== 'variants'
+      )
+    );
+    if (Object.keys(rest).length > 0) {
+      registerLegacyEmbroiderConfig(this.root, rest);
+    } else {
+      clearEmbroiderConfigCache(this.root);
+    }
 
     this.macrosConfig = MacrosConfig.for(legacyEmberAppInstance, this.root);
     if (this.env !== 'production') {
@@ -606,6 +624,11 @@ export default class CompatApp {
       contentForTree,
       prevStageTree,
     };
+  }
+
+  @Memoize()
+  get options(): CompatOptionsType {
+    return compatOptions(this.root);
   }
 
   @Memoize()

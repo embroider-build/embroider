@@ -1,6 +1,9 @@
 import type { V1AddonConstructor } from './v1-addon';
-import type { Options as CoreOptions } from '@embroider/core';
-import { optionsWithDefaults as coreWithDefaults } from '@embroider/core';
+// these deep imports keep this module light, because it's reachable from
+// @embroider/compat/config, which users' config files import.
+import type CoreOptions from '@embroider/core/src/options';
+import { optionsWithDefaults as coreWithDefaults } from '@embroider/core/src/options';
+import { loadEmbroiderConfig } from '@embroider/core/src/config-loader';
 import type { PackageRules } from './dependency-rules';
 
 // These options control how hard we will try to achieve compatibility with v1
@@ -64,16 +67,18 @@ export default interface Options extends CoreOptions {
   useAddonConfigModule?: boolean;
 }
 
-const defaults = Object.assign(coreWithDefaults(), {
-  compatAdapters: new Map(),
-  extraPublicTrees: [],
-  workspaceDir: null,
-  packageRules: [],
-  allowUnsafeDynamicComponents: false,
-  availableContentForTypes: [],
-  useAddonAppBoot: true,
-  useAddonConfigModule: true,
-});
+function compatOnlyDefaults() {
+  return {
+    compatAdapters: new Map(),
+    extraPublicTrees: [],
+    workspaceDir: null,
+    packageRules: [],
+    allowUnsafeDynamicComponents: false,
+    availableContentForTypes: [],
+    useAddonAppBoot: true,
+    useAddonConfigModule: true,
+  };
+}
 
 export type CompatOptionsType = Required<Options>;
 
@@ -120,7 +125,27 @@ export function optionsWithDefaults(options?: Options): CompatOptionsType {
     );
   }
 
-  return Object.assign({}, defaults, options);
+  if (
+    options?.allowUnsafeDynamicComponents !== undefined &&
+    typeof options.allowUnsafeDynamicComponents !== 'boolean'
+  ) {
+    throw new Error(`Invalid Embroider options:\n  'allowUnsafeDynamicComponents' must be a boolean`);
+  }
+  if (options?.packageRules !== undefined && !Array.isArray(options.packageRules)) {
+    throw new Error(`Invalid Embroider options:\n  'packageRules' must be an array`);
+  }
+  if (options?.compatAdapters !== undefined && !(options.compatAdapters instanceof Map)) {
+    throw new Error(`Invalid Embroider options:\n  'compatAdapters' must be a Map`);
+  }
+
+  // core validates and defaults its own options, we layer compat's on top.
+  return Object.assign(compatOnlyDefaults(), coreWithDefaults(options)) as CompatOptionsType;
+}
+
+// The fully-defaulted compat options for the app at appRoot, as configured in
+// the app's embroider config file.
+export function compatOptions(appRoot: string): CompatOptionsType {
+  return optionsWithDefaults(loadEmbroiderConfig(appRoot).options as Options);
 }
 
 // These are recommended configurations for addons to test themselves under. By

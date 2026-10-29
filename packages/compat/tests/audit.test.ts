@@ -45,11 +45,6 @@ describe('audit', function () {
     let resolverConfig: CompatResolverOptions = {
       appRoot: app.baseDir,
       modulePrefix: 'audit-this-app',
-      options: {
-        staticInvokables: true,
-        allowUnsafeDynamicComponents: false,
-      },
-      activePackageRules: [],
       renamePackages: {},
       renameModules: {
         '@ember/component/index.js': 'ember-source/@ember/component/index.js',
@@ -73,7 +68,6 @@ describe('audit', function () {
         },
       ],
       resolvableExtensions,
-      staticAppPaths: [],
       emberVersion: '4.0.0',
     };
 

@@ -4,6 +4,7 @@ import type { Resolver } from './module-resolver';
 import { compile } from './js-handlebars';
 import { extensionsPattern } from '@embroider/shared-internals';
 import { partition } from 'lodash';
+import { coreOptions } from './config-loader';
 import { getAppFiles, getFastbootFiles, importPaths, splitRoute, staticAppPathsPattern } from './virtual-entrypoint';
 
 export interface RouteEntrypointResponse {
@@ -26,6 +27,7 @@ export function renderRouteEntrypoint(
   }
 
   let engine = resolver.owningEngine(owner);
+  let options = coreOptions(resolver.options.appRoot);
   let isApp = owner?.root === resolver.options.engines[0]!.root;
   let hasFastboot = Boolean(resolver.options.engines[0]!.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
   let appFiles = appFilesCache.get(fromDir);
@@ -47,7 +49,7 @@ export function renderRouteEntrypoint(
       getAppFiles(fromDir),
       hasFastboot ? getFastbootFiles(owner.root) : new Set(),
       extensionsPattern(resolver.options.resolvableExtensions),
-      staticAppPathsPattern(resolver.options.staticAppPaths),
+      staticAppPathsPattern(options.staticAppPaths),
       resolver.options.podModulePrefix
     );
 
@@ -60,7 +62,7 @@ export function renderRouteEntrypoint(
     splitRoute(
       routeName,
       routeFiles,
-      resolver.options.splitAtRoutes,
+      options.splitAtRoutes,
       (_: string, _filename: string) => {
         // noop
       },

@@ -1,10 +1,6 @@
-import type { PipelineOptions } from '@embroider/compat';
-import type { PackagerConstructor } from '@embroider/core';
-import type { Webpack } from '@embroider/webpack';
+import type { Options } from '@embroider/compat';
 import Plugin from 'broccoli-plugin';
 import { spawn } from 'child_process';
-
-type EmberWebpackOptions = typeof Webpack extends PackagerConstructor<infer Options> ? Options : never;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const ourPeerDeps = require('../package.json').peerDependencies;
@@ -23,7 +19,7 @@ const embroiderDevDeps = {
     return maybeEmbroider(app);
 
 */
-export function maybeEmbroider(app: any, opts: PipelineOptions<EmberWebpackOptions> = {}) {
+export function maybeEmbroider(app: any, opts: Options = {}) {
   if (!shouldUseEmbroider(app)) {
     return app.toTree();
   }
@@ -40,7 +36,20 @@ export function maybeEmbroider(app: any, opts: PipelineOptions<EmberWebpackOptio
   let mergeWith = require('lodash/mergeWith') as typeof import('lodash/mergeWith');
   /* eslint-enable @typescript-eslint/no-require-imports */
 
-  if (process.env.EMBROIDER_TEST_SETUP_OPTIONS) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  let Core = require(require.resolve('@embroider/core', {
+    paths: [app.project.root],
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+  })) as typeof import('@embroider/core');
+  let configFile = Core.locateConfigFile(app.project.root);
+
+  if (process.env.EMBROIDER_TEST_SETUP_OPTIONS && configFile) {
+    // Passing options here would conflict with the config file. The
+    // recommended options match the defaults anyway.
+    console.log(
+      `Ignoring EMBROIDER_TEST_SETUP_OPTIONS=${process.env.EMBROIDER_TEST_SETUP_OPTIONS} because ${configFile} exists`
+    );
+  } else if (process.env.EMBROIDER_TEST_SETUP_OPTIONS) {
     let scenario = Compat.recommendedOptions[process.env.EMBROIDER_TEST_SETUP_OPTIONS];
     if (scenario) {
       opts = mergeWith({}, scenario, opts, appendArrays);

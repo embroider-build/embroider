@@ -16,9 +16,7 @@ export interface Options {
   appRoot: string;
   engines: EngineConfig[];
   modulePrefix: string;
-  splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
-  staticAppPaths: string[];
   emberVersion: string;
 }
 
@@ -35,8 +33,6 @@ export function buildResolverOptions<T extends Options>(inputs: {
   extraDeps?: Map<string, AddonPackage[]>;
   modulePrefix?: string;
   podModulePrefix?: string;
-  splitAtRoutes?: (RegExp | string)[];
-  staticAppPaths?: string[];
   extend?: (opts: T, allActiveAddons: AddonPackage[]) => T;
 }): T {
   let appPackage: Package;
@@ -62,9 +58,7 @@ export function buildResolverOptions<T extends Options>(inputs: {
     appRoot: appPackage.root,
     engines,
     modulePrefix,
-    staticAppPaths: inputs.staticAppPaths ?? [],
     emberVersion: appPackage.dependencies.find(d => d.name === 'ember-source')!.version,
-    splitAtRoutes: inputs.splitAtRoutes,
     podModulePrefix: inputs.podModulePrefix,
   };
 

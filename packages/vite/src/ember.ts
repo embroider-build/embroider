@@ -2,6 +2,8 @@ import { existsSync } from 'fs';
 import { templateTag } from './template-tag.js';
 import { resolver } from './resolver.js';
 import type { ConfigEnv, Plugin } from 'vite';
+import { resolve } from 'path';
+import core from '@embroider/core';
 
 import { esBuildResolver } from './esbuild-resolver.js';
 import { warnRootUrl } from './warn-root-url.js';
@@ -38,6 +40,10 @@ export function ember(params?: {
     {
       name: 'vite-plugin-ember-config',
       async config(config: UserConfig, env: ConfigEnv) {
+        // fail fast on a broken embroider.conf.*, rather than on the first
+        // request that happens to need it
+        core.validateConfig(config.root ? resolve(config.root) : process.cwd());
+
         // Default vite resolve extensions, which the user can completely
         // override if they want
         config.resolve ||= {};

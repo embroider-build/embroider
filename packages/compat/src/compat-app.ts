@@ -1,6 +1,14 @@
 import type { Node as BroccoliNode } from 'broccoli-node-api';
 import type { Stage, Package } from '@embroider/core';
-import { PackageCache, WaitForTrees, RewrittenPackageCache, locateEmbroiderWorkingDir } from '@embroider/core';
+import {
+  PackageCache,
+  WaitForTrees,
+  RewrittenPackageCache,
+  locateEmbroiderWorkingDir,
+  hasSpecifiedInEmbroiderConfig,
+  getFromEmbroiderConfig,
+  deprecateOldConfig,
+} from '@embroider/core';
 import type Options from './options';
 import type { CompatOptionsType } from './options';
 import { optionsWithDefaults } from './options';
@@ -151,7 +159,7 @@ export default class CompatApp {
     ];
     if (this.shouldBuildTests) configPaths.push({ file: '/tests/index.html', path: join('environments', `test.json`) });
     return new ContentForConfig(this.configTree, {
-      availableContentForTypes: this.options.availableContentForTypes,
+      availableContentForTypes: this.option('availableContentForTypes'),
       configPaths,
       pattern: this.filteredPatternsByContentFor.contentFor,
     });
@@ -568,8 +576,23 @@ export default class CompatApp {
 
   readonly macrosConfig: MacrosConfig;
 
-  constructor(readonly legacyEmberAppInstance: EmberAppInstance, _options?: Options) {
-    this.options = optionsWithDefaults(_options);
+  /**
+   * Reads one user option.
+   * The Embroider config file is the source of truth. The options from ember-cli-build are the old way.
+   */
+  option<K extends keyof CompatOptionsType>(name: K): CompatOptionsType[K] {
+    if (hasSpecifiedInEmbroiderConfig(this.root, name)) {
+      if (this.legacyOptions?.[name] !== undefined) {
+        deprecateOldConfig(this.root, name, 'ember-cli-build');
+      }
+      return getFromEmbroiderConfig(this.root, name) as CompatOptionsType[K];
+    } else {
+      return this.options[name];
+    }
+  }
+
+  constructor(readonly legacyEmberAppInstance: EmberAppInstance, private legacyOptions?: Options) {
+    this.options = optionsWithDefaults(legacyOptions);
 
     this.macrosConfig = MacrosConfig.for(legacyEmberAppInstance, this.root);
     if (this.env !== 'production') {
@@ -635,7 +658,6 @@ export default class CompatApp {
     return new CompatAppBuilder(
       origAppPkg,
       movedAppPkg,
-      this.options,
       this,
       configTree,
       contentForTree,

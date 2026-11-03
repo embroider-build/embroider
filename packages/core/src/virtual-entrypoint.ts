@@ -57,13 +57,7 @@ export function renderEntrypoint(
     resolver.options.podModulePrefix
   );
 
-  /**
-   * we are only reading staticInvokables off this type so I'm setting the type manually here. I don't know why
-   * resolver.options is reporting an incorrect type here, but I have verified this programatically that this
-   * is the right shape here and tests fail if it is wrong anyway
-   */
-  let options =
-    (resolver.options as unknown as { options: { staticInvokables: boolean } }).options ?? optionsWithDefaults();
+  let options = resolver.options.options ?? optionsWithDefaults();
 
   let requiredAppFiles = [appFiles.otherAppFiles];
   if (!options.staticInvokables) {

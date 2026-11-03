@@ -8,7 +8,15 @@ export { todo, unsupported, warn, debug, expectWarning, throwOnWarnings } from '
 export { Resolver } from './module-resolver';
 export { ModuleRequest, type Resolution, type RequestAdapter, type RequestAdapterCreate } from './module-request';
 export type { Options as ResolverOptions } from './module-resolver-options';
-export { ResolverLoader } from './resolver-loader';
+export { ResolverLoader, loadResolverOptions } from './resolver-loader';
+export {
+  loadEmbroiderConfig,
+  hasSpecifiedInEmbroiderConfig,
+  getFromEmbroiderConfig,
+  deprecateOldConfig,
+  type LoadedEmbroiderConfig,
+} from './embroider-config';
+export { writeResolverConfig } from './prebuild-state';
 export { virtualContent, type VirtualResponse } from './virtual-content';
 export type { Engine } from './app-files';
 

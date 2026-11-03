@@ -5,7 +5,7 @@
 import EmberRouter from '@ember/routing/router';
 import { buildWaiter } from '@ember/test-waiters';
 import { isDestroying, isDestroyed } from '@ember/destroyable';
-import { getOwner } from '@ember/application';
+import { getOwner } from '@ember/owner';
 import type Resolver from 'ember-resolver';
 
 interface GetRoute {

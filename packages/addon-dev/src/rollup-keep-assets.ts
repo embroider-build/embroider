@@ -2,6 +2,7 @@ import type { Plugin } from 'rollup';
 import minimatch from 'minimatch';
 import { dirname, relative } from 'path';
 import { readFileSync } from 'fs';
+import MagicString from 'magic-string';
 
 // randomly chosen, we're just looking to have high-entropy identifiers that
 // won't collide with anyting else in the source
@@ -55,30 +56,43 @@ export default function keepAssets({
           fileName: relative(from, id),
           source: output,
         });
+        let replacement: string;
         if (exports === '*') {
-          return `export * from ${marker}("${ref}")`;
+          replacement = `export * from ${marker}("${ref}")`;
         } else if (exports === 'default') {
-          return `export default ${marker}("${ref}")`;
+          replacement = `export default ${marker}("${ref}")`;
         } else {
           // side-effect only
-          return `${marker}("${ref}")`;
+          replacement = `${marker}("${ref}")`;
         }
+        // the asset's content leaves the JS module graph here. An empty map is
+        // rollup's convention for "deliberately no mapping", which keeps the
+        // chunk's source map intact instead of breaking it.
+        return { code: replacement, map: { mappings: '' as const } };
       }
     },
     renderChunk(code, chunk) {
       if (code.includes(marker)) {
         const { getName, imports } = nameTracker(code, exports);
+        const magic = new MagicString(code);
 
-        code = code.replace(
+        magic.replaceAll(
           new RegExp(`${marker}\\("([^"]+)"\\)`, 'g'),
-          (_x, ref) => {
+          (_x: string, ref: string) => {
             let assetFileName = this.getFileName(ref);
             let relativeName =
               './' + relative(dirname(chunk.fileName), assetFileName);
             return getName(relativeName) ?? '';
           }
         );
-        return imports() + code;
+        magic.prepend(imports());
+
+        // returning a map keeps the chunk's source map accurate across the
+        // injected imports and marker replacements
+        return {
+          code: magic.toString(),
+          map: magic.generateMap({ hires: 'boundary' }),
+        };
       }
     },
   };

@@ -1,5 +1,21 @@
 # Embroider Changelog
 
+## Release (2026-11-03)
+
+* @embroider/addon-dev 8.5.0 (minor)
+
+#### :rocket: Enhancement
+* `@embroider/addon-dev`
+  * Support for nested modules ([@tomdale](https://github.com/tomdale))
+
+#### :bug: Bug Fix
+* `@embroider/addon-dev`
+  * [#2773](https://github.com/embroider-build/embroider/pull/2773) Fix JS source maps broken by keep-assets ([@NullVoxPopuli](https://github.com/NullVoxPopuli))
+
+#### Committers: 2
+- Tom Dale ([@tomdale](https://github.com/tomdale))
+- [@NullVoxPopuli](https://github.com/NullVoxPopuli)
+
 ## Release (2026-10-23)
 
 * @embroider/addon-shim 1.11.0 (minor)

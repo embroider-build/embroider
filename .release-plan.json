@@ -1,20 +1,24 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.4.2"
-    },
-    "@embroider/addon-shim": {
       "impact": "minor",
-      "oldVersion": "1.10.3",
-      "newVersion": "1.11.0",
+      "oldVersion": "8.4.2",
+      "newVersion": "8.5.0",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "minor",
           "reason": "Appears in changelog section :rocket: Enhancement"
+        },
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
-      "pkgJSONPath": "./packages/addon-shim/package.json"
+      "pkgJSONPath": "./packages/addon-dev/package.json"
+    },
+    "@embroider/addon-shim": {
+      "oldVersion": "1.11.0"
     },
     "@embroider/babel-loader-9": {
       "oldVersion": "4.0.0"
@@ -56,5 +60,5 @@
       "oldVersion": "1.8.0"
     }
   },
-  "description": "## Release (2026-10-23)\n\n* @embroider/addon-shim 1.11.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-shim`\n  * [#2845](https://github.com/embroider-build/embroider/pull/2845) addon-shim: remove all runtime dependencies ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### Committers: 1\n- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n"
+  "description": "## Release (2026-11-03)\n\n* @embroider/addon-dev 8.5.0 (minor)\n\n#### :rocket: Enhancement\n* `@embroider/addon-dev`\n  * Support for nested modules ([@tomdale](https://github.com/tomdale))\n\n#### :bug: Bug Fix\n* `@embroider/addon-dev`\n  * [#2773](https://github.com/embroider-build/embroider/pull/2773) Fix JS source maps broken by keep-assets ([@NullVoxPopuli](https://github.com/NullVoxPopuli))\n\n#### Committers: 2\n- Tom Dale ([@tomdale](https://github.com/tomdale))\n- [@NullVoxPopuli](https://github.com/NullVoxPopuli)\n"
 }

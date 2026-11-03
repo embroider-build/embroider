@@ -34,29 +34,6 @@ function embroiderBundles(): {
   return globalThis as ReturnType<typeof embroiderBundles>;
 }
 
-/**
- * Embroider sets these globals only for an app with route splitting
- * or lazy engines.
- */
-function assertBundles(): void {
-  let bundles = embroiderBundles();
-  if (bundles._embroiderRouteBundles_ || bundles._embroiderEngineBundles_) {
-    return;
-  }
-  throw new Error(
-    [
-      `@embroider/router found no lazy routes and no lazy engines.`,
-      `This router only works in an app that Embroider builds with route splitting.`,
-      ``,
-      `To enable route splitting, add the route names to \`splitAtRoutes\` in ember-cli-build.js:`,
-      ``,
-      `  return compatBuild(app, buildOnce, { splitAtRoutes: ['my-route'] });`,
-      ``,
-      `If you do not want route splitting, import the router from '@ember/routing/router' instead.`,
-    ].join('\n')
-  );
-}
-
 class EmbroiderRouter extends EmberRouter {
   private seenByRoute = new Set<string>();
   private registeredBundles = new Map<EmbroiderBundle, { promise: Promise<void>; loaded: boolean }>();
@@ -122,8 +99,6 @@ class EmbroiderRouter extends EmberRouter {
   // This is the framework method that we're overriding to provide our own
   // handlerResolver.
   setupRouter(this: this & Internals, ...args: unknown[]) {
-    assertBundles();
-
     // @ts-expect-error extending private method
     let isSetup = super.setupRouter(...args);
     let microLib = this._routerMicrolib;

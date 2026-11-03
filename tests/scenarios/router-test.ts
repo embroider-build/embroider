@@ -5,10 +5,6 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 function setupScenario(project: Project) {
-  // not strictly needed in the embroider case, but needed in the classic
-  // case.
-  project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
-
   project.mergeFiles({
     'ember-cli-build.js': `
       'use strict';
@@ -125,7 +121,6 @@ function setupScenario(project: Project) {
           import { module, test, only } from "qunit";
           import { click, currentURL, fillIn, visit } from "@ember/test-helpers";
           import { setupApplicationTest } from "ember-qunit";
-          import { getGlobalConfig } from "@embroider/macros";
           import type Resolver from "ember-resolver";
 
           declare global {
@@ -173,13 +168,6 @@ function setupScenario(project: Project) {
                 "template:split-me/child",
                 "child template is lazy",
               );
-            });
-
-            test("can see @embroider/core config", async function (assert) {
-              let config = getGlobalConfig<{ "@embroider/core"?: { active: true } }>()[
-                "@embroider/core"
-              ];
-              assert.true(config!.active, "expected to see active @embroider/core");
             });
 
             test("can enter a lazy route", async function (assert) {

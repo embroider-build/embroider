@@ -5,6 +5,10 @@ import QUnit from 'qunit';
 const { module: Qmodule, test } = QUnit;
 
 function setupScenario(project: Project) {
+  // not strictly needed in the embroider case, but needed in the classic
+  // case.
+  project.linkDevDependency('@embroider/macros', { baseDir: __dirname });
+
   project.mergeFiles({
     'ember-cli-build.js': `
       'use strict';
@@ -17,6 +21,11 @@ function setupScenario(project: Project) {
         const app = new EmberApp(defaults, {
             'ember-cli-babel': {
               enableTypeScriptTransform: true,
+            },
+            '@embroider/macros': {
+              setOwnConfig: {
+                expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
+              }
             }
           });
 
@@ -121,6 +130,7 @@ function setupScenario(project: Project) {
           import { module, test, only } from "qunit";
           import { click, currentURL, fillIn, visit } from "@ember/test-helpers";
           import { setupApplicationTest } from "ember-qunit";
+          import { getGlobalConfig, getOwnConfig } from "@embroider/macros";
           import type Resolver from "ember-resolver";
 
           declare global {
@@ -151,24 +161,72 @@ function setupScenario(project: Project) {
               };
             });
 
-            test("lazy routes not yet present", async function (assert) {
-              await visit("/");
-              assert.containerDoesNotHave("controller:split-me", "controller is lazy");
-              assert.containerDoesNotHave("route:split-me", "route is lazy");
-              assert.containerDoesNotHave("template:split-me", "template is lazy");
-              assert.containerDoesNotHave(
-                "controller:split-me/child",
-                "child controller is lazy",
-              );
-              assert.containerDoesNotHave(
-                "route:split-me/child",
-                "child route is lazy",
-              );
-              assert.containerDoesNotHave(
-                "template:split-me/child",
-                "child template is lazy",
-              );
-            });
+            if (getOwnConfig<{ expectClassic: boolean }>().expectClassic) {
+              test("lazy routes present", async function (assert) {
+                await visit("/");
+                assert.containerHas(
+                  "controller:split-me",
+                  "classic build has controller",
+                );
+                assert.containerHas("route:split-me", "classic build has route");
+                assert.containerHas("template:split-me", "classic build has template");
+                assert.containerHas(
+                  "controller:split-me/child",
+                  "classic build has child controller",
+                );
+                assert.containerHas(
+                  "route:split-me/child",
+                  "classic build has child route",
+                );
+                assert.containerHas(
+                  "template:split-me/child",
+                  "classic build has child template",
+                );
+                assert.containerHas(
+                  "component:used-in-child",
+                  "classic build has all components",
+                );
+              });
+            } else {
+              test("lazy routes not yet present", async function (assert) {
+                await visit("/");
+                assert.containerDoesNotHave("controller:split-me", "controller is lazy");
+                assert.containerDoesNotHave("route:split-me", "route is lazy");
+                assert.containerDoesNotHave("template:split-me", "template is lazy");
+                assert.containerDoesNotHave(
+                  "controller:split-me/child",
+                  "child controller is lazy",
+                );
+                assert.containerDoesNotHave(
+                  "route:split-me/child",
+                  "child route is lazy",
+                );
+                assert.containerDoesNotHave(
+                  "template:split-me/child",
+                  "child template is lazy",
+                );
+              });
+            }
+
+            if (getOwnConfig<{ expectClassic: boolean }>().expectClassic) {
+              test("classic builds can not see @embroider/core config", async function (assert) {
+                let config = getGlobalConfig<{ "@embroider/core"?: { active: true } }>()[
+                  "@embroider/core"
+                ];
+                assert.strictEqual(
+                  config,
+                  undefined,
+                  "expected no embroider core config",
+                );
+              });
+            } else {
+              test("can see @embroider/core config", async function (assert) {
+                let config = getGlobalConfig<{ "@embroider/core"?: { active: true } }>()[
+                  "@embroider/core"
+                ];
+                assert.true(config!.active, "expected to see active @embroider/core");
+              });
+            }
 
             test("can enter a lazy route", async function (assert) {
               await visit("/split-me");
@@ -264,6 +322,11 @@ tsAppScenarios
             const app = new EmberApp(defaults, {
                 'ember-cli-babel': {
                   enableTypeScriptTransform: true,
+                },
+                '@embroider/macros': {
+                  setOwnConfig: {
+                    expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
+                  }
                 }
               });
 
@@ -329,6 +392,11 @@ tsAppClassicScenarios
         let app = new EmberApp(defaults, {
           'ember-cli-babel': {
             enableTypeScriptTransform: true,
+          },
+          '@embroider/macros': {
+            setOwnConfig: {
+              expectClassic: process.env.EMBROIDER_TEST_SETUP_FORCE === 'classic'
+            }
           }
         });
 
@@ -339,25 +407,6 @@ tsAppClassicScenarios
       };
     `,
     });
-
-    (project.files['tests'] as any)['acceptance'] = {
-      'router-error-test.ts': `
-        import { module, test } from "qunit";
-        import { visit } from "@ember/test-helpers";
-        import { setupApplicationTest } from "ember-qunit";
-
-        module("Acceptance | classic build", function (hooks) {
-          setupApplicationTest(hooks);
-
-          test("the router explains how to enable route splitting", async function (assert) {
-            await assert.rejects(
-              visit("/"),
-              /found no lazy routes and no lazy engines/,
-            );
-          });
-        });
-      `,
-    };
   })
   .forEachScenario(scenario => {
     Qmodule(scenario.name, function (hooks) {

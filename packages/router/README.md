@@ -9,9 +9,11 @@ of lazy route bundles and loads them when needed.
 - Ember CLI v3.28 or above
 - Node.js v16 or above
 
-To get code-splitting, your app must build with Embroider. It's safe to use
-this router in apps that aren't building with Embroider, but it won't do
-anything.
+This router only works in an app that Embroider builds
+with route splitting or lazy engines.
+In any other app, the router throws an error when the app boots.
+If you do not use route splitting,
+import the stock router from `@ember/routing/router`.
 
 ## Limitations
 
@@ -53,6 +55,12 @@ In your `router.js` file, import our router instead of the stock one:
 ```diff
 -import EmberRouter from '@ember/routing/router';
 +import EmberRouter from '@embroider/router';
+```
+
+In your `ember-cli-build.js` file, list the routes to split out of the app:
+
+```js
+return compatBuild(app, buildOnce, { splitAtRoutes: ['my-route'] });
 ```
 
 ## Notes on usage with pods

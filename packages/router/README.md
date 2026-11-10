@@ -11,7 +11,6 @@ of lazy route bundles and loads them when needed.
 
 This router only works in an app that Embroider builds
 with route splitting or lazy engines.
-In any other app, the router throws an error when the app boots.
 If you do not use route splitting,
 import the stock router from `@ember/routing/router`.
 

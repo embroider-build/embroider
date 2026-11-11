@@ -8,19 +8,63 @@ import { packageUp } from 'package-up';
 let glint1 = 'glint --declaration';
 let glint2 = 'ember-tsc --declaration';
 
-export default function rollupDeclarationsPlugin(
-  declarationsDir: string,
+export type DeclarationsOptions = {
   /**
    * The command to use to generate types.
    * Defaults to:
    * - glint --declaration     # for glint v1
    * - ember-tsc --declaration # for glint v2
    */
-  command?: string
-): Plugin {
-  let glintPromise: Promise<void>;
+  command?: string;
 
-  let commandToRun = command;
+  /**
+   * How often to run the command while rollup is in watch mode. Outside of
+   * watch mode it always runs.
+   *
+   * - 'once' (default): run on the first build, then leave the emitted
+   *   declarations in place for the rest of the watch session. A consuming
+   *   app's editor and type-checker need the files to exist on disk; they
+   *   don't need them regenerated on every keystroke, and the addon author
+   *   already sees type errors in their editor.
+   *   A failed run is retried on the next rebuild, so fixing the error that
+   *   broke the first attempt still gets you declarations.
+   * - 'always': type-check and re-emit on every rebuild. Always correct but
+   *   slow; on a few hundred source files this adds seconds to every rebuild.
+   * - 'never': don't emit declarations in watch mode at all. For addons that
+   *   run their own `tsc --watch` alongside rollup.
+   */
+  watch?: 'once' | 'always' | 'never';
+};
+
+export default function rollupDeclarationsPlugin(
+  declarationsDir: string,
+  commandOrOptions?: string | DeclarationsOptions
+): Plugin {
+  let options: DeclarationsOptions =
+    typeof commandOrOptions === 'string'
+      ? { command: commandOrOptions }
+      : commandOrOptions ?? {};
+
+  let watchBehavior = options.watch ?? 'once';
+
+  let glintPromise: Promise<void> | undefined;
+
+  let commandToRun = options.command;
+
+  // set once a watch-mode run has been kicked off, and cleared again if that
+  // run fails so the next rebuild retries it
+  let ranInWatchMode = false;
+
+  function shouldRunInWatchMode() {
+    switch (watchBehavior) {
+      case 'always':
+        return true;
+      case 'never':
+        return false;
+      case 'once':
+        return !ranInWatchMode;
+    }
+  }
 
   async function determineCommand() {
     if (commandToRun) return;
@@ -58,6 +102,16 @@ export default function rollupDeclarationsPlugin(
   return {
     name: 'declarations',
     buildStart() {
+      if (this.meta.watchMode && !shouldRunInWatchMode()) {
+        glintPromise = undefined;
+        return;
+      }
+
+      // Claim the 'once' slot up front so that rebuilds queued while this run
+      // is still in flight don't spawn a second type-check. Released again
+      // below if the run fails.
+      ranInWatchMode = true;
+
       const runGlint = async () => {
         await determineCommand();
 
@@ -75,6 +129,7 @@ export default function rollupDeclarationsPlugin(
         });
 
         if (exitCode > 0) {
+          ranInWatchMode = false;
           let msg = `Failed to generate declarations via \`${escapedCommand}\``;
 
           if (this.meta.watchMode) {

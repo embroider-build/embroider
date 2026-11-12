@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-11-12)
+
+* @embroider/router 4.0.0 (major)
+
+#### :boom: Breaking Change
+* `@embroider/router`
+  * [#2848](https://github.com/embroider-build/embroider/pull/2848) Remove @embroider/macros from @embroider/router ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### Committers: 1
+- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
 ## Release (2026-11-03)
 
 * @embroider/addon-dev 8.5.0 (minor)

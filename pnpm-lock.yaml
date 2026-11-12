@@ -1847,6 +1847,9 @@ importers:
       babel-parser-8:
         specifier: npm:@babel/parser@^8.0.0
         version: '@babel/parser@8.0.6'
+      babel-plugin-ember-polyfill-get-and-set-owner-from-ember-owner:
+        specifier: ^1.0.5
+        version: 1.0.5(@babel/core@7.29.7)
       babel-plugin-ember-template-compilation:
         specifier: ^3.1.0
         version: 3.1.0
@@ -6711,6 +6714,11 @@ packages:
   babel-plugin-ember-modules-api-polyfill@3.5.0:
     resolution: {integrity: sha512-pJajN/DkQUnStw0Az8c6khVcMQHgzqWr61lLNtVeu0g61LRW0k9jyK7vaedrHDWGe/Qe8sxG5wpiyW9NsMqFzA==}
     engines: {node: 6.* || 8.* || >= 10.*}
+
+  babel-plugin-ember-polyfill-get-and-set-owner-from-ember-owner@1.0.5:
+    resolution: {integrity: sha512-IDfK62biGGVihprdTmOlb5r66x6QIi30xXWtDbFl9N1K6094GpqICgK46PfHWC2zC7ZfaDrti1vQasHxwm2cxg==}
+    peerDependencies:
+      '@babel/core': ^7.0.0
 
   babel-plugin-ember-template-compilation@2.4.1:
     resolution: {integrity: sha512-n+ktQ3JeyWrpRutSyPn2PsHeH+A94SVm+iUoogzf9VUqpP47FfWem24gpQXhn+p6+x5/BpuFJXMLXWt7ZoYAKA==}
@@ -21709,6 +21717,10 @@ snapshots:
   babel-plugin-ember-modules-api-polyfill@3.5.0:
     dependencies:
       ember-rfc176-data: 0.3.18
+
+  babel-plugin-ember-polyfill-get-and-set-owner-from-ember-owner@1.0.5(@babel/core@7.29.7):
+    dependencies:
+      '@babel/core': 7.29.7
 
   babel-plugin-ember-template-compilation@2.4.1:
     dependencies:

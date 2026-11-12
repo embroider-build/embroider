@@ -3,12 +3,28 @@ import { dirname } from 'path';
 import pkgUp from 'pkg-up';
 import merge from 'lodash/merge';
 
+/**
+ * ember-source before 4.12 has no `@ember/owner` module.
+ * This plugin rewrites `getOwner` and `setOwner` imports from it
+ * to `@ember/application`.
+ */
+function polyfillEmberOwner(project: Project) {
+  let plugin = 'babel-plugin-ember-polyfill-get-and-set-owner-from-ember-owner';
+  project.linkDevDependency(plugin, { baseDir: __dirname });
+
+  let babelConfig = project.files['babel.config.cjs'];
+  if (typeof babelConfig === 'string') {
+    project.files['babel.config.cjs'] = babelConfig.replace('plugins: [', `plugins: [\n    '${plugin}',`);
+  }
+}
+
 export async function lts_3_28(project: Project) {
   project.linkDevDependency('ember-source', { baseDir: __dirname, resolveName: 'ember-source-3.28' });
   // ember-cli 4.12 is the earliest version that can have an async function
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+  polyfillEmberOwner(project);
 }
 
 async function lts_4_4(project: Project) {
@@ -17,6 +33,7 @@ async function lts_4_4(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+  polyfillEmberOwner(project);
 }
 
 async function lts_4_8(project: Project) {
@@ -25,6 +42,7 @@ async function lts_4_8(project: Project) {
   project.linkDevDependency('ember-cli', { baseDir: __dirname, resolveName: 'ember-cli-4.12' });
   project.linkDevDependency('ember-data', { baseDir: __dirname, resolveName: 'ember-data-5.3' });
   project.linkDevDependency('@ember/test-waiters', { baseDir: __dirname, resolveName: '@ember/test-waiters' });
+  polyfillEmberOwner(project);
 }
 
 async function lts_4_12(project: Project) {

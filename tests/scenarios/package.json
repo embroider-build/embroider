@@ -67,6 +67,7 @@
     "@types/semver": "^7.3.6",
     "babel-core-8": "npm:@babel/core@^8.0.0",
     "babel-parser-8": "npm:@babel/parser@^8.0.0",
+    "babel-plugin-ember-polyfill-get-and-set-owner-from-ember-owner": "^1.0.5",
     "babel-plugin-ember-template-compilation": "^3.1.0",
     "babel-plugin-transform-runtime-8": "npm:@babel/plugin-transform-runtime@^8.0.0",
     "babel-runtime-8": "npm:@babel/runtime@^8.0.0",

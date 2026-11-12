@@ -1,5 +1,6 @@
 import { existsSync } from 'fs';
 import { templateTag } from './template-tag.js';
+import { hmrRuntime } from './hmr.js';
 import { resolver } from './resolver.js';
 import type { ConfigEnv, Plugin } from 'vite';
 
@@ -33,6 +34,7 @@ export function ember(params?: {
   return [
     warnRootUrl(),
     typescriptTransform(),
+    hmrRuntime(),
     templateTag(),
     resolver(),
     {

@@ -1,7 +1,7 @@
-import { baseAddon, wideAppScenarios } from './scenarios';
+import { baseAddon, baseV2Addon, wideAppScenarios } from './scenarios';
 import type { PreparedApp } from 'scenario-tester';
 import QUnit from 'qunit';
-import { readdirSync } from 'fs-extra';
+import { readdirSync, readFileSync } from 'fs-extra';
 import { join } from 'path';
 import { setupViteDevServer } from './helpers';
 
@@ -94,6 +94,21 @@ wideAppScenarios
     });
 
     project.addDevDependency(addon2);
+
+    let v2Addon = baseV2Addon();
+    v2Addon.pkg.name = 'v2-addon-with-public-assets';
+    (v2Addon.pkg as any)['ember-addon']['public-assets'] = {
+      './public/present.txt': '/v2-addon-with-public-assets/present.txt',
+      // declared but not on disk, like an asset the addon only generates when it's built
+      './public/missing.txt': '/v2-addon-with-public-assets/missing.txt',
+    };
+    v2Addon.mergeFiles({
+      public: {
+        'present.txt': 'present',
+      },
+    });
+    project.addDevDependency(v2Addon);
+
     project.mergeFiles({
       'ember-cli-build.js': `
         'use strict';
@@ -391,6 +406,17 @@ wideAppScenarios
           f.startsWith('embroider-virtual-')
         );
         assert.ok(virtualAssetFiles.length > 1, 'should have created fingerprinted virtual asset files');
+
+        // a missing public asset is skipped with a warning, as the dev server skips it
+        assert.strictEqual(
+          readFileSync(join(app.dir, 'dist', 'v2-addon-with-public-assets', 'present.txt'), 'utf8'),
+          'present',
+          'should have copied the public asset that exists'
+        );
+        assert.ok(
+          result.output.includes('declares a public asset "./public/missing.txt" that does not exist, skipping it'),
+          'should have warned about the missing public asset'
+        );
       });
 
       Qmodule('vite dev', function (hooks) {

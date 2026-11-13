@@ -193,12 +193,12 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
     },
     async buildEnd() {
       if (command === 'build') {
-        emitVirtualFile(this, '@embroider/virtual/vendor.js');
-        emitVirtualFile(this, '@embroider/virtual/vendor.css');
+        await emitVirtualFile(this, '@embroider/virtual/vendor.js');
+        await emitVirtualFile(this, '@embroider/virtual/vendor.css');
 
         if (mode !== 'production') {
-          emitVirtualFile(this, '@embroider/virtual/test-support.js');
-          emitVirtualFile(this, '@embroider/virtual/test-support.css');
+          await emitVirtualFile(this, '@embroider/virtual/test-support.js');
+          await emitVirtualFile(this, '@embroider/virtual/test-support.css');
         }
       }
     },

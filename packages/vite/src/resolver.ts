@@ -1,4 +1,4 @@
-import { type Plugin, type ViteDevServer, normalizePath } from 'vite';
+import { type Plugin, type ResolvedConfig, type ViteDevServer, normalizePath } from 'vite';
 import core, { ModuleRequest, type Package, type Resolver } from '@embroider/core';
 const { virtualContent, ResolverLoader, explicitRelative, cleanUrl, tmpdir } = core;
 import { type ResponseMeta, RollupRequestAdapter } from './request.js';
@@ -104,7 +104,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
   }
 
   let mode = '';
-  let command = '';
+  let command: ResolvedConfig['command'] | undefined;
 
   return {
     name: 'embroider-resolver',
@@ -192,13 +192,13 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
       }
     },
     async buildEnd() {
-      if (command !== 'dev') {
-        emitVirtualFile(this, '@embroider/virtual/vendor.js');
-        emitVirtualFile(this, '@embroider/virtual/vendor.css');
+      if (command === 'build') {
+        await emitVirtualFile(this, '@embroider/virtual/vendor.js');
+        await emitVirtualFile(this, '@embroider/virtual/vendor.css');
 
         if (mode !== 'production') {
-          emitVirtualFile(this, '@embroider/virtual/test-support.js');
-          emitVirtualFile(this, '@embroider/virtual/test-support.css');
+          await emitVirtualFile(this, '@embroider/virtual/test-support.js');
+          await emitVirtualFile(this, '@embroider/virtual/test-support.css');
         }
       }
     },
@@ -212,7 +212,7 @@ export function resolver(params?: { rolldown?: boolean }): Plugin {
     transformIndexHtml(html) {
       // Only needed in `vite build`. In `vite dev` the virtual assets are served
       // as-is and Vite's own HTML transform already applies `base` to their URLs.
-      if (command !== 'serve') {
+      if (command === 'build') {
         return rewriteVirtualAssetUrls(html);
       }
     },

@@ -1,5 +1,18 @@
 # Embroider Changelog
 
+## Release (2026-11-17)
+
+* @embroider/vite 1.8.1 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2842](https://github.com/embroider-build/embroider/pull/2842) Skip content-for replacement on pages content-for.json doesn't list ([@andsmedeiros](https://github.com/andsmedeiros))
+  * [#2852](https://github.com/embroider-build/embroider/pull/2852) Fix emitFile() is not supported in serve mode console message ([@tcjr](https://github.com/tcjr))
+
+#### Committers: 2
+- André Medeiros ([@andsmedeiros](https://github.com/andsmedeiros))
+- Tom Carter ([@tcjr](https://github.com/tcjr))
+
 ## Release (2026-11-12)
 
 * @embroider/router 4.0.0 (major)

@@ -26,7 +26,22 @@ The [v2 Addon Format RFC](https://github.com/emberjs/rfcs/pull/507) is the offic
 
 ## Options
 
-You can pass options into Embroider by passing them into the `compatBuild` function like:
+Set Embroider options in a config file in the root of your app:
+
+```js
+// embroider.config.js (or embroider.config.cjs)
+export default {
+  splitAtRoutes: ['route.name'], // can also be a RegExp
+};
+```
+
+Embroider finds the file with [lilconfig](https://github.com/antonk52/lilconfig) and searches only the app root. The file can also be the `"embroider"` key in `package.json`, `.embroiderrc.json`, `.embroiderrc.js`, `.embroiderrc.cjs`, or a file in `.config/`. Embroider does not read `.mjs` files. In an app with `"type": "module"`, use an ESM `embroider.config.js`.
+
+The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/main/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/main/packages/compat/src/options.ts).
+
+### Apps with `ember-cli-build.js`
+
+The config file accepts every option of `compatBuild`. The options that you give to `compatBuild` still work:
 
 ```js
 // ember-cli-build.js
@@ -39,38 +54,36 @@ module.exports = async function (defaults) {
 
   return compatBuild(app, buildOnce, {
     staticInvokables: true, // this is the default so you don't need to set it
-    splitAtRoutes: ['route.name'], // can also be a RegExp
-  );
+  });
 };
 ```
 
-The options are documented in detail in [Core Options](https://github.com/embroider-build/embroider/blob/main/packages/core/src/options.ts) and [Compat Options](https://github.com/embroider-build/embroider/blob/main/packages/compat/src/options.ts)
+If the config file and `compatBuild` set the same option, Embroider uses the value from the config file and shows a deprecation. Move the option to the config file.
 
-### Embroider config file
+### Apps without `ember-cli-build.js`
 
-You can also set options in a config file in the root of your app:
+The config file accepts these options:
 
-```js
-// embroider.config.mjs
-export default {
-  splitAtRoutes: ['route.name'], // can also be a RegExp
-};
-```
+- `splitAtRoutes`
+- `staticAppPaths`
+- `modulePrefix`: the start of the app's module names in `@embroider/virtual/compat-modules`. The default is `"."`, which gives names like `"./routes/about"`, for the strict resolver of Ember 7.2 and later. An app that uses ember-resolver must set it to the `name` in its `package.json`.
+- `appDir`: the folder of the app files, for example `'./demo-app'`. The default comes from the `exports` in `package.json`. A v2 addon with a test app in its own package needs it, because its `exports` point at its published files.
 
-Embroider looks for the config in these places, in this order:
-
-- the `"embroider"` key in `package.json`
-- `.embroiderrc.json`
-- `embroider.config.js`
-- `embroider.config.mjs`
-- `embroider.config.cjs`
-
-If your app has an `ember-cli-build.js`, the config file accepts every option of `compatBuild`. Set each option in one place only. If `compatBuild` and the config file set the same option, the build stops with an error.
-
-If your app has no `ember-cli-build.js`, the config file accepts `splitAtRoutes` and `staticAppPaths`. To split routes, the app must:
+To split routes, the app must:
 
 - use `@embroider/router` for its router
 - give the modules from `@embroider/virtual/compat-modules` to its resolver
+
+For example, with the strict resolver of Ember 7.2 and later:
+
+```js
+import Application from '@ember/application';
+import compatModules from '@embroider/virtual/compat-modules';
+
+export default class App extends Application {
+  modules = compatModules;
+}
+```
 
 ## Environment variables
 

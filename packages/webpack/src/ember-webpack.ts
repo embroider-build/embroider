@@ -10,8 +10,8 @@
 */
 
 import type { BundleSummary, Packager, PackagerConstructor, Variant, ResolverOptions } from '@embroider/core';
-import { HTMLEntrypoint, getPackagerCacheDir, getOrCreate } from '@embroider/core';
-import { locateEmbroiderWorkingDir, RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
+import { HTMLEntrypoint, getPackagerCacheDir, getOrCreate, loadResolverOptions } from '@embroider/core';
+import { RewrittenPackageCache, tmpdir } from '@embroider/shared-internals';
 import type { Configuration, RuleSetUseItem, WebpackPluginInstance } from 'webpack';
 import webpack from 'webpack';
 import type { Stats } from 'fs-extra';
@@ -170,9 +170,7 @@ const Webpack: PackagerConstructor<Options> = class Webpack implements Packager 
       }
     }
 
-    let resolverConfig: EmbroiderPluginOptions = readJSONSync(
-      join(locateEmbroiderWorkingDir(this.appRoot), 'resolver.json')
-    );
+    let resolverConfig = loadResolverOptions<EmbroiderPluginOptions>(this.appRoot);
 
     return { entrypoints, otherAssets, rootURL, resolverConfig, publicAssetURL, packageName: meta.name };
   }

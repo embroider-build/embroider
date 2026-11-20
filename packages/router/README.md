@@ -56,11 +56,16 @@ In your `router.js` file, import our router instead of the stock one:
 +import EmberRouter from '@embroider/router';
 ```
 
-In your `ember-cli-build.js` file, list the routes to split out of the app:
+In the Embroider config file of your app, list the routes to split out of the app:
 
 ```js
-return compatBuild(app, buildOnce, { splitAtRoutes: ['my-route'] });
+// embroider.config.js
+export default {
+  splitAtRoutes: ['my-route'],
+};
 ```
+
+See [Options](https://github.com/embroider-build/embroider#options) for the places where Embroider finds this file. In an app without `ember-cli-build.js`, the app must also give the modules from `@embroider/virtual/compat-modules` to its resolver.
 
 ## Notes on usage with pods
 

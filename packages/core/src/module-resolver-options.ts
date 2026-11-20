@@ -16,10 +16,35 @@ export interface Options {
   appRoot: string;
   engines: EngineConfig[];
   modulePrefix: string;
+
+  /**
+   * The prefix of the app's module names in `@embroider/virtual/compat-modules`.
+   * When it is not set, the names use `modulePrefix`.
+   *
+   * `modulePrefix` stays the package name of the app,
+   * because addons can import the app by that name.
+   */
+  runtimeModulePrefix?: string;
+
+  /**
+   * The folder of the app files, relative to `appRoot`.
+   * When it is not set, the app files come from package.json `exports`.
+   */
+  appDir?: string;
   splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
   staticAppPaths: string[];
   emberVersion: string;
+  options?: ResolverUserFlags;
+}
+
+/**
+ * User options that `compatBuild` copies into the resolver options.
+ * Apps without a prebuild do not have them.
+ */
+export interface ResolverUserFlags {
+  staticInvokables?: boolean;
+  allowUnsafeDynamicComponents?: boolean;
 }
 
 export interface EngineConfig {

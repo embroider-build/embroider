@@ -55,6 +55,13 @@ export function buildMacros(options: Options = {}): ConfiguredMacros {
 
   transforms.setConfig(macros);
 
+  /**
+   * Only apps that Embroider builds call `buildMacros`.
+   *
+   * `@embroider/router` reads this flag to load split routes lazily.
+   */
+  macros.setGlobalConfig(__filename, '@embroider/core', { active: true });
+
   let { setOwnConfig, setConfig, configure } = options;
 
   if (setOwnConfig) {

@@ -3,7 +3,7 @@ import * as core from '@embroider/core';
 const { ResolverLoader } = core;
 import type { Plugin } from 'vite';
 import * as process from 'process';
-import { join, posix, dirname, basename } from 'path';
+import { join, resolve, posix, dirname, basename } from 'path';
 import fs from 'fs-extra';
 const { existsSync, readFileSync, lstatSync } = fs;
 import send from 'send';
@@ -20,7 +20,7 @@ function findPublicAsset(relativePath: string, resolver: Resolver) {
         const asset = Object.entries(pkg.meta['public-assets']).find(
           ([_key, a]) => posix.resolve('/', a) === relativePath
         )?.[0];
-        let local = asset ? join(addon.root, asset) : null;
+        let local = asset ? resolve(addon.root, asset) : null;
         if (local && existsSync(local)) {
           return local;
         }
@@ -77,7 +77,8 @@ export function assets(): Plugin {
                 return;
               }
 
-              const filePath = join(pkg.root, path);
+              // The synthesized vendor package lists node_modules files by absolute path.
+              const filePath = resolve(pkg.root, path);
               if (!lstatSync(filePath).isFile()) {
                 console.log(`Invalid package definition, ${pkg.name} has defined a file "${path}" that is not a file`);
                 return;

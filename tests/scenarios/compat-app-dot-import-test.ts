@@ -31,6 +31,26 @@ appScenarios
       'third-party.js': '// third party',
     };
     app.addDevDependency(addon);
+    app.addDevDependency('app-font', '1.0.0').files = {
+      fonts: {
+        'app-font.woff': 'app font',
+      },
+    };
+    merge(app.files, {
+      'ember-cli-build.js': `
+        'use strict';
+
+        const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+        const { compatBuild } = require('@embroider/compat');
+
+        module.exports = async function (defaults) {
+          const { buildOnce } = await import('@embroider/vite');
+          let app = new EmberApp(defaults, {});
+          app.import('node_modules/app-font/fonts/app-font.woff', { destDir: 'assets/fonts/' });
+          return compatBuild(app, buildOnce);
+        };
+      `,
+    });
   })
   .forEachScenario(function (scenario) {
     Qmodule(scenario.name, function (hooks) {
@@ -69,6 +89,14 @@ appScenarios
             join(app.dir, 'node_modules', 'my-addon', 'node_modules', 'third-party', 'third-party.js'),
           ])
           .equals('assets/tp.js');
+      });
+
+      test('vite build emits node_modules files imported with destDir or outputFile', async function (assert) {
+        let result = await app.execute('pnpm vite build');
+        assert.equal(result.exitCode, 0, result.output);
+        expectFile('./dist/assets/fonts/app-font.woff').matches('app font');
+        expectFile('./dist/fonts/some-font.ttf').matches('some font');
+        expectFile('./dist/assets/tp.js').matches('// third party');
       });
     });
   });

@@ -463,7 +463,11 @@ tsAppScenarios
     useQunit9TestHelper(project);
     project.mergeFiles({
       'ember-cli-build.js': embroiderCliBuild('{}'),
-      'embroider.config.cjs': `module.exports = { splitAtRoutes: ['split-me'], staticAppPaths: ['static-dir'] };`,
+      'embroider.config.cjs': `module.exports = {
+        splitAtRoutes: ['split-me'],
+        staticAppPaths: ['static-dir'],
+        staticInvokables: true,
+      };`,
       app: {
         'static-dir': {
           'my-library.js': `
@@ -512,6 +516,10 @@ tsAppScenarios
           },
         });
         assert.equal(result.exitCode, 0, result.output);
+        assert.false(
+          result.output.includes('DEPRECATION: The Embroider option'),
+          'options set only in the config file are not deprecated'
+        );
       });
 
       test(`deprecates an option that ember-cli-build sets too`, async function (assert) {
@@ -534,47 +542,41 @@ tsAppScenarios
     });
   });
 
-minimalAppScenarios
-  .only('canary')
-  .map('router-minimal-embroider-config', project => {
-    /**
-     * compat-modules includes the app-js of every active addon.
-     * The app-js of ember-data needs an ember-cli-build file.
-     */
-    project.removeDevDependency('ember-data');
+/**
+ * A minimal app (no ember-cli-build) that splits `split-me` with the Embroider config file.
+ * `prefix` is the start of the app's module names in compat-modules.
+ */
+function minimalRouterScenario(
+  name: string,
+  { config, appJs, prefix }: { config: string; appJs: string; prefix: string }
+) {
+  minimalAppScenarios
+    .only('canary')
+    .map(name, project => {
+      /**
+       * compat-modules includes the app-js of every active addon.
+       * The app-js of ember-data needs an ember-cli-build file.
+       */
+      project.removeDevDependency('ember-data');
 
-    project.mergeFiles({
-      'embroider.config.js': `export default {
-        modulePrefix: 'app-template-minimal',
-        splitAtRoutes: ['split-me'],
-        staticAppPaths: ['static-dir'],
-      };`,
-      src: {
-        'static-dir': {
-          'my-library.js': `
+      project.mergeFiles({
+        'embroider.config.js': config,
+        src: {
+          'static-dir': {
+            'my-library.js': `
             globalThis.staticDirMyLibLoaded = true;
             export {};
           `,
-        },
-        'non-static-dir': {
-          'another-library.js': `
+          },
+          'non-static-dir': {
+            'another-library.js': `
             globalThis.anotherLibraryLoaded = true;
             export {};
           `,
-        },
-        'registry.js': null,
-        'app.js': `
-          import Application from '@ember/application';
-          import Resolver from 'ember-resolver';
-          import compatModules from '@embroider/virtual/compat-modules';
-          import config from '#config';
-
-          export default class App extends Application {
-            modulePrefix = config.modulePrefix;
-            Resolver = Resolver.withModules(compatModules);
-          }
-        `,
-        'router.js': `
+          },
+          'registry.js': null,
+          'app.js': appJs,
+          'router.js': `
           import EmberRouter from '@embroider/router';
           import config from '#config';
 
@@ -590,28 +592,28 @@ minimalAppScenarios
             });
           });
         `,
-        routes: {
-          'about.js': `
+          routes: {
+            'about.js': `
             import Route from '@ember/routing/route';
             export default class AboutRoute extends Route {}
           `,
-          'split-me.js': `
+            'split-me.js': `
             import Route from '@ember/routing/route';
             export default class SplitMeRoute extends Route {}
           `,
-        },
-        templates: {
-          'about.gjs': `<template><div data-test-about>This is the about route.</div></template>`,
-          'split-me.gjs': `<template>{{outlet}}</template>`,
-          'split-me': {
-            'index.gjs': `<template><div data-test-split-me-index>This is the split-me/index.</div></template>`,
-            'child.gjs': `<template><div data-test-split-me-child>This is the split-me/child.</div></template>`,
+          },
+          templates: {
+            'about.gjs': `<template><div data-test-about>This is the about route.</div></template>`,
+            'split-me.gjs': `<template>{{outlet}}</template>`,
+            'split-me': {
+              'index.gjs': `<template><div data-test-split-me-index>This is the split-me/index.</div></template>`,
+              'child.gjs': `<template><div data-test-split-me-child>This is the split-me/child.</div></template>`,
+            },
           },
         },
-      },
-      tests: {
-        unit: {
-          'static-app-paths-test.js': `
+        tests: {
+          unit: {
+            'static-app-paths-test.js': `
             import { module, test } from 'qunit';
 
             module('Unit | staticAppPaths from the Embroider config', function () {
@@ -624,8 +626,8 @@ minimalAppScenarios
               });
             });
           `,
-        },
-        'test-helper.js': `
+          },
+          'test-helper.js': `
           import Application from '#src/app';
           import config, { enterTestMode } from '#config';
           import * as QUnit from 'qunit';
@@ -641,8 +643,8 @@ minimalAppScenarios
             qunitStart();
           }
         `,
-        acceptance: {
-          'lazy-routes-test.js': `
+          acceptance: {
+            'lazy-routes-test.js': `
             import { module, test } from 'qunit';
             import { visit } from '@ember/test-helpers';
             import { setupApplicationTest } from 'ember-qunit';
@@ -674,74 +676,91 @@ minimalAppScenarios
               });
             });
           `,
+          },
         },
-      },
-    });
-  })
-  .forEachScenario(scenario => {
-    Qmodule(scenario.name, function (hooks) {
-      let app: PreparedApp;
-      hooks.before(async () => {
-        app = await scenario.prepare();
       });
+    })
+    .forEachScenario(scenario => {
+      Qmodule(scenario.name, function (hooks) {
+        let app: PreparedApp;
+        hooks.before(async () => {
+          app = await scenario.prepare();
+        });
 
-      test(`vite build puts split-me in its own chunk`, async function (assert) {
-        let result = await app.execute('pnpm cross-env NODE_ENV=development vite build --mode development');
-        assert.equal(result.exitCode, 0, result.output);
-
-        let assetsDir = join(app.dir, 'dist', 'assets');
-        let chunks = readdirSync(assetsDir).filter(name => name.endsWith('.js'));
-        let splitChunks = chunks.filter(name => name.includes('route_split-me'));
-        assert.equal(splitChunks.length, 1, `one split-me chunk in ${chunks.join(', ')}`);
-        if (splitChunks.length !== 1) {
-          return;
-        }
-
-        let splitSource = readFileSync(join(assetsDir, splitChunks[0]), 'utf8');
-        for (let name of [
-          'routes/split-me',
-          'templates/split-me',
-          'templates/split-me/index',
-          'templates/split-me/child',
-        ]) {
-          assert.true(splitSource.includes(`"app-template-minimal/${name}"`), `split-me chunk has ${name}`);
-        }
-
-        let otherSources = chunks
-          .filter(name => !splitChunks.includes(name))
-          .map(name => readFileSync(join(assetsDir, name), 'utf8'))
-          .join('\n');
-        assert.true(otherSources.includes('"app-template-minimal/routes/about"'), 'about is in the initial bundle');
-        assert.false(
-          otherSources.includes('"app-template-minimal/routes/split-me"'),
-          'split-me is not in the initial bundle'
-        );
-      });
-
-      test(`loads split-me lazily and skips static-dir at runtime`, async function (assert) {
-        let result = await app.execute('pnpm dist:ember:test');
-        assert.equal(result.exitCode, 0, result.output);
-      });
-
-      test(`compat-modules uses "./" module names when modulePrefix is not set`, async function (assert) {
-        let configFile = join(app.dir, 'embroider.config.js');
-        let original = readFileSync(configFile, 'utf8');
-        writeFileSync(configFile, `export default { splitAtRoutes: ['split-me'] };`);
-        try {
+        test(`vite build puts split-me in its own chunk`, async function (assert) {
           let result = await app.execute('pnpm cross-env NODE_ENV=development vite build --mode development');
           assert.equal(result.exitCode, 0, result.output);
 
           let assetsDir = join(app.dir, 'dist', 'assets');
-          let sources = readdirSync(assetsDir)
-            .filter(name => name.endsWith('.js'))
+          let chunks = readdirSync(assetsDir).filter(name => name.endsWith('.js'));
+          let splitChunks = chunks.filter(name => name.includes('route_split-me'));
+          assert.equal(splitChunks.length, 1, `one split-me chunk in ${chunks.join(', ')}`);
+          if (splitChunks.length !== 1) {
+            return;
+          }
+
+          let splitSource = readFileSync(join(assetsDir, splitChunks[0]), 'utf8');
+          for (let name of [
+            'routes/split-me',
+            'templates/split-me',
+            'templates/split-me/index',
+            'templates/split-me/child',
+          ]) {
+            assert.true(splitSource.includes(`"${prefix}/${name}"`), `split-me chunk has ${name}`);
+          }
+
+          let otherSources = chunks
+            .filter(name => !splitChunks.includes(name))
             .map(name => readFileSync(join(assetsDir, name), 'utf8'))
             .join('\n');
-          assert.true(sources.includes('"./routes/about"'), 'about uses a "./" module name');
-          assert.true(sources.includes('"./routes/split-me"'), 'split-me uses a "./" module name');
-          assert.false(sources.includes('"app-template-minimal/routes/about"'), 'about does not use the package name');
-        } finally {
-          writeFileSync(configFile, original);
-        }
+          assert.true(otherSources.includes(`"${prefix}/routes/about"`), 'about is in the initial bundle');
+          assert.false(otherSources.includes(`"${prefix}/routes/split-me"`), 'split-me is not in the initial bundle');
+        });
+
+        test(`loads split-me lazily and skips static-dir at runtime`, async function (assert) {
+          let result = await app.execute('pnpm dist:ember:test');
+          assert.equal(result.exitCode, 0, result.output);
+        });
       });
     });
-  });
+}
+
+minimalRouterScenario('router-minimal-embroider-config', {
+  config: `export default {
+    modulePrefix: 'app-template-minimal',
+    splitAtRoutes: ['split-me'],
+    staticAppPaths: ['static-dir'],
+  };`,
+  appJs: `
+    import Application from '@ember/application';
+    import Resolver from 'ember-resolver';
+    import compatModules from '@embroider/virtual/compat-modules';
+    import config from '#config';
+
+    export default class App extends Application {
+      modulePrefix = config.modulePrefix;
+      Resolver = Resolver.withModules(compatModules);
+    }
+  `,
+  prefix: 'app-template-minimal',
+});
+
+/**
+ * Ember 7.2 and later resolve with `modules` when the app sets no `Resolver`.
+ * Without `modulePrefix` in the config, compat-modules uses the "./" names that this resolver expects.
+ */
+minimalRouterScenario('router-minimal-strict-resolver', {
+  config: `export default {
+    splitAtRoutes: ['split-me'],
+    staticAppPaths: ['static-dir'],
+  };`,
+  appJs: `
+    import Application from '@ember/application';
+    import compatModules from '@embroider/virtual/compat-modules';
+
+    export default class App extends Application {
+      modules = compatModules;
+    }
+  `,
+  prefix: '.',
+});

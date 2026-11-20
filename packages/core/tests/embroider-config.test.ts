@@ -102,16 +102,32 @@ describe('options from the config file', () => {
 });
 
 describe('withUserConfig', () => {
-  test('keeps the resolver options when the app has no config', () => {
-    let options = resolverOptions();
-    expect(withUserConfig(makeApp({}), options, false)).toBe(options);
+  test('keeps the prebuild state when the app has no config', () => {
+    expect(withUserConfig(makeApp({}), resolverOptions(), true)).toEqual(resolverOptions());
+  });
+
+  test('uses "." as the module prefix of an app without a prebuild or a config', () => {
+    expect(withUserConfig(makeApp({}), resolverOptions(), false)).toEqual(
+      resolverOptions({ runtimeModulePrefix: '.' })
+    );
   });
 
   test('sets the user options of an app without a prebuild', () => {
-    let root = makeApp({ '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'], staticAppPaths: ['lib'] }) });
+    let root = makeApp({
+      '.embroiderrc.json': JSON.stringify({
+        modulePrefix: 'my-app',
+        splitAtRoutes: ['admin'],
+        staticAppPaths: ['lib'],
+      }),
+    });
     expect(withUserConfig(root, resolverOptions(), false)).toEqual(
-      resolverOptions({ splitAtRoutes: ['admin'], staticAppPaths: ['lib'] })
+      resolverOptions({ runtimeModulePrefix: 'my-app', splitAtRoutes: ['admin'], staticAppPaths: ['lib'] })
     );
+  });
+
+  test('sets the module prefix of an app with a prebuild', () => {
+    let root = makeApp({ '.embroiderrc.json': JSON.stringify({ modulePrefix: '.' }) });
+    expect(withUserConfig(root, resolverOptions(), true)).toEqual(resolverOptions({ runtimeModulePrefix: '.' }));
   });
 
   test('throws for unexpected properties in an app without a prebuild', () => {
@@ -119,7 +135,7 @@ describe('withUserConfig', () => {
       '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'], staticInvokables: false, other: 1 }),
     });
     expect(() => withUserConfig(root, resolverOptions(), false)).toThrow(
-      `Unexpected properties in .embroiderrc.json: staticInvokables, other. Expected only: splitAtRoutes, staticAppPaths.`
+      `Unexpected properties in .embroiderrc.json: staticInvokables, other. Expected only: modulePrefix, splitAtRoutes, staticAppPaths.`
     );
   });
 

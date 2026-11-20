@@ -91,7 +91,7 @@ export function deprecateOldConfig(appRoot: string, path: string, oldPlace: stri
  * The user options that the resolver reads during the build.
  * Without a prebuild, nothing reads the other options of `compatBuild`.
  */
-const minimalAppKeys = ['splitAtRoutes', 'staticAppPaths'];
+const minimalAppKeys = ['modulePrefix', 'splitAtRoutes', 'staticAppPaths'];
 
 /**
  * Reads the user options of the resolver.
@@ -100,9 +100,21 @@ const minimalAppKeys = ['splitAtRoutes', 'staticAppPaths'];
  * Users do not edit that file, so it is not an old place to deprecate.
  */
 export function withUserConfig<T extends ResolverOptions>(appRoot: string, resolverOptions: T, prebuilt: boolean): T {
+  let result: T = Object.assign({}, resolverOptions);
+
+  /**
+   * Without a prebuild, the default fits the `./`-relative module names of a strict resolver.
+   * An app that uses ember-resolver sets `modulePrefix` to its package name.
+   */
+  if (hasSpecifiedInEmbroiderConfig(appRoot, 'modulePrefix')) {
+    result.runtimeModulePrefix = getFromEmbroiderConfig(appRoot, 'modulePrefix') as string;
+  } else if (!prebuilt) {
+    result.runtimeModulePrefix = '.';
+  }
+
   let loaded = loadEmbroiderConfig(appRoot);
   if (!loaded) {
-    return resolverOptions;
+    return result;
   }
 
   if (!prebuilt) {
@@ -115,7 +127,6 @@ export function withUserConfig<T extends ResolverOptions>(appRoot: string, resol
     }
   }
 
-  let result: T = Object.assign({}, resolverOptions);
   if (hasSpecifiedInEmbroiderConfig(appRoot, 'splitAtRoutes')) {
     result.splitAtRoutes = getFromEmbroiderConfig(appRoot, 'splitAtRoutes') as T['splitAtRoutes'];
   }

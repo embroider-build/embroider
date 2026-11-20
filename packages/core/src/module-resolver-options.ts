@@ -16,6 +16,15 @@ export interface Options {
   appRoot: string;
   engines: EngineConfig[];
   modulePrefix: string;
+
+  /**
+   * The prefix of the app's module names in `@embroider/virtual/compat-modules`.
+   * When it is not set, the names use `modulePrefix`.
+   *
+   * `modulePrefix` stays the package name of the app,
+   * because addons can import the app by that name.
+   */
+  runtimeModulePrefix?: string;
   splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
   staticAppPaths: string[];

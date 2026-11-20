@@ -544,7 +544,11 @@ minimalAppScenarios
     project.removeDevDependency('ember-data');
 
     project.mergeFiles({
-      'embroider.config.js': `export default { splitAtRoutes: ['split-me'], staticAppPaths: ['static-dir'] };`,
+      'embroider.config.js': `export default {
+        modulePrefix: 'app-template-minimal',
+        splitAtRoutes: ['split-me'],
+        staticAppPaths: ['static-dir'],
+      };`,
       src: {
         'static-dir': {
           'my-library.js': `
@@ -717,6 +721,27 @@ minimalAppScenarios
       test(`loads split-me lazily and skips static-dir at runtime`, async function (assert) {
         let result = await app.execute('pnpm dist:ember:test');
         assert.equal(result.exitCode, 0, result.output);
+      });
+
+      test(`compat-modules uses "./" module names when modulePrefix is not set`, async function (assert) {
+        let configFile = join(app.dir, 'embroider.config.js');
+        let original = readFileSync(configFile, 'utf8');
+        writeFileSync(configFile, `export default { splitAtRoutes: ['split-me'] };`);
+        try {
+          let result = await app.execute('pnpm cross-env NODE_ENV=development vite build --mode development');
+          assert.equal(result.exitCode, 0, result.output);
+
+          let assetsDir = join(app.dir, 'dist', 'assets');
+          let sources = readdirSync(assetsDir)
+            .filter(name => name.endsWith('.js'))
+            .map(name => readFileSync(join(assetsDir, name), 'utf8'))
+            .join('\n');
+          assert.true(sources.includes('"./routes/about"'), 'about uses a "./" module name');
+          assert.true(sources.includes('"./routes/split-me"'), 'split-me uses a "./" module name');
+          assert.false(sources.includes('"app-template-minimal/routes/about"'), 'about does not use the package name');
+        } finally {
+          writeFileSync(configFile, original);
+        }
       });
     });
   });

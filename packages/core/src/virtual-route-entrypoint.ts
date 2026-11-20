@@ -41,7 +41,9 @@ export function renderRouteEntrypoint(
           ])
         ),
         isApp,
-        modulePrefix: isApp ? resolver.options.modulePrefix : engine.packageName,
+        modulePrefix: isApp
+          ? resolver.options.runtimeModulePrefix ?? resolver.options.modulePrefix
+          : engine.packageName,
         appRelativePath: 'NOT_USED_DELETE_ME',
       },
       getAppFiles(fromDir),

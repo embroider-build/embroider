@@ -80,7 +80,11 @@ async function runRollup(dir: string, rollupOptions = {}) {
   }
 }
 
-describe('declarations', function () {
+/**
+ * Each test runs glint over a new project.
+ * That takes about 1.5 seconds locally and more than 5 seconds on slow CI runners.
+ */
+describe('declarations', { timeout: 30_000 }, function () {
   let project: Project | null;
 
   afterEach(() => {

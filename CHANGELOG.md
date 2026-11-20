@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-11-20)
+
+* @embroider/addon-dev 8.5.1 (patch)
+
+#### :house: Internal
+* `@embroider/addon-dev`
+  * [#2855](https://github.com/embroider-build/embroider/pull/2855) Give the addon-dev declarations tests 30 seconds ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### Committers: 1
+- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
 ## Release (2026-11-17)
 
 * @embroider/vite 1.8.1 (patch)

@@ -115,13 +115,19 @@ describe('withUserConfig', () => {
   test('sets the user options of an app without a prebuild', () => {
     let root = makeApp({
       '.embroiderrc.json': JSON.stringify({
+        appDir: './demo-app',
         modulePrefix: 'my-app',
         splitAtRoutes: ['admin'],
         staticAppPaths: ['lib'],
       }),
     });
     expect(withUserConfig(root, resolverOptions(), false)).toEqual(
-      resolverOptions({ runtimeModulePrefix: 'my-app', splitAtRoutes: ['admin'], staticAppPaths: ['lib'] })
+      resolverOptions({
+        appDir: './demo-app',
+        runtimeModulePrefix: 'my-app',
+        splitAtRoutes: ['admin'],
+        staticAppPaths: ['lib'],
+      })
     );
   });
 
@@ -135,7 +141,7 @@ describe('withUserConfig', () => {
       '.embroiderrc.json': JSON.stringify({ splitAtRoutes: ['admin'], staticInvokables: false, other: 1 }),
     });
     expect(() => withUserConfig(root, resolverOptions(), false)).toThrow(
-      `Unexpected properties in .embroiderrc.json: staticInvokables, other. Expected only: modulePrefix, splitAtRoutes, staticAppPaths.`
+      `Unexpected properties in .embroiderrc.json: staticInvokables, other. Expected only: appDir, modulePrefix, splitAtRoutes, staticAppPaths.`
     );
   });
 

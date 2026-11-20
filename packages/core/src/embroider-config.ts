@@ -91,7 +91,7 @@ export function deprecateOldConfig(appRoot: string, path: string, oldPlace: stri
  * The user options that the resolver reads during the build.
  * Without a prebuild, nothing reads the other options of `compatBuild`.
  */
-const minimalAppKeys = ['modulePrefix', 'splitAtRoutes', 'staticAppPaths'];
+const minimalAppKeys = ['appDir', 'modulePrefix', 'splitAtRoutes', 'staticAppPaths'];
 
 /**
  * Reads the user options of the resolver.
@@ -127,6 +127,9 @@ export function withUserConfig<T extends ResolverOptions>(appRoot: string, resol
     }
   }
 
+  if (hasSpecifiedInEmbroiderConfig(appRoot, 'appDir')) {
+    result.appDir = getFromEmbroiderConfig(appRoot, 'appDir') as string;
+  }
   if (hasSpecifiedInEmbroiderConfig(appRoot, 'splitAtRoutes')) {
     result.splitAtRoutes = getFromEmbroiderConfig(appRoot, 'splitAtRoutes') as T['splitAtRoutes'];
   }

@@ -25,6 +25,12 @@ export interface Options {
    * because addons can import the app by that name.
    */
   runtimeModulePrefix?: string;
+
+  /**
+   * The folder of the app files, relative to `appRoot`.
+   * When it is not set, the app files come from package.json `exports`.
+   */
+  appDir?: string;
   splitAtRoutes?: (RegExp | string)[];
   podModulePrefix?: string;
   staticAppPaths: string[];

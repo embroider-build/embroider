@@ -3,3 +3,10 @@
 <div>isDeveloping: <span data-test-developing>{{this.isDeveloping}}</span></div>
 <div>isTesting: <span data-test-testing>{{this.isTesting}}</span></div>
 <div data-test-version>{{this.versionChangerVersion}}</div>
+<div data-test-macro-condition>
+  {{#if (macroCondition (macroGetOwnConfig 'showRed'))}}
+    red
+  {{else}}
+    blue
+  {{/if}}
+</div>

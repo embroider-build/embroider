@@ -12,8 +12,8 @@ import { resolvableExtensions } from './resolvable-extensions';
 
 export interface EntrypointResponse {
   type: 'entrypoint';
-  fromDir: string;
-  specifier: string;
+  fromPackageDir: string;
+  appTreeDir: string | null;
 }
 
 export function staticAppPathsPattern(staticAppPaths: string[] | undefined): RegExp | undefined {
@@ -24,9 +24,9 @@ export function staticAppPathsPattern(staticAppPaths: string[] | undefined): Reg
 
 export function renderEntrypoint(
   resolver: Resolver,
-  { fromDir }: { fromDir: string }
+  { appTreeDir, fromPackageDir }: EntrypointResponse
 ): { src: string; watches: string[] } {
-  const owner = resolver.packageCache.ownerOfFile(fromDir);
+  const owner = resolver.packageCache.ownerOfFile(fromPackageDir);
 
   if (!owner) {
     throw new Error('Owner expected'); // ToDo: Really bad error, update message
@@ -37,6 +37,7 @@ export function renderEntrypoint(
   let hasFastboot = Boolean(resolver.options.engines[0]!.activeAddons.find(a => a.name === 'ember-cli-fastboot'));
   let defineModulesFrom = ['./-embroider-implicit-modules.js'];
 
+  debugger;
   let appFiles = new AppFiles(
     {
       package: owner,
@@ -50,7 +51,7 @@ export function renderEntrypoint(
       modulePrefix: isApp ? resolver.options.modulePrefix : engine.packageName,
       appRelativePath: 'NOT_USED_DELETE_ME',
     },
-    getAppFiles(fromDir),
+    appTreeDir ? getAppFiles(appTreeDir) : new Set(),
     hasFastboot ? getFastbootFiles(owner.root) : new Set(),
     extensionsPattern(resolver.options.resolvableExtensions),
     staticAppPathsPattern(resolver.options.staticAppPaths),
@@ -137,7 +138,7 @@ export function renderEntrypoint(
   };
   return {
     src: entryTemplate(params),
-    watches: [fromDir],
+    watches: appTreeDir ? [appTreeDir] : [],
   };
 }
 

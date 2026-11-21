@@ -17,9 +17,11 @@ For a guide on porting a V1 addon to V2, see https://github.com/embroider-build/
 
 2. Copy the rollup and babel configs from the [v2 addon blueprint](https://github.com/embroider-build/addon-blueprint)
 
-### addon.publicAssets(path <required>, options)
+### addon.publicAssets(path <required>, options) *or* addon.publicAssets(pathsAndOptions <required>)
 
 A rollup plugin to expose a folder of assets. `path` is required to define which folder to expose. `options.include` is a glob pattern passed to `walkSync.include` to pick files. `options.exclude` is a glob pattern passed to `walkSync.ignore` to exclude files. `options.namespace` is the namespace to expose files, defaults to the package name + the path that you provided e.g. if you call `addon.publicAssets('public')` in a v2 addon named `super-addon` then your namespace will default to `super-addon/public`.
+
+To specify multiple folders, pass a `pathsAndOptions` array, where each entry includes a `path` and `options`.
 
 ### addon.keepAssets(patterns: string[], exports?: 'default' | '*')
 

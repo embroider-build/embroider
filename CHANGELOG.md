@@ -1,5 +1,22 @@
 # Embroider Changelog
 
+## Release (2026-11-24)
+
+* @embroider/addon-dev 8.5.1 (patch)
+* @embroider/compat 4.1.29 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2857](https://github.com/embroider-build/embroider/pull/2857) compat: skip the dynamic import syntax plugin when Babel parses import() itself ([@aklkv](https://github.com/aklkv))
+
+#### :house: Internal
+* `@embroider/addon-dev`
+  * [#2855](https://github.com/embroider-build/embroider/pull/2855) Give the addon-dev declarations tests 30 seconds ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### Committers: 2
+- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+- Alexey Kulakov ([@aklkv](https://github.com/aklkv))
+
 ## Release (2026-11-17)
 
 * @embroider/vite 1.8.1 (patch)

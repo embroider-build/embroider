@@ -1,7 +1,17 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "oldVersion": "8.5.0"
+      "impact": "patch",
+      "oldVersion": "8.5.0",
+      "newVersion": "8.5.1",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :house: Internal"
+        }
+      ],
+      "pkgJSONPath": "./packages/addon-dev/package.json"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.11.0"
@@ -13,7 +23,17 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.28"
+      "impact": "patch",
+      "oldVersion": "4.1.28",
+      "newVersion": "4.1.29",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.1"
@@ -43,18 +63,8 @@
       "oldVersion": "1.4.2"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.8.0",
-      "newVersion": "1.8.1",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.8.1"
     }
   },
-  "description": "## Release (2026-11-17)\n\n* @embroider/vite 1.8.1 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2842](https://github.com/embroider-build/embroider/pull/2842) Skip content-for replacement on pages content-for.json doesn't list ([@andsmedeiros](https://github.com/andsmedeiros))\n  * [#2852](https://github.com/embroider-build/embroider/pull/2852) Fix emitFile() is not supported in serve mode console message ([@tcjr](https://github.com/tcjr))\n\n#### Committers: 2\n- André Medeiros ([@andsmedeiros](https://github.com/andsmedeiros))\n- Tom Carter ([@tcjr](https://github.com/tcjr))\n"
+  "description": "## Release (2026-11-24)\n\n* @embroider/addon-dev 8.5.1 (patch)\n* @embroider/compat 4.1.29 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2857](https://github.com/embroider-build/embroider/pull/2857) compat: skip the dynamic import syntax plugin when Babel parses import() itself ([@aklkv](https://github.com/aklkv))\n\n#### :house: Internal\n* `@embroider/addon-dev`\n  * [#2855](https://github.com/embroider-build/embroider/pull/2855) Give the addon-dev declarations tests 30 seconds ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### Committers: 2\n- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n- Alexey Kulakov ([@aklkv](https://github.com/aklkv))\n"
 }

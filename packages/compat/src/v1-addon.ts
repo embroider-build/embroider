@@ -26,6 +26,7 @@ import {
   isCompactReexports,
   isColocationPlugin,
   isInlinePrecompilePlugin,
+  needsDynamicImportSyntaxPlugin,
 } from './detect-babel-plugins';
 import HbsToJSBroccoliPlugin from './hbs-to-js-broccoli-plugin';
 import { fromPairs } from 'lodash';
@@ -546,7 +547,7 @@ export default class V1Addon {
         // may use import() syntax and we need to re-add it to the parser.
         if (version && semver.satisfies(semver.coerce(version) || version, '^6')) {
           babelConfig.plugins.push(require.resolve('babel-plugin-syntax-dynamic-import'));
-        } else {
+        } else if (needsDynamicImportSyntaxPlugin(emberCLIBabelInstance?.root)) {
           babelConfig.plugins.push(require.resolve('@babel/plugin-syntax-dynamic-import'));
         }
       }

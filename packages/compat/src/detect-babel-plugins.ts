@@ -1,5 +1,7 @@
 import type { PluginItem } from '@babel/core';
+import { readJSONSync } from 'fs-extra';
 import { join, sep } from 'path';
+import semver from 'semver';
 
 export function isEmberAutoImportDynamic(item: PluginItem): boolean {
   let pluginPath: string;
@@ -91,3 +93,17 @@ const htmlbarPathMatches = [
   ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
   ['babel-plugin-ember-template-compilation', 'src', 'node-main.js'].join(sep),
 ];
+
+// Babel parses `import()` without a plugin since 7.8.0. The syntax plugin only
+// exists for Babel 7, and Babel 8 refuses to load it.
+export function needsDynamicImportSyntaxPlugin(emberCLIBabelRoot: string | undefined): boolean {
+  if (!emberCLIBabelRoot) {
+    return true;
+  }
+  try {
+    let { version } = readJSONSync(require.resolve('@babel/core/package.json', { paths: [emberCLIBabelRoot] }));
+    return semver.lt(version, '7.8.0');
+  } catch {
+    return true;
+  }
+}

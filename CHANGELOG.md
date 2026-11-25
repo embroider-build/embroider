@@ -1,5 +1,19 @@
 # Embroider Changelog
 
+## Release (2026-11-25)
+
+* @embroider/addon-dev 8.5.2 (patch)
+* @embroider/vite 1.8.2 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/vite`
+  * [#2860](https://github.com/embroider-build/embroider/pull/2860) Fix dependency scanning on Windows ([@btecu](https://github.com/btecu))
+* `@embroider/addon-dev`
+  * [#2858](https://github.com/embroider-build/embroider/pull/2858) Normalize windows paths for kept assets in addons ([@btecu](https://github.com/btecu))
+
+#### Committers: 1
+- Bj Tecu ([@btecu](https://github.com/btecu))
+
 ## Release (2026-11-24)
 
 * @embroider/addon-dev 8.5.1 (patch)

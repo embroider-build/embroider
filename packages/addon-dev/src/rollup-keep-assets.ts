@@ -1,4 +1,5 @@
 import type { Plugin } from 'rollup';
+import { normalizePath } from '@rollup/pluginutils';
 import minimatch from 'minimatch';
 import { dirname, relative } from 'path';
 import { readFileSync } from 'fs';
@@ -53,7 +54,7 @@ export default function keepAssets({
       if (include.some((pattern) => minimatch(id, pattern))) {
         let ref = this.emitFile({
           type: 'asset',
-          fileName: relative(from, id),
+          fileName: normalizePath(relative(from, id)),
           source: output,
         });
         let replacement: string;
@@ -81,7 +82,8 @@ export default function keepAssets({
           (_x: string, ref: string) => {
             let assetFileName = this.getFileName(ref);
             let relativeName =
-              './' + relative(dirname(chunk.fileName), assetFileName);
+              './' +
+              normalizePath(relative(dirname(chunk.fileName), assetFileName));
             return getName(relativeName) ?? '';
           }
         );

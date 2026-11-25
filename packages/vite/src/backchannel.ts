@@ -1,4 +1,5 @@
 import makeDebug from 'debug';
+import { normalizePath } from 'vite';
 
 const debug = makeDebug('embroider:vite-esbuild-backchannel');
 
@@ -58,7 +59,11 @@ export function writeStatus(specifier: string, fromFile: string, status: FinalSt
 }
 
 function stateKey(specifier: string, fromFile: string): string {
-  return `${specifier}\0${fromFile}`;
+  // On Windows our request adapters use backslashes, but the dep scan observer
+  // gets the importer from Vite with forward slashes. Both must map to one key.
+  let normalizedFile = normalizePath(fromFile);
+
+  return `${specifier}\0${normalizedFile}`;
 }
 
 export type FinalStatus = { type: 'not_found' } | { type: 'found'; filename: string };

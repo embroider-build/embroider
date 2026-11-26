@@ -2,13 +2,13 @@
   "solution": {
     "@embroider/addon-dev": {
       "impact": "patch",
-      "oldVersion": "8.5.0",
-      "newVersion": "8.5.1",
+      "oldVersion": "8.5.1",
+      "newVersion": "8.5.2",
       "tagName": "latest",
       "constraints": [
         {
           "impact": "patch",
-          "reason": "Appears in changelog section :house: Internal"
+          "reason": "Appears in changelog section :bug: Bug Fix"
         }
       ],
       "pkgJSONPath": "./packages/addon-dev/package.json"
@@ -23,17 +23,7 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "impact": "patch",
-      "oldVersion": "4.1.28",
-      "newVersion": "4.1.29",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/compat/package.json"
+      "oldVersion": "4.1.29"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.1"
@@ -63,8 +53,18 @@
       "oldVersion": "1.4.2"
     },
     "@embroider/vite": {
-      "oldVersion": "1.8.1"
+      "impact": "patch",
+      "oldVersion": "1.8.1",
+      "newVersion": "1.8.2",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/vite/package.json"
     }
   },
-  "description": "## Release (2026-11-24)\n\n* @embroider/addon-dev 8.5.1 (patch)\n* @embroider/compat 4.1.29 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2857](https://github.com/embroider-build/embroider/pull/2857) compat: skip the dynamic import syntax plugin when Babel parses import() itself ([@aklkv](https://github.com/aklkv))\n\n#### :house: Internal\n* `@embroider/addon-dev`\n  * [#2855](https://github.com/embroider-build/embroider/pull/2855) Give the addon-dev declarations tests 30 seconds ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### Committers: 2\n- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n- Alexey Kulakov ([@aklkv](https://github.com/aklkv))\n"
+  "description": "## Release (2026-11-25)\n\n* @embroider/addon-dev 8.5.2 (patch)\n* @embroider/vite 1.8.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2860](https://github.com/embroider-build/embroider/pull/2860) Fix dependency scanning on Windows ([@btecu](https://github.com/btecu))\n* `@embroider/addon-dev`\n  * [#2858](https://github.com/embroider-build/embroider/pull/2858) Normalize windows paths for kept assets in addons ([@btecu](https://github.com/btecu))\n\n#### Committers: 1\n- Bj Tecu ([@btecu](https://github.com/btecu))\n"
 }

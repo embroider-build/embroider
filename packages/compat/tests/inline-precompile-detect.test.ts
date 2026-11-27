@@ -12,6 +12,9 @@ describe('isInlinePrecompilePlugin', () => {
     expect(isInlinePrecompilePlugin('/ember-cli-htmlbars/lib/require-from-worker.js')).toBeTruthy;
     expect(isInlinePrecompilePlugin('/ember-cli-htmlbars/lib/require-from-worker')).toBeTruthy;
 
+    expect(isInlinePrecompilePlugin('/babel-plugin-ember-template-compilation/src/node-main.js')).toBeTruthy();
+    expect(isInlinePrecompilePlugin('/babel-plugin-ember-template-compilation/dist/src/node-main.js')).toBeTruthy();
+
     // Windows paths
     expect(isInlinePrecompilePlugin('\\htmlbars-inline-precompile\\index.js')).toBeTruthy;
     expect(isInlinePrecompilePlugin('\\htmlbars-inline-precompile\\index')).toBeTruthy;

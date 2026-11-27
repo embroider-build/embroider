@@ -8,7 +8,7 @@ import {
   packageName,
   syntheticJStoHBS,
 } from '@embroider/shared-internals';
-import { dirname, resolve, posix, basename } from 'path';
+import { dirname, resolve, posix, basename, relative, isAbsolute, sep } from 'path';
 import type { Package } from '@embroider/shared-internals';
 import { explicitRelative, RewrittenPackageCache } from '@embroider/shared-internals';
 import makeDebug from 'debug';
@@ -429,11 +429,17 @@ export class Resolver {
       pkg = this.packageCache.resolve(packageName, requestingPkg);
     }
 
-    let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
-    let specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
+    let specifier: string;
+    let appDir = this.appDirOf(pkg);
+    if (appDir) {
+      specifier = resolve(appDir, '-embroider-entrypoint.js');
+    } else {
+      let matched = resolveExports(pkg.packageJSON, '-embroider-entrypoint.js', {
+        browser: true,
+        conditions: ['default', 'imports'],
+      });
+      specifier = resolve(pkg.root, matched?.[0] ?? '-embroider-entrypoint.js');
+    }
     return logTransition(
       'entrypoint',
       request,
@@ -460,15 +466,20 @@ export class Resolver {
       throw new Error(`bug: found entrypoint import in non-ember package at ${request.fromFile}`);
     }
 
-    let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
-      browser: true,
-      conditions: ['default', 'imports'],
-    });
+    let appDir = this.appDirOf(pkg);
+    let entrypoint: string;
+    if (appDir) {
+      entrypoint = resolve(appDir, '-embroider-route-entrypoint.js');
+    } else {
+      let matched = resolveExports(pkg.packageJSON, '-embroider-route-entrypoint.js', {
+        browser: true,
+        conditions: ['default', 'imports'],
+      });
+      entrypoint = resolve(pkg.root, matched?.[0] ?? '-embroider-route-entrypoint.js');
+    }
     // The trailing `.js` stops the id from ending in a route-controlled extension
     // like `.map`, which Vite's dev sourcemap middleware hijacks. See #2670.
-    let entrypoint = matched ?? '-embroider-route-entrypoint.js';
-    let target = `${entrypoint}:route=${routeName}.js`;
-    let specifier = resolve(pkg.root, target);
+    let specifier = `${entrypoint}:route=${routeName}.js`;
 
     return logTransition(
       'route entrypoint',
@@ -1322,7 +1333,7 @@ export class Resolver {
       // it's a relative import inside an engine (which also means app), which
       // means we may need to satisfy the request via app tree merging.
 
-      let logicalName = engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
+      let logicalName = this.engineRelativeName(pkg, resolve(dirname(request.fromFile), request.specifier));
       if (!logicalName) {
         return abortFallback('fallbackResolve: relative failure because this file is not externally accessible');
       }
@@ -1413,6 +1424,28 @@ export class Resolver {
     }
   }
 
+  /**
+   * The folder that holds the app files of `pkg`, when the Embroider config sets `appDir`.
+   * Only the app itself has one. Without it, the app files come from package.json `exports`.
+   */
+  private appDirOf(pkg: Package): string | undefined {
+    if (this.options.appDir && pkg.root === this.options.appRoot) {
+      return resolve(pkg.root, this.options.appDir);
+    }
+  }
+
+  private engineRelativeName(pkg: Package, filename: string): string | undefined {
+    let appDir = this.appDirOf(pkg);
+    if (!appDir) {
+      return engineRelativeName(pkg, filename);
+    }
+    let relativePath = relative(appDir, filename);
+    if (relativePath.startsWith('..') || isAbsolute(relativePath)) {
+      return undefined;
+    }
+    return './' + relativePath.split(sep).join('/');
+  }
+
   // check if this file is resolvable as a global component, and if so return
   // its dasherized name
   reverseComponentLookup(filename: string): string | undefined {
@@ -1424,7 +1457,7 @@ export class Resolver {
     if (engineConfig) {
       // we're directly inside an engine, so we're potentially resolvable as a
       // global component
-      let inAppName = engineRelativeName(owningPackage, filename);
+      let inAppName = this.engineRelativeName(owningPackage, filename);
       if (inAppName) {
         return this.tryReverseComponent(engineConfig.packageName, inAppName);
       }

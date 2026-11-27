@@ -31,7 +31,7 @@ export default class V1InstanceCache {
     let packageName = addonInstance.pkg.name;
     // if the user registered something (including "null", which allows
     // disabling the built-in adapters), that takes precedence.
-    let AdapterClass = this.app.options.compatAdapters.get(packageName);
+    let AdapterClass = this.app.option('compatAdapters').get(packageName);
 
     if (AdapterClass === null) {
       return V1Addon;

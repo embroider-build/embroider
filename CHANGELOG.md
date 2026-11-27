@@ -1,5 +1,16 @@
 # Embroider Changelog
 
+## Release (2026-11-27)
+
+* @embroider/compat 4.1.30 (patch)
+
+#### :bug: Bug Fix
+* `@embroider/compat`
+  * [#2861](https://github.com/embroider-build/embroider/pull/2861) Detect babel-plugin-ember-template-compilation 3+ as the inline precompile plugin ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
+#### Committers: 1
+- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))
+
 ## Release (2026-11-25)
 
 * @embroider/addon-dev 8.5.2 (patch)

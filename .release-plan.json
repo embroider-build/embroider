@@ -1,17 +1,7 @@
 {
   "solution": {
     "@embroider/addon-dev": {
-      "impact": "patch",
-      "oldVersion": "8.5.1",
-      "newVersion": "8.5.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/addon-dev/package.json"
+      "oldVersion": "8.5.2"
     },
     "@embroider/addon-shim": {
       "oldVersion": "1.11.0"
@@ -23,7 +13,17 @@
       "oldVersion": "1.1.0"
     },
     "@embroider/compat": {
-      "oldVersion": "4.1.29"
+      "impact": "patch",
+      "oldVersion": "4.1.29",
+      "newVersion": "4.1.30",
+      "tagName": "latest",
+      "constraints": [
+        {
+          "impact": "patch",
+          "reason": "Appears in changelog section :bug: Bug Fix"
+        }
+      ],
+      "pkgJSONPath": "./packages/compat/package.json"
     },
     "@embroider/config-meta-loader": {
       "oldVersion": "1.0.1"
@@ -53,18 +53,8 @@
       "oldVersion": "1.4.2"
     },
     "@embroider/vite": {
-      "impact": "patch",
-      "oldVersion": "1.8.1",
-      "newVersion": "1.8.2",
-      "tagName": "latest",
-      "constraints": [
-        {
-          "impact": "patch",
-          "reason": "Appears in changelog section :bug: Bug Fix"
-        }
-      ],
-      "pkgJSONPath": "./packages/vite/package.json"
+      "oldVersion": "1.8.2"
     }
   },
-  "description": "## Release (2026-11-25)\n\n* @embroider/addon-dev 8.5.2 (patch)\n* @embroider/vite 1.8.2 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/vite`\n  * [#2860](https://github.com/embroider-build/embroider/pull/2860) Fix dependency scanning on Windows ([@btecu](https://github.com/btecu))\n* `@embroider/addon-dev`\n  * [#2858](https://github.com/embroider-build/embroider/pull/2858) Normalize windows paths for kept assets in addons ([@btecu](https://github.com/btecu))\n\n#### Committers: 1\n- Bj Tecu ([@btecu](https://github.com/btecu))\n"
+  "description": "## Release (2026-11-27)\n\n* @embroider/compat 4.1.30 (patch)\n\n#### :bug: Bug Fix\n* `@embroider/compat`\n  * [#2861](https://github.com/embroider-build/embroider/pull/2861) Detect babel-plugin-ember-template-compilation 3+ as the inline precompile plugin ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n\n#### Committers: 1\n- @NullVoxPopuli's reduced-access machine account for AI usage ([@NullVoxPopuli-ai-agent](https://github.com/NullVoxPopuli-ai-agent))\n"
 }

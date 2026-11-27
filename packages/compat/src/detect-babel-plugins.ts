@@ -92,6 +92,7 @@ const htmlbarPathMatches = [
   ['ember-cli-htmlbars', 'index'].join(sep),
   ['ember-cli-htmlbars', 'lib', 'require-from-worker'].join(sep),
   ['babel-plugin-ember-template-compilation', 'src', 'node-main.js'].join(sep),
+  ['babel-plugin-ember-template-compilation', 'dist', 'src', 'node-main.js'].join(sep),
 ];
 
 // Babel parses `import()` without a plugin since 7.8.0. The syntax plugin only

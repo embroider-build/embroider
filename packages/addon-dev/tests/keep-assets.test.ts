@@ -33,12 +33,12 @@ const CSS_ID = '/proj/src/styles.css';
 const CSS = '.foo { color: red; }\n';
 
 // stands in for upstream plugins that load modules
-function stubModules(modules: Record<string, string>): Plugin {
+function stubModules(modules: Record<string, string>, from = FROM): Plugin {
   return {
     name: 'test-upstream',
     resolveId(id) {
-      if (id === 'entry') return ENTRY_ID;
-      if (id.startsWith('./')) return `${FROM}/${id.slice(2)}`;
+      if (id === 'entry') return `${from}/entry.js`;
+      if (id.startsWith('./')) return `${from}/${id.slice(2)}`;
       return undefined;
     },
     load(id) {
@@ -53,6 +53,7 @@ const DEFAULT_MODULES: Record<string, string> = {
 };
 
 async function build({
+  from = FROM,
   modules = DEFAULT_MODULES,
   include = ['**/*.css'],
   exports = undefined as undefined | 'default' | '*',
@@ -62,8 +63,8 @@ async function build({
     input: 'entry',
     onwarn: (w) => warnings.push(w),
     plugins: [
-      stubModules(modules),
-      keepAssets({ from: FROM, include, exports }),
+      stubModules(modules, from),
+      keepAssets({ from, include, exports }),
     ],
   });
   const { output } = await bundle.generate({ format: 'es', sourcemap: true });
@@ -168,5 +169,19 @@ describe('keep-assets source maps', () => {
       await bundle.close();
     }
     expect(brokenSourcemapWarnings(warnings)).toEqual([]);
+  });
+});
+
+describe('keep-assets matching', () => {
+  test('keeps assets of an addon that lives under a dot directory', async () => {
+    const from = '/home/me/.worktrees/addon/src';
+    const { output } = await build({
+      from,
+      modules: {
+        [`${from}/entry.js`]: DEFAULT_MODULES[ENTRY_ID],
+        [`${from}/styles.css`]: CSS,
+      },
+    });
+    expect(findAsset(output, 'styles.css')).toBe(CSS);
   });
 });

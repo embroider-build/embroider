@@ -19,6 +19,10 @@ export default function keepAssets({
   exports?: undefined | 'default' | '*';
 }): Plugin {
   const marker = `__keep_assets_marker_${counter++}__`;
+  // ids are absolute, so without `dot` an addon anywhere under a dot directory
+  // (say ~/.cache) never matches `**`.
+  const isKept = (id: string) =>
+    include.some((pattern) => minimatch(id, pattern, { dot: true }));
 
   return {
     name: 'keep-assets',
@@ -31,7 +35,7 @@ export default function keepAssets({
     // load hooks, in which case this will not run but our transform hook will
     // still over from there.
     load(id: string) {
-      if (include.some((pattern) => minimatch(id, pattern))) {
+      if (isKept(id)) {
         return {
           code: readFileSync(id).toString('binary'),
           meta: {
@@ -51,7 +55,7 @@ export default function keepAssets({
         // string and we can emit the true bytes.
         output = Buffer.from(code, 'binary');
       }
-      if (include.some((pattern) => minimatch(id, pattern))) {
+      if (isKept(id)) {
         let ref = this.emitFile({
           type: 'asset',
           fileName: normalizePath(relative(from, id)),

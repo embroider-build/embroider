@@ -26,7 +26,8 @@ export function ember(params?: {
    * List of names of rollup plugins that should be taken from your regular Vite
    * config and also applied when Rolldown is bundling dependencies for
    * development. The default list of names is importable as
-   * `defaultRolldownSharedPlugins`.
+   * `defaultRolldownSharedPlugins`. They don't transform modules that Rolldown
+   * parses as JSON.
    */
   rolldownSharedPlugins?: string[];
 }) {
@@ -234,8 +235,32 @@ function sharedRolldownPlugins<T extends { name: string }>(
           // special case. Needs different config.
           return resolver({ rolldown: true });
         }
-        return matched;
+        return skipJson(matched);
       }
     })
     .filter(Boolean) as T[];
+}
+
+/**
+ * Vite turns JSON into JS before other plugins transform it, but Rolldown
+ * parses JSON itself, after the transform hooks. In optimizeDeps, a shared
+ * plugin that matches `.json`, like Babel given `extensions`, would get the raw
+ * JSON and print it back out as a statement that Rolldown can't parse.
+ */
+function skipJson(plugin: Plugin): Plugin {
+  let { transform } = plugin;
+  if (!transform) {
+    return plugin;
+  }
+  let handler = typeof transform === 'function' ? transform : transform.handler;
+  let skippingJson: typeof handler = function (code, id, meta) {
+    if (meta?.moduleType === 'json') {
+      return null;
+    }
+    return handler.call(this, code, id, meta);
+  };
+  return {
+    ...plugin,
+    transform: typeof transform === 'function' ? skippingJson : { ...transform, handler: skippingJson },
+  };
 }
